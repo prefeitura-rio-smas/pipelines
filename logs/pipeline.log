@@ -1,0 +1,64 @@
+Traceback (most recent call last):
+  File "<frozen runpy>", line 198, in _run_module_as_main
+  File "<frozen runpy>", line 88, in _run_code
+  File "/root/pipelines/arcgis/pipeline/flows.py", line 66, in <module>
+    incremental_flow()
+  File "/root/pipelines/arcgis/pipeline/flows.py", line 62, in incremental_flow
+    raise RuntimeError("❌ dbt run falhou")
+RuntimeError: ❌ dbt run falhou
+↳ Extraindo abordagem/ficha (layer 0)…
+   • 178,109 linhas → abordagem_ficha_raw
+↳ Extraindo abordagem/repeat (layer 1)…
+   • 252,922 linhas → abordagem_repeat_raw
+🔄 Executando dbt models (gold)...
+
+/root/venv-abordagem/bin/python: No module named dbt.__main__; 'dbt' is a package and cannot be directly executed
+
+Traceback (most recent call last):
+  File "<frozen runpy>", line 198, in _run_module_as_main
+  File "<frozen runpy>", line 88, in _run_code
+  File "/root/pipelines/arcgis/pipeline/flows.py", line 66, in <module>
+    incremental_flow()
+  File "/root/pipelines/arcgis/pipeline/flows.py", line 62, in incremental_flow
+    raise RuntimeError("❌ dbt run falhou")
+RuntimeError: ❌ dbt run falhou
+↳ Extraindo abordagem/ficha (layer 0)…
+   • 178,158 linhas → abordagem_ficha_raw
+↳ Extraindo abordagem/repeat (layer 1)…
+   • 252,975 linhas → abordagem_repeat_raw
+🔄 Executando dbt models (gold)...
+
+/root/venv-abordagem/bin/python: No module named dbt.__main__; 'dbt' is a package and cannot be directly executed
+
+Traceback (most recent call last):
+  File "<frozen runpy>", line 198, in _run_module_as_main
+  File "<frozen runpy>", line 88, in _run_code
+  File "/root/pipelines/arcgis/pipeline/flows.py", line 66, in <module>
+    incremental_flow()
+  File "/root/pipelines/arcgis/pipeline/flows.py", line 62, in incremental_flow
+    raise RuntimeError("❌ dbt run falhou")
+RuntimeError: ❌ dbt run falhou
+↳ Extraindo abordagem/ficha (layer 0)…
+   • 178,215 linhas → abordagem_ficha_raw
+↳ Extraindo abordagem/repeat (layer 1)…
+   • 253,035 linhas → abordagem_repeat_raw
+🔄 Executando dbt models (gold)...
+
+/root/venv-abordagem/bin/python: No module named dbt.__main__; 'dbt' is a package and cannot be directly executed
+
+Traceback (most recent call last):
+  File "<frozen runpy>", line 198, in _run_module_as_main
+  File "<frozen runpy>", line 88, in _run_code
+  File "/root/pipelines/arcgis/pipeline/flows.py", line 66, in <module>
+    incremental_flow()
+  File "/root/pipelines/arcgis/pipeline/flows.py", line 62, in incremental_flow
+    raise RuntimeError("❌ dbt run falhou")
+RuntimeError: ❌ dbt run falhou
+↳ Extraindo abordagem/ficha (layer 0)…
+   • 178,217 linhas → abordagem_ficha_raw
+↳ Extraindo abordagem/repeat (layer 1)…
+   • 253,036 linhas → abordagem_repeat_raw
+🔄 Executando dbt models (gold)...
+
+/root/venv-abordagem/bin/python: No module named dbt.__main__; 'dbt' is a package and cannot be directly executed
+

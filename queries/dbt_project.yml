@@ -1,0 +1,9 @@
+name: "queries"
+version: "1.0"
+profile: "rj_smas_dev"
+model-paths: ["models"]
+
+models:
+  queries:
+    dashboard_arcgis:
+      materialized: table

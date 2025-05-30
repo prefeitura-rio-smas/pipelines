@@ -1,0 +1,3666 @@
+This file is a merged representation of the entire codebase, combined into a single document by Repomix.
+
+<file_summary>
+This section contains a summary of this file.
+
+<purpose>
+This file contains a packed representation of the entire repository's contents.
+It is designed to be easily consumable by AI systems for analysis, code review,
+or other automated processes.
+</purpose>
+
+<file_format>
+The content is organized as follows:
+1. This summary section
+2. Repository information
+3. Directory structure
+4. Repository files (if enabled)
+5. Multiple file entries, each consisting of:
+  - File path as an attribute
+  - Full contents of the file
+</file_format>
+
+<usage_guidelines>
+- This file should be treated as read-only. Any changes should be made to the
+  original repository files, not this packed version.
+- When processing this file, use the file path to distinguish
+  between different files in the repository.
+- Be aware that this file may contain sensitive information. Handle it with
+  the same level of security as you would the original repository.
+</usage_guidelines>
+
+<notes>
+- Some files may have been excluded based on .gitignore rules and Repomix's configuration
+- Binary files are not included in this packed representation. Please refer to the Repository Structure section for a complete list of file paths, including binary files
+- Files matching patterns in .gitignore are excluded
+- Files matching default ignore patterns are excluded
+- Files are sorted by Git change count (files with more changes are at the bottom)
+</notes>
+
+</file_summary>
+
+<directory_structure>
+pipeline/
+  constants.py
+  flows.py
+  pipelines.yaml
+  tasks.py
+  utils.py
+queries/
+  models/
+    dashboard_arcgis/
+      abordagem_ficha.sql
+      abordagem_repeat.sql
+      schema.yml
+  dbt_project.yml
+sandbox/
+  elt/
+    setup_teste_elt.ipynb
+    setup_teste_elt.py
+  etl/
+    setup_teste_etl.ipynb
+.gitignore
+Dockerfile
+requirements.txt
+</directory_structure>
+
+<files>
+This section contains the contents of the repository's files.
+
+<file path="pipeline/constants.py">
+# pipeline/constants.py
+from pathlib import Path
+from pydantic_settings import BaseSettings, SettingsConfigDict
+
+class Settings(BaseSettings):
+    # --- ArcGIS ---
+    AGOL_URL: str
+    AGOL_USER: str
+    AGOL_PWD: str
+    SIURB_URL: str
+    SIURB_USER: str
+    SIURB_PWD: str
+    AGOL_LAYER_ID: str
+    SIURB_LAYER_ID: str
+
+    # --- GCP ---
+    GCP_PROJECT: str = "rj-smas-dev"
+    GCP_DATASET: str = "arcgis_raw"
+    GCS_BUCKET: str  = "rj-smas-dev"
+
+    # ✅ aceita variáveis a mais e ignora
+    model_config = SettingsConfigDict(
+        env_file      = Path(__file__).parents[1] / ".env",  # ajuste caminho se quiser
+        extra         = "ignore",
+        case_sensitive=False,
+    )
+
+settings = Settings()
+</file>
+
+<file path="pipeline/flows.py">
+# pipeline/flows.py
+from pathlib import Path
+import yaml
+import sys
+import subprocess
+
+from .tasks import extract_arcgis, stage_to_parquet, load_to_bigquery
+
+# Caminho para o YAML de configurações de ingestão
+CONFIG_PATH = Path(__file__).with_name("pipelines.yaml")
+# Diretório do projeto dbt (pasta paralela `queries`)
+DBT_PROJECT_DIR = Path(__file__).parent.parent / "queries"
+
+def incremental_flow() -> None:
+    """
+    Percorre o YAML e executa:
+      1️⃣ Extract   (ArcGIS)
+      2️⃣ Stage     (Parquet + timestamp)
+      3️⃣ Load      (BigQuery)
+      4️⃣ Transform (dbt models gold)
+    """
+    cfg = yaml.safe_load(CONFIG_PATH.read_text())
+
+    for job in cfg:
+        account = job.get("account", "siurb")
+        for layer_name, idx in job["layers"].items():
+            print(f"↳ Extraindo {job['name']}/{layer_name} (layer {idx})…")
+
+            # 1️⃣ Extract
+            df = extract_arcgis(
+                feature_id = job["feature_id"],
+                account    = account,
+                layer      = idx,
+            )
+            if df.empty:
+                print("   • Nada a carregar.")
+                continue
+
+            # 2️⃣ Stage
+            tmp = Path(f"/tmp/{job['name']}_{layer_name}.parquet")
+            stage_to_parquet(df, tmp)        # timestamp incluído aqui
+
+            # 3️⃣ Load
+            table = f"{job['name']}_{layer_name}_raw"
+            load_to_bigquery(tmp, table)
+            print(f"   • {len(df):,} linhas → {table}")
+
+    # 4️⃣ Transform (dbt)
+    print("🔄 Executando dbt models (gold)...")
+    result = subprocess.run(
+        [
+            sys.executable, "-m", "dbt", "run",
+            "--project-dir", str(DBT_PROJECT_DIR)
+        ],
+        cwd=DBT_PROJECT_DIR,
+        capture_output=True,
+        text=True,
+    )
+    print(result.stdout)
+    if result.returncode != 0:
+        print(result.stderr)
+        raise RuntimeError("❌ dbt run falhou")
+    print("✅ dbt concluído com sucesso.")
+
+if __name__ == "__main__":
+    incremental_flow()
+</file>
+
+<file path="pipeline/pipelines.yaml">
+# pipeline/pipelines.yaml
+# Cada bloco descreve UM Feature Service e suas camadas
+
+- name: abordagem                               # prefixo dos nomes Projetos
+  feature_id: 6832ff4ca54c4608b169682ae3a5b088  # ArcGIS item.id (Feature Service)
+  account: siurb                                # opcional; default = siurb
+  layers:
+    ficha: 0                                    # <apelido>: <índice da layer>
+    repeat: 1
+</file>
+
+<file path="pipeline/tasks.py">
+# pipeline/tasks.py
+from pathlib import Path
+import pandas as pd
+from google.cloud import bigquery
+from .utils import fetch_dataframe, bq_client, dataset_ref, add_timestamp
+
+def extract_arcgis(
+    *,
+    feature_id: str, 
+    account: str = "siurb",
+    layer: int = 1,
+    where: str = "1=1",
+    max_records: int = 5000,
+) -> pd.DataFrame:
+    """E = Extract."""
+    return fetch_dataframe(account=account, feature_id=feature_id, layer=layer , where=where, max_records=max_records)
+
+def stage_to_parquet(df: pd.DataFrame, path: Path) -> Path:
+    """Salva dataframe localmente em parquet (formato rápido)."""
+    add_timestamp(df)
+    path.parent.mkdir(parents=True, exist_ok=True)
+    df.to_parquet(path, index=False)
+    return path
+
+def load_to_bigquery(
+    path: Path,
+    table: str,
+    *,
+    write_disposition: bigquery.WriteDisposition = "WRITE_TRUNCATE",
+):
+    """L = Load (carrega parquet -> BQ via load_job)."""
+    client = bq_client()
+    job_cfg = bigquery.LoadJobConfig(
+        autodetect=True,
+        source_format=bigquery.SourceFormat.PARQUET,
+        write_disposition=write_disposition,
+    )
+    with path.open("rb") as f:
+        job = client.load_table_from_file(
+            f,
+            destination=f"{dataset_ref()}.{table}",
+            job_config=job_cfg,
+        )
+    job.result()  # espera terminar
+    return job.output_rows
+</file>
+
+<file path="pipeline/utils.py">
+# pipeline/utils.py
+from functools import lru_cache
+from typing import Literal
+import pandas as pd
+from arcgis.gis       import GIS
+from arcgis.features  import FeatureLayer
+from google.cloud     import bigquery, storage
+from .constants       import settings
+from datetime         import datetime, timezone
+
+# ---------- ArcGIS ----------
+def _get_gis(account: Literal["siurb", "agol"]) -> GIS:
+    if account == "siurb":
+        return GIS(settings.SIURB_URL, settings.SIURB_USER, settings.SIURB_PWD)
+    elif account == "agol":
+        return GIS(settings.AGOL_URL, settings.AGOL_USER, settings.AGOL_PWD)
+    else:
+        raise ValueError("account deve ser 'siurb' ou 'agol'")
+
+def get_feature_layer(account: str, feature_id: str, layer: int) -> FeatureLayer:
+    gis  = _get_gis(account)
+    item = gis.content.get(
+        feature_id
+    )
+    return item.layers[layer] 
+
+def fetch_dataframe(
+    account: str,
+    feature_id: str,
+    layer: int,
+    where: str = "1=1",
+    max_records: int = 5000,
+):
+    """Baixa dados sem geometria e devolve DataFrame Polars/Pandas."""
+    fl  = get_feature_layer(account, feature_id, layer)
+    sdf = fl.query(
+        where=where,
+        out_fields="*",
+        return_geometry=False,
+        max_records=max_records,
+    ).sdf  # ArcGIS devolve Spatial DataFrame (pandas)
+    return sdf
+
+# ---------- BigQuery / GCS ----------
+@lru_cache
+def bq_client() -> bigquery.Client:
+    return bigquery.Client(project=settings.GCP_PROJECT)
+
+@lru_cache
+def gcs_client() -> storage.Client:
+    return storage.Client(project=settings.GCP_PROJECT)
+
+def dataset_ref() -> str:
+    return f"{settings.GCP_PROJECT}.{settings.GCP_DATASET}"
+
+# ---------- Outros ----------
+def add_timestamp(df: pd.DataFrame, column="timestamp_captura") -> pd.DataFrame:
+    """
+    Acrescenta coluna ISO-8601 UTC (AAAA-MM-DDTHH:MM:SS) ao DataFrame.
+    Retorna a mesma instância (conveniente para encadear).
+    """
+    df[column] = datetime.now(tz=timezone.utc).isoformat(timespec="seconds")
+    return df
+</file>
+
+<file path="queries/models/dashboard_arcgis/abordagem_ficha.sql">
+-- models/dashboard_arcgis/abordagem_ficha.sql
+
+SELECT 
+  uniquerowid,
+  unidade_calculo,
+  nome_usuario,
+  SAFE.PARSE_DATE('%d/%m/%Y', data_nascimento) AS data_nascimento,
+  cpf,
+  nome_mae,
+  filtro_ano_ultima_abordagem,
+  filtro_data_abordagem,
+  IFNULL(excluir_ficha, 'Não') AS excluir_ficha,  
+  created_user
+
+ FROM {{ source('arcgis_raw', 'abordagem_ficha_raw') }}
+</file>
+
+<file path="queries/models/dashboard_arcgis/abordagem_repeat.sql">
+SELECT
+  objectid,
+  globalid,
+  CASE
+   WHEN repeat_unidade_calculo = 'CREAS MARIA LINA DE CASTRO LIMA' THEN 'Creas Maria Lina De Castro Lima'
+   WHEN repeat_unidade_calculo = 'CREAS SIMONE DE BEAUVOIR' THEN 'Creas Simone De Beauvoir'
+   WHEN repeat_unidade_calculo = 'CREAS ARLINDO RODRIGUES' THEN 'Creas Arlindo Rodrigues'
+   WHEN repeat_unidade_calculo = 'CREAS JANETE CLAIR' THEN 'Creas Janete Clair'
+   WHEN repeat_unidade_calculo = 'CREAS PROFESSORA ALDAIZA SPOSATI' THEN 'Creas Professora Aldaiza Sposati'
+   WHEN repeat_unidade_calculo = 'CREAS PROFESSORA MÁRCIA LOPES' THEN 'Creas Professora Marcia Lopes'
+   WHEN repeat_unidade_calculo = 'CREAS STELLA MARIS' THEN 'Creas Stella Maris'
+   WHEN repeat_unidade_calculo = 'CREAS NELSON CARNEIRO' THEN 'Creas Nelson Carneiro'
+   WHEN repeat_unidade_calculo = 'CREAS WANDA ENGEL ADUAN' THEN 'Creas Wanda Engel Aduan'
+   WHEN repeat_unidade_calculo = 'CREAS JOÃO HÉLIO FERNANDES VIEITES' THEN 'Creas Joao Helio Fernandes Vieites'
+   WHEN repeat_unidade_calculo = 'CREAS DANIELA PEREZ' THEN 'Creas Daniela Perez'
+   WHEN repeat_unidade_calculo = 'CREAS PADRE GUILHERME DECAMINADA' THEN 'Creas Padre Guilherme Decaminada'
+   WHEN repeat_unidade_calculo = 'CREAS ZILDA ARNS NEUMANN' THEN 'Creas Zilda Arns Neumann'
+   WHEN repeat_unidade_calculo = 'CREAS JOÃO MANUEL MONTEIRO' THEN 'Creas Joao Manuel Monteiro'
+    WHEN repeat_unidade_calculo = 'CENTRO POP JOSÉ SARAMAGO' THEN 'Centro Pop José Saramago'
+   WHEN repeat_unidade_calculo = 'CENTRO POP BÁRBARA CALAZANS' THEN 'Centro Pop Barbara  Calazans'
+   ELSE repeat_unidade_calculo
+   END AS repeat_unidade_calculo_tratada,
+  repeat_unidade_cas,
+  repeat_nome_usuario,
+
+  SAFE.PARSE_DATE('%d/%m/%Y', repeat_data_nascimento) AS repeat_data_nascimento,
+
+  repeat_idade,
+  repeat_faixa_etaria,
+  CASE
+   WHEN repeat_estado_nascimento = 'rio_de_janeiro' THEN 'Rio de Janeiro'
+   WHEN repeat_estado_nascimento = 'outros_estados' THEN 'Outros Estados'
+   WHEN repeat_estado_nascimento = 'outro_pais' THEN 'Outro País'
+   WHEN repeat_estado_nascimento = 'ns_nr' THEN 'NS/NR'
+   ELSE repeat_estado_nascimento
+   END AS repeat_estado_nascimento_tratada,
+  repeat_nome_mae,
+  repeat_nome_pai,
+  CASE 
+   WHEN repeat_raca_cor_etnia = 'parda' THEN 'Parda'
+   WHEN repeat_raca_cor_etnia = 'branca' THEN 'Branca'
+   WHEN repeat_raca_cor_etnia = 'preta' THEN 'Preta'
+   WHEN repeat_raca_cor_etnia = 'amarela' THEN 'Amarela'
+   WHEN repeat_raca_cor_etnia = 'indígena' THEN 'Indígena'
+   WHEN repeat_raca_cor_etnia = 'nao_sabe_nao_quis_responder' THEN 'NS/NR'
+   ELSE repeat_raca_cor_etnia
+   END AS repeat_raca_cor_etnia_tratada,
+  CASE
+   WHEN repeat_sexo = 'masculino' THEN 'Masculino'
+   WHEN repeat_sexo = 'feminino' THEN 'Feminino'
+   WHEN repeat_sexo = 'intersexo' THEN 'Intersexo'
+   WHEN repeat_sexo = 'nao_sabe_nao_quis_responder' THEN 'NS/NR'
+   ELSE repeat_sexo
+   END AS repeat_sexo,
+  turno_abordagem,
+
+  DATE(data_abordagem) AS data_abordagem,
+  ano_num_data_abordagem,
+  dia_num_data_abordagem,
+  CASE
+  WHEN RIGHT(mes_abrev_data_abordagem, 1) = '.' THEN mes_abrev_data_abordagem
+  ELSE CONCAT(mes_abrev_data_abordagem, '.')
+  END AS mes_abrev_data_abordagem,
+
+  ano_mes_data_abordagem,
+  bairro_abord,
+
+  CONCAT(y, ', ', x) AS coordenadas,
+
+  CASE
+   WHEN note_creas = 'CREAS Janete Clair' THEN 'Creas Janete Clair'
+   WHEN note_creas = 'CREAS Maria Lina de Castro Lima' THEN 'Creas Maria Lina De Castro Lima'
+   WHEN note_creas = 'CREAS Daniela Perez' THEN 'Creas Daniela Perez'
+   WHEN note_creas = 'CREAS Stella Maris' THEN 'Creas Stella Maris'
+   WHEN note_creas = 'CREAS Nélson Carneiro' THEN 'Creas Nelson Carneiro'
+   WHEN note_creas = 'CREAS Padre Guilherme Decaminada' THEN 'Creas Padre Guilherme Decaminada'
+   WHEN note_creas = 'CREAS Professora Márcia Lopes' THEN 'Creas Professora Márcia Lopes'
+   WHEN note_creas = 'CREAS Professora Aldaíza Sposati' THEN 'Creas Professora Aldaíza Sposati'
+   WHEN note_creas = 'CREAS João Hélio Fernandes Vieites' THEN 'Creas João Hélio Fernandes Vieites'
+   WHEN note_creas = 'CREAS Wanda Engel Aduan' THEN 'Creas Wanda Engel Aduan'
+   WHEN note_creas = 'CREAS Zilda Arns Neumann' THEN 'Creas Zilda Arns Neumann'
+   WHEN note_creas = 'CREAS Nelson Carneiro' THEN 'Creas Nelson Carneiro'
+   WHEN note_creas = 'CREAS João Manoel Monteiro' THEN 'Creas João Manoel Monteiro'
+   WHEN note_creas = 'CREAS Simone de Beauvoir' THEN 'Creas Simone de Beauvoir'
+   WHEN note_creas = 'CREAS Arlindo Rodrigues' THEN 'Creas Arlindo Rodrigues'
+   ELSE note_creas
+   END AS note_creas_tratada,
+  CASE
+   WHEN resp_abordagem = 'cgppsr' THEN 'CTPR'
+   WHEN resp_abordagem = 'creas' THEN 'CREAS'
+   WHEN resp_abordagem = 'centro_pop' THEN 'CENTRO POP'
+   ELSE resp_abordagem
+   END AS resp_abordagem,
+  CASE resp_abordagem1
+   WHEN 'ouvidoria1' THEN 'Ouvidoria CTPR'
+   WHEN'ouvidoria2' THEN 'Ouvidoria CREAS'
+   WHEN'ouvidoria3' THEN 'Ouvidoria Centro POP'
+   WHEN'tenda_acol_direitos' THEN 'Tenda acolhe com direitos'
+   WHEN'abord_itinerante' THEN 'Abordagem CTPR'
+   WHEN'deman_emergencial1' THEN 'Demanda emergencial CTPR'
+   WHEN'naas' THEN 'NAAS'
+   WHEN'itinerante' THEN 'Abordagem CREAS'
+   WHEN'deman_emergencial2' THEN 'Demanda emergencial CREAS'
+   WHEN'abordagem_social' THEN 'Abordagem Centro POP'
+   WHEN'demanda_emergencial' THEN 'Demanda emergencial Centro POP'
+   WHEN'ncp' THEN 'NCP'
+   ELSE resp_abordagem1
+   END AS resp_abordagem1,
+  acao_conjunta,
+  CASE
+   WHEN permanencia_rua = 'h24' THEN '24 horas'
+   WHEN permanencia_rua = 'apenas_durante_dia' THEN 'Apenas durante o dia'
+   WHEN permanencia_rua = 'durante_semana_retorna_casa_final_de_semana' THEN 'Durante a semana'
+   WHEN permanencia_rua = 'frequenta_cenas_de_uso_esporadicamente' THEN 'Frequenta cenas de uso'
+   WHEN permanencia_rua = 'apenas_durante_noite' THEN 'Apenas durante a noite'
+   WHEN permanencia_rua = 'nao_sabe_nao_respondeu' THEN 'NS/NR'
+   ELSE permanencia_rua
+   END AS permanencia_rua_tratada,
+  CASE
+   WHEN tempo_permanencia = 'de_1_a_3_anos' THEN 'De 1 a 3 anos'
+   WHEN tempo_permanencia = 'de_3_a_6_anos' THEN 'De 3 a 6 anos'
+   WHEN tempo_permanencia = 'de_1_a_3_meses' THEN 'De 1 a 3 meses'
+   WHEN tempo_permanencia = 'menos_3_dias' THEN 'Menos de 3 dias'
+   WHEN tempo_permanencia = 'de_6_meses_a_1_ano' THEN 'De 6 meses a 1 ano'
+   WHEN tempo_permanencia = 'de_6_a_10_anos' THEN 'De 6 a 10 anos'
+   WHEN tempo_permanencia = 'de_3_a_6_meses' THEN 'De 3 a 6 meses'
+   WHEN tempo_permanencia = 'mais_de_10_anos' THEN 'Mais de 10 anos'
+   WHEN tempo_permanencia = 'de_7_a_30_dias' THEN 'De 7 a 30 anos'
+   WHEN tempo_permanencia = 'de_3_a_7_dias' THEN 'De 3 a 7 dias'
+   WHEN tempo_permanencia = 'ns_nr' THEN 'NS/NR'
+   ELSE tempo_permanencia
+   END AS tempo_permanencia_tratada,
+  principal_motivo_permanencia,
+
+  flag_conflito_familiar,
+  flag_abandono_familiar,
+  flag_desocupacao,
+  flag_orfandade,
+  flag_acesso_a_renda,
+  flag_desemprego,
+  flag_desemprego_dos_pais,
+  flag_transtorno_psiquiatrico,
+  flag_uso_drogas_ilicitas,
+  flag_trabalho_infantil,
+  flag_exploracao_sexual,
+  flag_egresso_sistema_prisional,
+  flag_alcoolismo_motivo,
+  flag_violencia_conflito_comuni,
+  flag_preferencia_vontade_prop,
+  flag_egresso_mse,
+  flag_imigrante,
+  flag_migrante,
+  flag_refugiado,
+  flag_ns_nr_motivo,
+  e_migrante,
+  CASE
+   WHEN migrante_terra_natal = 'nao_sabe_nao_quis_responder' THEN 'NS/NR'
+   WHEN migrante_terra_natal = 'sim' THEN 'Sim'
+   WHEN migrante_terra_natal = 'nao' THEN 'Não'
+   ELSE migrante_terra_natal
+   END AS migrante_terra_natal_tratada,
+  CASE
+   WHEN possui_referencia = 'nao_sabe_nao_quis_responder' THEN 'NS/NR'
+    WHEN possui_referencia = 'sim' THEN 'Sim'
+    WHEN possui_referencia = 'nao' THEN 'Não'
+   ELSE possui_referencia
+   END AS possui_referencia_tratada,
+  possui_documento,
+  documentacao,
+
+  flg_documentacao_identidade,
+  flg_documentacao_cnh,
+  flg_documentacao_registro_nasc,
+  flg_documentacao_ctps,
+  flg_documentacao_cpf,
+  flg_documentacao_passaporte,
+  CASE
+   WHEN escolaridade = 'medio_incompleto' THEN 'Médio incompleto'
+   WHEN escolaridade = 'fundamental_incompleto' THEN 'Fundamental incompleto'
+   WHEN escolaridade = 'medio_completo' THEN 'Médio completo'
+   WHEN escolaridade = 'fundamental_completo' THEN 'Fundamental completo'
+   WHEN escolaridade = 'nao_alfabetizado' THEN 'Não alfabetizado'
+   WHEN escolaridade = 'nao_sabe_nao_respondeu' THEN 'Não sabe/Não respondeu'
+   WHEN escolaridade = 'superior_completo' THEN 'Superior completo'
+   WHEN escolaridade = 'superior_incompleto' THEN 'Superior incompleto'
+   WHEN escolaridade = 'nao_escolarizado' THEN 'Não escolarizado'
+   ELSE escolaridade
+   END AS escolaridade_tratada,
+  recebe_beneficio,
+  beneficios,
+
+  flag_bolsa_familia,
+  flag_bpc,
+  flag_seguro_desemprego,
+  flag_aposentadoria,
+  flag_pensionista,
+  flag_outros_ben,
+  beneficios_outros,
+  CASE
+   WHEN ocupacao = 'catador' THEN 'Catador'
+   WHEN ocupacao = 'pedinte' THEN 'Pedinte'
+   WHEN ocupacao = 'ambulante' THEN 'Ambulante'
+   WHEN ocupacao = 'bicos' THEN 'Bicos'
+   WHEN ocupacao = 'outros' THEN 'Outros'
+   WHEN ocupacao = 'impossibilitado_para_trabalho' THEN 'Impossibilitado'
+   WHEN ocupacao = 'prostituicao' THEN 'Prostituição'
+   WHEN ocupacao = 'ns_nr' THEN 'NS/NR' 
+   ELSE ocupacao
+   END AS ocupacao_tratada,
+
+  flag_nao_tem_interesse,
+  flag_gastronomia,
+  flag_beleza,
+  flag_pequenos_reparos,
+  flag_jardinagem,
+  flag_empreendedorismo,
+  flag_producao_artesanal,
+  flag_inclusao_digital,
+  flag_outros_curso,
+  flag_curso_ns_nr,
+  flag_nao_tem,
+
+  flag_alcoolismo,
+  flag_asma_bronquite,
+  flag_covid_19,
+  flag_cancer_tumores,
+  flag_diabetes,
+  flag_dengue,
+  flag_depen_quimica,
+  flag_epilepsia,
+  flag_escabiose,
+  flag_hanseniase,
+  flag_hepatite,
+  flag_hipertensao_doenca_cardio,
+  flag_hiv_aids,
+  flag_pneumonia,
+  flag_sarampo,
+  flag_sifilis,
+  flag_transtorno_mental,
+  flag_trauma_fisico,
+  flag_tuberculose,
+  flag_ns_nr,
+
+  IFNULL(aceita_acolhimento, 'N/A') AS aceita_acolhimento_tratada,
+  motivo_acolhimento_nao,
+  outro_motivo,
+
+  flag_motivo_renda,
+  flag_motivo_regra,
+  flag_motivo_moradia,
+  flag_motivo_animal,
+  flag_motivo_n_interesse,
+  flag_motivo_outro,
+  CASE
+   WHEN unidade_destino = 'albergue' THEN 'Albergue'
+   WHEN unidade_destino = 'central_recepcao' THEN 'Central de Recepção'
+   WHEN unidade_destino = 'outros' THEN 'Outros'
+   WHEN unidade_destino = 'com_terapeutica' THEN 'Comunidade Terapêutica'
+   WHEN unidade_destino = 'urs' THEN 'URS'
+   ELSE unidade_destino
+   END AS unidade_destino_tratada,
+  CASE equipamento_destino
+    WHEN 'albergue_dercy_gonçalves' THEN 'Albergue Dercy Gonçalves'
+    WHEN 'albergue_nise_da_silveira' THEN 'Albergue Nise da Silveira'
+    WHEN 'craf_tom_jobim' THEN 'Craf Tom Jobim'
+    WHEN 'assoc_maranatha_rj_madureira' THEN 'Associação Maranatha RJ Madureira'
+    WHEN 'albergue_martin_luther_kingjr' THEN 'Albergue Martin Luther King Jr'
+    WHEN 'assoc_maranatha_rj_lins_de_vasconcelos' THEN 'Associação Maranatha RJ Lins de Vasconcelos'
+    WHEN 'inst_social_marca_de_cristo' THEN 'Instituto Social Marca de Cristo'
+    WHEN 'urs_rio_acolhedor_paciencia' THEN 'Urs Rio Acolhedor Paciência'
+    WHEN 'cri_pastor_carlos_portela' THEN 'Cri Pastor Carlos Portela'
+    WHEN 'urs_haroldo_costa' THEN 'Urs Haroldo Costa'
+    WHEN 'albergue_mais_tempo_lgbtqia' THEN 'Albergue Mais Tempo LGBTQIA'
+    WHEN 'assoc_maranatha_rj_padre_miguel' THEN 'Associação Maranatha RJ Padre Miguel'
+    WHEN 'assoc_maranatha_rj_vila_kennedy' THEN 'Associação Maranatha RJ Vila Kennedy'
+    WHEN 'albergue_betinho' THEN 'Albergue Betinho'
+    WHEN 'inst_revivendo_com_cristo' THEN 'Instituto Revivendo com Cristo'
+    WHEN 'crca_ademar_ferreira_de_oliveira' THEN 'CRCA Ademar Ferreira de Oliveira'
+    WHEN 'assoc_maranatha_rj_bangu' THEN 'Associação Maranatha RJ Bangu'
+    WHEN 'crca_taiguara' THEN 'CRCA Taiguara'
+    WHEN 'assoc_maranatha_rj_sepetiba' THEN 'Associação Maranatha RJ Sepetiba'
+    WHEN 'albergue_alfonso_lavalle' THEN 'Albergue Alfonso Lavalle'
+    WHEN 'assoc_maranatha_rj_vila_valqueire' THEN 'Associação Maranatha RJ Vila Valqueire'
+    WHEN 'assoc_de_assistencia_social_videira' THEN 'Associação de Assistência Social Videira'
+    WHEN 'projeto_alcançando_vidas' THEN 'Projeto Alcançando Vidas'
+    WHEN 'camor' THEN 'CAMOR'
+    WHEN 'assoc_maranatha_rj_engenho_de_dentro' THEN 'Associação Maranatha RJ Engenho de Dentro'
+    WHEN 'inst_social_manasses_campo_grande2' THEN 'Instituto Social Manassés Campo Grande 2'
+    WHEN 'inst_social_manasses_campo_grande1' THEN 'Instituto Social Manassés Campo Grande 1'
+    WHEN 'comt_valentes_de_davi_escola_de_profetas' THEN 'COMT Valentes de Davi Escola de Profetas'
+   ELSE equipamento_destino
+   END AS equipamento_destino_tratada,
+  CASE
+   WHEN encam_creas = 'creas_maria_lina_de_castro_lima' THEN 'Creas Maria Lina De Castro Lima'
+   WHEN encam_creas = 'creas_simone_de_beauvoir' THEN 'Creas Simone De Beauvoir'
+   WHEN encam_creas = 'creas_arlindo_rodrigues' THEN 'Creas Arlindo Rodrigues'
+   WHEN encam_creas = 'creas_janete_clair' THEN 'Creas Janete Clair'
+   WHEN encam_creas = 'creas_professora_aldaiza_sposati' THEN 'Creas Professora Aldaiza Sposati'
+   WHEN encam_creas = 'creas_professora_marcia_lopes' THEN 'Creas Professora Marcia Lopes'
+   WHEN encam_creas = 'creas_stella_maris' THEN 'Creas Stella Maris'
+   WHEN encam_creas = 'creas_nelson_carneiro' THEN 'Creas Nelson Carneiro'
+   WHEN encam_creas = 'creas_wanda_engel_aduan' THEN 'Creas Wanda Engel Aduan'
+   WHEN encam_creas = 'creas_joao_helio_fernandes_vieites' THEN 'Creas Joao Helio Fernandes Vieites'
+   WHEN encam_creas = 'creas_daniela_perez' THEN 'Creas Daniela Perez'
+   WHEN encam_creas = 'creas_padre_guilherme_decaminada' THEN 'Creas Padre Guilherme Decaminada'
+   WHEN encam_creas = 'creas_zilda_arns_neumann' THEN 'Creas Zilda Arns Neumann'
+   WHEN encam_creas = 'creas_joao_manuel_monteiro' THEN 'Creas Joao Manuel Monteiro'
+   ELSE encam_creas
+   END AS encam_creas_tratada,
+  CASE
+   WHEN encam_centropop = 'centro_pop_jose_saramago' THEN 'Centro Pop José Saramago'
+   WHEN encam_centropop = 'centro_pop_barbara_calazans' THEN 'Centro Pop Barbara  Calazans'
+   ELSE encam_centropop
+   END AS encam_centropop_tratada,
+  encam_cras,
+
+  flg_sem_encaminhamento,
+  flg_encam_creas,
+  flg_encam_centropop,
+  flg_encam_cras,
+  flg_encam_conselhotutelar,
+  flg_encam_encaminhamento_saude,
+  flg_encam_defensoria_publica,
+  flg_encam_detran,
+  flg_encam_cartorio,
+  flg_encam_fundacao_leaoxiii,
+  flg_encam_receita_federal,
+  flg_encam_delegacia,
+  flg_encam_outros,
+  parentrowid,
+  created_user
+
+ FROM {{ source('arcgis_raw', 'abordagem_repeat_raw') }}
+</file>
+
+<file path="queries/models/dashboard_arcgis/schema.yml">
+version: 2
+
+sources:
+  - name: arcgis_raw
+    database: rj-smas-dev
+    schema: arcgis_raw
+    tables:
+      - name: abordagem_repeat_raw
+      - name: abordagem_ficha_raw
+
+models:
+  - name: abordagem_repeat
+    description: "Tabela tratada com os dados de repetição (repeat)"
+    columns:
+      - name: objectid
+        description: ""
+      - name: globalid
+        description: ""
+      - name: repeat_unidade_calculo_tratada
+        description: ""
+      - name: repeat_unidade_cas
+        description: ""
+      - name: repeat_nome_usuario
+        description: ""
+      - name: repeat_data_nascimento
+        description: ""
+      - name: repeat_idade
+        description: ""
+      - name: repeat_faixa_etaria
+        description: ""
+      - name: repeat_estado_nascimento_tratada
+        description: ""
+      - name: repeat_nome_mae
+        description: ""
+      - name: repeat_nome_pai
+        description: ""
+      - name: repeat_raca_cor_etnia_tratada
+        description: ""
+      - name: repeat_sexo
+        description: ""
+      - name: turno_abordagem
+        description: ""
+      - name: data_abordagem
+        description: ""
+      - name: ano_num_data_abordagem
+        description: ""
+      - name: dia_num_data_abordagem
+        description: ""
+      - name: mes_abrev_data_abordagem
+        description: ""
+      - name: ano_mes_data_abordagem
+        description: ""
+      - name: bairro_abord
+        description: ""
+      - name: coordenadas
+        description: ""
+      - name: note_creas_tratada
+        description: ""
+      - name: resp_abordagem
+        description: ""
+      - name: resp_abordagem1
+        description: ""
+      - name: acao_conjunta
+        description: ""
+      - name: permanencia_rua_tratada
+        description: ""
+      - name: tempo_permanencia_tratada
+        description: ""
+      - name: principal_motivo_permanencia
+        description: ""
+      - name: flag_conflito_familiar
+        description: ""
+      - name: flag_abandono_familiar
+        description: ""
+      - name: flag_desocupacao
+        description: ""
+      - name: flag_orfandade
+        description: ""
+      - name: flag_acesso_a_renda
+        description: ""
+      - name: flag_desemprego
+        description: ""
+      - name: flag_desemprego_dos_pais
+        description: ""
+      - name: flag_transtorno_psiquiatrico
+        description: ""
+      - name: flag_uso_drogas_ilicitas
+        description: ""
+      - name: flag_trabalho_infantil
+        description: ""
+      - name: flag_exploracao_sexual
+        description: ""
+      - name: flag_egresso_sistema_prisional
+        description: ""
+      - name: flag_alcoolismo_motivo
+        description: ""
+      - name: flag_violencia_conflito_comuni
+        description: ""
+      - name: flag_preferencia_vontade_prop
+        description: ""
+      - name: flag_egresso_mse
+        description: ""
+      - name: flag_imigrante
+        description: ""
+      - name: flag_migrante
+        description: ""
+      - name: flag_refugiado
+        description: ""
+      - name: flag_ns_nr_motivo
+        description: ""
+      - name: e_migrante
+        description: ""
+      - name: migrante_terra_natal_tratada
+        description: ""
+      - name: possui_referencia_tratada
+        description: ""
+      - name: possui_documento
+        description: ""
+      - name: documentacao
+        description: ""
+      - name: flg_documentacao_identidade
+        description: ""
+      - name: flg_documentacao_cnh
+        description: ""
+      - name: flg_documentacao_registro_nasc
+        description: ""
+      - name: flg_documentacao_ctps
+        description: ""
+      - name: flg_documentacao_cpf
+        description: ""
+      - name: flg_documentacao_passaporte
+        description: ""
+      - name: escolaridade_tratada
+        description: ""
+      - name: recebe_beneficio
+        description: ""
+      - name: beneficios
+        description: ""
+      - name: flag_bolsa_familia
+        description: ""
+      - name: flag_bpc
+        description: ""
+      - name: flag_seguro_desemprego
+        description: ""
+      - name: flag_aposentadoria
+        description: ""
+      - name: flag_pensionista
+        description: ""
+      - name: flag_outros_ben
+        description: ""
+      - name: beneficios_outros
+        description: ""
+      - name: ocupacao_tratada
+        description: ""
+      - name: flag_nao_tem_interesse
+        description: ""
+      - name: flag_gastronomia
+        description: ""
+      - name: flag_beleza
+        description: ""
+      - name: flag_pequenos_reparos
+        description: ""
+      - name: flag_jardinagem
+        description: ""
+      - name: flag_empreendedorismo
+        description: ""
+      - name: flag_producao_artesanal
+        description: ""
+      - name: flag_inclusao_digital
+        description: ""
+      - name: flag_outros_curso
+        description: ""
+      - name: flag_curso_ns_nr
+        description: ""
+      - name: flag_nao_tem
+        description: ""
+      - name: flag_alcoolismo
+        description: ""
+      - name: flag_asma_bronquite
+        description: ""
+      - name: flag_covid_19
+        description: ""
+      - name: flag_cancer_tumores
+        description: ""
+      - name: flag_diabetes
+        description: ""
+      - name: flag_dengue
+        description: ""
+      - name: flag_depen_quimica
+        description: ""
+      - name: flag_epilepsia
+        description: ""
+      - name: flag_escabiose
+        description: ""
+      - name: flag_hanseniase
+        description: ""
+      - name: flag_hepatite
+        description: ""
+      - name: flag_hipertensao_doenca_cardio
+        description: ""
+      - name: flag_hiv_aids
+        description: ""
+      - name: flag_pneumonia
+        description: ""
+      - name: flag_sarampo
+        description: ""
+      - name: flag_sifilis
+        description: ""
+      - name: flag_transtorno_mental
+        description: ""
+      - name: flag_trauma_fisico
+        description: ""
+      - name: flag_tuberculose
+        description: ""
+      - name: flag_ns_nr
+        description: ""
+      - name: aceita_acolhimento_tratada
+        description: ""
+      - name: motivo_acolhimento_nao
+        description: ""
+      - name: outro_motivo
+        description: ""
+      - name: flag_motivo_renda
+        description: ""
+      - name: flag_motivo_regra
+        description: ""
+      - name: flag_motivo_moradia
+        description: ""
+      - name: flag_motivo_animal
+        description: ""
+      - name: flag_motivo_n_interesse
+        description: ""
+      - name: flag_motivo_outro
+        description: ""
+      - name: unidade_destino_tratada
+        description: ""
+      - name: equipamento_destino_tratada
+        description: ""
+      - name: encam_creas_tratada
+        description: ""
+      - name: encam_centropop_tratada
+        description: ""
+      - name: encam_cras
+        description: ""
+      - name: flg_sem_encaminhamento
+        description: ""
+      - name: flg_encam_creas
+        description: ""
+      - name: flg_encam_centropop
+        description: ""
+      - name: flg_encam_cras
+        description: ""
+      - name: flg_encam_conselhotutelar
+        description: ""
+      - name: flg_encam_encaminhamento_saude
+        description: ""
+      - name: flg_encam_defensoria_publica
+        description: ""
+      - name: flg_encam_detran
+        description: ""
+      - name: flg_encam_cartorio
+        description: ""
+      - name: flg_encam_fundacao_leaoxiii
+        description: ""
+      - name: flg_encam_receita_federal
+        description: ""
+      - name: flg_encam_delegacia
+        description: ""
+      - name: flg_encam_outros
+        description: ""
+      - name: parentrowid
+        description: ""
+      - name: created_user
+        description: ""
+
+
+models:
+  - name: abordagem_ficha
+    description: "Tabela gold para BI, gerada a partir da abordagem_ficha_raw."
+    columns:
+      - name: uniquerowid
+        description: "Identificador único da ficha."
+      - name: unidade_calculo
+        description: "Unidade de cálculo do registro."
+      - name: nome_usuario
+        description: "Nome do usuário."
+      - name: data_nascimento
+        description: "Data de nascimento, formatada."
+      - name: cpf
+        description: "CPF do usuário."
+      - name: nome_mae
+        description: "Nome da mãe do usuário."
+      - name: filtro_ano_ultima_abordagem
+        description: "Ano da última abordagem."
+      - name: excluir_ficha
+        description: "Indicador de ficha excluída."
+      - name: created_user
+        description: "Usuário que criou o registro."
+</file>
+
+<file path="queries/dbt_project.yml">
+name: "queries"
+version: "1.0"
+profile: "rj_smas_dev"
+model-paths: ["models"]
+
+models:
+  queries:
+    dashboard_arcgis:
+      materialized: table
+</file>
+
+<file path="sandbox/elt/setup_teste_elt.ipynb">
+{
+ "cells": [
+  {
+   "cell_type": "markdown",
+   "id": "d65dbb28",
+   "metadata": {},
+   "source": [
+    "# Conexão com o BigQuery\n",
+    "\n",
+    "- Objetivo: conectar ao bigquery, testar os comando de criação de tabela e overwrite e lapidar para a pipeline"
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": 14,
+   "id": "8cd392e7",
+   "metadata": {},
+   "outputs": [],
+   "source": [
+    "# 1. Importa o SDK e configura o projeto (opcional)\n",
+    "from google.cloud import bigquery\n",
+    "import os\n",
+    "from dotenv import load_dotenv\n",
+    "from pathlib import Path"
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": 15,
+   "id": "74113c17",
+   "metadata": {},
+   "outputs": [
+    {
+     "data": {
+      "text/plain": [
+       "True"
+      ]
+     },
+     "execution_count": 15,
+     "metadata": {},
+     "output_type": "execute_result"
+    }
+   ],
+   "source": [
+    "env_path = Path('/root/pipelines/arcgis/abordagem') / '.env'\n",
+    "load_dotenv(dotenv_path=env_path)"
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": 16,
+   "id": "9055960f",
+   "metadata": {},
+   "outputs": [],
+   "source": [
+    "# 2. Cria o cliente\n",
+    "client = bigquery.Client()"
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": 17,
+   "id": "718da9b8",
+   "metadata": {},
+   "outputs": [
+    {
+     "name": "stdout",
+     "output_type": "stream",
+     "text": [
+      "✔️ Datasets encontrados no projeto:\n",
+      "  • arcgis_raw\n",
+      "  • dashboard_cadunico_subex\n",
+      "  • dashboard_cfc_subex\n",
+      "  • protecao_social_cadunico\n",
+      "  • teste_abordagem\n"
+     ]
+    }
+   ],
+   "source": [
+    "# 3. Lista os datasets no projeto\n",
+    "datasets = list(client.list_datasets())\n",
+    "if datasets:\n",
+    "    print(\"✔️ Datasets encontrados no projeto:\")\n",
+    "    for ds in datasets:\n",
+    "        print(f\"  • {ds.dataset_id}\")\n",
+    "else:\n",
+    "    print(\"⚠️ Nenhum dataset encontrado. Verifique PROJECT_ID e credenciais.\")"
+   ]
+  },
+  {
+   "cell_type": "markdown",
+   "id": "d11807d8",
+   "metadata": {},
+   "source": [
+    "# Conexão com o Arcgis\n",
+    "\n",
+    "- Objetivo: conectar a feature, analisar os dados e lapidar para a pipeline"
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": 18,
+   "id": "d3840705",
+   "metadata": {},
+   "outputs": [],
+   "source": [
+    "from arcgis.gis import GIS\n",
+    "from arcgis.features import FeatureLayer\n",
+    "import pandas as pd\n",
+    "\n",
+    "ARCIS_PORTAL_URL_SIURB = os.getenv(\"ARCIS_PORTAL_URL_SIURB\")\n",
+    "ARCIS_USER_SIURB = os.getenv(\"ARCIS_USER_SIURB\")\n",
+    "ARCIS_PWD_SIURB = os.getenv(\"ARCIS_PWD_SIURB\")\n",
+    "\n",
+    "ARCIS_PORTAL_URL_AGOL = os.getenv(\"ARCIS_PORTAL_URL_AGOL\")\n",
+    "ARCIS_USER_AGOL = os.getenv(\"ARCIS_USER_AGOL\")\n",
+    "ARCIS_PWD_AGOL = os.getenv(\"ARCIS_PWD_AGOL\")\n",
+    "\n",
+    "ARCIS_ABORDAGEM_FEATURE_SIURB = os.getenv(\"ARCIS_ABORDAGEM_FEATURE_SIURB\")"
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": 19,
+   "id": "e0db5dd5",
+   "metadata": {},
+   "outputs": [
+    {
+     "name": "stdout",
+     "output_type": "stream",
+     "text": [
+      "🔐 Logando na conta siurb...\n",
+      "✅ Logado como: SMAS_ed01\n"
+     ]
+    }
+   ],
+   "source": [
+    "# Exemplo para notebooks: input controlado\n",
+    "opcao = input(\"Deseja logar em qual conta? Digite 'siurb' ou 'agol': \").strip().lower()\n",
+    "\n",
+    "if opcao == \"siurb\":\n",
+    "    print(f\"🔐 Logando na conta {opcao}...\")\n",
+    "    gis = GIS(ARCIS_PORTAL_URL_SIURB, ARCIS_USER_SIURB, ARCIS_PWD_SIURB)\n",
+    "elif opcao == \"agol\":\n",
+    "    print(f\"🔐 Logando na conta {opcao}...\")\n",
+    "    gis = GIS(ARCIS_PORTAL_URL_AGOL, ARCIS_USER_AGOL, ARCIS_PWD_AGOL)\n",
+    "else:\n",
+    "    raise ValueError(\"Opção inválida. Use 'siurb' ou 'agol'.\")\n",
+    "\n",
+    "# Confirmação da conta logada\n",
+    "print(f\"✅ Logado como: {gis.users.me.username}\")"
+   ]
+  },
+  {
+   "cell_type": "markdown",
+   "id": "1c9d5859",
+   "metadata": {},
+   "source": [
+    "***Listagem das camadas usadas até o momento***\n",
+    "\n",
+    "*Abordagem SIURB ID = 6832ff4ca54c4608b169682ae3a5b088*\n",
+    "\n",
+    "*Abordagem AGOL ID = 1ef5fb0ea56c42849d338bb30d796b0f*"
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": 20,
+   "id": "b1bab144",
+   "metadata": {},
+   "outputs": [
+    {
+     "name": "stdout",
+     "output_type": "stream",
+     "text": [
+      "Conta: siurb\n",
+      "Título: ABORDAGEM SOCIAL - CPSR (2023.2)\n",
+      "Layers : ['Ficha de Abordagem Social - SMAS', 'repeat_abordagem']\n",
+      "Tables : []\n"
+     ]
+    }
+   ],
+   "source": [
+    "# Input do ID da camada\n",
+    "item_id = ARCIS_ABORDAGEM_FEATURE_SIURB\n",
+    "item = gis.content.get(item_id)\n",
+    "\n",
+    "# Confirmação do item recuperado\n",
+    "if item:\n",
+    "    print(\"Conta:\", opcao)\n",
+    "    print(\"Título:\", item.title)\n",
+    "    print(\"Layers :\", [lyr.properties.name   for lyr in item.layers])\n",
+    "    print(\"Tables :\", [tbl.properties.name   for tbl in item.tables])\n",
+    "else:\n",
+    "    print(\"⚠️ Nenhum item encontrado com esse ID.\")"
+   ]
+  },
+  {
+   "cell_type": "markdown",
+   "id": "e6f37d18",
+   "metadata": {},
+   "source": [
+    "# 2.1 Ficha de Abordagem Social – SMAS\n",
+    "\n",
+    "- Layer index 0: `\"Ficha de Abordagem Social - SMAS\"`"
+   ]
+  },
+  {
+   "cell_type": "markdown",
+   "id": "1408971a",
+   "metadata": {},
+   "source": [
+    "***Conectando para pegar os dados no arcgis***"
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": null,
+   "id": "9cd68e4f",
+   "metadata": {},
+   "outputs": [],
+   "source": [
+    "# já temos `item = gis.content.get(...)`\n",
+    "layer_smas = item.layers[0]  \n",
+    "print(\"Conta:\", opcao)\n",
+    "print(\"URL da layer:\", layer_smas.url)\n",
+    "\n",
+    "# consulta sem geometria, pegando só as colunas\n",
+    "fl = layer_smas.query(\n",
+    "    where=\"1=1\",\n",
+    "    out_fields=\"*\",\n",
+    "    return_geometry=False,\n",
+    "    max_records=5\n",
+    ")\n",
+    "\n",
+    "# converte para pandas\n",
+    "df_smas = fl.sdf  \n",
+    "print(\"Linhas × Colunas:\", df_smas.shape)\n",
+    "display(df_smas.head())"
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": null,
+   "id": "83310674",
+   "metadata": {},
+   "outputs": [],
+   "source": [
+    "# Lista todos os campos definidos no serviço\n",
+    "fields = [fld[\"name\"] for fld in layer_smas.properties.fields]\n",
+    "print(\"Total de campos no serviço:\", len(fields))\n",
+    "print(fields)\n"
+   ]
+  },
+  {
+   "cell_type": "markdown",
+   "id": "4332e6e0",
+   "metadata": {},
+   "source": [
+    "**Pontos de inspeção**  \n",
+    "- Número de colunas (`df_smas.shape[1]`)  \n",
+    "- Tipos de cada coluna (`df_smas.dtypes`)  \n",
+    "- Valores nulos (`df_smas.isna().sum()`)\n"
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": null,
+   "id": "f98b7cbc",
+   "metadata": {},
+   "outputs": [],
+   "source": [
+    "# detalhes rápidos\n",
+    "print(df_smas.dtypes)\n",
+    "print(\"\\nValores ausentes por coluna:\")\n",
+    "print(df_smas.isna().sum())\n"
+   ]
+  },
+  {
+   "cell_type": "markdown",
+   "id": "7119b378",
+   "metadata": {},
+   "source": [
+    "## Processo de ELT\n",
+    "\n",
+    "**Movimento dos dados para o Bigquery**\n",
+    "\n",
+    "- Objetivo: Levar os dados para o Bigquery para serem tratados por lá"
+   ]
+  },
+  {
+   "cell_type": "markdown",
+   "id": "a0f23918",
+   "metadata": {},
+   "source": [
+    "***Mini processo de tratamento, transformando tudo em string e incluindo o timestamp.***"
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": null,
+   "id": "43d09c9a",
+   "metadata": {},
+   "outputs": [],
+   "source": [
+    "import pandas as pd\n",
+    "from datetime import datetime\n",
+    "import re\n",
+    "\n",
+    "df_smas[\"timestamp\"] = datetime.now()\n",
+    "df_smas = df_smas.astype(\"string\")\n",
+    "\n",
+    "\n",
+    "display(df_smas.head())\n",
+    "print(df_smas.dtypes)"
+   ]
+  },
+  {
+   "cell_type": "markdown",
+   "id": "96b9af2e",
+   "metadata": {},
+   "source": [
+    "***Subida dos dados para o Bucket***"
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": null,
+   "id": "c114d6bf",
+   "metadata": {},
+   "outputs": [],
+   "source": [
+    "from google.cloud import storage\n",
+    "import os\n",
+    "\n",
+    "# gera string tipo '20250521_104500'\n",
+    "timestamp = datetime.now().strftime(\"%Y%m%d_%H%M%S\")\n",
+    "\n",
+    "# Define o nome do arquivo e o path no bucket\n",
+    "bucket_name = \"rj-smas-dev\"\n",
+    "object_path = f\"raw/arcgis/{opcao}/abordagem/ficha/ficha_{timestamp}.csv\"\n",
+    "\n",
+    "local_csv = \"/tmp/ficha.csv\"\n",
+    "\n",
+    "# Salva o dataframe localmente como CSV\n",
+    "df_smas.to_csv(local_csv, index=False)\n",
+    "\n",
+    "# Sobe pro bucket\n",
+    "storage_client = storage.Client()\n",
+    "bucket = storage_client.bucket(bucket_name)\n",
+    "blob = bucket.blob(object_path)\n",
+    "blob.upload_from_filename(local_csv)\n",
+    "\n",
+    "print(f\"✔️ CSV enviado ao bucket: gs://{bucket_name}/{object_path}\")\n"
+   ]
+  },
+  {
+   "cell_type": "markdown",
+   "id": "28fa47f6",
+   "metadata": {},
+   "source": [
+    "# 2.2 repeat_abordagem\n",
+    "\n",
+    "- Layer index 1: `\"repeat_abordagem\"`"
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": null,
+   "id": "7864e746",
+   "metadata": {},
+   "outputs": [],
+   "source": [
+    "# já temos `item_x = gis.content.get(...)`\n",
+    "layer_smas = item.layers[1]  \n",
+    "print(\"Conta:\", opcao)\n",
+    "print(\"URL da layer:\", layer_smas.url)\n",
+    "\n",
+    "# consulta sem geometria, pegando só as colunas\n",
+    "fl = layer_smas.query(\n",
+    "    where=\"1=1\",\n",
+    "    out_fields=\"*\",\n",
+    "    return_geometry=False,\n",
+    ")\n",
+    "\n",
+    "# converte para pandas\n",
+    "df_smas = fl.sdf  \n",
+    "print(\"Linhas × Colunas:\", df_smas.shape)\n",
+    "display(df_smas.head())"
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": null,
+   "id": "3c1d144f",
+   "metadata": {},
+   "outputs": [],
+   "source": [
+    "# Lista todos os campos definidos no serviço\n",
+    "fields = [fld[\"name\"] for fld in layer_smas.properties.fields]\n",
+    "print(\"Total de campos no serviço:\", len(fields))\n",
+    "print(fields)\n"
+   ]
+  },
+  {
+   "cell_type": "markdown",
+   "id": "70d6b92b",
+   "metadata": {},
+   "source": [
+    "**Pontos de inspeção**  \n",
+    "- Número de colunas (`df_smas.shape[1]`)  \n",
+    "- Tipos de cada coluna (`df_smas.dtypes`)  \n",
+    "- Valores nulos (`df_smas.isna().sum()`)\n"
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": null,
+   "id": "69e55caf",
+   "metadata": {},
+   "outputs": [],
+   "source": [
+    "# detalhes rápidos\n",
+    "print(df_smas.dtypes)\n",
+    "print(\"\\nValores ausentes por coluna:\")\n",
+    "print(df_smas.isna().sum())"
+   ]
+  },
+  {
+   "cell_type": "markdown",
+   "id": "e811c762",
+   "metadata": {},
+   "source": [
+    "## Processo de EL\n",
+    "\n",
+    "**Movimento dos dados para o Bigquery**\n",
+    "\n",
+    "- Objetivo: Levar os dados para o Bigquery para serem tratados por lá"
+   ]
+  },
+  {
+   "cell_type": "markdown",
+   "id": "98c78090",
+   "metadata": {},
+   "source": [
+    "### Mini processo de tratamento, transformando tudo em string e incluindo o timestamp."
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": null,
+   "id": "229f3dcd",
+   "metadata": {},
+   "outputs": [],
+   "source": [
+    "import pandas as pd\n",
+    "from datetime import datetime\n",
+    "import re\n",
+    "\n",
+    "df_smas[\"timestamp\"] = datetime.now()\n",
+    "df_smas = df_smas.astype(\"string\")\n",
+    "\n",
+    "\n",
+    "display(df_smas.head())\n",
+    "print(df_smas.dtypes)"
+   ]
+  },
+  {
+   "cell_type": "markdown",
+   "id": "41ec550c",
+   "metadata": {},
+   "source": [
+    "### Subida dos dados para o Bucket"
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": null,
+   "id": "8ddfea7e",
+   "metadata": {},
+   "outputs": [],
+   "source": [
+    "from google.cloud import storage\n",
+    "import os\n",
+    "\n",
+    "# gera string tipo '20250521_104500'\n",
+    "timestamp = datetime.now().strftime(\"%Y%m%d_%H%M%S\")\n",
+    "\n",
+    "# Define o nome do arquivo e o path no bucket\n",
+    "bucket_name = \"rj-smas-dev\"\n",
+    "object_path = f\"raw/arcgis/{opcao}/abordagem/repeat/repeat_{timestamp}.csv\"\n",
+    "\n",
+    "local_csv = \"/tmp/repeat.csv\"\n",
+    "\n",
+    "# Salva o dataframe localmente como CSV\n",
+    "df_smas.to_csv(local_csv, index=False)\n",
+    "\n",
+    "# Sobe pro bucket\n",
+    "storage_client = storage.Client()\n",
+    "bucket = storage_client.bucket(bucket_name)\n",
+    "blob = bucket.blob(object_path)\n",
+    "blob.upload_from_filename(local_csv)\n",
+    "\n",
+    "print(f\"✔️ CSV enviado ao bucket: gs://{bucket_name}/{object_path}\")"
+   ]
+  },
+  {
+   "cell_type": "markdown",
+   "id": "db77ccf3",
+   "metadata": {},
+   "source": [
+    "## Processo de T\n",
+    "\n",
+    "**Tratando os dados do bucket e criando as camadas Bronze**\n",
+    "\n",
+    "- Objetivo: Criar as Tabelas Externas no BigQuery"
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": null,
+   "id": "24115e78",
+   "metadata": {},
+   "outputs": [],
+   "source": [
+    "from google.api_core.exceptions import NotFound\n",
+    "from google.cloud import bigquery, storage\n",
+    "import csv\n",
+    "\n",
+    "PROJECT_ID  = \"rj-smas-dev\"\n",
+    "DATASET_ID  = \"arcgis_raw\"\n",
+    "BUCKET_NAME = \"rj-smas-dev\"\n",
+    "\n",
+    "fontes  = [\"siurb\"]\n",
+    "tipos   = [\"ficha\", \"repeat\"]\n",
+    "\n",
+    "bq  = bigquery.Client(project=PROJECT_ID)\n",
+    "gcs = storage.Client(project=PROJECT_ID)\n",
+    "\n",
+    "dataset_ref = f\"{PROJECT_ID}.{DATASET_ID}\"\n",
+    "\n",
+    "def header_cols(prefix: str):\n",
+    "    \"\"\"\n",
+    "    Abre o 1º CSV do prefixo e devolve a lista de colunas.\n",
+    "    Evita placeholder de 'pasta' (nome terminando em '/').\n",
+    "    \"\"\"\n",
+    "    blobs = (b for b in gcs.list_blobs(BUCKET_NAME, prefix=prefix)\n",
+    "             if not b.name.endswith(\"/\"))\n",
+    "    blob  = next(blobs)                              # pega o primeiro arquivo real\n",
+    "    # lê só a primeira linha\n",
+    "    with blob.open(\"r\") as f:\n",
+    "        header_line = f.readline().strip(\"\\n\")\n",
+    "    return next(csv.reader([header_line]))\n",
+    "\n",
+    "for fonte in fontes:\n",
+    "    for tipo in tipos:\n",
+    "        table_id = f\"{fonte}_abordagem_{tipo}_raw\"\n",
+    "        full_id  = f\"{dataset_ref}.{table_id}\"\n",
+    "        uri_glob = f\"gs://{BUCKET_NAME}/raw/arcgis/{fonte}/abordagem/{tipo}/*.csv\"\n",
+    "        prefix   = f\"raw/arcgis/{fonte}/abordagem/{tipo}/\"\n",
+    "\n",
+    "        # --- schema: tudo STRING -------------------\n",
+    "        cols   = header_cols(prefix)\n",
+    "        schema = [bigquery.SchemaField(col, \"STRING\") for col in cols]\n",
+    "\n",
+    "        cfg = bigquery.ExternalConfig(\"CSV\")\n",
+    "        cfg.source_uris               = [uri_glob]\n",
+    "        cfg.autodetect                = False           # vamos indicar o schema manual\n",
+    "        cfg.schema                    = schema          # tudo STRING\n",
+    "        cfg.options.skip_leading_rows = 1\n",
+    "        cfg.options.quote_character   = '\"'             # padrão ─ volta a ser válido\n",
+    "        cfg.options.allow_jagged_rows = True            # linhas mais curtas = NULL\n",
+    "        cfg.options.allow_quoted_newlines = True        # \\n dentro de \"campo\"\n",
+    "        cfg.max_bad_records = 10                      # pula até 1000 linhas quebradas\n",
+    "\n",
+    "\n",
+    "        tbl = bigquery.Table(full_id)\n",
+    "        tbl.external_data_configuration = cfg\n",
+    "        bq.create_table(tbl, exists_ok=True)\n",
+    "\n",
+    "        print(f\"✅  {full_id} → EXTERNAL (all STRING)\")\n"
+   ]
+  }
+ ],
+ "metadata": {
+  "kernelspec": {
+   "display_name": "venv-abordagem",
+   "language": "python",
+   "name": "python3"
+  },
+  "language_info": {
+   "codemirror_mode": {
+    "name": "ipython",
+    "version": 3
+   },
+   "file_extension": ".py",
+   "mimetype": "text/x-python",
+   "name": "python",
+   "nbconvert_exporter": "python",
+   "pygments_lexer": "ipython3",
+   "version": "3.11.2"
+  }
+ },
+ "nbformat": 4,
+ "nbformat_minor": 5
+}
+</file>
+
+<file path="sandbox/elt/setup_teste_elt.py">
+#!/usr/bin/env python
+# coding: utf-8
+
+# # Conexão com o BigQuery
+# 
+# - Objetivo: conectar ao bigquery, testar os comando de criação de tabela e overwrite e lapidar para a pipeline
+
+# In[14]:
+
+
+# 1. Importa o SDK e configura o projeto (opcional)
+from google.cloud import bigquery
+import os
+from dotenv import load_dotenv
+from pathlib import Path
+
+
+# In[15]:
+
+
+env_path = Path('/root/pipelines/arcgis/abordagem') / '.env'
+load_dotenv(dotenv_path=env_path)
+
+
+# In[16]:
+
+
+# 2. Cria o cliente
+client = bigquery.Client()
+
+
+# In[17]:
+
+
+# 3. Lista os datasets no projeto
+datasets = list(client.list_datasets())
+if datasets:
+    print("✔️ Datasets encontrados no projeto:")
+    for ds in datasets:
+        print(f"  • {ds.dataset_id}")
+else:
+    print("⚠️ Nenhum dataset encontrado. Verifique PROJECT_ID e credenciais.")
+
+
+# # Conexão com o Arcgis
+# 
+# - Objetivo: conectar a feature, analisar os dados e lapidar para a pipeline
+
+# In[18]:
+
+
+from arcgis.gis import GIS
+from arcgis.features import FeatureLayer
+import pandas as pd
+
+ARCIS_PORTAL_URL_SIURB = os.getenv("ARCIS_PORTAL_URL_SIURB")
+ARCIS_USER_SIURB = os.getenv("ARCIS_USER_SIURB")
+ARCIS_PWD_SIURB = os.getenv("ARCIS_PWD_SIURB")
+
+ARCIS_PORTAL_URL_AGOL = os.getenv("ARCIS_PORTAL_URL_AGOL")
+ARCIS_USER_AGOL = os.getenv("ARCIS_USER_AGOL")
+ARCIS_PWD_AGOL = os.getenv("ARCIS_PWD_AGOL")
+
+ARCIS_ABORDAGEM_FEATURE_SIURB = os.getenv("ARCIS_ABORDAGEM_FEATURE_SIURB")
+
+
+# In[19]:
+
+
+# Exemplo para notebooks: input controlado
+opcao = input("Deseja logar em qual conta? Digite 'siurb' ou 'agol': ").strip().lower()
+
+if opcao == "siurb":
+    print(f"🔐 Logando na conta {opcao}...")
+    gis = GIS(ARCIS_PORTAL_URL_SIURB, ARCIS_USER_SIURB, ARCIS_PWD_SIURB)
+elif opcao == "agol":
+    print(f"🔐 Logando na conta {opcao}...")
+    gis = GIS(ARCIS_PORTAL_URL_AGOL, ARCIS_USER_AGOL, ARCIS_PWD_AGOL)
+else:
+    raise ValueError("Opção inválida. Use 'siurb' ou 'agol'.")
+
+# Confirmação da conta logada
+print(f"✅ Logado como: {gis.users.me.username}")
+
+
+# ***Listagem das camadas usadas até o momento***
+# 
+# *Abordagem SIURB ID = 6832ff4ca54c4608b169682ae3a5b088*
+# 
+# *Abordagem AGOL ID = 1ef5fb0ea56c42849d338bb30d796b0f*
+
+# In[20]:
+
+
+# Input do ID da camada
+item_id = ARCIS_ABORDAGEM_FEATURE_SIURB
+item = gis.content.get(item_id)
+
+# Confirmação do item recuperado
+if item:
+    print("Conta:", opcao)
+    print("Título:", item.title)
+    print("Layers :", [lyr.properties.name   for lyr in item.layers])
+    print("Tables :", [tbl.properties.name   for tbl in item.tables])
+else:
+    print("⚠️ Nenhum item encontrado com esse ID.")
+
+
+# # 2.1 Ficha de Abordagem Social – SMAS
+# 
+# - Layer index 0: `"Ficha de Abordagem Social - SMAS"`
+
+# ***Conectando para pegar os dados no arcgis***
+
+# In[ ]:
+
+
+# já temos `item = gis.content.get(...)`
+layer_smas = item.layers[0]  
+print("Conta:", opcao)
+print("URL da layer:", layer_smas.url)
+
+# consulta sem geometria, pegando só as colunas
+fl = layer_smas.query(
+    where="1=1",
+    out_fields="*",
+    return_geometry=False,
+    max_records=5
+)
+
+# converte para pandas
+df_smas = fl.sdf  
+print("Linhas × Colunas:", df_smas.shape)
+display(df_smas.head())
+
+
+# In[ ]:
+
+
+# Lista todos os campos definidos no serviço
+fields = [fld["name"] for fld in layer_smas.properties.fields]
+print("Total de campos no serviço:", len(fields))
+print(fields)
+
+
+# **Pontos de inspeção**  
+# - Número de colunas (`df_smas.shape[1]`)  
+# - Tipos de cada coluna (`df_smas.dtypes`)  
+# - Valores nulos (`df_smas.isna().sum()`)
+# 
+
+# In[ ]:
+
+
+# detalhes rápidos
+print(df_smas.dtypes)
+print("\nValores ausentes por coluna:")
+print(df_smas.isna().sum())
+
+
+# ## Processo de ELT
+# 
+# **Movimento dos dados para o Bigquery**
+# 
+# - Objetivo: Levar os dados para o Bigquery para serem tratados por lá
+
+# ***Mini processo de tratamento, transformando tudo em string e incluindo o timestamp.***
+
+# In[ ]:
+
+
+import pandas as pd
+from datetime import datetime
+import re
+
+df_smas["timestamp"] = datetime.now()
+df_smas = df_smas.astype("string")
+
+
+display(df_smas.head())
+print(df_smas.dtypes)
+
+
+# ***Subida dos dados para o Bucket***
+
+# In[ ]:
+
+
+from google.cloud import storage
+import os
+
+# gera string tipo '20250521_104500'
+timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
+
+# Define o nome do arquivo e o path no bucket
+bucket_name = "rj-smas-dev"
+object_path = f"raw/arcgis/{opcao}/abordagem/ficha/ficha_{timestamp}.csv"
+
+local_csv = "/tmp/ficha.csv"
+
+# Salva o dataframe localmente como CSV
+df_smas.to_csv(local_csv, index=False)
+
+# Sobe pro bucket
+storage_client = storage.Client()
+bucket = storage_client.bucket(bucket_name)
+blob = bucket.blob(object_path)
+blob.upload_from_filename(local_csv)
+
+print(f"✔️ CSV enviado ao bucket: gs://{bucket_name}/{object_path}")
+
+
+# # 2.2 repeat_abordagem
+# 
+# - Layer index 1: `"repeat_abordagem"`
+
+# In[ ]:
+
+
+# já temos `item_x = gis.content.get(...)`
+layer_smas = item.layers[1]  
+print("Conta:", opcao)
+print("URL da layer:", layer_smas.url)
+
+# consulta sem geometria, pegando só as colunas
+fl = layer_smas.query(
+    where="1=1",
+    out_fields="*",
+    return_geometry=False,
+)
+
+# converte para pandas
+df_smas = fl.sdf  
+print("Linhas × Colunas:", df_smas.shape)
+display(df_smas.head())
+
+
+# In[ ]:
+
+
+# Lista todos os campos definidos no serviço
+fields = [fld["name"] for fld in layer_smas.properties.fields]
+print("Total de campos no serviço:", len(fields))
+print(fields)
+
+
+# **Pontos de inspeção**  
+# - Número de colunas (`df_smas.shape[1]`)  
+# - Tipos de cada coluna (`df_smas.dtypes`)  
+# - Valores nulos (`df_smas.isna().sum()`)
+# 
+
+# In[ ]:
+
+
+# detalhes rápidos
+print(df_smas.dtypes)
+print("\nValores ausentes por coluna:")
+print(df_smas.isna().sum())
+
+
+# ## Processo de EL
+# 
+# **Movimento dos dados para o Bigquery**
+# 
+# - Objetivo: Levar os dados para o Bigquery para serem tratados por lá
+
+# ### Mini processo de tratamento, transformando tudo em string e incluindo o timestamp.
+
+# In[ ]:
+
+
+import pandas as pd
+from datetime import datetime
+import re
+
+df_smas["timestamp"] = datetime.now()
+df_smas = df_smas.astype("string")
+
+
+display(df_smas.head())
+print(df_smas.dtypes)
+
+
+# ### Subida dos dados para o Bucket
+
+# In[ ]:
+
+
+from google.cloud import storage
+import os
+
+# gera string tipo '20250521_104500'
+timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
+
+# Define o nome do arquivo e o path no bucket
+bucket_name = "rj-smas-dev"
+object_path = f"raw/arcgis/{opcao}/abordagem/repeat/repeat_{timestamp}.csv"
+
+local_csv = "/tmp/repeat.csv"
+
+# Salva o dataframe localmente como CSV
+df_smas.to_csv(local_csv, index=False)
+
+# Sobe pro bucket
+storage_client = storage.Client()
+bucket = storage_client.bucket(bucket_name)
+blob = bucket.blob(object_path)
+blob.upload_from_filename(local_csv)
+
+print(f"✔️ CSV enviado ao bucket: gs://{bucket_name}/{object_path}")
+
+
+# ## Processo de T
+# 
+# **Tratando os dados do bucket e criando as camadas Bronze**
+# 
+# - Objetivo: Criar as Tabelas Externas no BigQuery
+
+# In[ ]:
+
+
+from google.api_core.exceptions import NotFound
+from google.cloud import bigquery, storage
+import csv
+
+PROJECT_ID  = "rj-smas-dev"
+DATASET_ID  = "arcgis_raw"
+BUCKET_NAME = "rj-smas-dev"
+
+fontes  = ["siurb"]
+tipos   = ["ficha", "repeat"]
+
+bq  = bigquery.Client(project=PROJECT_ID)
+gcs = storage.Client(project=PROJECT_ID)
+
+dataset_ref = f"{PROJECT_ID}.{DATASET_ID}"
+
+def header_cols(prefix: str):
+    """
+    Abre o 1º CSV do prefixo e devolve a lista de colunas.
+    Evita placeholder de 'pasta' (nome terminando em '/').
+    """
+    blobs = (b for b in gcs.list_blobs(BUCKET_NAME, prefix=prefix)
+             if not b.name.endswith("/"))
+    blob  = next(blobs)                              # pega o primeiro arquivo real
+    # lê só a primeira linha
+    with blob.open("r") as f:
+        header_line = f.readline().strip("\n")
+    return next(csv.reader([header_line]))
+
+for fonte in fontes:
+    for tipo in tipos:
+        table_id = f"{fonte}_abordagem_{tipo}_raw"
+        full_id  = f"{dataset_ref}.{table_id}"
+        uri_glob = f"gs://{BUCKET_NAME}/raw/arcgis/{fonte}/abordagem/{tipo}/*.csv"
+        prefix   = f"raw/arcgis/{fonte}/abordagem/{tipo}/"
+
+        # --- schema: tudo STRING -------------------
+        cols   = header_cols(prefix)
+        schema = [bigquery.SchemaField(col, "STRING") for col in cols]
+
+        cfg = bigquery.ExternalConfig("CSV")
+        cfg.source_uris               = [uri_glob]
+        cfg.autodetect                = False           # vamos indicar o schema manual
+        cfg.schema                    = schema          # tudo STRING
+        cfg.options.skip_leading_rows = 1
+        cfg.options.quote_character   = '"'             # padrão ─ volta a ser válido
+        cfg.options.allow_jagged_rows = True            # linhas mais curtas = NULL
+        cfg.options.allow_quoted_newlines = True        # \n dentro de "campo"
+        cfg.max_bad_records = 10                      # pula até 1000 linhas quebradas
+
+
+        tbl = bigquery.Table(full_id)
+        tbl.external_data_configuration = cfg
+        bq.create_table(tbl, exists_ok=True)
+
+        print(f"✅  {full_id} → EXTERNAL (all STRING)")
+</file>
+
+<file path="sandbox/etl/setup_teste_etl.ipynb">
+{
+ "cells": [
+  {
+   "cell_type": "markdown",
+   "id": "d65dbb28",
+   "metadata": {},
+   "source": [
+    "# Conexão com o BigQuery\n",
+    "\n",
+    "- Objetivo: conectar ao bigquery, testar os comando de criação de tabela e overwrite e lapidar para a pipeline"
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": 3,
+   "id": "8cd392e7",
+   "metadata": {},
+   "outputs": [],
+   "source": [
+    "# 1. Importa o SDK e configura o projeto (opcional)\n",
+    "from google.cloud import bigquery\n",
+    "import os"
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": 4,
+   "id": "95b23076",
+   "metadata": {},
+   "outputs": [],
+   "source": [
+    "# Definindo o projeto\n",
+    "os.environ['GOOGLE_CLOUD_PROJECT'] = 'rj-smas-dev'"
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": 5,
+   "id": "9055960f",
+   "metadata": {},
+   "outputs": [],
+   "source": [
+    "# 2. Cria o cliente\n",
+    "client = bigquery.Client()"
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": 6,
+   "id": "718da9b8",
+   "metadata": {},
+   "outputs": [
+    {
+     "ename": "Forbidden",
+     "evalue": "403 GET https://bigquery.googleapis.com/bigquery/v2/projects/rj-smas-dev/datasets?prettyPrint=false: Caller does not have required permission to use project rj-smas-dev. Grant the caller the roles/serviceusage.serviceUsageConsumer role, or a custom role with the serviceusage.services.use permission, by visiting https://console.developers.google.com/iam-admin/iam/project?project=rj-smas-dev and then retry. Propagation of the new permission may take a few minutes. [{'@type': 'type.googleapis.com/google.rpc.ErrorInfo', 'reason': 'USER_PROJECT_DENIED', 'domain': 'googleapis.com', 'metadata': {'consumer': 'projects/rj-smas-dev', 'containerInfo': 'rj-smas-dev', 'service': 'bigquery.googleapis.com'}}, {'@type': 'type.googleapis.com/google.rpc.LocalizedMessage', 'locale': 'en-US', 'message': 'Caller does not have required permission to use project rj-smas-dev. Grant the caller the roles/serviceusage.serviceUsageConsumer role, or a custom role with the serviceusage.services.use permission, by visiting https://console.developers.google.com/iam-admin/iam/project?project=rj-smas-dev and then retry. Propagation of the new permission may take a few minutes.'}, {'@type': 'type.googleapis.com/google.rpc.Help', 'links': [{'description': 'Google developer console IAM admin', 'url': 'https://console.developers.google.com/iam-admin/iam/project?project=rj-smas-dev'}]}]",
+     "output_type": "error",
+     "traceback": [
+      "\u001b[31m---------------------------------------------------------------------------\u001b[39m",
+      "\u001b[31mForbidden\u001b[39m                                 Traceback (most recent call last)",
+      "\u001b[36mCell\u001b[39m\u001b[36m \u001b[39m\u001b[32mIn[6]\u001b[39m\u001b[32m, line 2\u001b[39m\n\u001b[32m      1\u001b[39m \u001b[38;5;66;03m# 3. Lista os datasets no projeto\u001b[39;00m\n\u001b[32m----> \u001b[39m\u001b[32m2\u001b[39m datasets = \u001b[38;5;28;43mlist\u001b[39;49m\u001b[43m(\u001b[49m\u001b[43mclient\u001b[49m\u001b[43m.\u001b[49m\u001b[43mlist_datasets\u001b[49m\u001b[43m(\u001b[49m\u001b[43m)\u001b[49m\u001b[43m)\u001b[49m\n\u001b[32m      3\u001b[39m \u001b[38;5;28;01mif\u001b[39;00m datasets:\n\u001b[32m      4\u001b[39m     \u001b[38;5;28mprint\u001b[39m(\u001b[33m\"\u001b[39m\u001b[33m✔️ Datasets encontrados no projeto:\u001b[39m\u001b[33m\"\u001b[39m)\n",
+      "\u001b[36mFile \u001b[39m\u001b[32m~/venv-abordagem/lib/python3.11/site-packages/google/api_core/page_iterator.py:208\u001b[39m, in \u001b[36mIterator._items_iter\u001b[39m\u001b[34m(self)\u001b[39m\n\u001b[32m    206\u001b[39m \u001b[38;5;28;01mdef\u001b[39;00m\u001b[38;5;250m \u001b[39m\u001b[34m_items_iter\u001b[39m(\u001b[38;5;28mself\u001b[39m):\n\u001b[32m    207\u001b[39m \u001b[38;5;250m    \u001b[39m\u001b[33;03m\"\"\"Iterator for each item returned.\"\"\"\u001b[39;00m\n\u001b[32m--> \u001b[39m\u001b[32m208\u001b[39m \u001b[43m    \u001b[49m\u001b[38;5;28;43;01mfor\u001b[39;49;00m\u001b[43m \u001b[49m\u001b[43mpage\u001b[49m\u001b[43m \u001b[49m\u001b[38;5;129;43;01min\u001b[39;49;00m\u001b[43m \u001b[49m\u001b[38;5;28;43mself\u001b[39;49m\u001b[43m.\u001b[49m\u001b[43m_page_iter\u001b[49m\u001b[43m(\u001b[49m\u001b[43mincrement\u001b[49m\u001b[43m=\u001b[49m\u001b[38;5;28;43;01mFalse\u001b[39;49;00m\u001b[43m)\u001b[49m\u001b[43m:\u001b[49m\n\u001b[32m    209\u001b[39m \u001b[43m        \u001b[49m\u001b[38;5;28;43;01mfor\u001b[39;49;00m\u001b[43m \u001b[49m\u001b[43mitem\u001b[49m\u001b[43m \u001b[49m\u001b[38;5;129;43;01min\u001b[39;49;00m\u001b[43m \u001b[49m\u001b[43mpage\u001b[49m\u001b[43m:\u001b[49m\n\u001b[32m    210\u001b[39m \u001b[43m            \u001b[49m\u001b[38;5;28;43mself\u001b[39;49m\u001b[43m.\u001b[49m\u001b[43mnum_results\u001b[49m\u001b[43m \u001b[49m\u001b[43m+\u001b[49m\u001b[43m=\u001b[49m\u001b[43m \u001b[49m\u001b[32;43m1\u001b[39;49m\n",
+      "\u001b[36mFile \u001b[39m\u001b[32m~/venv-abordagem/lib/python3.11/site-packages/google/api_core/page_iterator.py:244\u001b[39m, in \u001b[36mIterator._page_iter\u001b[39m\u001b[34m(self, increment)\u001b[39m\n\u001b[32m    232\u001b[39m \u001b[38;5;28;01mdef\u001b[39;00m\u001b[38;5;250m \u001b[39m\u001b[34m_page_iter\u001b[39m(\u001b[38;5;28mself\u001b[39m, increment):\n\u001b[32m    233\u001b[39m \u001b[38;5;250m    \u001b[39m\u001b[33;03m\"\"\"Generator of pages of API responses.\u001b[39;00m\n\u001b[32m    234\u001b[39m \n\u001b[32m    235\u001b[39m \u001b[33;03m    Args:\u001b[39;00m\n\u001b[32m   (...)\u001b[39m\u001b[32m    242\u001b[39m \u001b[33;03m        Page: each page of items from the API.\u001b[39;00m\n\u001b[32m    243\u001b[39m \u001b[33;03m    \"\"\"\u001b[39;00m\n\u001b[32m--> \u001b[39m\u001b[32m244\u001b[39m     page = \u001b[38;5;28;43mself\u001b[39;49m\u001b[43m.\u001b[49m\u001b[43m_next_page\u001b[49m\u001b[43m(\u001b[49m\u001b[43m)\u001b[49m\n\u001b[32m    245\u001b[39m     \u001b[38;5;28;01mwhile\u001b[39;00m page \u001b[38;5;129;01mis\u001b[39;00m \u001b[38;5;129;01mnot\u001b[39;00m \u001b[38;5;28;01mNone\u001b[39;00m:\n\u001b[32m    246\u001b[39m         \u001b[38;5;28mself\u001b[39m.page_number += \u001b[32m1\u001b[39m\n",
+      "\u001b[36mFile \u001b[39m\u001b[32m~/venv-abordagem/lib/python3.11/site-packages/google/api_core/page_iterator.py:373\u001b[39m, in \u001b[36mHTTPIterator._next_page\u001b[39m\u001b[34m(self)\u001b[39m\n\u001b[32m    366\u001b[39m \u001b[38;5;250m\u001b[39m\u001b[33;03m\"\"\"Get the next page in the iterator.\u001b[39;00m\n\u001b[32m    367\u001b[39m \n\u001b[32m    368\u001b[39m \u001b[33;03mReturns:\u001b[39;00m\n\u001b[32m    369\u001b[39m \u001b[33;03m    Optional[Page]: The next page in the iterator or :data:`None` if\u001b[39;00m\n\u001b[32m    370\u001b[39m \u001b[33;03m        there are no pages left.\u001b[39;00m\n\u001b[32m    371\u001b[39m \u001b[33;03m\"\"\"\u001b[39;00m\n\u001b[32m    372\u001b[39m \u001b[38;5;28;01mif\u001b[39;00m \u001b[38;5;28mself\u001b[39m._has_next_page():\n\u001b[32m--> \u001b[39m\u001b[32m373\u001b[39m     response = \u001b[38;5;28;43mself\u001b[39;49m\u001b[43m.\u001b[49m\u001b[43m_get_next_page_response\u001b[49m\u001b[43m(\u001b[49m\u001b[43m)\u001b[49m\n\u001b[32m    374\u001b[39m     items = response.get(\u001b[38;5;28mself\u001b[39m._items_key, ())\n\u001b[32m    375\u001b[39m     page = Page(\u001b[38;5;28mself\u001b[39m, items, \u001b[38;5;28mself\u001b[39m.item_to_value, raw_page=response)\n",
+      "\u001b[36mFile \u001b[39m\u001b[32m~/venv-abordagem/lib/python3.11/site-packages/google/api_core/page_iterator.py:432\u001b[39m, in \u001b[36mHTTPIterator._get_next_page_response\u001b[39m\u001b[34m(self)\u001b[39m\n\u001b[32m    430\u001b[39m params = \u001b[38;5;28mself\u001b[39m._get_query_params()\n\u001b[32m    431\u001b[39m \u001b[38;5;28;01mif\u001b[39;00m \u001b[38;5;28mself\u001b[39m._HTTP_METHOD == \u001b[33m\"\u001b[39m\u001b[33mGET\u001b[39m\u001b[33m\"\u001b[39m:\n\u001b[32m--> \u001b[39m\u001b[32m432\u001b[39m     \u001b[38;5;28;01mreturn\u001b[39;00m \u001b[38;5;28;43mself\u001b[39;49m\u001b[43m.\u001b[49m\u001b[43mapi_request\u001b[49m\u001b[43m(\u001b[49m\n\u001b[32m    433\u001b[39m \u001b[43m        \u001b[49m\u001b[43mmethod\u001b[49m\u001b[43m=\u001b[49m\u001b[38;5;28;43mself\u001b[39;49m\u001b[43m.\u001b[49m\u001b[43m_HTTP_METHOD\u001b[49m\u001b[43m,\u001b[49m\u001b[43m \u001b[49m\u001b[43mpath\u001b[49m\u001b[43m=\u001b[49m\u001b[38;5;28;43mself\u001b[39;49m\u001b[43m.\u001b[49m\u001b[43mpath\u001b[49m\u001b[43m,\u001b[49m\u001b[43m \u001b[49m\u001b[43mquery_params\u001b[49m\u001b[43m=\u001b[49m\u001b[43mparams\u001b[49m\n\u001b[32m    434\u001b[39m \u001b[43m    \u001b[49m\u001b[43m)\u001b[49m\n\u001b[32m    435\u001b[39m \u001b[38;5;28;01melif\u001b[39;00m \u001b[38;5;28mself\u001b[39m._HTTP_METHOD == \u001b[33m\"\u001b[39m\u001b[33mPOST\u001b[39m\u001b[33m\"\u001b[39m:\n\u001b[32m    436\u001b[39m     \u001b[38;5;28;01mreturn\u001b[39;00m \u001b[38;5;28mself\u001b[39m.api_request(\n\u001b[32m    437\u001b[39m         method=\u001b[38;5;28mself\u001b[39m._HTTP_METHOD, path=\u001b[38;5;28mself\u001b[39m.path, data=params\n\u001b[32m    438\u001b[39m     )\n",
+      "\u001b[36mFile \u001b[39m\u001b[32m~/venv-abordagem/lib/python3.11/site-packages/google/cloud/bigquery/client.py:502\u001b[39m, in \u001b[36mClient.list_datasets.<locals>.api_request\u001b[39m\u001b[34m(*args, **kwargs)\u001b[39m\n\u001b[32m    501\u001b[39m \u001b[38;5;28;01mdef\u001b[39;00m\u001b[38;5;250m \u001b[39m\u001b[34mapi_request\u001b[39m(*args, **kwargs):\n\u001b[32m--> \u001b[39m\u001b[32m502\u001b[39m     \u001b[38;5;28;01mreturn\u001b[39;00m \u001b[38;5;28;43mself\u001b[39;49m\u001b[43m.\u001b[49m\u001b[43m_call_api\u001b[49m\u001b[43m(\u001b[49m\n\u001b[32m    503\u001b[39m \u001b[43m        \u001b[49m\u001b[43mretry\u001b[49m\u001b[43m,\u001b[49m\n\u001b[32m    504\u001b[39m \u001b[43m        \u001b[49m\u001b[43mspan_name\u001b[49m\u001b[43m=\u001b[49m\u001b[33;43m\"\u001b[39;49m\u001b[33;43mBigQuery.listDatasets\u001b[39;49m\u001b[33;43m\"\u001b[39;49m\u001b[43m,\u001b[49m\n\u001b[32m    505\u001b[39m \u001b[43m        \u001b[49m\u001b[43mspan_attributes\u001b[49m\u001b[43m=\u001b[49m\u001b[43mspan_attributes\u001b[49m\u001b[43m,\u001b[49m\n\u001b[32m    506\u001b[39m \u001b[43m        \u001b[49m\u001b[43m*\u001b[49m\u001b[43margs\u001b[49m\u001b[43m,\u001b[49m\n\u001b[32m    507\u001b[39m \u001b[43m        \u001b[49m\u001b[43mtimeout\u001b[49m\u001b[43m=\u001b[49m\u001b[43mtimeout\u001b[49m\u001b[43m,\u001b[49m\n\u001b[32m    508\u001b[39m \u001b[43m        \u001b[49m\u001b[43m*\u001b[49m\u001b[43m*\u001b[49m\u001b[43mkwargs\u001b[49m\u001b[43m,\u001b[49m\n\u001b[32m    509\u001b[39m \u001b[43m    \u001b[49m\u001b[43m)\u001b[49m\n",
+      "\u001b[36mFile \u001b[39m\u001b[32m~/venv-abordagem/lib/python3.11/site-packages/google/cloud/bigquery/client.py:843\u001b[39m, in \u001b[36mClient._call_api\u001b[39m\u001b[34m(self, retry, span_name, span_attributes, job_ref, headers, **kwargs)\u001b[39m\n\u001b[32m    839\u001b[39m \u001b[38;5;28;01mif\u001b[39;00m span_name \u001b[38;5;129;01mis\u001b[39;00m \u001b[38;5;129;01mnot\u001b[39;00m \u001b[38;5;28;01mNone\u001b[39;00m:\n\u001b[32m    840\u001b[39m     \u001b[38;5;28;01mwith\u001b[39;00m create_span(\n\u001b[32m    841\u001b[39m         name=span_name, attributes=span_attributes, client=\u001b[38;5;28mself\u001b[39m, job_ref=job_ref\n\u001b[32m    842\u001b[39m     ):\n\u001b[32m--> \u001b[39m\u001b[32m843\u001b[39m         \u001b[38;5;28;01mreturn\u001b[39;00m \u001b[43mcall\u001b[49m\u001b[43m(\u001b[49m\u001b[43m)\u001b[49m\n\u001b[32m    845\u001b[39m \u001b[38;5;28;01mreturn\u001b[39;00m call()\n",
+      "\u001b[36mFile \u001b[39m\u001b[32m~/venv-abordagem/lib/python3.11/site-packages/google/api_core/retry/retry_unary.py:293\u001b[39m, in \u001b[36mRetry.__call__.<locals>.retry_wrapped_func\u001b[39m\u001b[34m(*args, **kwargs)\u001b[39m\n\u001b[32m    289\u001b[39m target = functools.partial(func, *args, **kwargs)\n\u001b[32m    290\u001b[39m sleep_generator = exponential_sleep_generator(\n\u001b[32m    291\u001b[39m     \u001b[38;5;28mself\u001b[39m._initial, \u001b[38;5;28mself\u001b[39m._maximum, multiplier=\u001b[38;5;28mself\u001b[39m._multiplier\n\u001b[32m    292\u001b[39m )\n\u001b[32m--> \u001b[39m\u001b[32m293\u001b[39m \u001b[38;5;28;01mreturn\u001b[39;00m \u001b[43mretry_target\u001b[49m\u001b[43m(\u001b[49m\n\u001b[32m    294\u001b[39m \u001b[43m    \u001b[49m\u001b[43mtarget\u001b[49m\u001b[43m,\u001b[49m\n\u001b[32m    295\u001b[39m \u001b[43m    \u001b[49m\u001b[38;5;28;43mself\u001b[39;49m\u001b[43m.\u001b[49m\u001b[43m_predicate\u001b[49m\u001b[43m,\u001b[49m\n\u001b[32m    296\u001b[39m \u001b[43m    \u001b[49m\u001b[43msleep_generator\u001b[49m\u001b[43m,\u001b[49m\n\u001b[32m    297\u001b[39m \u001b[43m    \u001b[49m\u001b[43mtimeout\u001b[49m\u001b[43m=\u001b[49m\u001b[38;5;28;43mself\u001b[39;49m\u001b[43m.\u001b[49m\u001b[43m_timeout\u001b[49m\u001b[43m,\u001b[49m\n\u001b[32m    298\u001b[39m \u001b[43m    \u001b[49m\u001b[43mon_error\u001b[49m\u001b[43m=\u001b[49m\u001b[43mon_error\u001b[49m\u001b[43m,\u001b[49m\n\u001b[32m    299\u001b[39m \u001b[43m\u001b[49m\u001b[43m)\u001b[49m\n",
+      "\u001b[36mFile \u001b[39m\u001b[32m~/venv-abordagem/lib/python3.11/site-packages/google/api_core/retry/retry_unary.py:153\u001b[39m, in \u001b[36mretry_target\u001b[39m\u001b[34m(target, predicate, sleep_generator, timeout, on_error, exception_factory, **kwargs)\u001b[39m\n\u001b[32m    149\u001b[39m \u001b[38;5;66;03m# pylint: disable=broad-except\u001b[39;00m\n\u001b[32m    150\u001b[39m \u001b[38;5;66;03m# This function explicitly must deal with broad exceptions.\u001b[39;00m\n\u001b[32m    151\u001b[39m \u001b[38;5;28;01mexcept\u001b[39;00m \u001b[38;5;167;01mException\u001b[39;00m \u001b[38;5;28;01mas\u001b[39;00m exc:\n\u001b[32m    152\u001b[39m     \u001b[38;5;66;03m# defer to shared logic for handling errors\u001b[39;00m\n\u001b[32m--> \u001b[39m\u001b[32m153\u001b[39m     \u001b[43m_retry_error_helper\u001b[49m\u001b[43m(\u001b[49m\n\u001b[32m    154\u001b[39m \u001b[43m        \u001b[49m\u001b[43mexc\u001b[49m\u001b[43m,\u001b[49m\n\u001b[32m    155\u001b[39m \u001b[43m        \u001b[49m\u001b[43mdeadline\u001b[49m\u001b[43m,\u001b[49m\n\u001b[32m    156\u001b[39m \u001b[43m        \u001b[49m\u001b[43msleep\u001b[49m\u001b[43m,\u001b[49m\n\u001b[32m    157\u001b[39m \u001b[43m        \u001b[49m\u001b[43merror_list\u001b[49m\u001b[43m,\u001b[49m\n\u001b[32m    158\u001b[39m \u001b[43m        \u001b[49m\u001b[43mpredicate\u001b[49m\u001b[43m,\u001b[49m\n\u001b[32m    159\u001b[39m \u001b[43m        \u001b[49m\u001b[43mon_error\u001b[49m\u001b[43m,\u001b[49m\n\u001b[32m    160\u001b[39m \u001b[43m        \u001b[49m\u001b[43mexception_factory\u001b[49m\u001b[43m,\u001b[49m\n\u001b[32m    161\u001b[39m \u001b[43m        \u001b[49m\u001b[43mtimeout\u001b[49m\u001b[43m,\u001b[49m\n\u001b[32m    162\u001b[39m \u001b[43m    \u001b[49m\u001b[43m)\u001b[49m\n\u001b[32m    163\u001b[39m     \u001b[38;5;66;03m# if exception not raised, sleep before next attempt\u001b[39;00m\n\u001b[32m    164\u001b[39m     time.sleep(sleep)\n",
+      "\u001b[36mFile \u001b[39m\u001b[32m~/venv-abordagem/lib/python3.11/site-packages/google/api_core/retry/retry_base.py:212\u001b[39m, in \u001b[36m_retry_error_helper\u001b[39m\u001b[34m(exc, deadline, next_sleep, error_list, predicate_fn, on_error_fn, exc_factory_fn, original_timeout)\u001b[39m\n\u001b[32m    206\u001b[39m \u001b[38;5;28;01mif\u001b[39;00m \u001b[38;5;129;01mnot\u001b[39;00m predicate_fn(exc):\n\u001b[32m    207\u001b[39m     final_exc, source_exc = exc_factory_fn(\n\u001b[32m    208\u001b[39m         error_list,\n\u001b[32m    209\u001b[39m         RetryFailureReason.NON_RETRYABLE_ERROR,\n\u001b[32m    210\u001b[39m         original_timeout,\n\u001b[32m    211\u001b[39m     )\n\u001b[32m--> \u001b[39m\u001b[32m212\u001b[39m     \u001b[38;5;28;01mraise\u001b[39;00m final_exc \u001b[38;5;28;01mfrom\u001b[39;00m\u001b[38;5;250m \u001b[39m\u001b[34;01msource_exc\u001b[39;00m\n\u001b[32m    213\u001b[39m \u001b[38;5;28;01mif\u001b[39;00m on_error_fn \u001b[38;5;129;01mis\u001b[39;00m \u001b[38;5;129;01mnot\u001b[39;00m \u001b[38;5;28;01mNone\u001b[39;00m:\n\u001b[32m    214\u001b[39m     on_error_fn(exc)\n",
+      "\u001b[36mFile \u001b[39m\u001b[32m~/venv-abordagem/lib/python3.11/site-packages/google/api_core/retry/retry_unary.py:144\u001b[39m, in \u001b[36mretry_target\u001b[39m\u001b[34m(target, predicate, sleep_generator, timeout, on_error, exception_factory, **kwargs)\u001b[39m\n\u001b[32m    142\u001b[39m \u001b[38;5;28;01mfor\u001b[39;00m sleep \u001b[38;5;129;01min\u001b[39;00m sleep_generator:\n\u001b[32m    143\u001b[39m     \u001b[38;5;28;01mtry\u001b[39;00m:\n\u001b[32m--> \u001b[39m\u001b[32m144\u001b[39m         result = \u001b[43mtarget\u001b[49m\u001b[43m(\u001b[49m\u001b[43m)\u001b[49m\n\u001b[32m    145\u001b[39m         \u001b[38;5;28;01mif\u001b[39;00m inspect.isawaitable(result):\n\u001b[32m    146\u001b[39m             warnings.warn(_ASYNC_RETRY_WARNING)\n",
+      "\u001b[36mFile \u001b[39m\u001b[32m~/venv-abordagem/lib/python3.11/site-packages/google/cloud/_http/__init__.py:494\u001b[39m, in \u001b[36mJSONConnection.api_request\u001b[39m\u001b[34m(self, method, path, query_params, data, content_type, headers, api_base_url, api_version, expect_json, _target_object, timeout, extra_api_info)\u001b[39m\n\u001b[32m    482\u001b[39m response = \u001b[38;5;28mself\u001b[39m._make_request(\n\u001b[32m    483\u001b[39m     method=method,\n\u001b[32m    484\u001b[39m     url=url,\n\u001b[32m   (...)\u001b[39m\u001b[32m    490\u001b[39m     extra_api_info=extra_api_info,\n\u001b[32m    491\u001b[39m )\n\u001b[32m    493\u001b[39m \u001b[38;5;28;01mif\u001b[39;00m \u001b[38;5;129;01mnot\u001b[39;00m \u001b[32m200\u001b[39m <= response.status_code < \u001b[32m300\u001b[39m:\n\u001b[32m--> \u001b[39m\u001b[32m494\u001b[39m     \u001b[38;5;28;01mraise\u001b[39;00m exceptions.from_http_response(response)\n\u001b[32m    496\u001b[39m \u001b[38;5;28;01mif\u001b[39;00m expect_json \u001b[38;5;129;01mand\u001b[39;00m response.content:\n\u001b[32m    497\u001b[39m     \u001b[38;5;28;01mreturn\u001b[39;00m response.json()\n",
+      "\u001b[31mForbidden\u001b[39m: 403 GET https://bigquery.googleapis.com/bigquery/v2/projects/rj-smas-dev/datasets?prettyPrint=false: Caller does not have required permission to use project rj-smas-dev. Grant the caller the roles/serviceusage.serviceUsageConsumer role, or a custom role with the serviceusage.services.use permission, by visiting https://console.developers.google.com/iam-admin/iam/project?project=rj-smas-dev and then retry. Propagation of the new permission may take a few minutes. [{'@type': 'type.googleapis.com/google.rpc.ErrorInfo', 'reason': 'USER_PROJECT_DENIED', 'domain': 'googleapis.com', 'metadata': {'consumer': 'projects/rj-smas-dev', 'containerInfo': 'rj-smas-dev', 'service': 'bigquery.googleapis.com'}}, {'@type': 'type.googleapis.com/google.rpc.LocalizedMessage', 'locale': 'en-US', 'message': 'Caller does not have required permission to use project rj-smas-dev. Grant the caller the roles/serviceusage.serviceUsageConsumer role, or a custom role with the serviceusage.services.use permission, by visiting https://console.developers.google.com/iam-admin/iam/project?project=rj-smas-dev and then retry. Propagation of the new permission may take a few minutes.'}, {'@type': 'type.googleapis.com/google.rpc.Help', 'links': [{'description': 'Google developer console IAM admin', 'url': 'https://console.developers.google.com/iam-admin/iam/project?project=rj-smas-dev'}]}]"
+     ]
+    }
+   ],
+   "source": [
+    "# 3. Lista os datasets no projeto\n",
+    "datasets = list(client.list_datasets())\n",
+    "if datasets:\n",
+    "    print(\"✔️ Datasets encontrados no projeto:\")\n",
+    "    for ds in datasets:\n",
+    "        print(f\"  • {ds.dataset_id}\")\n",
+    "else:\n",
+    "    print(\"⚠️ Nenhum dataset encontrado. Verifique PROJECT_ID e credenciais.\")"
+   ]
+  },
+  {
+   "cell_type": "markdown",
+   "id": "d11807d8",
+   "metadata": {},
+   "source": [
+    "# Conexão com o Arcgis\n",
+    "\n",
+    "- Objetivo: conectar a feature, analisar os dados e lapidar para a pipeline"
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": 9,
+   "id": "d3840705",
+   "metadata": {},
+   "outputs": [],
+   "source": [
+    "from arcgis.gis import GIS\n",
+    "from arcgis.features import FeatureLayer\n",
+    "import pandas as pd"
+   ]
+  },
+  {
+   "cell_type": "markdown",
+   "id": "066b4343",
+   "metadata": {},
+   "source": [
+    "***Conexão com o SIURB***"
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": 8,
+   "id": "34814b41",
+   "metadata": {},
+   "outputs": [
+    {
+     "ename": "NameError",
+     "evalue": "name 'gis' is not defined",
+     "output_type": "error",
+     "traceback": [
+      "\u001b[31m---------------------------------------------------------------------------\u001b[39m",
+      "\u001b[31mNameError\u001b[39m                                 Traceback (most recent call last)",
+      "\u001b[36mCell\u001b[39m\u001b[36m \u001b[39m\u001b[32mIn[8]\u001b[39m\u001b[32m, line 2\u001b[39m\n\u001b[32m      1\u001b[39m gis_siurb = GIS(\u001b[33m\"\u001b[39m\u001b[33mhttps://siurb.rio/portal\u001b[39m\u001b[33m\"\u001b[39m, \u001b[33m\"\u001b[39m\u001b[33mSMAS_ed01\u001b[39m\u001b[33m\"\u001b[39m, \u001b[33m\"\u001b[39m\u001b[33m@smas#25\u001b[39m\u001b[33m\"\u001b[39m)\n\u001b[32m----> \u001b[39m\u001b[32m2\u001b[39m item_siurb = \u001b[43mgis\u001b[49m.content.get(\u001b[33m\"\u001b[39m\u001b[33m6832ff4ca54c4608b169682ae3a5b088\u001b[39m\u001b[33m\"\u001b[39m)\n",
+      "\u001b[31mNameError\u001b[39m: name 'gis' is not defined"
+     ]
+    }
+   ],
+   "source": [
+    "gis_siurb = GIS(\"https://siurb.rio/portal\", \"SMAS_ed01\", \"@smas#25\")\n",
+    "item_siurb = gis.content.get(\"6832ff4ca54c4608b169682ae3a5b088\")"
+   ]
+  },
+  {
+   "cell_type": "markdown",
+   "id": "d2d294c7",
+   "metadata": {},
+   "source": [
+    "***Conexão com o AGOL***"
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": 10,
+   "id": "d2b15acb",
+   "metadata": {},
+   "outputs": [],
+   "source": [
+    "gis_agol = GIS(\"https://www.arcgis.com/index.html\", \"smds.adm\", \"#smds.adm@25\")\n",
+    "item_agol = gis_agol.content.get(\"1ef5fb0ea56c42849d338bb30d796b0f\")"
+   ]
+  },
+  {
+   "cell_type": "markdown",
+   "id": "b0f6a9b6",
+   "metadata": {},
+   "source": [
+    "***Teste da conexão***"
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": 12,
+   "id": "06f77bac",
+   "metadata": {},
+   "outputs": [
+    {
+     "name": "stdout",
+     "output_type": "stream",
+     "text": [
+      "Título: ABORDAGEM SOCIAL - CPSR (2023.2)\n",
+      "Layers : ['Ficha de Abordagem Social - SMAS', 'repeat_abordagem']\n",
+      "Tables : []\n"
+     ]
+    }
+   ],
+   "source": [
+    "# Configurar entre siurb e agol \n",
+    "item = item_agol\n",
+    "\n",
+    "print(\"Título:\", item.title)\n",
+    "print(\"Layers :\", [lyr.properties.name   for lyr in item.layers])\n",
+    "print(\"Tables :\", [tbl.properties.name   for tbl in item.tables])"
+   ]
+  },
+  {
+   "cell_type": "markdown",
+   "id": "e6f37d18",
+   "metadata": {},
+   "source": [
+    "# 2.1 Ficha de Abordagem Social – SMAS\n",
+    "\n",
+    "- Layer index 0: `\"Ficha de Abordagem Social - SMAS\"`"
+   ]
+  },
+  {
+   "cell_type": "markdown",
+   "id": "1408971a",
+   "metadata": {},
+   "source": [
+    "***Conectando para pegar os dados no arcgis***"
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": 16,
+   "id": "9cd68e4f",
+   "metadata": {},
+   "outputs": [
+    {
+     "name": "stdout",
+     "output_type": "stream",
+     "text": [
+      "URL da layer: https://pgeo3.rio.rj.gov.br/arcgis/rest/services/Hosted/service_38e6b1b9fd64490da151470cb0739fe9/FeatureServer/0\n"
+     ]
+    },
+    {
+     "ename": "KeyboardInterrupt",
+     "evalue": "",
+     "output_type": "error",
+     "traceback": [
+      "\u001b[31m---------------------------------------------------------------------------\u001b[39m",
+      "\u001b[31mKeyboardInterrupt\u001b[39m                         Traceback (most recent call last)",
+      "\u001b[36mCell\u001b[39m\u001b[36m \u001b[39m\u001b[32mIn[16]\u001b[39m\u001b[32m, line 6\u001b[39m\n\u001b[32m      3\u001b[39m \u001b[38;5;28mprint\u001b[39m(\u001b[33m\"\u001b[39m\u001b[33mURL da layer:\u001b[39m\u001b[33m\"\u001b[39m, layer_smas.url)\n\u001b[32m      5\u001b[39m \u001b[38;5;66;03m# consulta sem geometria, pegando só as colunas\u001b[39;00m\n\u001b[32m----> \u001b[39m\u001b[32m6\u001b[39m fl = \u001b[43mlayer_smas\u001b[49m\u001b[43m.\u001b[49m\u001b[43mquery\u001b[49m\u001b[43m(\u001b[49m\n\u001b[32m      7\u001b[39m \u001b[43m    \u001b[49m\u001b[43mwhere\u001b[49m\u001b[43m=\u001b[49m\u001b[33;43m\"\u001b[39;49m\u001b[33;43m1=1\u001b[39;49m\u001b[33;43m\"\u001b[39;49m\u001b[43m,\u001b[49m\n\u001b[32m      8\u001b[39m \u001b[43m    \u001b[49m\u001b[43mout_fields\u001b[49m\u001b[43m=\u001b[49m\u001b[33;43m\"\u001b[39;49m\u001b[33;43m*\u001b[39;49m\u001b[33;43m\"\u001b[39;49m\u001b[43m,\u001b[49m\n\u001b[32m      9\u001b[39m \u001b[43m    \u001b[49m\u001b[43mreturn_geometry\u001b[49m\u001b[43m=\u001b[49m\u001b[38;5;28;43;01mFalse\u001b[39;49;00m\u001b[43m,\u001b[49m\n\u001b[32m     10\u001b[39m \u001b[43m    \u001b[49m\u001b[43mmax_records\u001b[49m\u001b[43m=\u001b[49m\u001b[32;43m5\u001b[39;49m\n\u001b[32m     11\u001b[39m \u001b[43m)\u001b[49m\n\u001b[32m     13\u001b[39m \u001b[38;5;66;03m# converte para pandas\u001b[39;00m\n\u001b[32m     14\u001b[39m df_smas = fl.sdf  \n",
+      "\u001b[36mFile \u001b[39m\u001b[32m~/venv-abordagem/lib/python3.11/site-packages/arcgis/features/layer.py:2257\u001b[39m, in \u001b[36mFeatureLayer.query\u001b[39m\u001b[34m(self, where, out_fields, time_filter, geometry_filter, return_geometry, return_count_only, return_ids_only, return_distinct_values, return_extent_only, group_by_fields_for_statistics, statistic_filter, result_offset, result_record_count, object_ids, distance, units, max_allowable_offset, out_sr, geometry_precision, gdb_version, order_by_fields, out_statistics, return_z, return_m, multipatch_option, quantization_parameters, return_centroid, return_all_records, result_type, historic_moment, sql_format, return_true_curves, return_exceeded_limit_features, as_df, datum_transformation, time_reference_unknown_client, **kwargs)\u001b[39m\n\u001b[32m   2214\u001b[39m \u001b[38;5;66;03m# validate parameters\u001b[39;00m\n\u001b[32m   2215\u001b[39m query_params = _query.QueryParameters(\n\u001b[32m   2216\u001b[39m     where=where,\n\u001b[32m   2217\u001b[39m     out_fields=out_fields,\n\u001b[32m   (...)\u001b[39m\u001b[32m   2250\u001b[39m     time_reference_unknown_client=time_reference_unknown_client,\n\u001b[32m   2251\u001b[39m )\n\u001b[32m   2252\u001b[39m \u001b[38;5;28;01mreturn\u001b[39;00m \u001b[43m_query\u001b[49m\u001b[43m.\u001b[49m\u001b[43mQuery\u001b[49m\u001b[43m(\u001b[49m\n\u001b[32m   2253\u001b[39m \u001b[43m    \u001b[49m\u001b[43mlayer\u001b[49m\u001b[43m=\u001b[49m\u001b[38;5;28;43mself\u001b[39;49m\u001b[43m,\u001b[49m\n\u001b[32m   2254\u001b[39m \u001b[43m    \u001b[49m\u001b[43mparameters\u001b[49m\u001b[43m=\u001b[49m\u001b[43mquery_params\u001b[49m\u001b[43m,\u001b[49m\n\u001b[32m   2255\u001b[39m \u001b[43m    \u001b[49m\u001b[43mis_layer\u001b[49m\u001b[43m=\u001b[49m\u001b[38;5;28;43;01mTrue\u001b[39;49;00m\u001b[43m,\u001b[49m\n\u001b[32m   2256\u001b[39m \u001b[43m    \u001b[49m\u001b[43mas_df\u001b[49m\u001b[43m=\u001b[49m\u001b[43mas_df\u001b[49m\u001b[43m,\u001b[49m\n\u001b[32m-> \u001b[39m\u001b[32m2257\u001b[39m \u001b[43m\u001b[49m\u001b[43m)\u001b[49m\u001b[43m.\u001b[49m\u001b[43mexecute\u001b[49m\u001b[43m(\u001b[49m\u001b[43m)\u001b[49m\n",
+      "\u001b[36mFile \u001b[39m\u001b[32m~/venv-abordagem/lib/python3.11/site-packages/arcgis/_impl/common/_query.py:658\u001b[39m, in \u001b[36mQuery.execute\u001b[39m\u001b[34m(self)\u001b[39m\n\u001b[32m    655\u001b[39m \u001b[38;5;28mself\u001b[39m._get_url()\n\u001b[32m    657\u001b[39m \u001b[38;5;66;03m# Two workflows: Return as FeatureSet or return as DataFrame\u001b[39;00m\n\u001b[32m--> \u001b[39m\u001b[32m658\u001b[39m \u001b[38;5;28;01mreturn\u001b[39;00m \u001b[38;5;28;43mself\u001b[39;49m\u001b[43m.\u001b[49m\u001b[43m_query\u001b[49m\u001b[43m(\u001b[49m\u001b[43mraw\u001b[49m\u001b[43m)\u001b[49m\n",
+      "\u001b[36mFile \u001b[39m\u001b[32m~/venv-abordagem/lib/python3.11/site-packages/arcgis/_impl/common/_query.py:677\u001b[39m, in \u001b[36mQuery._query\u001b[39m\u001b[34m(self, raw)\u001b[39m\n\u001b[32m    673\u001b[39m     \u001b[38;5;66;03m# Perform the initial query\u001b[39;00m\n\u001b[32m    674\u001b[39m     result = \u001b[38;5;28mself\u001b[39m.layer._con._session.get(\n\u001b[32m    675\u001b[39m         \u001b[38;5;28mself\u001b[39m.url, params=encoded_parameters\n\u001b[32m    676\u001b[39m     ).json()\n\u001b[32m--> \u001b[39m\u001b[32m677\u001b[39m     \u001b[38;5;28;01mreturn\u001b[39;00m \u001b[38;5;28;43mself\u001b[39;49m\u001b[43m.\u001b[49m\u001b[43m_process_query_result\u001b[49m\u001b[43m(\u001b[49m\u001b[43mresult\u001b[49m\u001b[43m,\u001b[49m\u001b[43m \u001b[49m\u001b[43mraw\u001b[49m\u001b[43m)\u001b[49m\n\u001b[32m    678\u001b[39m \u001b[38;5;28;01mexcept\u001b[39;00m \u001b[38;5;167;01mException\u001b[39;00m \u001b[38;5;28;01mas\u001b[39;00m query_exception:\n\u001b[32m    679\u001b[39m     \u001b[38;5;28;01mreturn\u001b[39;00m \u001b[38;5;28mself\u001b[39m._handle_query_exception(query_exception)\n",
+      "\u001b[36mFile \u001b[39m\u001b[32m~/venv-abordagem/lib/python3.11/site-packages/arcgis/_impl/common/_query.py:711\u001b[39m, in \u001b[36mQuery._process_query_result\u001b[39m\u001b[34m(self, result, raw)\u001b[39m\n\u001b[32m    707\u001b[39m         features = \u001b[38;5;28mself\u001b[39m._fetch_all_features_single_thread(features, result)\n\u001b[32m    708\u001b[39m     \u001b[38;5;28;01melse\u001b[39;00m:\n\u001b[32m    709\u001b[39m         \u001b[38;5;66;03m# Otherwise, we use a concurrent workflow with ids to fetch all features\u001b[39;00m\n\u001b[32m    710\u001b[39m         \u001b[38;5;66;03m# This workflow also works if pagination is not supported\u001b[39;00m\n\u001b[32m--> \u001b[39m\u001b[32m711\u001b[39m         features = \u001b[38;5;28;43mself\u001b[39;49m\u001b[43m.\u001b[49m\u001b[43m_fetch_all_features_by_chunk\u001b[49m\u001b[43m(\u001b[49m\u001b[43m)\u001b[49m\n\u001b[32m    713\u001b[39m result[\u001b[33m\"\u001b[39m\u001b[33mfeatures\u001b[39m\u001b[33m\"\u001b[39m] = features\n\u001b[32m    714\u001b[39m \u001b[38;5;28;01mif\u001b[39;00m \u001b[38;5;28mself\u001b[39m.as_df:\n",
+      "\u001b[36mFile \u001b[39m\u001b[32m~/venv-abordagem/lib/python3.11/site-packages/arcgis/_impl/common/_query.py:829\u001b[39m, in \u001b[36mQuery._fetch_all_features_by_chunk\u001b[39m\u001b[34m(self)\u001b[39m\n\u001b[32m    827\u001b[39m     \u001b[38;5;66;03m# Step 4: Process the results\u001b[39;00m\n\u001b[32m    828\u001b[39m     \u001b[38;5;28;01mfor\u001b[39;00m future \u001b[38;5;129;01min\u001b[39;00m concurrent.futures.as_completed(futures):\n\u001b[32m--> \u001b[39m\u001b[32m829\u001b[39m         result = \u001b[43mfuture\u001b[49m\u001b[43m.\u001b[49m\u001b[43mresult\u001b[49m\u001b[43m(\u001b[49m\u001b[43m)\u001b[49m\u001b[43m.\u001b[49m\u001b[43mjson\u001b[49m\u001b[43m(\u001b[49m\u001b[43m)\u001b[49m\n\u001b[32m    830\u001b[39m         features += result.get(\u001b[33m\"\u001b[39m\u001b[33mfeatures\u001b[39m\u001b[33m\"\u001b[39m, [])\n\u001b[32m    831\u001b[39m \u001b[38;5;28;01mreturn\u001b[39;00m features\n",
+      "\u001b[36mFile \u001b[39m\u001b[32m~/venv-abordagem/lib/python3.11/site-packages/requests/models.py:974\u001b[39m, in \u001b[36mResponse.json\u001b[39m\u001b[34m(self, **kwargs)\u001b[39m\n\u001b[32m    971\u001b[39m             \u001b[38;5;28;01mraise\u001b[39;00m RequestsJSONDecodeError(e.msg, e.doc, e.pos)\n\u001b[32m    973\u001b[39m \u001b[38;5;28;01mtry\u001b[39;00m:\n\u001b[32m--> \u001b[39m\u001b[32m974\u001b[39m     \u001b[38;5;28;01mreturn\u001b[39;00m \u001b[43mcomplexjson\u001b[49m\u001b[43m.\u001b[49m\u001b[43mloads\u001b[49m\u001b[43m(\u001b[49m\u001b[38;5;28;43mself\u001b[39;49m\u001b[43m.\u001b[49m\u001b[43mtext\u001b[49m\u001b[43m,\u001b[49m\u001b[43m \u001b[49m\u001b[43m*\u001b[49m\u001b[43m*\u001b[49m\u001b[43mkwargs\u001b[49m\u001b[43m)\u001b[49m\n\u001b[32m    975\u001b[39m \u001b[38;5;28;01mexcept\u001b[39;00m JSONDecodeError \u001b[38;5;28;01mas\u001b[39;00m e:\n\u001b[32m    976\u001b[39m     \u001b[38;5;66;03m# Catch JSON-related errors and raise as requests.JSONDecodeError\u001b[39;00m\n\u001b[32m    977\u001b[39m     \u001b[38;5;66;03m# This aliases json.JSONDecodeError and simplejson.JSONDecodeError\u001b[39;00m\n\u001b[32m    978\u001b[39m     \u001b[38;5;28;01mraise\u001b[39;00m RequestsJSONDecodeError(e.msg, e.doc, e.pos)\n",
+      "\u001b[36mFile \u001b[39m\u001b[32m/usr/lib/python3.11/json/__init__.py:346\u001b[39m, in \u001b[36mloads\u001b[39m\u001b[34m(s, cls, object_hook, parse_float, parse_int, parse_constant, object_pairs_hook, **kw)\u001b[39m\n\u001b[32m    341\u001b[39m     s = s.decode(detect_encoding(s), \u001b[33m'\u001b[39m\u001b[33msurrogatepass\u001b[39m\u001b[33m'\u001b[39m)\n\u001b[32m    343\u001b[39m \u001b[38;5;28;01mif\u001b[39;00m (\u001b[38;5;28mcls\u001b[39m \u001b[38;5;129;01mis\u001b[39;00m \u001b[38;5;28;01mNone\u001b[39;00m \u001b[38;5;129;01mand\u001b[39;00m object_hook \u001b[38;5;129;01mis\u001b[39;00m \u001b[38;5;28;01mNone\u001b[39;00m \u001b[38;5;129;01mand\u001b[39;00m\n\u001b[32m    344\u001b[39m         parse_int \u001b[38;5;129;01mis\u001b[39;00m \u001b[38;5;28;01mNone\u001b[39;00m \u001b[38;5;129;01mand\u001b[39;00m parse_float \u001b[38;5;129;01mis\u001b[39;00m \u001b[38;5;28;01mNone\u001b[39;00m \u001b[38;5;129;01mand\u001b[39;00m\n\u001b[32m    345\u001b[39m         parse_constant \u001b[38;5;129;01mis\u001b[39;00m \u001b[38;5;28;01mNone\u001b[39;00m \u001b[38;5;129;01mand\u001b[39;00m object_pairs_hook \u001b[38;5;129;01mis\u001b[39;00m \u001b[38;5;28;01mNone\u001b[39;00m \u001b[38;5;129;01mand\u001b[39;00m \u001b[38;5;129;01mnot\u001b[39;00m kw):\n\u001b[32m--> \u001b[39m\u001b[32m346\u001b[39m     \u001b[38;5;28;01mreturn\u001b[39;00m \u001b[43m_default_decoder\u001b[49m\u001b[43m.\u001b[49m\u001b[43mdecode\u001b[49m\u001b[43m(\u001b[49m\u001b[43ms\u001b[49m\u001b[43m)\u001b[49m\n\u001b[32m    347\u001b[39m \u001b[38;5;28;01mif\u001b[39;00m \u001b[38;5;28mcls\u001b[39m \u001b[38;5;129;01mis\u001b[39;00m \u001b[38;5;28;01mNone\u001b[39;00m:\n\u001b[32m    348\u001b[39m     \u001b[38;5;28mcls\u001b[39m = JSONDecoder\n",
+      "\u001b[36mFile \u001b[39m\u001b[32m/usr/lib/python3.11/json/decoder.py:337\u001b[39m, in \u001b[36mJSONDecoder.decode\u001b[39m\u001b[34m(self, s, _w)\u001b[39m\n\u001b[32m    332\u001b[39m \u001b[38;5;28;01mdef\u001b[39;00m\u001b[38;5;250m \u001b[39m\u001b[34mdecode\u001b[39m(\u001b[38;5;28mself\u001b[39m, s, _w=WHITESPACE.match):\n\u001b[32m    333\u001b[39m \u001b[38;5;250m    \u001b[39m\u001b[33;03m\"\"\"Return the Python representation of ``s`` (a ``str`` instance\u001b[39;00m\n\u001b[32m    334\u001b[39m \u001b[33;03m    containing a JSON document).\u001b[39;00m\n\u001b[32m    335\u001b[39m \n\u001b[32m    336\u001b[39m \u001b[33;03m    \"\"\"\u001b[39;00m\n\u001b[32m--> \u001b[39m\u001b[32m337\u001b[39m     obj, end = \u001b[38;5;28;43mself\u001b[39;49m\u001b[43m.\u001b[49m\u001b[43mraw_decode\u001b[49m\u001b[43m(\u001b[49m\u001b[43ms\u001b[49m\u001b[43m,\u001b[49m\u001b[43m \u001b[49m\u001b[43midx\u001b[49m\u001b[43m=\u001b[49m\u001b[43m_w\u001b[49m\u001b[43m(\u001b[49m\u001b[43ms\u001b[49m\u001b[43m,\u001b[49m\u001b[43m \u001b[49m\u001b[32;43m0\u001b[39;49m\u001b[43m)\u001b[49m\u001b[43m.\u001b[49m\u001b[43mend\u001b[49m\u001b[43m(\u001b[49m\u001b[43m)\u001b[49m\u001b[43m)\u001b[49m\n\u001b[32m    338\u001b[39m     end = _w(s, end).end()\n\u001b[32m    339\u001b[39m     \u001b[38;5;28;01mif\u001b[39;00m end != \u001b[38;5;28mlen\u001b[39m(s):\n",
+      "\u001b[36mFile \u001b[39m\u001b[32m/usr/lib/python3.11/json/decoder.py:353\u001b[39m, in \u001b[36mJSONDecoder.raw_decode\u001b[39m\u001b[34m(self, s, idx)\u001b[39m\n\u001b[32m    344\u001b[39m \u001b[38;5;250m\u001b[39m\u001b[33;03m\"\"\"Decode a JSON document from ``s`` (a ``str`` beginning with\u001b[39;00m\n\u001b[32m    345\u001b[39m \u001b[33;03ma JSON document) and return a 2-tuple of the Python\u001b[39;00m\n\u001b[32m    346\u001b[39m \u001b[33;03mrepresentation and the index in ``s`` where the document ended.\u001b[39;00m\n\u001b[32m   (...)\u001b[39m\u001b[32m    350\u001b[39m \n\u001b[32m    351\u001b[39m \u001b[33;03m\"\"\"\u001b[39;00m\n\u001b[32m    352\u001b[39m \u001b[38;5;28;01mtry\u001b[39;00m:\n\u001b[32m--> \u001b[39m\u001b[32m353\u001b[39m     obj, end = \u001b[38;5;28;43mself\u001b[39;49m\u001b[43m.\u001b[49m\u001b[43mscan_once\u001b[49m\u001b[43m(\u001b[49m\u001b[43ms\u001b[49m\u001b[43m,\u001b[49m\u001b[43m \u001b[49m\u001b[43midx\u001b[49m\u001b[43m)\u001b[49m\n\u001b[32m    354\u001b[39m \u001b[38;5;28;01mexcept\u001b[39;00m \u001b[38;5;167;01mStopIteration\u001b[39;00m \u001b[38;5;28;01mas\u001b[39;00m err:\n\u001b[32m    355\u001b[39m     \u001b[38;5;28;01mraise\u001b[39;00m JSONDecodeError(\u001b[33m\"\u001b[39m\u001b[33mExpecting value\u001b[39m\u001b[33m\"\u001b[39m, s, err.value) \u001b[38;5;28;01mfrom\u001b[39;00m\u001b[38;5;250m \u001b[39m\u001b[38;5;28;01mNone\u001b[39;00m\n",
+      "\u001b[31mKeyboardInterrupt\u001b[39m: "
+     ]
+    }
+   ],
+   "source": [
+    "# já temos `item = gis.content.get(...)`\n",
+    "layer_smas = item.layers[0]  \n",
+    "print(\"URL da layer:\", layer_smas.url)\n",
+    "\n",
+    "# consulta sem geometria, pegando só as colunas\n",
+    "fl = layer_smas.query(\n",
+    "    where=\"1=1\",\n",
+    "    out_fields=\"*\",\n",
+    "    return_geometry=False,\n",
+    "    max_records=5\n",
+    ")\n",
+    "\n",
+    "# converte para pandas\n",
+    "df_smas = fl.sdf  \n",
+    "print(\"Linhas × Colunas:\", df_smas.shape)\n",
+    "display(df_smas.head())"
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": null,
+   "id": "83310674",
+   "metadata": {},
+   "outputs": [
+    {
+     "name": "stdout",
+     "output_type": "stream",
+     "text": [
+      "Total de campos no serviço: 42\n",
+      "['objectid', 'globalid', 'uniquerowid', 'unidade_calculo', 'unidade_bairro', 'unidade_cas', 'filtro_primeira_letra_equip', 'filtro_cinco_letra_equip', 'nome_usuario', 'nome_social', 'data_nascimento', 'data_nascimento_iso', 'idade', 'faixa_etaria', 'cpf', 'calc_valido', 'motivo_cpf', 'estado_nascimento', 'migrante_sim_nao', 'nome_mae', 'nome_pai', 'grupo_familiar', 'raca_cor_etnia', 'sexo', 'filtro_primeira_letra', 'filtro_data_abordagem', 'filtro_mes_ultima_abord', 'filtro_ano_ultima_abordagem', 'flag_painel', 'exclusao_unidade_calculo', 'exclusao_unidade_bairro', 'exclusao_unidade_cas', 'nome_usuario_ver', 'excluir_ficha', 'nome_tecnico_preenc_form', 'observacoes_edicao', 'data_preenc_form', 'data_exclusao', 'created_user', 'created_date', 'last_edited_user', 'last_edited_date']\n"
+     ]
+    }
+   ],
+   "source": [
+    "# Lista todos os campos definidos no serviço\n",
+    "fields = [fld[\"name\"] for fld in layer_smas.properties.fields]\n",
+    "print(\"Total de campos no serviço:\", len(fields))\n",
+    "print(fields)\n"
+   ]
+  },
+  {
+   "cell_type": "markdown",
+   "id": "4332e6e0",
+   "metadata": {},
+   "source": [
+    "**Pontos de inspeção**  \n",
+    "- Número de colunas (`df_smas.shape[1]`)  \n",
+    "- Tipos de cada coluna (`df_smas.dtypes`)  \n",
+    "- Valores nulos (`df_smas.isna().sum()`)\n"
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": null,
+   "id": "f98b7cbc",
+   "metadata": {},
+   "outputs": [
+    {
+     "name": "stdout",
+     "output_type": "stream",
+     "text": [
+      "objectid                                Int64\n",
+      "globalid                       string[python]\n",
+      "uniquerowid                    string[python]\n",
+      "unidade_calculo                string[python]\n",
+      "unidade_bairro                 string[python]\n",
+      "unidade_cas                    string[python]\n",
+      "filtro_primeira_letra_equip    string[python]\n",
+      "filtro_cinco_letra_equip       string[python]\n",
+      "nome_usuario                   string[python]\n",
+      "nome_social                    string[python]\n",
+      "data_nascimento                string[python]\n",
+      "data_nascimento_iso            string[python]\n",
+      "idade                                   Int32\n",
+      "faixa_etaria                   string[python]\n",
+      "cpf                            string[python]\n",
+      "calc_valido                    string[python]\n",
+      "motivo_cpf                     string[python]\n",
+      "estado_nascimento              string[python]\n",
+      "migrante_sim_nao               string[python]\n",
+      "nome_mae                       string[python]\n",
+      "nome_pai                       string[python]\n",
+      "grupo_familiar                 string[python]\n",
+      "raca_cor_etnia                 string[python]\n",
+      "sexo                           string[python]\n",
+      "filtro_primeira_letra          string[python]\n",
+      "filtro_data_abordagem          datetime64[us]\n",
+      "filtro_mes_ultima_abord        string[python]\n",
+      "filtro_ano_ultima_abordagem    string[python]\n",
+      "flag_painel                    string[python]\n",
+      "exclusao_unidade_calculo       string[python]\n",
+      "exclusao_unidade_bairro        string[python]\n",
+      "exclusao_unidade_cas           string[python]\n",
+      "nome_usuario_ver               string[python]\n",
+      "excluir_ficha                  string[python]\n",
+      "nome_tecnico_preenc_form       string[python]\n",
+      "observacoes_edicao             string[python]\n",
+      "data_preenc_form               datetime64[us]\n",
+      "data_exclusao                  datetime64[us]\n",
+      "created_user                   string[python]\n",
+      "created_date                   datetime64[us]\n",
+      "last_edited_user               string[python]\n",
+      "last_edited_date               datetime64[us]\n",
+      "dtype: object\n",
+      "\n",
+      "Valores ausentes por coluna:\n",
+      "objectid                            0\n",
+      "globalid                            0\n",
+      "uniquerowid                         0\n",
+      "unidade_calculo                     0\n",
+      "unidade_bairro                      0\n",
+      "unidade_cas                         0\n",
+      "filtro_primeira_letra_equip        28\n",
+      "filtro_cinco_letra_equip        22281\n",
+      "nome_usuario                        0\n",
+      "nome_social                    171392\n",
+      "data_nascimento                   227\n",
+      "data_nascimento_iso               228\n",
+      "idade                               2\n",
+      "faixa_etaria                        0\n",
+      "cpf                             60143\n",
+      "calc_valido                    123550\n",
+      "motivo_cpf                     140431\n",
+      "estado_nascimento                   0\n",
+      "migrante_sim_nao                    0\n",
+      "nome_mae                            0\n",
+      "nome_pai                        49752\n",
+      "grupo_familiar                      0\n",
+      "raca_cor_etnia                      0\n",
+      "sexo                                0\n",
+      "filtro_primeira_letra               4\n",
+      "filtro_data_abordagem           13618\n",
+      "filtro_mes_ultima_abord         14132\n",
+      "filtro_ano_ultima_abordagem     43870\n",
+      "flag_painel                     68078\n",
+      "exclusao_unidade_calculo       171868\n",
+      "exclusao_unidade_bairro        171868\n",
+      "exclusao_unidade_cas           171867\n",
+      "nome_usuario_ver                24045\n",
+      "excluir_ficha                   59005\n",
+      "nome_tecnico_preenc_form       171868\n",
+      "observacoes_edicao             172667\n",
+      "data_preenc_form               171868\n",
+      "data_exclusao                  171868\n",
+      "created_user                        0\n",
+      "created_date                        0\n",
+      "last_edited_user                    0\n",
+      "last_edited_date                    0\n",
+      "dtype: int64\n"
+     ]
+    }
+   ],
+   "source": [
+    "# detalhes rápidos\n",
+    "print(df_smas.dtypes)\n",
+    "print(\"\\nValores ausentes por coluna:\")\n",
+    "print(df_smas.isna().sum())\n"
+   ]
+  },
+  {
+   "cell_type": "markdown",
+   "id": "7119b378",
+   "metadata": {},
+   "source": [
+    "## Processo de ELT\n",
+    "\n",
+    "**Movimento dos dados para o Bigquery**\n",
+    "\n",
+    "- Objetivo: Levar os dados para o Bigquery para serem tratados por lá"
+   ]
+  },
+  {
+   "cell_type": "markdown",
+   "id": "1e5447a0",
+   "metadata": {},
+   "source": [
+    "## Processo de ETL\n",
+    "\n",
+    "**Tratamento dos dados coletados**\n",
+    "\n",
+    "- Objetivo: Tratar os dados que vieram do arcgis, preparar para a subido pro Bigquery"
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": 32,
+   "id": "79adf3a1",
+   "metadata": {},
+   "outputs": [
+    {
+     "data": {
+      "text/html": [
+       "<div>\n",
+       "<style scoped>\n",
+       "    .dataframe tbody tr th:only-of-type {\n",
+       "        vertical-align: middle;\n",
+       "    }\n",
+       "\n",
+       "    .dataframe tbody tr th {\n",
+       "        vertical-align: top;\n",
+       "    }\n",
+       "\n",
+       "    .dataframe thead th {\n",
+       "        text-align: right;\n",
+       "    }\n",
+       "</style>\n",
+       "<table border=\"1\" class=\"dataframe\">\n",
+       "  <thead>\n",
+       "    <tr style=\"text-align: right;\">\n",
+       "      <th></th>\n",
+       "      <th>globalid</th>\n",
+       "      <th>unidade_calculo</th>\n",
+       "      <th>nome_usuario</th>\n",
+       "      <th>data_nascimento</th>\n",
+       "      <th>cpf</th>\n",
+       "      <th>nome_mae</th>\n",
+       "      <th>filtro_ano_ultima_abordagem</th>\n",
+       "      <th>excluir_ficha</th>\n",
+       "      <th>created_user</th>\n",
+       "    </tr>\n",
+       "  </thead>\n",
+       "  <tbody>\n",
+       "    <tr>\n",
+       "      <th>0</th>\n",
+       "      <td>{E1D6732E-87FF-4A13-A43A-3EAA66ACB6FB}</td>\n",
+       "      <td>EQUIPE 24H (ESPECIALIZADA)</td>\n",
+       "      <td>WESLEYDA SILVA RODRIGUES</td>\n",
+       "      <td>1995-08-02</td>\n",
+       "      <td>&lt;NA&gt;</td>\n",
+       "      <td>OTELINA DA SILVA RODRIGUES</td>\n",
+       "      <td>&lt;NA&gt;</td>\n",
+       "      <td>Não</td>\n",
+       "      <td>datarioadmin</td>\n",
+       "    </tr>\n",
+       "    <tr>\n",
+       "      <th>1</th>\n",
+       "      <td>{AE1FBD81-15EF-4D87-B0A1-6E9F594A3889}</td>\n",
+       "      <td>CREAS PROFESSORA ALDAIZA SPOSATI</td>\n",
+       "      <td>GILMAR DA SILVA</td>\n",
+       "      <td>1986-01-20</td>\n",
+       "      <td>&lt;NA&gt;</td>\n",
+       "      <td>MARIA DE FATIA ELIAS DA CRUZ</td>\n",
+       "      <td>&lt;NA&gt;</td>\n",
+       "      <td>Não</td>\n",
+       "      <td>datarioadmin</td>\n",
+       "    </tr>\n",
+       "    <tr>\n",
+       "      <th>2</th>\n",
+       "      <td>{1D7D5549-18BF-4637-8C0F-8D9D78C8E328}</td>\n",
+       "      <td>EQUIPE 24H (ESPECIALIZADA)</td>\n",
+       "      <td>DIEGO DE SOUZA MOREIRA</td>\n",
+       "      <td>1992-12-08</td>\n",
+       "      <td>&lt;NA&gt;</td>\n",
+       "      <td>ROSELI DE SOUZA MOREIA</td>\n",
+       "      <td>&lt;NA&gt;</td>\n",
+       "      <td>Não</td>\n",
+       "      <td>datarioadmin</td>\n",
+       "    </tr>\n",
+       "    <tr>\n",
+       "      <th>3</th>\n",
+       "      <td>{D6A02F5F-0556-4A1F-9829-A791D8C7181D}</td>\n",
+       "      <td>EQUIPE 24H (ESPECIALIZADA)</td>\n",
+       "      <td>VICENTE DE PAIVA</td>\n",
+       "      <td>1957-09-06</td>\n",
+       "      <td>&lt;NA&gt;</td>\n",
+       "      <td>JANDIRA HORTENCIA</td>\n",
+       "      <td>&lt;NA&gt;</td>\n",
+       "      <td>Não</td>\n",
+       "      <td>datarioadmin</td>\n",
+       "    </tr>\n",
+       "    <tr>\n",
+       "      <th>4</th>\n",
+       "      <td>{D2B0BCA0-7376-429A-8750-4EB51C645E6B}</td>\n",
+       "      <td>EQUIPE 24H (ESPECIALIZADA)</td>\n",
+       "      <td>RODRIGO MARTINS DE MAGALHAES</td>\n",
+       "      <td>1997-10-19</td>\n",
+       "      <td>&lt;NA&gt;</td>\n",
+       "      <td>MARTA MARTINS</td>\n",
+       "      <td>&lt;NA&gt;</td>\n",
+       "      <td>Não</td>\n",
+       "      <td>datarioadmin</td>\n",
+       "    </tr>\n",
+       "  </tbody>\n",
+       "</table>\n",
+       "</div>"
+      ],
+      "text/plain": [
+       "                                 globalid                   unidade_calculo  \\\n",
+       "0  {E1D6732E-87FF-4A13-A43A-3EAA66ACB6FB}        EQUIPE 24H (ESPECIALIZADA)   \n",
+       "1  {AE1FBD81-15EF-4D87-B0A1-6E9F594A3889}  CREAS PROFESSORA ALDAIZA SPOSATI   \n",
+       "2  {1D7D5549-18BF-4637-8C0F-8D9D78C8E328}        EQUIPE 24H (ESPECIALIZADA)   \n",
+       "3  {D6A02F5F-0556-4A1F-9829-A791D8C7181D}        EQUIPE 24H (ESPECIALIZADA)   \n",
+       "4  {D2B0BCA0-7376-429A-8750-4EB51C645E6B}        EQUIPE 24H (ESPECIALIZADA)   \n",
+       "\n",
+       "                    nome_usuario data_nascimento   cpf  \\\n",
+       "0       WESLEYDA SILVA RODRIGUES      1995-08-02  <NA>   \n",
+       "1                GILMAR DA SILVA      1986-01-20  <NA>   \n",
+       "2         DIEGO DE SOUZA MOREIRA      1992-12-08  <NA>   \n",
+       "3              VICENTE DE PAIVA       1957-09-06  <NA>   \n",
+       "4  RODRIGO MARTINS DE MAGALHAES       1997-10-19  <NA>   \n",
+       "\n",
+       "                       nome_mae filtro_ano_ultima_abordagem excluir_ficha  \\\n",
+       "0    OTELINA DA SILVA RODRIGUES                        <NA>           Não   \n",
+       "1  MARIA DE FATIA ELIAS DA CRUZ                        <NA>           Não   \n",
+       "2        ROSELI DE SOUZA MOREIA                        <NA>           Não   \n",
+       "3            JANDIRA HORTENCIA                         <NA>           Não   \n",
+       "4                MARTA MARTINS                         <NA>           Não   \n",
+       "\n",
+       "   created_user  \n",
+       "0  datarioadmin  \n",
+       "1  datarioadmin  \n",
+       "2  datarioadmin  \n",
+       "3  datarioadmin  \n",
+       "4  datarioadmin  "
+      ]
+     },
+     "metadata": {},
+     "output_type": "display_data"
+    },
+    {
+     "name": "stdout",
+     "output_type": "stream",
+     "text": [
+      "globalid                       string[python]\n",
+      "unidade_calculo                string[python]\n",
+      "nome_usuario                   string[python]\n",
+      "data_nascimento                        object\n",
+      "cpf                            string[python]\n",
+      "nome_mae                       string[python]\n",
+      "filtro_ano_ultima_abordagem    string[python]\n",
+      "excluir_ficha                  string[python]\n",
+      "created_user                   string[python]\n",
+      "dtype: object\n",
+      "Linhas: 169419\n"
+     ]
+    }
+   ],
+   "source": [
+    "# Seleciona e trata as colunas que vão para o BigQuery\n",
+    "import pandas as pd\n",
+    "import re\n",
+    "from datetime import date\n",
+    "\n",
+    "COLS_KEEP = [\n",
+    "    \"globalid\",\n",
+    "    \"unidade_calculo\",\n",
+    "    \"nome_usuario\",\n",
+    "    \"data_nascimento\",\n",
+    "    \"cpf\",\n",
+    "    \"nome_mae\",\n",
+    "    \"filtro_ano_ultima_abordagem\",\n",
+    "    \"excluir_ficha\",\n",
+    "    \"created_user\",\n",
+    "]\n",
+    "\n",
+    "# 1️⃣ Copia apenas as colunas relevantes\n",
+    "df_out = df_smas[COLS_KEEP].copy()\n",
+    "\n",
+    "# 2️⃣ Função auxiliar → date | None\n",
+    "def to_date_obj(col):\n",
+    "    dt = pd.to_datetime(col, errors=\"coerce\", dayfirst=True)\n",
+    "    # .dt.date devolve objeto python date; NaT → NaN, então trocamos p/ None\n",
+    "    return dt.dt.date.where(~dt.isna(), None)\n",
+    "\n",
+    "# 3️⃣ Limpezas e normalizações\n",
+    "df_out[\"data_nascimento\"] = to_date_obj(df_out[\"data_nascimento\"])\n",
+    "\n",
+    "df_out[\"cpf\"] = (\n",
+    "    df_out[\"cpf\"]\n",
+    "      .astype(\"string\")\n",
+    "      .str.replace(r\"\\D\", \"\", regex=True)          # só dígitos\n",
+    "      .replace(\"\", pd.NA)                          # string vazia → NA\n",
+    ")\n",
+    "\n",
+    "df_out[\"excluir_ficha\"] = (\n",
+    "    df_out[\"excluir_ficha\"]\n",
+    "      .str.strip()\n",
+    "      .str.lower()\n",
+    "      .map({\"sim\": \"Sim\", \"não\": \"Não\", \"nao\": \"Não\"})\n",
+    "      .fillna(\"Não\")                                # default\n",
+    "      .astype(\"string\")                            \n",
+    ")\n",
+    "\n",
+    "# 4️⃣ Garante StringDtype nas demais colunas\n",
+    "for col in [\n",
+    "    \"globalid\",\n",
+    "    \"unidade_calculo\",\n",
+    "    \"nome_usuario\",\n",
+    "    \"nome_mae\",\n",
+    "    \"filtro_ano_ultima_abordagem\",\n",
+    "    \"created_user\",\n",
+    "]:\n",
+    "    df_out[col] = df_out[col].astype(\"string\")\n",
+    "\n",
+    "# 5️⃣ Inspeção rápida\n",
+    "display(df_out.head())\n",
+    "print(df_out.dtypes)\n",
+    "print(\"Linhas:\", len(df_out))"
+   ]
+  },
+  {
+   "cell_type": "markdown",
+   "id": "27fb5846",
+   "metadata": {},
+   "source": [
+    "**Subida dos dados para o BigQuery**\n",
+    "- Objetivo: esquematizar as tabelas do bq e subir os dados tratados"
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": 37,
+   "id": "49f2ce57",
+   "metadata": {},
+   "outputs": [
+    {
+     "name": "stderr",
+     "output_type": "stream",
+     "text": [
+      "/root/venv-abordagem/lib/python3.11/site-packages/google/cloud/bigquery/_pandas_helpers.py:489: FutureWarning: Loading pandas DataFrame into BigQuery will require pandas-gbq package version 0.26.1 or greater in the future. Tried to import pandas-gbq and got: No module named 'pandas_gbq'\n",
+      "  warnings.warn(\n"
+     ]
+    },
+    {
+     "name": "stdout",
+     "output_type": "stream",
+     "text": [
+      "✔️ rj-smas-dev:teste_abordagem.abordagem_sintetica com 169419 linhas.\n"
+     ]
+    }
+   ],
+   "source": [
+    "# Sobe df_out (preparado no BLOCO 1) para o BigQuery\n",
+    "import subprocess\n",
+    "from google.oauth2.credentials import Credentials\n",
+    "from google.cloud import bigquery\n",
+    "\n",
+    "# 1️⃣ Pega um access-token da conta que já fez `gcloud auth login`\n",
+    "access_token = subprocess.check_output(\n",
+    "    [\"gcloud\", \"auth\", \"print-access-token\"],\n",
+    "    text=True,\n",
+    ").strip()\n",
+    "\n",
+    "# 2️⃣ Instancia credenciais *sem* refresh nem quota-project\n",
+    "creds = Credentials(token=access_token)\n",
+    "\n",
+    "# 3️⃣ Cria o cliente BigQuery usando essas credenciais\n",
+    "PROJECT_ID  = \"rj-smas-dev\"          # defina explicitamente\n",
+    "DATASET_ID  = \"teste_abordagem\"\n",
+    "TABLE_ID    = \"abordagem_sintetica\"\n",
+    "TABLE_REF   = f\"{PROJECT_ID}.{DATASET_ID}.{TABLE_ID}\"\n",
+    "\n",
+    "client = bigquery.Client(project=PROJECT_ID, credentials=creds)\n",
+    "\n",
+    "# 4️⃣ (opcional) cria dataset via API; se falhar, crie no CLI: `bq mk`\n",
+    "try:\n",
+    "    client.create_dataset(DATASET_ID, exists_ok=True)\n",
+    "except Exception as e:\n",
+    "    print(\"⚠️  Não consegui criar o dataset via API – \"\n",
+    "          \"crie no CLI se precisar:\", e)\n",
+    "\n",
+    "# 5️⃣ esquema da tabela\n",
+    "schema = [\n",
+    "    bigquery.SchemaField(\"globalid\", \"STRING\"),\n",
+    "    bigquery.SchemaField(\"unidade_calculo\", \"STRING\"),\n",
+    "    bigquery.SchemaField(\"nome_usuario\", \"STRING\"),\n",
+    "    bigquery.SchemaField(\"data_nascimento\", \"DATE\"),\n",
+    "    bigquery.SchemaField(\"cpf\", \"STRING\"),\n",
+    "    bigquery.SchemaField(\"nome_mae\", \"STRING\"),\n",
+    "    bigquery.SchemaField(\"filtro_ano_ultima_abordagem\", \"STRING\"),\n",
+    "    bigquery.SchemaField(\"excluir_ficha\", \"STRING\"),\n",
+    "    bigquery.SchemaField(\"created_user\", \"STRING\"),\n",
+    "]\n",
+    "\n",
+    "job_config = bigquery.LoadJobConfig(\n",
+    "    schema=schema,\n",
+    "    write_disposition=\"WRITE_TRUNCATE\",\n",
+    ")\n",
+    "\n",
+    "# 6️⃣ carrega o df_out (gerado no BLOCO 1)\n",
+    "load_job = client.load_table_from_dataframe(df_out, TABLE_REF, job_config=job_config)\n",
+    "load_job.result()          # espera terminar\n",
+    "\n",
+    "table = client.get_table(TABLE_REF)\n",
+    "print(f\"✔️ {table.full_table_id} com {table.num_rows} linhas.\")"
+   ]
+  },
+  {
+   "cell_type": "markdown",
+   "id": "28fa47f6",
+   "metadata": {},
+   "source": [
+    "# 2.2 repeat_abordagem\n",
+    "\n",
+    "- Layer index 1: `\"repeat_abordagem\"`"
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": 13,
+   "id": "7864e746",
+   "metadata": {},
+   "outputs": [
+    {
+     "name": "stdout",
+     "output_type": "stream",
+     "text": [
+      "URL da layer: https://services1.arcgis.com/OlP4dGNtIcnD3RYf/arcgis/rest/services/service_ab1e5fb472de491ca105077fe17b72ea/FeatureServer/1\n",
+      "Linhas × Colunas: (228712, 266)\n"
+     ]
+    },
+    {
+     "data": {
+      "text/html": [
+       "<div>\n",
+       "<style scoped>\n",
+       "    .dataframe tbody tr th:only-of-type {\n",
+       "        vertical-align: middle;\n",
+       "    }\n",
+       "\n",
+       "    .dataframe tbody tr th {\n",
+       "        vertical-align: top;\n",
+       "    }\n",
+       "\n",
+       "    .dataframe thead th {\n",
+       "        text-align: right;\n",
+       "    }\n",
+       "</style>\n",
+       "<table border=\"1\" class=\"dataframe\">\n",
+       "  <thead>\n",
+       "    <tr style=\"text-align: right;\">\n",
+       "      <th></th>\n",
+       "      <th>objectid</th>\n",
+       "      <th>globalid</th>\n",
+       "      <th>repeat_unidade_calculo</th>\n",
+       "      <th>repeat_unidade_bairro</th>\n",
+       "      <th>repeat_unidade_cas</th>\n",
+       "      <th>repeat_nome_usuario</th>\n",
+       "      <th>repeat_nome_social</th>\n",
+       "      <th>repeat_data_nascimento</th>\n",
+       "      <th>repeat_data_nascimento_iso</th>\n",
+       "      <th>repeat_idade</th>\n",
+       "      <th>...</th>\n",
+       "      <th>observacao</th>\n",
+       "      <th>parentglobalid</th>\n",
+       "      <th>CreationDate</th>\n",
+       "      <th>Creator</th>\n",
+       "      <th>EditDate</th>\n",
+       "      <th>Editor</th>\n",
+       "      <th>flag_exc_repeat</th>\n",
+       "      <th>note_creas</th>\n",
+       "      <th>repeat_cpf</th>\n",
+       "      <th>repeat_flag_painel</th>\n",
+       "    </tr>\n",
+       "  </thead>\n",
+       "  <tbody>\n",
+       "    <tr>\n",
+       "      <th>0</th>\n",
+       "      <td>730</td>\n",
+       "      <td>aba4bfab-8851-433e-80c8-f44b70d67de8</td>\n",
+       "      <td>CENTRO POP JOSÉ SARAMAGO</td>\n",
+       "      <td>Bonsucesso</td>\n",
+       "      <td>4</td>\n",
+       "      <td>EDMILSON DE LIMA</td>\n",
+       "      <td>&lt;NA&gt;</td>\n",
+       "      <td>12/09/1983</td>\n",
+       "      <td>1983-09-12</td>\n",
+       "      <td>39</td>\n",
+       "      <td>...</td>\n",
+       "      <td>&lt;NA&gt;</td>\n",
+       "      <td>20ae622e-4af8-4417-96bb-6854e424a9dd</td>\n",
+       "      <td>2023-07-05 15:19:32.519999</td>\n",
+       "      <td>subpse.siurb.territorio</td>\n",
+       "      <td>2023-09-01 19:17:00.960999</td>\n",
+       "      <td>smds.adm</td>\n",
+       "      <td>&lt;NA&gt;</td>\n",
+       "      <td>CREAS Nelson Carneiro</td>\n",
+       "      <td>&lt;NA&gt;</td>\n",
+       "      <td>&lt;NA&gt;</td>\n",
+       "    </tr>\n",
+       "    <tr>\n",
+       "      <th>1</th>\n",
+       "      <td>733</td>\n",
+       "      <td>edb5a6c2-737c-4789-ab8e-dd6ece1ed0b1</td>\n",
+       "      <td>CENTRO POP JOSÉ SARAMAGO</td>\n",
+       "      <td>Bonsucesso</td>\n",
+       "      <td>4</td>\n",
+       "      <td>FABIO RAMOS DA SILVA</td>\n",
+       "      <td>&lt;NA&gt;</td>\n",
+       "      <td>14/07/1981</td>\n",
+       "      <td>1981-07-14</td>\n",
+       "      <td>41</td>\n",
+       "      <td>...</td>\n",
+       "      <td>&lt;NA&gt;</td>\n",
+       "      <td>cefaad8f-7094-4f41-b0a3-40826fd76835</td>\n",
+       "      <td>2023-07-05 15:37:20.377000</td>\n",
+       "      <td>subpse.siurb.territorio</td>\n",
+       "      <td>2023-09-01 19:17:01.762000</td>\n",
+       "      <td>smds.adm</td>\n",
+       "      <td>&lt;NA&gt;</td>\n",
+       "      <td>CREAS Nelson Carneiro</td>\n",
+       "      <td>&lt;NA&gt;</td>\n",
+       "      <td>&lt;NA&gt;</td>\n",
+       "    </tr>\n",
+       "    <tr>\n",
+       "      <th>2</th>\n",
+       "      <td>734</td>\n",
+       "      <td>aa649e86-4996-4d0a-bf3b-76f7ab9282b0</td>\n",
+       "      <td>CENTRO POP JOSÉ SARAMAGO</td>\n",
+       "      <td>Bonsucesso</td>\n",
+       "      <td>4</td>\n",
+       "      <td>JORGE FRANCISCO DOS SANTOS</td>\n",
+       "      <td>&lt;NA&gt;</td>\n",
+       "      <td>13/01/1964</td>\n",
+       "      <td>1964-01-13</td>\n",
+       "      <td>60</td>\n",
+       "      <td>...</td>\n",
+       "      <td>&lt;NA&gt;</td>\n",
+       "      <td>b2c6ae6a-f7c1-406c-9d3f-316f37527e2b</td>\n",
+       "      <td>2023-07-05 15:46:13.423000</td>\n",
+       "      <td>subpse.siurb.territorio</td>\n",
+       "      <td>2024-12-27 14:52:34.986000</td>\n",
+       "      <td>smds.adm</td>\n",
+       "      <td>&lt;NA&gt;</td>\n",
+       "      <td>CREAS Nelson Carneiro</td>\n",
+       "      <td>&lt;NA&gt;</td>\n",
+       "      <td>&lt;NA&gt;</td>\n",
+       "    </tr>\n",
+       "    <tr>\n",
+       "      <th>3</th>\n",
+       "      <td>735</td>\n",
+       "      <td>46df03af-d8cf-45a4-9a01-bdd3e2e9d6d4</td>\n",
+       "      <td>CENTRO POP JOSÉ SARAMAGO</td>\n",
+       "      <td>Bonsucesso</td>\n",
+       "      <td>4</td>\n",
+       "      <td>NAULDOBERTO CIRINO</td>\n",
+       "      <td>&lt;NA&gt;</td>\n",
+       "      <td>28/05/1974</td>\n",
+       "      <td>1974-05-28</td>\n",
+       "      <td>49</td>\n",
+       "      <td>...</td>\n",
+       "      <td>&lt;NA&gt;</td>\n",
+       "      <td>8009fb97-0fc4-46ec-a934-2267ea5fff54</td>\n",
+       "      <td>2023-07-05 15:52:25.684000</td>\n",
+       "      <td>subpse.siurb.territorio</td>\n",
+       "      <td>2023-09-01 19:17:03.829999</td>\n",
+       "      <td>smds.adm</td>\n",
+       "      <td>&lt;NA&gt;</td>\n",
+       "      <td>CREAS Nelson Carneiro</td>\n",
+       "      <td>&lt;NA&gt;</td>\n",
+       "      <td>&lt;NA&gt;</td>\n",
+       "    </tr>\n",
+       "    <tr>\n",
+       "      <th>4</th>\n",
+       "      <td>736</td>\n",
+       "      <td>52db383b-14cf-4f0a-b0e6-4cfc2e2bec6d</td>\n",
+       "      <td>CENTRO POP JOSÉ SARAMAGO</td>\n",
+       "      <td>Bonsucesso</td>\n",
+       "      <td>4</td>\n",
+       "      <td>LUIZ FERNANDO DE JESUS</td>\n",
+       "      <td>&lt;NA&gt;</td>\n",
+       "      <td>01/05/1993</td>\n",
+       "      <td>1993-05-01</td>\n",
+       "      <td>30</td>\n",
+       "      <td>...</td>\n",
+       "      <td>&lt;NA&gt;</td>\n",
+       "      <td>6f94111c-7ef7-4e99-8198-ca520fde37e0</td>\n",
+       "      <td>2023-07-05 16:05:15.941999</td>\n",
+       "      <td>subpse.siurb.territorio</td>\n",
+       "      <td>2023-09-01 19:17:04.812000</td>\n",
+       "      <td>smds.adm</td>\n",
+       "      <td>&lt;NA&gt;</td>\n",
+       "      <td>CREAS Nelson Carneiro</td>\n",
+       "      <td>&lt;NA&gt;</td>\n",
+       "      <td>&lt;NA&gt;</td>\n",
+       "    </tr>\n",
+       "  </tbody>\n",
+       "</table>\n",
+       "<p>5 rows × 266 columns</p>\n",
+       "</div>"
+      ],
+      "text/plain": [
+       "   objectid                              globalid    repeat_unidade_calculo  \\\n",
+       "0       730  aba4bfab-8851-433e-80c8-f44b70d67de8  CENTRO POP JOSÉ SARAMAGO   \n",
+       "1       733  edb5a6c2-737c-4789-ab8e-dd6ece1ed0b1  CENTRO POP JOSÉ SARAMAGO   \n",
+       "2       734  aa649e86-4996-4d0a-bf3b-76f7ab9282b0  CENTRO POP JOSÉ SARAMAGO   \n",
+       "3       735  46df03af-d8cf-45a4-9a01-bdd3e2e9d6d4  CENTRO POP JOSÉ SARAMAGO   \n",
+       "4       736  52db383b-14cf-4f0a-b0e6-4cfc2e2bec6d  CENTRO POP JOSÉ SARAMAGO   \n",
+       "\n",
+       "  repeat_unidade_bairro repeat_unidade_cas         repeat_nome_usuario  \\\n",
+       "0            Bonsucesso                  4            EDMILSON DE LIMA   \n",
+       "1            Bonsucesso                  4        FABIO RAMOS DA SILVA   \n",
+       "2            Bonsucesso                  4  JORGE FRANCISCO DOS SANTOS   \n",
+       "3            Bonsucesso                  4          NAULDOBERTO CIRINO   \n",
+       "4            Bonsucesso                  4      LUIZ FERNANDO DE JESUS   \n",
+       "\n",
+       "  repeat_nome_social repeat_data_nascimento repeat_data_nascimento_iso  \\\n",
+       "0               <NA>             12/09/1983                 1983-09-12   \n",
+       "1               <NA>             14/07/1981                 1981-07-14   \n",
+       "2               <NA>             13/01/1964                 1964-01-13   \n",
+       "3               <NA>             28/05/1974                 1974-05-28   \n",
+       "4               <NA>             01/05/1993                 1993-05-01   \n",
+       "\n",
+       "   repeat_idade  ... observacao                        parentglobalid  \\\n",
+       "0            39  ...       <NA>  20ae622e-4af8-4417-96bb-6854e424a9dd   \n",
+       "1            41  ...       <NA>  cefaad8f-7094-4f41-b0a3-40826fd76835   \n",
+       "2            60  ...       <NA>  b2c6ae6a-f7c1-406c-9d3f-316f37527e2b   \n",
+       "3            49  ...       <NA>  8009fb97-0fc4-46ec-a934-2267ea5fff54   \n",
+       "4            30  ...       <NA>  6f94111c-7ef7-4e99-8198-ca520fde37e0   \n",
+       "\n",
+       "                CreationDate                  Creator  \\\n",
+       "0 2023-07-05 15:19:32.519999  subpse.siurb.territorio   \n",
+       "1 2023-07-05 15:37:20.377000  subpse.siurb.territorio   \n",
+       "2 2023-07-05 15:46:13.423000  subpse.siurb.territorio   \n",
+       "3 2023-07-05 15:52:25.684000  subpse.siurb.territorio   \n",
+       "4 2023-07-05 16:05:15.941999  subpse.siurb.territorio   \n",
+       "\n",
+       "                    EditDate    Editor flag_exc_repeat             note_creas  \\\n",
+       "0 2023-09-01 19:17:00.960999  smds.adm            <NA>  CREAS Nelson Carneiro   \n",
+       "1 2023-09-01 19:17:01.762000  smds.adm            <NA>  CREAS Nelson Carneiro   \n",
+       "2 2024-12-27 14:52:34.986000  smds.adm            <NA>  CREAS Nelson Carneiro   \n",
+       "3 2023-09-01 19:17:03.829999  smds.adm            <NA>  CREAS Nelson Carneiro   \n",
+       "4 2023-09-01 19:17:04.812000  smds.adm            <NA>  CREAS Nelson Carneiro   \n",
+       "\n",
+       "  repeat_cpf repeat_flag_painel  \n",
+       "0       <NA>               <NA>  \n",
+       "1       <NA>               <NA>  \n",
+       "2       <NA>               <NA>  \n",
+       "3       <NA>               <NA>  \n",
+       "4       <NA>               <NA>  \n",
+       "\n",
+       "[5 rows x 266 columns]"
+      ]
+     },
+     "metadata": {},
+     "output_type": "display_data"
+    }
+   ],
+   "source": [
+    "# já temos `item_x = gis.content.get(...)`\n",
+    "layer_smas = item.layers[1]  \n",
+    "print(\"URL da layer:\", layer_smas.url)\n",
+    "\n",
+    "# consulta sem geometria, pegando só as colunas\n",
+    "fl = layer_smas.query(\n",
+    "    where=\"1=1\",\n",
+    "    out_fields=\"*\",\n",
+    "    return_geometry=False,\n",
+    ")\n",
+    "\n",
+    "# converte para pandas\n",
+    "df_smas = fl.sdf  \n",
+    "print(\"Linhas × Colunas:\", df_smas.shape)\n",
+    "display(df_smas.head())"
+   ]
+  },
+  {
+   "cell_type": "markdown",
+   "id": "e811c762",
+   "metadata": {},
+   "source": [
+    "## Processo de ELT\n",
+    "\n",
+    "**Movimento dos dados para o Bigquery**\n",
+    "\n",
+    "- Objetivo: Levar os dados para o Bigquery para serem tratados por lá"
+   ]
+  },
+  {
+   "cell_type": "markdown",
+   "id": "1ef694d4",
+   "metadata": {},
+   "source": [
+    "## Processo de ETL\n",
+    "\n",
+    "**Tratamento dos dados coletados**\n",
+    "\n",
+    "- Objetivo: Tratar os dados que vieram do arcgis, preparar para a subido pro Bigquery"
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": 41,
+   "id": "139bb79e",
+   "metadata": {},
+   "outputs": [
+    {
+     "data": {
+      "text/html": [
+       "<div>\n",
+       "<style scoped>\n",
+       "    .dataframe tbody tr th:only-of-type {\n",
+       "        vertical-align: middle;\n",
+       "    }\n",
+       "\n",
+       "    .dataframe tbody tr th {\n",
+       "        vertical-align: top;\n",
+       "    }\n",
+       "\n",
+       "    .dataframe thead th {\n",
+       "        text-align: right;\n",
+       "    }\n",
+       "</style>\n",
+       "<table border=\"1\" class=\"dataframe\">\n",
+       "  <thead>\n",
+       "    <tr style=\"text-align: right;\">\n",
+       "      <th></th>\n",
+       "      <th>objectid</th>\n",
+       "      <th>globalid</th>\n",
+       "      <th>repeat_unidade_calculo</th>\n",
+       "      <th>turno_abordagem</th>\n",
+       "      <th>data_abordagem</th>\n",
+       "      <th>dia_num_data_abordagem</th>\n",
+       "      <th>mes_abrev_data_abordagem</th>\n",
+       "      <th>ano_num_data_abordagem</th>\n",
+       "      <th>bairro_abord</th>\n",
+       "      <th>x</th>\n",
+       "      <th>y</th>\n",
+       "      <th>resp_abordagem</th>\n",
+       "      <th>resp_abordagem1</th>\n",
+       "      <th>aceita_acolhimento</th>\n",
+       "      <th>parentrowid</th>\n",
+       "      <th>created_user</th>\n",
+       "      <th>coordenadas</th>\n",
+       "    </tr>\n",
+       "  </thead>\n",
+       "  <tbody>\n",
+       "    <tr>\n",
+       "      <th>0</th>\n",
+       "      <td>217487</td>\n",
+       "      <td>{748D7B39-61B5-41F0-9A17-CFD9B5F4A1EA}</td>\n",
+       "      <td>CREAS PROFESSORA ALDAIZA SPOSATI</td>\n",
+       "      <td>noite</td>\n",
+       "      <td>2025-03-28</td>\n",
+       "      <td>28</td>\n",
+       "      <td>mar</td>\n",
+       "      <td>2025</td>\n",
+       "      <td>Bangu</td>\n",
+       "      <td>-43.46272009</td>\n",
+       "      <td>-22.87452501</td>\n",
+       "      <td>creas</td>\n",
+       "      <td>itinerante</td>\n",
+       "      <td>nao</td>\n",
+       "      <td>{F0321C2D-5314-4E2A-BD32-81A75EC77A6C}</td>\n",
+       "      <td>SMAS.subpse.territorio_ed01</td>\n",
+       "      <td>-22.87452501, -43.46272009</td>\n",
+       "    </tr>\n",
+       "    <tr>\n",
+       "      <th>1</th>\n",
+       "      <td>217488</td>\n",
+       "      <td>{0DAF5C7A-A96D-49E3-AEA0-6C967D8D0976}</td>\n",
+       "      <td>EQUIPE 24H (ESPECIALIZADA)</td>\n",
+       "      <td>tarde</td>\n",
+       "      <td>2025-04-04</td>\n",
+       "      <td>04</td>\n",
+       "      <td>abr</td>\n",
+       "      <td>2025</td>\n",
+       "      <td>Cidade Nova</td>\n",
+       "      <td>-43.20369104</td>\n",
+       "      <td>-22.91012883</td>\n",
+       "      <td>cgppsr</td>\n",
+       "      <td>abord_itinerante</td>\n",
+       "      <td>sim</td>\n",
+       "      <td>{AA31417F-4A51-400E-BF87-705B651BEEEB}</td>\n",
+       "      <td>SMAS.subpse.territorio_ed01</td>\n",
+       "      <td>-22.91012883, -43.20369104</td>\n",
+       "    </tr>\n",
+       "    <tr>\n",
+       "      <th>2</th>\n",
+       "      <td>217489</td>\n",
+       "      <td>{2307E9FE-D996-48E9-8DFB-BB02D4832FDB}</td>\n",
+       "      <td>EQUIPE 24H (ESPECIALIZADA)</td>\n",
+       "      <td>manha</td>\n",
+       "      <td>2025-04-04</td>\n",
+       "      <td>04</td>\n",
+       "      <td>abr</td>\n",
+       "      <td>2025</td>\n",
+       "      <td>Leme</td>\n",
+       "      <td>-43.16505788</td>\n",
+       "      <td>-22.96156698</td>\n",
+       "      <td>cgppsr</td>\n",
+       "      <td>abord_itinerante</td>\n",
+       "      <td>nao</td>\n",
+       "      <td>{53A7EF74-5176-4391-934C-D6312299CC67}</td>\n",
+       "      <td>SMAS.subpse.territorio_ed01</td>\n",
+       "      <td>-22.96156698, -43.16505788</td>\n",
+       "    </tr>\n",
+       "    <tr>\n",
+       "      <th>3</th>\n",
+       "      <td>217490</td>\n",
+       "      <td>{C5DBCA8A-AEB4-4660-A37B-4F957BED6013}</td>\n",
+       "      <td>EQUIPE 24H (ESPECIALIZADA)</td>\n",
+       "      <td>noite</td>\n",
+       "      <td>2025-04-04</td>\n",
+       "      <td>04</td>\n",
+       "      <td>abr</td>\n",
+       "      <td>2025</td>\n",
+       "      <td>Tijuca</td>\n",
+       "      <td>-43.2329918</td>\n",
+       "      <td>-22.92533655</td>\n",
+       "      <td>cgppsr</td>\n",
+       "      <td>abord_itinerante</td>\n",
+       "      <td>nao</td>\n",
+       "      <td>{26843F25-DBB9-4A81-9064-BF646960E383}</td>\n",
+       "      <td>SMAS.subpse.territorio_ed01</td>\n",
+       "      <td>-22.92533655, -43.2329918</td>\n",
+       "    </tr>\n",
+       "    <tr>\n",
+       "      <th>4</th>\n",
+       "      <td>217491</td>\n",
+       "      <td>{0B44666C-B799-4828-86C7-1E74713B7680}</td>\n",
+       "      <td>EQUIPE 24H (ESPECIALIZADA)</td>\n",
+       "      <td>noite</td>\n",
+       "      <td>2025-04-04</td>\n",
+       "      <td>04</td>\n",
+       "      <td>abr.</td>\n",
+       "      <td>2025</td>\n",
+       "      <td>Tijuca</td>\n",
+       "      <td>681189.80409656</td>\n",
+       "      <td>7463664.90550056</td>\n",
+       "      <td>cgppsr</td>\n",
+       "      <td>abord_itinerante</td>\n",
+       "      <td>nao</td>\n",
+       "      <td>{29A0CBFE-5BBF-4198-85D4-C1CFA89C7ECD}</td>\n",
+       "      <td>SMAS.subpse.territorio_ed01</td>\n",
+       "      <td>7463664.90550056, 681189.80409656</td>\n",
+       "    </tr>\n",
+       "  </tbody>\n",
+       "</table>\n",
+       "</div>"
+      ],
+      "text/plain": [
+       "  objectid                                globalid  \\\n",
+       "0   217487  {748D7B39-61B5-41F0-9A17-CFD9B5F4A1EA}   \n",
+       "1   217488  {0DAF5C7A-A96D-49E3-AEA0-6C967D8D0976}   \n",
+       "2   217489  {2307E9FE-D996-48E9-8DFB-BB02D4832FDB}   \n",
+       "3   217490  {C5DBCA8A-AEB4-4660-A37B-4F957BED6013}   \n",
+       "4   217491  {0B44666C-B799-4828-86C7-1E74713B7680}   \n",
+       "\n",
+       "             repeat_unidade_calculo turno_abordagem data_abordagem  \\\n",
+       "0  CREAS PROFESSORA ALDAIZA SPOSATI           noite     2025-03-28   \n",
+       "1        EQUIPE 24H (ESPECIALIZADA)           tarde     2025-04-04   \n",
+       "2        EQUIPE 24H (ESPECIALIZADA)           manha     2025-04-04   \n",
+       "3        EQUIPE 24H (ESPECIALIZADA)           noite     2025-04-04   \n",
+       "4        EQUIPE 24H (ESPECIALIZADA)           noite     2025-04-04   \n",
+       "\n",
+       "  dia_num_data_abordagem mes_abrev_data_abordagem ano_num_data_abordagem  \\\n",
+       "0                     28                      mar                   2025   \n",
+       "1                     04                      abr                   2025   \n",
+       "2                     04                      abr                   2025   \n",
+       "3                     04                      abr                   2025   \n",
+       "4                     04                     abr.                   2025   \n",
+       "\n",
+       "  bairro_abord                x                 y resp_abordagem  \\\n",
+       "0        Bangu     -43.46272009      -22.87452501          creas   \n",
+       "1  Cidade Nova     -43.20369104      -22.91012883         cgppsr   \n",
+       "2         Leme     -43.16505788      -22.96156698         cgppsr   \n",
+       "3       Tijuca      -43.2329918      -22.92533655         cgppsr   \n",
+       "4       Tijuca  681189.80409656  7463664.90550056         cgppsr   \n",
+       "\n",
+       "    resp_abordagem1 aceita_acolhimento  \\\n",
+       "0        itinerante                nao   \n",
+       "1  abord_itinerante                sim   \n",
+       "2  abord_itinerante                nao   \n",
+       "3  abord_itinerante                nao   \n",
+       "4  abord_itinerante                nao   \n",
+       "\n",
+       "                              parentrowid                 created_user  \\\n",
+       "0  {F0321C2D-5314-4E2A-BD32-81A75EC77A6C}  SMAS.subpse.territorio_ed01   \n",
+       "1  {AA31417F-4A51-400E-BF87-705B651BEEEB}  SMAS.subpse.territorio_ed01   \n",
+       "2  {53A7EF74-5176-4391-934C-D6312299CC67}  SMAS.subpse.territorio_ed01   \n",
+       "3  {26843F25-DBB9-4A81-9064-BF646960E383}  SMAS.subpse.territorio_ed01   \n",
+       "4  {29A0CBFE-5BBF-4198-85D4-C1CFA89C7ECD}  SMAS.subpse.territorio_ed01   \n",
+       "\n",
+       "                         coordenadas  \n",
+       "0         -22.87452501, -43.46272009  \n",
+       "1         -22.91012883, -43.20369104  \n",
+       "2         -22.96156698, -43.16505788  \n",
+       "3          -22.92533655, -43.2329918  \n",
+       "4  7463664.90550056, 681189.80409656  "
+      ]
+     },
+     "metadata": {},
+     "output_type": "display_data"
+    },
+    {
+     "name": "stdout",
+     "output_type": "stream",
+     "text": [
+      "objectid                    string[python]\n",
+      "globalid                    string[python]\n",
+      "repeat_unidade_calculo      string[python]\n",
+      "turno_abordagem             string[python]\n",
+      "data_abordagem                      object\n",
+      "dia_num_data_abordagem      string[python]\n",
+      "mes_abrev_data_abordagem    string[python]\n",
+      "ano_num_data_abordagem      string[python]\n",
+      "bairro_abord                string[python]\n",
+      "x                           string[python]\n",
+      "y                           string[python]\n",
+      "resp_abordagem              string[python]\n",
+      "resp_abordagem1             string[python]\n",
+      "aceita_acolhimento          string[python]\n",
+      "parentrowid                 string[python]\n",
+      "created_user                string[python]\n",
+      "coordenadas                 string[python]\n",
+      "dtype: object\n",
+      "Linhas: 275728\n"
+     ]
+    }
+   ],
+   "source": [
+    "# Seleciona e trata as colunas que vão para o BigQuery\n",
+    "import pandas as pd\n",
+    "import re\n",
+    "from datetime import date\n",
+    "\n",
+    "COLS_KEEP = [\n",
+    "    \"objectid\",\n",
+    "    \"globalid\",\n",
+    "    \"repeat_unidade_calculo\",\n",
+    "    \"turno_abordagem\",\n",
+    "    \"data_abordagem\",\n",
+    "    \"dia_num_data_abordagem\",\n",
+    "    \"mes_abrev_data_abordagem\",\n",
+    "    \"ano_num_data_abordagem\",\n",
+    "    \"bairro_abord\",\n",
+    "    \"x\",\n",
+    "    \"y\",\n",
+    "    \"resp_abordagem\",\n",
+    "    \"resp_abordagem1\",\n",
+    "    \"aceita_acolhimento\",\n",
+    "    \"parentrowid\",\n",
+    "    \"created_user\",\n",
+    "]\n",
+    "\n",
+    "# 1️⃣ Copia apenas as colunas relevantes\n",
+    "df_out = df_smas[COLS_KEEP].copy()\n",
+    "\n",
+    "# 2️⃣ Função auxiliar → date | None\n",
+    "def to_date_obj(col):\n",
+    "    dt = pd.to_datetime(col, errors=\"coerce\", dayfirst=True)\n",
+    "    # .dt.date devolve objeto python date; NaT → NaN, então trocamos p/ None\n",
+    "    return dt.dt.date.where(~dt.isna(), None)\n",
+    "\n",
+    "# 3️⃣ Limpezas e normalizações\n",
+    "df_out[\"data_abordagem\"] = to_date_obj(df_out[\"data_abordagem\"])\n",
+    "\n",
+    "df_out[\"coordenadas\"] = df_out[\"y\"].astype(str) + \", \" + df_out[\"x\"].astype(str)\n",
+    "\n",
+    "# 4️⃣ Garante StringDtype nas demais colunas\n",
+    "for col in [\n",
+    "    \"objectid\",\n",
+    "    \"globalid\",\n",
+    "    \"repeat_unidade_calculo\",\n",
+    "    \"turno_abordagem\",\n",
+    "    \"dia_num_data_abordagem\",\n",
+    "    \"mes_abrev_data_abordagem\",\n",
+    "    \"ano_num_data_abordagem\",\n",
+    "    \"bairro_abord\",\n",
+    "    \"x\",\n",
+    "    \"y\",\n",
+    "    \"resp_abordagem\",\n",
+    "    \"resp_abordagem1\",\n",
+    "    \"aceita_acolhimento\",\n",
+    "    \"parentrowid\",\n",
+    "    \"created_user\",\n",
+    "    \"coordenadas\",\n",
+    "]:\n",
+    "    df_out[col] = df_out[col].astype(\"string\")\n",
+    "\n",
+    "# 5️⃣ Inspeção rápida\n",
+    "display(df_out.head())\n",
+    "print(df_out.dtypes)\n",
+    "print(\"Linhas:\", len(df_out))"
+   ]
+  },
+  {
+   "cell_type": "markdown",
+   "id": "872150af",
+   "metadata": {},
+   "source": [
+    "**Subida dos dados para o BigQuery**\n",
+    "- Objetivo: esquematizar as tabelas do bq e subir os dados tratados"
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": 43,
+   "id": "c5d396dd",
+   "metadata": {},
+   "outputs": [
+    {
+     "name": "stderr",
+     "output_type": "stream",
+     "text": [
+      "/root/venv-abordagem/lib/python3.11/site-packages/google/cloud/bigquery/_pandas_helpers.py:489: FutureWarning: Loading pandas DataFrame into BigQuery will require pandas-gbq package version 0.26.1 or greater in the future. Tried to import pandas-gbq and got: No module named 'pandas_gbq'\n",
+      "  warnings.warn(\n"
+     ]
+    },
+    {
+     "name": "stdout",
+     "output_type": "stream",
+     "text": [
+      "✔️ rj-smas-dev:teste_abordagem.repeat_siurb com 275728 linhas.\n"
+     ]
+    }
+   ],
+   "source": [
+    "# Sobe df_out (preparado no BLOCO 1) para o BigQuery\n",
+    "import subprocess\n",
+    "from google.oauth2.credentials import Credentials\n",
+    "from google.cloud import bigquery\n",
+    "\n",
+    "# 1️⃣ Pega um access-token da conta que já fez `gcloud auth login`\n",
+    "access_token = subprocess.check_output(\n",
+    "    [\"gcloud\", \"auth\", \"application-default\", \"print-access-token\"],\n",
+    "    text=True,\n",
+    ").strip()\n",
+    "\n",
+    "# 2️⃣ Instancia credenciais *sem* refresh nem quota-project\n",
+    "creds = Credentials(token=access_token)\n",
+    "\n",
+    "# 3️⃣ Cria o cliente BigQuery usando essas credenciais\n",
+    "PROJECT_ID  = \"rj-smas-dev\"          # defina explicitamente\n",
+    "DATASET_ID  = \"teste_abordagem\"\n",
+    "TABLE_ID    = \"repeat_siurb\"\n",
+    "TABLE_REF   = f\"{PROJECT_ID}.{DATASET_ID}.{TABLE_ID}\"\n",
+    "\n",
+    "client = bigquery.Client(project=PROJECT_ID, credentials=creds)\n",
+    "\n",
+    "# 4️⃣ (opcional) cria dataset via API; se falhar, crie no CLI: `bq mk`\n",
+    "try:\n",
+    "    client.create_dataset(DATASET_ID, exists_ok=True)\n",
+    "except Exception as e:\n",
+    "    print(\"⚠️  Não consegui criar o dataset via API – \"\n",
+    "          \"crie no CLI se precisar:\", e)\n",
+    "\n",
+    "# 5️⃣ esquema da tabela\n",
+    "schema = [\n",
+    "    bigquery.SchemaField(\"objectid\", \"STRING\"),\n",
+    "    bigquery.SchemaField(\"globalid\", \"STRING\"),\n",
+    "    bigquery.SchemaField(\"repeat_unidade_calculo\", \"STRING\"),\n",
+    "    bigquery.SchemaField(\"turno_abordagem\", \"STRING\"),\n",
+    "    bigquery.SchemaField(\"data_abordagem\", \"DATE\"),  # objeto datetime convertido no carregamento\n",
+    "    bigquery.SchemaField(\"dia_num_data_abordagem\", \"STRING\"),\n",
+    "    bigquery.SchemaField(\"mes_abrev_data_abordagem\", \"STRING\"),\n",
+    "    bigquery.SchemaField(\"ano_num_data_abordagem\", \"STRING\"),\n",
+    "    bigquery.SchemaField(\"bairro_abord\", \"STRING\"),\n",
+    "    bigquery.SchemaField(\"x\", \"STRING\"),\n",
+    "    bigquery.SchemaField(\"y\", \"STRING\"),\n",
+    "    bigquery.SchemaField(\"resp_abordagem\", \"STRING\"),\n",
+    "    bigquery.SchemaField(\"resp_abordagem1\", \"STRING\"),\n",
+    "    bigquery.SchemaField(\"aceita_acolhimento\", \"STRING\"),\n",
+    "    bigquery.SchemaField(\"parentrowid\", \"STRING\"),\n",
+    "    bigquery.SchemaField(\"created_user\", \"STRING\"),\n",
+    "    bigquery.SchemaField(\"coordenadas\", \"STRING\"),\n",
+    "]\n",
+    "\n",
+    "job_config = bigquery.LoadJobConfig(\n",
+    "    schema=schema,\n",
+    "    write_disposition=\"WRITE_TRUNCATE\",\n",
+    ")\n",
+    "\n",
+    "# 6️⃣ carrega o df_out (gerado no BLOCO 1)\n",
+    "load_job = client.load_table_from_dataframe(df_out, TABLE_REF, job_config=job_config)\n",
+    "load_job.result()          # espera terminar\n",
+    "\n",
+    "table = client.get_table(TABLE_REF)\n",
+    "print(f\"✔️ {table.full_table_id} com {table.num_rows} linhas.\")"
+   ]
+  }
+ ],
+ "metadata": {
+  "kernelspec": {
+   "display_name": "venv-abordagem",
+   "language": "python",
+   "name": "python3"
+  },
+  "language_info": {
+   "codemirror_mode": {
+    "name": "ipython",
+    "version": 3
+   },
+   "file_extension": ".py",
+   "mimetype": "text/x-python",
+   "name": "python",
+   "nbconvert_exporter": "python",
+   "pygments_lexer": "ipython3",
+   "version": "3.11.2"
+  }
+ },
+ "nbformat": 4,
+ "nbformat_minor": 5
+}
+</file>
+
+<file path=".gitignore">
+# credenciais
+.env
+</file>
+
+<file path="Dockerfile">
+# Dockerfile for ARCgis → BigQuery + dbt pipeline
+
+FROM python:3.11-slim
+
+# Install OS dependencies (if needed; e.g., git for dbt packages)
+RUN apt-get update \
+    && apt-get install -y --no-install-recommends git \
+    && rm -rf /var/lib/apt/lists/*
+
+# Create app directory
+WORKDIR /app
+
+# Copy Python pipeline and dbt project
+COPY pipeline/ ./pipeline
+COPY queries/ ./queries
+
+# Copy requirements and install Python dependencies
+COPY requirements.txt ./
+RUN pip install --no-cache-dir -r requirements.txt \
+    && pip install --no-cache-dir dbt-core dbt-bigquery
+
+# Environment variables for credentials
+ENV GOOGLE_APPLICATION_CREDENTIALS=/etc/gcp/credentials/leoneabreu-smas.json
+
+# Default command: run the ELT pipeline (bronze + dbt gold)
+CMD ["python", "-m", "pipeline.flows"]
+</file>
+
+<file path="requirements.txt">
+agate==1.9.1
+aiohappyeyeballs==2.6.1
+aiohttp==3.12.1
+aiosignal==1.3.2
+altair==5.5.0
+annotated-types==0.7.0
+anyio==4.9.0
+arcgis==2.4.1
+argon2-cffi==23.1.0
+argon2-cffi-bindings==21.2.0
+arrow==1.3.0
+asttokens==3.0.0
+async-lru==2.0.5
+attrs==25.3.0
+babel==2.17.0
+backports.tarfile==1.2.0
+beautifulsoup4==4.13.4
+bleach==6.2.0
+blinker==1.9.0
+cachetools==5.5.2
+certifi==2025.4.26
+cffi==1.17.1
+charset-normalizer==3.4.2
+click==8.2.0
+cloudpickle==3.1.1
+colorama==0.4.6
+comm==0.2.2
+contourpy==1.3.2
+cryptography==44.0.3
+cycler==0.12.1
+daff==1.4.2
+dask==2024.12.1
+dask-expr==1.1.21
+db-dtypes==1.4.3
+dbt-adapters==1.15.3
+dbt-bigquery==1.9.2
+dbt-common==1.25.0
+dbt-core==1.9.4
+dbt-extractor==0.6.0
+dbt-protos==1.0.315
+dbt-semantic-interfaces==0.7.4
+debugpy==1.8.14
+decorator==5.2.1
+deepdiff==7.0.1
+defusedxml==0.7.1
+dlt==1.11.0
+docstring_parser==0.16
+executing==2.2.0
+fastjsonschema==2.21.1
+fonttools==4.58.0
+fqdn==1.5.1
+frozenlist==1.6.0
+fsspec==2025.5.1
+gcloud==0.18.3
+gcsfs==2025.5.1
+geomet==1.1.0
+gitdb==4.0.12
+GitPython==3.1.44
+giturlparse==0.12.0
+google-api-core==2.24.2
+google-auth==2.40.1
+google-auth-oauthlib==1.2.2
+google-cloud-aiplatform==1.94.0
+google-cloud-bigquery==3.32.0
+google-cloud-bigquery-storage==2.31.0
+google-cloud-core==2.4.3
+google-cloud-dataproc==5.18.1
+google-cloud-resource-manager==1.14.2
+google-cloud-storage==2.19.0
+google-crc32c==1.7.1
+google-genai==1.16.1
+google-resumable-media==2.7.2
+googleapis-common-protos==1.70.0
+grpc-google-iam-v1==0.14.2
+grpcio==1.72.0rc1
+grpcio-status==1.71.0
+h11==0.16.0
+hexbytes==1.3.1
+httpcore==1.0.9
+httplib2==0.22.0
+httpx==0.28.1
+humanize==4.12.3
+idna==3.10
+importlib-metadata==6.11.0
+ipykernel==6.29.5
+ipython==9.2.0
+ipython_pygments_lexers==1.1.1
+isodate==0.6.1
+isoduration==20.11.0
+jaraco.classes==3.4.0
+jaraco.context==6.0.1
+jaraco.functools==4.1.0
+jedi==0.19.2
+jeepney==0.9.0
+Jinja2==3.1.6
+json5==0.12.0
+jsonpath-ng==1.7.0
+jsonpointer==3.0.0
+jsonschema==4.23.0
+jsonschema-specifications==2025.4.1
+jupyter-events==0.12.0
+jupyter-lsp==2.2.5
+jupyter_client==8.6.3
+jupyter_core==5.7.2
+jupyter_server==2.16.0
+jupyter_server_terminals==0.5.3
+jupyterlab==4.4.2
+jupyterlab_pygments==0.3.0
+jupyterlab_server==2.27.3
+keyring==25.6.0
+kiwisolver==1.4.8
+leather==0.4.0
+locket==1.0.0
+lxml==5.4.0
+makefun==1.16.0
+markdown-it-py==3.0.0
+MarkupSafe==3.0.2
+mashumaro==3.14
+matplotlib==3.10.3
+matplotlib-inline==0.1.7
+mdurl==0.1.2
+mistune==3.1.3
+more-itertools==10.7.0
+msgpack==1.1.0
+multidict==6.4.4
+narwhals==1.41.0
+nbclient==0.10.2
+nbconvert==7.16.6
+nbformat==5.10.4
+nest-asyncio==1.6.0
+networkx==3.4.2
+notebook_shim==0.2.4
+numpy==1.26.4
+oauth2client==4.1.3
+oauthlib==3.2.2
+ordered-set==4.1.0
+orjson==3.10.18
+overrides==7.7.0
+packaging==24.2
+pandas==2.2.3
+pandas-gbq==0.29.0
+pandocfilters==1.5.1
+parsedatetime==2.6
+parso==0.8.4
+partd==1.4.2
+pathspec==0.12.1
+pathvalidate==3.2.3
+pendulum==3.1.0
+pexpect==4.9.0
+pillow==11.2.1
+platformdirs==4.3.8
+pluggy==1.6.0
+ply==3.11
+prometheus_client==0.21.1
+prompt_toolkit==3.0.51
+propcache==0.3.1
+proto-plus==1.26.1
+protobuf==5.29.4
+psutil==7.0.0
+ptyprocess==0.7.0
+pure_eval==0.2.3
+puremagic==1.29
+pyarrow==16.1.0
+pyasn1==0.6.1
+pyasn1_modules==0.4.2
+pycparser==2.22
+pydantic==2.11.4
+pydantic-settings==2.9.1
+pydantic_core==2.33.2
+pydata-google-auth==1.9.1
+pydeck==0.9.1
+Pygments==2.19.1
+pylerc==4.0
+pyparsing==3.2.3
+pyspnego==0.11.2
+python-dateutil==2.9.0.post0
+python-dotenv==1.1.0
+python-json-logger==3.3.0
+python-slugify==8.0.4
+pytimeparse==1.1.8
+pytz==2025.2
+PyYAML==6.0.2
+pyzmq==26.4.0
+referencing==0.36.2
+requests==2.32.3
+requests-oauthlib==2.0.0
+requests-toolbelt==1.0.0
+requirements-parser==0.13.0
+rfc3339-validator==0.1.4
+rfc3986-validator==0.1.1
+rich==14.0.0
+rich-argparse==1.7.1
+rpds-py==0.24.0
+rsa==4.9.1
+SecretStorage==3.3.3
+semver==3.0.4
+Send2Trash==1.8.3
+shapely==2.1.1
+simplejson==3.20.1
+six==1.17.0
+smmap==5.0.2
+sniffio==1.3.1
+snowplow-tracker==1.1.0
+soupsieve==2.7
+sqlglot==26.21.0
+sqlparse==0.5.3
+stack-data==0.6.3
+streamlit==1.45.1
+tenacity==9.1.2
+terminado==0.18.1
+text-unidecode==1.3
+tinycss2==1.4.0
+toml==0.10.2
+tomlkit==0.13.2
+toolz==1.0.0
+tornado==6.4.2
+tqdm==4.67.1
+traitlets==5.14.3
+truststore==0.10.1
+types-python-dateutil==2.9.0.20241206
+typing-inspection==0.4.0
+typing_extensions==4.13.2
+tzdata==2025.2
+ujson==5.10.0
+uri-template==1.3.0
+urllib3==2.4.0
+watchdog==6.0.0
+wcwidth==0.2.13
+webcolors==24.11.1
+webencodings==0.5.1
+websocket-client==1.8.0
+websockets==15.0.1
+yarl==1.20.0
+zipp==3.21.0
+</file>
+
+</files>
