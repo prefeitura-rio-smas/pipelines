@@ -47,11 +47,9 @@ def incremental_flow() -> None:
 
     # 4️⃣ Transform (dbt)
     print("🔄 Executando dbt models (gold)...")
+
     result = subprocess.run(
-        [
-            sys.executable, "-m", "dbt", "run",
-            "--project-dir", str(DBT_PROJECT_DIR)
-        ],
+        ["dbt", "run", "--project-dir", str(DBT_PROJECT_DIR)],
         cwd=DBT_PROJECT_DIR,
         capture_output=True,
         text=True,
