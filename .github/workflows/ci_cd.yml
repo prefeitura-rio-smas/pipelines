@@ -31,7 +31,7 @@ jobs:
     needs: test
     runs-on: ubuntu-latest
     env:
-      DBT_PROFILES_DIR: ./queries    # onde está profiles.yml
+      DBT_PROFILES_DIR: queries
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-python@v5
@@ -42,8 +42,7 @@ jobs:
 
       - name: dbt compile
         run: |
-          cd queries
-          dbt parse            # ou: dbt compile
+          dbt parse --project-dir queries --profiles-dir queries
 
   build-push:                       # 3️⃣ publica imagem só se smoke OK
     needs: smoke-dbt
