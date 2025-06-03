@@ -2,17 +2,15 @@ name: CI · Build · Push
 
 on:
   push:
-    branches: [main]        
+    branches: [main]
   pull_request:
-  workflow_dispatch:        # permite disparo manual
+  workflow_dispatch:
 
 jobs:
-  test:
+  test:                              # 1️⃣ lint + pytest
     runs-on: ubuntu-latest
-
     steps:
       - uses: actions/checkout@v4
-
       - uses: actions/setup-python@v5
         with: { python-version: '3.11' }
 
@@ -29,16 +27,33 @@ jobs:
       - name: Tests
         run: pytest || echo "⚠️  Ainda sem testes — adicione depois"
 
-  build-push:
-    needs: test              # só builda se os testes passarem
+  smoke-dbt:                         # 2️⃣ compila o dbt
+    needs: test
+    runs-on: ubuntu-latest
+    env:
+      DBT_PROFILES_DIR: ./queries    # onde está profiles.yml
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with: { python-version: '3.11' }
+
+      - name: Install dbt only
+        run: pip install --quiet dbt-core dbt-bigquery
+
+      - name: dbt compile
+        run: |
+          cd queries
+          dbt parse            # ou: dbt compile
+
+  build-push:                       # 3️⃣ publica imagem só se smoke OK
+    needs: smoke-dbt
     runs-on: ubuntu-latest
     permissions:
       contents: read
-      packages: write        # publicar no GHCR
+      packages: write
 
     steps:
       - uses: actions/checkout@v4
-
       - name: Setup Buildx
         uses: docker/setup-buildx-action@v3
 

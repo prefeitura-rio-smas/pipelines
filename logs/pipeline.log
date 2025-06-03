@@ -2269,3 +2269,49 @@ A general exception was raised: HTTPSConnectionPool(host='pgeo3.rio.rj.gov.br', 
 [0m18:05:13  Done. PASS=2 WARN=0 ERROR=0 SKIP=0 TOTAL=2
 
 ✅ dbt concluído com sucesso.
+↳ Extraindo abordagem/ficha (layer 0)…
+   • 179,596 linhas → abordagem_ficha_raw
+↳ Extraindo abordagem/repeat (layer 1)…
+   • 254,757 linhas → abordagem_repeat_raw
+🔄 Executando dbt models (gold)...
+[0m19:04:52  Running with dbt=1.9.4
+[0m19:04:57  Registered adapter: bigquery=1.9.2
+[0m19:04:58  Found 2 models, 2 sources, 493 macros
+[0m19:04:58  
+[0m19:04:58  Concurrency: 2 threads (target='dev')
+[0m19:04:58  
+[0m19:04:59  1 of 2 START sql table model dashboard_arcgis.abordagem_ficha .................. [RUN]
+[0m19:04:59  2 of 2 START sql table model dashboard_arcgis.abordagem_repeat ................. [RUN]
+[0m19:05:09  2 of 2 OK created sql table model dashboard_arcgis.abordagem_repeat ............ [[32mCREATE TABLE (254.8k rows, 292.4 MiB processed)[0m in 10.09s]
+[0m19:05:24  1 of 2 OK created sql table model dashboard_arcgis.abordagem_ficha ............. [[32mCREATE TABLE (179.6k rows, 30.2 MiB processed)[0m in 25.39s]
+[0m19:05:25  
+[0m19:05:25  Finished running 2 table models in 0 hours 0 minutes and 26.32 seconds (26.32s).
+[0m19:05:25  
+[0m19:05:25  [32mCompleted successfully[0m
+[0m19:05:25  
+[0m19:05:25  Done. PASS=2 WARN=0 ERROR=0 SKIP=0 TOTAL=2
+
+✅ dbt concluído com sucesso.
+↳ Extraindo abordagem/ficha (layer 0)…
+   • 179,616 linhas → abordagem_ficha_raw
+↳ Extraindo abordagem/repeat (layer 1)…
+   • 254,775 linhas → abordagem_repeat_raw
+🔄 Executando dbt models (gold)...
+[0m20:04:46  Running with dbt=1.9.4
+[0m20:04:51  Registered adapter: bigquery=1.9.2
+[0m20:04:52  Found 2 models, 2 sources, 493 macros
+[0m20:04:52  
+[0m20:04:52  Concurrency: 2 threads (target='dev')
+[0m20:04:52  
+[0m20:04:52  1 of 2 START sql table model dashboard_arcgis.abordagem_ficha .................. [RUN]
+[0m20:04:52  2 of 2 START sql table model dashboard_arcgis.abordagem_repeat ................. [RUN]
+[0m20:04:58  1 of 2 OK created sql table model dashboard_arcgis.abordagem_ficha ............. [[32mCREATE TABLE (179.6k rows, 30.2 MiB processed)[0m in 5.26s]
+[0m20:05:03  2 of 2 OK created sql table model dashboard_arcgis.abordagem_repeat ............ [[32mCREATE TABLE (254.8k rows, 292.5 MiB processed)[0m in 10.98s]
+[0m20:05:03  
+[0m20:05:03  Finished running 2 table models in 0 hours 0 minutes and 11.88 seconds (11.88s).
+[0m20:05:03  
+[0m20:05:03  [32mCompleted successfully[0m
+[0m20:05:03  
+[0m20:05:03  Done. PASS=2 WARN=0 ERROR=0 SKIP=0 TOTAL=2
+
+✅ dbt concluído com sucesso.
