@@ -10,7 +10,7 @@ RUN pip install --no-cache-dir -r requirements.txt
 
 # Código + script de entrada
 COPY . .
-ENV DBT_PROFILES_DIR=/app/dbt_profile
+ENV DBT_PROFILES_DIR=/app/queries
 COPY entrypoint.sh .
 RUN chmod +x /app/entrypoint.sh
 
