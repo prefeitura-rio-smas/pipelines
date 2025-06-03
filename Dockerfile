@@ -10,6 +10,10 @@ RUN pip install --no-cache-dir -r requirements.txt
 
 # Código + script de entrada
 COPY . .
+
+# garante que o profile seja incluído
+COPY queries/profiles.yml /app/queries/profiles.yml
+
 ENV DBT_PROFILES_DIR=/app/queries
 COPY entrypoint.sh .
 RUN chmod +x /app/entrypoint.sh
