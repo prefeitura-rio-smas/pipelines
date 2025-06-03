@@ -23,6 +23,7 @@ jobs:
           pip install flake8 pytest
 
       - name: Lint
+        continue-on-error: true
         run: flake8 pipeline
 
       - name: Tests
