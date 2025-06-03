@@ -2200,3 +2200,26 @@ A general exception was raised: HTTPSConnectionPool(host='pgeo3.rio.rj.gov.br', 
 [0m15:05:15  Done. PASS=2 WARN=0 ERROR=0 SKIP=0 TOTAL=2
 
 ✅ dbt concluído com sucesso.
+↳ Extraindo abordagem/ficha (layer 0)…
+   • 179,439 linhas → abordagem_ficha_raw
+↳ Extraindo abordagem/repeat (layer 1)…
+   • 254,575 linhas → abordagem_repeat_raw
+🔄 Executando dbt models (gold)...
+[0m16:04:52  Running with dbt=1.9.4
+[0m16:04:57  Registered adapter: bigquery=1.9.2
+[0m16:04:58  Found 2 models, 2 sources, 493 macros
+[0m16:04:58  
+[0m16:04:58  Concurrency: 2 threads (target='dev')
+[0m16:04:58  
+[0m16:04:59  1 of 2 START sql table model dashboard_arcgis.abordagem_ficha .................. [RUN]
+[0m16:04:59  2 of 2 START sql table model dashboard_arcgis.abordagem_repeat ................. [RUN]
+[0m16:05:04  1 of 2 OK created sql table model dashboard_arcgis.abordagem_ficha ............. [[32mCREATE TABLE (179.4k rows, 30.1 MiB processed)[0m in 5.12s]
+[0m16:05:11  2 of 2 OK created sql table model dashboard_arcgis.abordagem_repeat ............ [[32mCREATE TABLE (254.6k rows, 292.2 MiB processed)[0m in 11.72s]
+[0m16:05:11  
+[0m16:05:11  Finished running 2 table models in 0 hours 0 minutes and 12.66 seconds (12.66s).
+[0m16:05:11  
+[0m16:05:11  [32mCompleted successfully[0m
+[0m16:05:11  
+[0m16:05:11  Done. PASS=2 WARN=0 ERROR=0 SKIP=0 TOTAL=2
+
+✅ dbt concluído com sucesso.
