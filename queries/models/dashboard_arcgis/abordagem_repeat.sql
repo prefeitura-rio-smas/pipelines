@@ -242,7 +242,11 @@ SELECT
   flag_tuberculose,
   flag_ns_nr,
 
-  IFNULL(aceita_acolhimento, 'N/A') AS aceita_acolhimento_tratada,
+  CASE
+   WHEN aceita_acolhimento IS NULL THEN 'nao'
+   WHEN TRIM(LOWER(aceita_acolhimento)) = 'n/a' THEN 'nao'
+   ELSE aceita_acolhimento
+   END AS aceita_acolhimento_tratada,
   motivo_acolhimento_nao,
   outro_motivo,
 
