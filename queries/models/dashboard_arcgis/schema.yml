@@ -242,6 +242,10 @@ models:
         description: ""
       - name: encam_cras
         description: ""
+      - name: encaminhamento_rede
+        description: ""
+      - name: encaminhamento_rede_tratada
+        description: ""
       - name: flg_sem_encaminhamento
         description: ""
       - name: flg_encam_creas

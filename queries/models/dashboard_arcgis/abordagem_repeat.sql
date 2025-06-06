@@ -315,6 +315,32 @@ SELECT
    END AS encam_centropop_tratada,
   encam_cras,
 
+encaminhamento_rede,
+  ARRAY_TO_STRING(
+    ARRAY(
+      SELECT
+
+        CASE
+          WHEN LOWER(TRIM(part)) = 'cras' THEN 'CRAS'
+          WHEN LOWER(TRIM(part)) = 'defensoria_publica' THEN 'Defensoria Pública'
+          WHEN LOWER(TRIM(part)) = 'fundacao_leaoxii' THEN 'Fundação Leão XIII'
+          WHEN LOWER(TRIM(part)) = 'outros' THEN 'Outros'
+          WHEN LOWER(TRIM(part)) = 'creas' THEN 'CREAS'
+          WHEN LOWER(TRIM(part)) = 'conselho_tutelar' THEN 'Conselho Tutelar'
+          WHEN LOWER(TRIM(part)) = 'detran' THEN 'DETRAN'
+          WHEN LOWER(TRIM(part)) = 'receita_federal' THEN 'Receita Federal'
+          WHEN LOWER(TRIM(part)) = 'centro_pop' THEN 'Centro POP'
+          WHEN LOWER(TRIM(part)) = 'encaminhamento_de_saude' THEN 'Encaminhamento de Saúde'
+          WHEN LOWER(TRIM(part)) = 'cartorio' THEN 'Cartório'
+          WHEN LOWER(TRIM(part)) = 'delegacia' THEN 'Delegacia'
+          WHEN LOWER(TRIM(part)) = 'nao_houve_encaminhamento' THEN 'Sem encaminhamentos'
+          ELSE encaminhamento_rede
+        END
+      FROM UNNEST(SPLIT(encaminhamento_rede, ',')) AS part
+    ),
+    ', '
+  ) AS encaminhamento_rede_tratada,
+
   flg_sem_encaminhamento,
   flg_encam_creas,
   flg_encam_centropop,
