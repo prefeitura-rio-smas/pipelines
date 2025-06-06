@@ -315,7 +315,7 @@ SELECT
    END AS encam_centropop_tratada,
   encam_cras,
 
-encaminhamento_rede,
+  encaminhamento_rede,
   ARRAY_TO_STRING(
     ARRAY(
       SELECT
