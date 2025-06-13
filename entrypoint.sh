@@ -1,16 +1,21 @@
 #!/usr/bin/env bash
-set -euo pipefail           # aborta se qualquer comando falhar
+# Não use "set -e" para podermos tratar erros manualmente
+set -uo pipefail
+
+SUCCESS_DELAY="${SUCCESS_DELAY:-3600}"   # aguarda 1 h após sucesso
+RETRY_DELAY="${RETRY_DELAY:-3600}"       # aguarda 1 h após falha (pode mudar via -e)
+LOG_TAG="pipeline"
 
 while true; do
-  echo "⏱️  $(date) — disparando incremental_flow"
-  python -m pipeline.flows incremental_flow
-  status=$?
+  echo "⏱️  $(date) [$LOG_TAG] — disparando incremental_flow"
 
-  if [ $status -ne 0 ]; then
-    echo "❌  $(date) — fluxo falhou (exit $status). Encerrando contêiner."
-    exit $status            # encerra o script ⇒ contêiner para
+  # Executa o fluxo; $? guarda o exit code
+  if python -m pipeline.flows incremental_flow; then
+    echo "✅  $(date) [$LOG_TAG] — sucesso. Dormindo ${SUCCESS_DELAY}s…"
+    sleep "$SUCCESS_DELAY"
+  else
+    status=$?
+    echo "❌  $(date) [$LOG_TAG] — falhou (exit $status). Retentativa em ${RETRY_DELAY}s…"
+    sleep "$RETRY_DELAY"
   fi
-
-  echo "🏁  $(date) — ciclo concluído, dormindo 1 h"
-  sleep 28800
 done
