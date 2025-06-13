@@ -2315,3 +2315,23 @@ A general exception was raised: HTTPSConnectionPool(host='pgeo3.rio.rj.gov.br', 
 [0m20:05:03  Done. PASS=2 WARN=0 ERROR=0 SKIP=0 TOTAL=2
 
 ✅ dbt concluído com sucesso.
+Traceback (most recent call last):
+  File "<frozen runpy>", line 198, in _run_module_as_main
+  File "<frozen runpy>", line 88, in _run_code
+  File "/app/pipeline/flows.py", line 64, in <module>
+    incremental_flow()
+  File "/app/pipeline/flows.py", line 30, in incremental_flow
+    df = extract_arcgis(
+         ^^^^^^^^^^^^^^^
+  File "/app/pipeline/tasks.py", line 16, in extract_arcgis
+    return fetch_dataframe(account=account, feature_id=feature_id, layer=layer , where=where, max_records=max_records)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/app/pipeline/utils.py", line 35, in fetch_dataframe
+    fl  = get_feature_layer(account, feature_id, layer)
+          ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/app/pipeline/utils.py", line 25, in get_feature_layer
+    return item.layers[layer] 
+           ~~~~~~~~~~~^^^^^^^
+TypeError: 'NoneType' object is not subscriptable
+↳ Extraindo abordagem/ficha (layer 0)…
+A general exception was raised: HTTPSConnectionPool(host='pgeo3.rio.rj.gov.br', port=443): Max retries exceeded with url: /arcgis/rest/services/Hosted/service_38e6b1b9fd64490da151470cb0739fe9/FeatureServer (Caused by ResponseError('too many 503 error responses'))

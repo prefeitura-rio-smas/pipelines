@@ -1,0 +1,13 @@
+{
+    "version": "0.2.0",
+    "configurations": [
+        {
+            "name": "Python: Pipeline Flow",
+            "type": "debugpy",
+            "request": "launch",
+            "console": "integratedTerminal",
+            "cwd": "${workspaceFolder}", // Agora vai apontar para /root/pipelines/arcgis
+            "module": "pipeline.flows"
+        }
+    ]
+}

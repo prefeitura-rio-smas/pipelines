@@ -12,5 +12,5 @@ while true; do
   fi
 
   echo "🏁  $(date) — ciclo concluído, dormindo 1 h"
-  sleep 3600
+  sleep 28800
 done
