@@ -20,29 +20,29 @@ tokens AS (
 
     -- explode em palavras já normalizadas
     SPLIT(
-    -- 1) minúsculo + strip acentos
-    REGEXP_REPLACE(
+    TRIM(                                                         
       REGEXP_REPLACE(
-        LOWER(
-          REGEXP_REPLACE(NORMALIZE(repeat_nome_usuario, NFD), r'\p{M}', '')
+        REGEXP_REPLACE(
+          LOWER(
+            REGEXP_REPLACE(NORMALIZE(repeat_nome_usuario, NFD), r'\p{M}', '')  -- remove acentos
+          ),
+          r'[^a-z\s]', ' '        -- pontuação → espaço
         ),
-        r'[^a-z\s]',            -- 2) remove pontuação
-        ' '
-      ),
-      r'\s+', ' '              -- 3) espaços duplicados
+        r'\s+', ' '               -- espaços duplicados
+      )
     )
 , ' ')     AS arr_usuario,
     SPLIT(
-    -- 1) minúsculo + strip acentos
-    REGEXP_REPLACE(
+    TRIM(                                                         
       REGEXP_REPLACE(
-        LOWER(
-          REGEXP_REPLACE(NORMALIZE(repeat_nome_mae, NFD), r'\p{M}', '')
+        REGEXP_REPLACE(
+          LOWER(
+            REGEXP_REPLACE(NORMALIZE(repeat_nome_mae, NFD), r'\p{M}', '')  -- remove acentos
+          ),
+          r'[^a-z\s]', ' '        -- pontuação → espaço
         ),
-        r'[^a-z\s]',            -- 2) remove pontuação
-        ' '
-      ),
-      r'\s+', ' '              -- 3) espaços duplicados
+        r'\s+', ' '               -- espaços duplicados
+      )
     )
 ,     ' ')     AS arr_mae
   FROM base

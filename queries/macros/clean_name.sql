@@ -1,13 +1,13 @@
 {% macro clean_name(col) %}
-    -- 1) minúsculo + strip acentos
-    REGEXP_REPLACE(
+    TRIM(                                                         
       REGEXP_REPLACE(
-        LOWER(
-          REGEXP_REPLACE(NORMALIZE({{ col }}, NFD), r'\p{M}', '')
+        REGEXP_REPLACE(
+          LOWER(
+            REGEXP_REPLACE(NORMALIZE({{ col }}, NFD), r'\p{M}', '')  -- remove acentos
+          ),
+          r'[^a-z\s]', ' '        -- pontuação → espaço
         ),
-        r'[^a-z\s]',            -- 2) remove pontuação
-        ' '
-      ),
-      r'\s+', ' '              -- 3) espaços duplicados
+        r'\s+', ' '               -- espaços duplicados
+      )
     )
 {% endmacro %}
