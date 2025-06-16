@@ -7,25 +7,47 @@ on:
   workflow_dispatch:
 
 jobs:
-  test:                              # 1️⃣ lint + pytest
+  test:
     runs-on: ubuntu-latest
+
     steps:
       - uses: actions/checkout@v4
-      - uses: actions/setup-python@v5
-        with: { python-version: '3.11' }
 
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.10'
+
+      # instala Poetry de forma idempotente + cache ----------------------------
+      - uses: snok/install-poetry@v1
+        with:
+          version: 1.8.2
+          virtualenvs-create: true
+          virtualenvs-in-project: true
+          installer-parallel: true
+
+      - uses: actions/cache@v4
+        with:
+          path: |
+            ~/.cache/pypoetry
+            ~/.cache/pip
+            .venv            # venv local criada pelo Poetry
+          key: >-
+            ${{ runner.os }}-poetry-
+            ${{ hashFiles('poetry.lock') }}
+
+      # instala deps normais + as de dev (flake8/pytest) ------------------------
       - name: Install deps
         run: |
-          pip install --upgrade pip
-          pip install -r requirements.txt dbt-core dbt-bigquery
-          pip install flake8 pytest
+          poetry install --with dev --no-interaction --no-ansi
 
       - name: Lint
-        continue-on-error: true
-        run: flake8 pipeline
+        continue-on-error: true           # remova quando o código estiver limpo
+        run: poetry run flake8 pipeline
 
       - name: Tests
-        run: pytest || echo "⚠️  Ainda sem testes — adicione depois"
+        continue-on-error: true           # até criar testes de verdade
+        run: poetry run pytest
+
 
   smoke-dbt:                         # 2️⃣ compila o dbt
     needs: test
