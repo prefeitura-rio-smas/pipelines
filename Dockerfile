@@ -1,22 +1,22 @@
 # Imagem base enxuta
-FROM python:3.11-slim
+FROM python:3.10-slim
 
-# Diretório de trabalho
+# Instala o Poetry (versão fixa p/ reprodutibilidade)
+ENV POETRY_VERSION=1.8.2 \
+    POETRY_VIRTUALENVS_CREATE=false \
+    POETRY_HOME=/opt/poetry
+RUN pip install --no-cache-dir "poetry==$POETRY_VERSION"
+
 WORKDIR /app
 
-# Dependências
-COPY requirements.txt .
-RUN pip install --no-cache-dir -r requirements.txt
+# Copia manifests e instala dependências
+COPY pyproject.toml poetry.lock /app/
+RUN poetry install --no-interaction --no-ansi --no-dev
 
-# Código + script de entrada
-COPY . .
-
-# garante que o profile seja incluído
+# Copia o resto do código + entrypoint
+COPY . /app
 COPY queries/profiles.yml /app/queries/profiles.yml
-
-ENV DBT_PROFILES_DIR=/app/queries
-COPY entrypoint.sh .
+COPY entrypoint.sh /app/entrypoint.sh
 RUN chmod +x /app/entrypoint.sh
 
-# Container roda o loop horário
 ENTRYPOINT ["./entrypoint.sh"]
