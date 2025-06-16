@@ -2,7 +2,7 @@
   
     
 
-    create or replace table `rj-smas-dev`.`dashboard_arcgis`.`abordagem_ficha`
+    create or replace table `rj-smas-dev`.`dashboard_arcgis_dev`.`abordagem_ficha`
       
     
     
