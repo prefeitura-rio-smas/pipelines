@@ -2,6 +2,9 @@
 # Não use "set -e" para podermos tratar erros manualmente
 set -uo pipefail
 
+export DBT_TARGET="${DBT_TARGET:-prod}"          # força produção dentro do container
+export DBT_PROFILES_DIR="${DBT_PROFILES_DIR:-/app/queries}"
+
 SUCCESS_DELAY="${SUCCESS_DELAY:-3600}"   # aguarda 1 h após sucesso
 RETRY_DELAY="${RETRY_DELAY:-3600}"       # aguarda 1 h após falha (pode mudar via -e)
 LOG_TAG="pipeline"
