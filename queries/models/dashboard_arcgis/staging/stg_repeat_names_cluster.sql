@@ -1,80 +1,139 @@
-{{ config(materialized='view') }}
+{{ config(materialized = 'table') }}
 
+-- 1. Base com nomes normalizados
 WITH base AS (
-  SELECT
-    parentrowid,
-    nome_usuario_norm AS nm,
-    nome_mae_norm     AS mm
-  FROM {{ ref('stg_repeat_names') }}
+    SELECT
+        parentrowid,
+        nome_usuario_norm AS nm,
+        nome_mae_norm     AS mm,
+        ano_num_data_abordagem
+    FROM {{ ref('stg_repeat_names') }}
 ),
 
--- 1) BLOQUEIO por SOUNDEX (evita pair-wise N²)
-blocked AS (
-  SELECT *,
-         SOUNDEX(nm) AS sx_nm,
-         SOUNDEX(mm) AS sx_mm
-  FROM base
+-- 2. Bloqueio A  (SOUNDEX do nome)  ·········································
+blk_a AS (
+    SELECT
+        *,
+        SOUNDEX(nm) AS blk
+    FROM base
+    QUALIFY ROW_NUMBER() OVER (PARTITION BY blk ORDER BY parentrowid) <= 2000
 ),
 
--- 2) GERAR pares só dentro do bloco
+pairs_a AS (
+    SELECT
+        a.parentrowid AS id_a,
+        b.parentrowid AS id_b,
+        a.nm, a.mm,
+        b.nm AS nm_b, b.mm AS mm_b
+    FROM blk_a a
+    JOIN blk_a b USING (blk)
+    WHERE a.parentrowid < b.parentrowid
+),
+
+-- 3. Bloqueio B  (SOUNDEX do nome + último sobrenome da mãe) ···············
+blk_b AS (
+    SELECT
+        *,
+        CONCAT(
+          SOUNDEX(nm), '_',
+          SOUNDEX(SPLIT(mm, ' ')[SAFE_OFFSET(-1)])  -- último token
+        ) AS blk
+    FROM base
+    QUALIFY ROW_NUMBER() OVER (PARTITION BY blk ORDER BY parentrowid) <= 2000
+),
+
+pairs_b AS (
+    SELECT
+        a.parentrowid AS id_a,
+        b.parentrowid AS id_b,
+        a.nm, a.mm,
+        b.nm AS nm_b, b.mm AS mm_b
+    FROM blk_b a
+    JOIN blk_b b USING (blk)
+    WHERE a.parentrowid < b.parentrowid
+),
+
+-- 4. União dos pares candidatos ·············································
 pairs AS (
-  SELECT
-    a.parentrowid AS id_a,
-    b.parentrowid AS id_b,
-
-    EDIT_DISTANCE(a.nm, b.nm) AS d_nm,
-    EDIT_DISTANCE(a.mm, b.mm) AS d_mm,
-
-    -- tokens
-    SPLIT(a.nm, ' ') AS arr_nm_a,
-    SPLIT(b.nm, ' ') AS arr_nm_b,
-    SPLIT(a.mm, ' ') AS arr_mm_a,
-    SPLIT(b.mm, ' ') AS arr_mm_b
-  FROM blocked a
-  JOIN blocked b
-    ON a.sx_nm = b.sx_nm AND a.sx_mm = b.sx_mm
-   AND a.parentrowid < b.parentrowid             -- evita espelho
+    SELECT * FROM pairs_a
+    UNION ALL
+    SELECT * FROM pairs_b
 ),
 
--- 3) MÉTRICAS de contenção (tokens_inter / tokens_menor)
+-- 5. Métricas de distância e contenção ······································
 scored AS (
-  SELECT *,
-    ARRAY_LENGTH(
-      (SELECT ARRAY_AGG(x) FROM UNNEST(arr_nm_a) x
-                             INNER JOIN UNNEST(arr_nm_b) y ON x=y)
-    ) / LEAST(ARRAY_LENGTH(arr_nm_a), ARRAY_LENGTH(arr_nm_b))         AS cont_nm,
+    SELECT
+        id_a, id_b,
+        EDIT_DISTANCE(nm,  nm_b) AS d_nm,
+        EDIT_DISTANCE(mm,  mm_b) AS d_mm,
 
-    ARRAY_LENGTH(
-      (SELECT ARRAY_AGG(x) FROM UNNEST(arr_mm_a) x
-                             INNER JOIN UNNEST(arr_mm_b) y ON x=y)
-    ) / LEAST(ARRAY_LENGTH(arr_mm_a), ARRAY_LENGTH(arr_mm_b))         AS cont_mm
-  FROM pairs
+        ARRAY_LENGTH(
+          ARRAY(
+            SELECT x FROM UNNEST(SPLIT(nm, ' ')) x
+            INTERSECT DISTINCT
+            SELECT y FROM UNNEST(SPLIT(nm_b,' ')) y
+          )
+        ) / LEAST(
+              ARRAY_LENGTH(SPLIT(nm,  ' ')),
+              ARRAY_LENGTH(SPLIT(nm_b,' '))
+          )                                   AS cont_nm,
+
+        ARRAY_LENGTH(
+          ARRAY(
+            SELECT x FROM UNNEST(SPLIT(mm, ' ')) x
+            INTERSECT DISTINCT
+            SELECT y FROM UNNEST(SPLIT(mm_b,' ')) y
+          )
+        ) / LEAST(
+              ARRAY_LENGTH(SPLIT(mm,  ' ')),
+              ARRAY_LENGTH(SPLIT(mm_b,' '))
+          )                                   AS cont_mm
+    FROM pairs
 ),
 
--- 4) REGRA DE MATCH
+-- 6. Pares que satisfazem a regra de duplicidade ····························
 dupes AS (
-  SELECT id_a, id_b
-  FROM scored
-  WHERE
-        (d_nm <= 2 OR cont_nm >= 0.8)
-    AND (d_mm <= 2 OR cont_mm >= 0.8)
+    SELECT id_a, id_b
+    FROM scored
+    WHERE (d_nm <= 2 OR cont_nm >= 0.8)
+      AND (d_mm <= 2 OR cont_mm >= 0.8)
 ),
 
--- 5) CLUSTER  ➜ menor parentrowid do grupo
-cluster_map AS (
-  SELECT id_a AS parentrowid, LEAST(id_a, MIN(id_b)) AS seed
-  FROM dupes
-  GROUP BY id_a
+-- 7. Grafo não-direcionado (componentes conexas) ····························
+graph AS (
+    SELECT parentrowid, parentrowid AS neigh FROM base
+    UNION ALL
+    SELECT id_a, id_b FROM dupes
+    UNION ALL
+    SELECT id_b, id_a FROM dupes
+),
 
-  UNION ALL
+seed AS (
+    SELECT
+        parentrowid,
+        MIN(neigh) OVER (PARTITION BY parentrowid) AS cluster_seed
+    FROM graph
+),
 
-  SELECT parentrowid, parentrowid
-  FROM base                                   -- singletons
+-- 8. Resultado final (uma linha por parentrowid) ····························
+final AS (
+    SELECT
+        b.parentrowid,
+        b.nm,
+        b.mm,
+        b.ano_num_data_abordagem,
+        MIN(cluster_seed) OVER (PARTITION BY cluster_seed) AS cluster_id,
+        COUNT(*)        OVER (PARTITION BY cluster_seed)   AS cluster_size
+    FROM base b
+    JOIN seed USING (parentrowid)
 )
 
 SELECT
-  b.*,
-  MIN(seed) OVER (PARTITION BY seed) AS cluster_id,
-  COUNT(*)  OVER (PARTITION BY seed) AS cluster_size
-FROM base b
-LEFT JOIN cluster_map USING (parentrowid)
+    parentrowid,
+    nm,
+    mm,
+    ano_num_data_abordagem,
+    cluster_id,
+    cluster_size,
+    cluster_size > 1 AS is_duplicado
+FROM final

@@ -4082,3 +4082,1017 @@ JOIN clustered USING (parentrowid);;
 [0m16:23:46.645257 [debug] [MainThread]: Sending event: {'category': 'dbt', 'action': 'invocation', 'label': 'end', 'context': [<snowplow_tracker.self_describing_json.SelfDescribingJson object at 0x7ff767d49450>, <snowplow_tracker.self_describing_json.SelfDescribingJson object at 0x7ff747b83bb0>, <snowplow_tracker.self_describing_json.SelfDescribingJson object at 0x7ff766ef7cd0>]}
 [0m16:23:46.645795 [debug] [MainThread]: Flushing usage events
 [0m16:23:47.210168 [debug] [MainThread]: An error was encountered while trying to flush usage events
+[0m17:23:24.986579 [debug] [MainThread]: Sending event: {'category': 'dbt', 'action': 'invocation', 'label': 'start', 'context': [<snowplow_tracker.self_describing_json.SelfDescribingJson object at 0x7ff746f7d4b0>, <snowplow_tracker.self_describing_json.SelfDescribingJson object at 0x7ff74616bc40>, <snowplow_tracker.self_describing_json.SelfDescribingJson object at 0x7ff74616bbe0>]}
+
+
+============================== 17:23:24.990371 | d385a2cc-f69d-4baa-8c45-63b66dd37874 ==============================
+[0m17:23:24.990371 [info ] [MainThread]: Running with dbt=1.9.4
+[0m17:23:24.991027 [debug] [MainThread]: running dbt with arguments {'printer_width': '80', 'indirect_selection': 'eager', 'log_cache_events': 'False', 'write_json': 'True', 'partial_parse': 'True', 'cache_selected_only': 'False', 'warn_error': 'None', 'fail_fast': 'False', 'debug': 'False', 'log_path': 'queries/logs', 'profiles_dir': 'queries', 'version_check': 'True', 'use_colors': 'True', 'use_experimental_parser': 'False', 'empty': 'False', 'quiet': 'False', 'no_print': 'None', 'warn_error_options': 'WarnErrorOptions(include=[], exclude=[])', 'static_parser': 'True', 'log_format': 'default', 'introspect': 'True', 'target_path': 'None', 'invocation_command': 'dbt run --project-dir queries --profiles-dir queries --select stg_repeat_names_cluster', 'send_anonymous_usage_stats': 'True'}
+[0m17:23:28.741784 [debug] [MainThread]: Sending event: {'category': 'dbt', 'action': 'project_id', 'label': 'd385a2cc-f69d-4baa-8c45-63b66dd37874', 'context': [<snowplow_tracker.self_describing_json.SelfDescribingJson object at 0x7ff74616bd30>]}
+[0m17:23:28.855271 [debug] [MainThread]: Sending event: {'category': 'dbt', 'action': 'adapter_info', 'label': 'd385a2cc-f69d-4baa-8c45-63b66dd37874', 'context': [<snowplow_tracker.self_describing_json.SelfDescribingJson object at 0x7ff72700fdc0>]}
+[0m17:23:28.856278 [info ] [MainThread]: Registered adapter: bigquery=1.9.2
+[0m17:23:29.130268 [debug] [MainThread]: checksum: 53ed91fada2233efb98368d1716b44ab532c83a9c293cf1890b7905d5b45fb25, vars: {}, profile: , target: dev, version: 1.9.4
+[0m17:23:29.305579 [debug] [MainThread]: Partial parsing enabled: 0 files deleted, 0 files added, 1 files changed.
+[0m17:23:29.306532 [debug] [MainThread]: Partial parsing: updated file: queries://models/dashboard_arcgis/staging/stg_repeat_names_cluster.sql
+[0m17:23:29.792427 [debug] [MainThread]: Sending event: {'category': 'dbt', 'action': 'load_project', 'label': 'd385a2cc-f69d-4baa-8c45-63b66dd37874', 'context': [<snowplow_tracker.self_describing_json.SelfDescribingJson object at 0x7ff726984130>]}
+[0m17:23:29.916056 [debug] [MainThread]: Wrote artifact WritableManifest to queries/target/manifest.json
+[0m17:23:29.918602 [debug] [MainThread]: Wrote artifact SemanticManifest to queries/target/semantic_manifest.json
+[0m17:23:29.932855 [debug] [MainThread]: Sending event: {'category': 'dbt', 'action': 'resource_counts', 'label': 'd385a2cc-f69d-4baa-8c45-63b66dd37874', 'context': [<snowplow_tracker.self_describing_json.SelfDescribingJson object at 0x7ff726985a80>]}
+[0m17:23:29.933705 [info ] [MainThread]: Found 4 models, 2 sources, 494 macros
+[0m17:23:29.934147 [debug] [MainThread]: Sending event: {'category': 'dbt', 'action': 'runnable_timing', 'label': 'd385a2cc-f69d-4baa-8c45-63b66dd37874', 'context': [<snowplow_tracker.self_describing_json.SelfDescribingJson object at 0x7ff747b39cc0>]}
+[0m17:23:29.935862 [info ] [MainThread]: 
+[0m17:23:29.936343 [info ] [MainThread]: Concurrency: 2 threads (target='dev')
+[0m17:23:29.936764 [info ] [MainThread]: 
+[0m17:23:29.937400 [debug] [MainThread]: Acquiring new bigquery connection 'master'
+[0m17:23:29.938981 [debug] [ThreadPool]: Acquiring new bigquery connection 'list_rj-smas-dev'
+[0m17:23:29.939782 [debug] [ThreadPool]: Opening a new connection, currently in state init
+[0m17:23:30.727007 [debug] [ThreadPool]: Re-using an available connection from the pool (formerly list_rj-smas-dev, now list_rj-smas-dev_dashboard_arcgis_dev)
+[0m17:23:30.728063 [debug] [ThreadPool]: Opening a new connection, currently in state closed
+[0m17:23:31.418827 [debug] [MainThread]: Sending event: {'category': 'dbt', 'action': 'runnable_timing', 'label': 'd385a2cc-f69d-4baa-8c45-63b66dd37874', 'context': [<snowplow_tracker.self_describing_json.SelfDescribingJson object at 0x7ff74876bf10>]}
+[0m17:23:31.419714 [debug] [MainThread]: Opening a new connection, currently in state init
+[0m17:23:31.468325 [debug] [Thread-1 (]: Began running node model.queries.stg_repeat_names_cluster
+[0m17:23:31.469411 [info ] [Thread-1 (]: 1 of 1 START sql view model dashboard_arcgis_dev.stg_repeat_names_cluster ...... [RUN]
+[0m17:23:31.470171 [debug] [Thread-1 (]: Re-using an available connection from the pool (formerly list_rj-smas-dev_dashboard_arcgis_dev, now model.queries.stg_repeat_names_cluster)
+[0m17:23:31.470735 [debug] [Thread-1 (]: Began compiling node model.queries.stg_repeat_names_cluster
+[0m17:23:31.481856 [debug] [Thread-1 (]: Writing injected SQL for node "model.queries.stg_repeat_names_cluster"
+[0m17:23:31.482797 [debug] [Thread-1 (]: Began executing node model.queries.stg_repeat_names_cluster
+[0m17:23:31.521160 [debug] [Thread-1 (]: Writing runtime sql for node "model.queries.stg_repeat_names_cluster"
+[0m17:23:31.522547 [debug] [Thread-1 (]: On model.queries.stg_repeat_names_cluster: /* {"app": "dbt", "dbt_version": "1.9.4", "profile_name": "rj_smas_dev", "target_name": "dev", "node_id": "model.queries.stg_repeat_names_cluster"} */
+
+
+  create or replace view `rj-smas-dev`.`dashboard_arcgis_dev`.`stg_repeat_names_cluster`
+  OPTIONS()
+  as 
+
+WITH base AS (
+  SELECT
+    parentrowid,
+    nome_usuario_norm AS nm,
+    nome_mae_norm     AS mm
+  FROM `rj-smas-dev`.`dashboard_arcgis_dev`.`stg_repeat_names`
+),
+
+-- 1) BLOQUEIO por SOUNDEX (evita pair-wise N²)
+blocked AS (
+  SELECT *,
+         SOUNDEX(nm) AS sx_nm,
+         SOUNDEX(mm) AS sx_mm
+  FROM base
+),
+
+-- 2) GERAR pares só dentro do bloco
+pairs AS (
+  SELECT
+    a.parentrowid AS id_a,
+    b.parentrowid AS id_b,
+
+    EDIT_DISTANCE(a.nm, b.nm) AS d_nm,
+    EDIT_DISTANCE(a.mm, b.mm) AS d_mm,
+
+    -- tokens
+    SPLIT(a.nm, ' ') AS arr_nm_a,
+    SPLIT(b.nm, ' ') AS arr_nm_b,
+    SPLIT(a.mm, ' ') AS arr_mm_a,
+    SPLIT(b.mm, ' ') AS arr_mm_b
+  FROM blocked a
+  JOIN blocked b
+    ON a.sx_nm = b.sx_nm AND a.sx_mm = b.sx_mm
+   AND a.parentrowid < b.parentrowid             -- evita espelho
+),
+
+-- 3) MÉTRICAS de contenção (tokens_inter / tokens_menor)
+scored AS (
+  SELECT *,
+    ARRAY_LENGTH(
+      (SELECT ARRAY_AGG(x) FROM UNNEST(arr_nm_a) x
+                             INNER JOIN UNNEST(arr_nm_b) y ON x=y)
+    ) / LEAST(ARRAY_LENGTH(arr_nm_a), ARRAY_LENGTH(arr_nm_b))         AS cont_nm,
+
+    ARRAY_LENGTH(
+      (SELECT ARRAY_AGG(x) FROM UNNEST(arr_mm_a) x
+                             INNER JOIN UNNEST(arr_mm_b) y ON x=y)
+    ) / LEAST(ARRAY_LENGTH(arr_mm_a), ARRAY_LENGTH(arr_mm_b))         AS cont_mm
+  FROM pairs
+),
+
+-- 4) REGRA DE MATCH
+dupes AS (
+  SELECT id_a, id_b
+  FROM scored
+  WHERE
+        (d_nm <= 2 OR cont_nm >= 0.8)
+    AND (d_mm <= 2 OR cont_mm >= 0.8)
+),
+
+-- 5) CLUSTER  ➜ menor parentrowid do grupo
+cluster_map AS (
+  SELECT id_a AS parentrowid, LEAST(id_a, MIN(id_b)) AS seed
+  FROM dupes
+  GROUP BY id_a
+
+  UNION ALL
+
+  SELECT parentrowid, parentrowid
+  FROM base                                   -- singletons
+)
+
+SELECT
+  b.*,
+  MIN(seed) OVER (PARTITION BY seed) AS cluster_id,
+  COUNT(*)  OVER (PARTITION BY seed) AS cluster_size
+FROM base b
+LEFT JOIN cluster_map USING (parentrowid);
+
+
+[0m17:23:31.523211 [debug] [Thread-1 (]: Opening a new connection, currently in state closed
+[0m17:23:32.423690 [debug] [Thread-1 (]: BigQuery adapter: https://console.cloud.google.com/bigquery?project=rj-smas-dev&j=bq:US:0f5d0ed7-d289-4446-85ed-5dcc318f893d&page=queryresults
+[0m17:23:33.030033 [debug] [Thread-1 (]: Sending event: {'category': 'dbt', 'action': 'run_model', 'label': 'd385a2cc-f69d-4baa-8c45-63b66dd37874', 'context': [<snowplow_tracker.self_describing_json.SelfDescribingJson object at 0x7ff72c3c4700>]}
+[0m17:23:33.031359 [info ] [Thread-1 (]: 1 of 1 OK created sql view model dashboard_arcgis_dev.stg_repeat_names_cluster . [[32mCREATE VIEW (0 processed)[0m in 1.56s]
+[0m17:23:33.032385 [debug] [Thread-1 (]: Finished running node model.queries.stg_repeat_names_cluster
+[0m17:23:33.034923 [debug] [MainThread]: Opening a new connection, currently in state closed
+[0m17:23:33.082865 [debug] [MainThread]: Connection 'master' was properly closed.
+[0m17:23:33.083566 [debug] [MainThread]: Connection 'model.queries.stg_repeat_names_cluster' was properly closed.
+[0m17:23:33.084002 [info ] [MainThread]: 
+[0m17:23:33.084428 [info ] [MainThread]: Finished running 1 view model in 0 hours 0 minutes and 3.15 seconds (3.15s).
+[0m17:23:33.085530 [debug] [MainThread]: Command end result
+[0m17:23:33.120676 [debug] [MainThread]: Wrote artifact WritableManifest to queries/target/manifest.json
+[0m17:23:33.123130 [debug] [MainThread]: Wrote artifact SemanticManifest to queries/target/semantic_manifest.json
+[0m17:23:33.132646 [debug] [MainThread]: Wrote artifact RunExecutionResult to queries/target/run_results.json
+[0m17:23:33.133260 [info ] [MainThread]: 
+[0m17:23:33.133853 [info ] [MainThread]: [32mCompleted successfully[0m
+[0m17:23:33.134313 [info ] [MainThread]: 
+[0m17:23:33.134882 [info ] [MainThread]: Done. PASS=1 WARN=0 ERROR=0 SKIP=0 TOTAL=1
+[0m17:23:33.135640 [debug] [MainThread]: Resource report: {"command_name": "run", "command_success": true, "command_wall_clock_time": 8.263472, "process_in_blocks": "0", "process_kernel_time": 0.742281, "process_mem_max_rss": "400624", "process_out_blocks": "3232", "process_user_time": 7.206929}
+[0m17:23:33.136306 [debug] [MainThread]: Command `dbt run` succeeded at 17:23:33.136175 after 8.26 seconds
+[0m17:23:33.136853 [debug] [MainThread]: Sending event: {'category': 'dbt', 'action': 'invocation', 'label': 'end', 'context': [<snowplow_tracker.self_describing_json.SelfDescribingJson object at 0x7ff746f7d4b0>, <snowplow_tracker.self_describing_json.SelfDescribingJson object at 0x7ff74616bd30>, <snowplow_tracker.self_describing_json.SelfDescribingJson object at 0x7ff746e4fb50>]}
+[0m17:23:33.137436 [debug] [MainThread]: Flushing usage events
+[0m17:23:33.703303 [debug] [MainThread]: An error was encountered while trying to flush usage events
+[0m17:34:52.595388 [debug] [MainThread]: Sending event: {'category': 'dbt', 'action': 'invocation', 'label': 'start', 'context': [<snowplow_tracker.self_describing_json.SelfDescribingJson object at 0x7f2720645390>, <snowplow_tracker.self_describing_json.SelfDescribingJson object at 0x7f271f82fa90>, <snowplow_tracker.self_describing_json.SelfDescribingJson object at 0x7f271f82fa30>]}
+
+
+============================== 17:34:52.599207 | c5d3a252-81d7-4a63-acb1-3e01d5122e34 ==============================
+[0m17:34:52.599207 [info ] [MainThread]: Running with dbt=1.9.4
+[0m17:34:52.599959 [debug] [MainThread]: running dbt with arguments {'printer_width': '80', 'indirect_selection': 'eager', 'log_cache_events': 'False', 'write_json': 'True', 'partial_parse': 'True', 'cache_selected_only': 'False', 'warn_error': 'None', 'version_check': 'True', 'profiles_dir': 'queries', 'log_path': 'queries/logs', 'fail_fast': 'False', 'debug': 'False', 'use_colors': 'True', 'use_experimental_parser': 'False', 'no_print': 'None', 'quiet': 'False', 'empty': 'False', 'warn_error_options': 'WarnErrorOptions(include=[], exclude=[])', 'static_parser': 'True', 'log_format': 'default', 'invocation_command': 'dbt run --project-dir queries --profiles-dir queries --select stg_repeat_names_cluster', 'target_path': 'None', 'introspect': 'True', 'send_anonymous_usage_stats': 'True'}
+[0m17:34:56.213669 [debug] [MainThread]: Sending event: {'category': 'dbt', 'action': 'project_id', 'label': 'c5d3a252-81d7-4a63-acb1-3e01d5122e34', 'context': [<snowplow_tracker.self_describing_json.SelfDescribingJson object at 0x7f271fa32c20>]}
+[0m17:34:56.327626 [debug] [MainThread]: Sending event: {'category': 'dbt', 'action': 'adapter_info', 'label': 'c5d3a252-81d7-4a63-acb1-3e01d5122e34', 'context': [<snowplow_tracker.self_describing_json.SelfDescribingJson object at 0x7f271fd2b490>]}
+[0m17:34:56.328816 [info ] [MainThread]: Registered adapter: bigquery=1.9.2
+[0m17:34:56.598204 [debug] [MainThread]: checksum: 53ed91fada2233efb98368d1716b44ab532c83a9c293cf1890b7905d5b45fb25, vars: {}, profile: , target: dev, version: 1.9.4
+[0m17:34:56.792709 [debug] [MainThread]: Partial parsing enabled: 0 files deleted, 0 files added, 1 files changed.
+[0m17:34:56.793780 [debug] [MainThread]: Partial parsing: updated file: queries://models/dashboard_arcgis/staging/stg_repeat_names_cluster.sql
+[0m17:34:57.288005 [debug] [MainThread]: Sending event: {'category': 'dbt', 'action': 'load_project', 'label': 'c5d3a252-81d7-4a63-acb1-3e01d5122e34', 'context': [<snowplow_tracker.self_describing_json.SelfDescribingJson object at 0x7f26ff874130>]}
+[0m17:34:57.409955 [debug] [MainThread]: Wrote artifact WritableManifest to queries/target/manifest.json
+[0m17:34:57.412552 [debug] [MainThread]: Wrote artifact SemanticManifest to queries/target/semantic_manifest.json
+[0m17:34:57.425452 [debug] [MainThread]: Sending event: {'category': 'dbt', 'action': 'resource_counts', 'label': 'c5d3a252-81d7-4a63-acb1-3e01d5122e34', 'context': [<snowplow_tracker.self_describing_json.SelfDescribingJson object at 0x7f26ff875f90>]}
+[0m17:34:57.426241 [info ] [MainThread]: Found 4 models, 2 sources, 494 macros
+[0m17:34:57.426822 [debug] [MainThread]: Sending event: {'category': 'dbt', 'action': 'runnable_timing', 'label': 'c5d3a252-81d7-4a63-acb1-3e01d5122e34', 'context': [<snowplow_tracker.self_describing_json.SelfDescribingJson object at 0x7f26ff8757e0>]}
+[0m17:34:57.428713 [info ] [MainThread]: 
+[0m17:34:57.429278 [info ] [MainThread]: Concurrency: 2 threads (target='dev')
+[0m17:34:57.429850 [info ] [MainThread]: 
+[0m17:34:57.430642 [debug] [MainThread]: Acquiring new bigquery connection 'master'
+[0m17:34:57.432608 [debug] [ThreadPool]: Acquiring new bigquery connection 'list_rj-smas-dev'
+[0m17:34:57.433675 [debug] [ThreadPool]: Opening a new connection, currently in state init
+[0m17:34:58.159744 [debug] [ThreadPool]: Re-using an available connection from the pool (formerly list_rj-smas-dev, now list_rj-smas-dev_dashboard_arcgis_dev)
+[0m17:34:58.160586 [debug] [ThreadPool]: Opening a new connection, currently in state closed
+[0m17:34:58.765328 [debug] [MainThread]: Sending event: {'category': 'dbt', 'action': 'runnable_timing', 'label': 'c5d3a252-81d7-4a63-acb1-3e01d5122e34', 'context': [<snowplow_tracker.self_describing_json.SelfDescribingJson object at 0x7f26ff8757e0>]}
+[0m17:34:58.766398 [debug] [MainThread]: Opening a new connection, currently in state init
+[0m17:34:58.814393 [debug] [Thread-1 (]: Began running node model.queries.stg_repeat_names_cluster
+[0m17:34:58.815476 [info ] [Thread-1 (]: 1 of 1 START sql table model dashboard_arcgis_dev.stg_repeat_names_cluster ..... [RUN]
+[0m17:34:58.816218 [debug] [Thread-1 (]: Re-using an available connection from the pool (formerly list_rj-smas-dev_dashboard_arcgis_dev, now model.queries.stg_repeat_names_cluster)
+[0m17:34:58.816699 [debug] [Thread-1 (]: Began compiling node model.queries.stg_repeat_names_cluster
+[0m17:34:58.828081 [debug] [Thread-1 (]: Writing injected SQL for node "model.queries.stg_repeat_names_cluster"
+[0m17:34:58.829112 [debug] [Thread-1 (]: Began executing node model.queries.stg_repeat_names_cluster
+[0m17:34:58.884525 [debug] [Thread-1 (]: Writing runtime sql for node "model.queries.stg_repeat_names_cluster"
+[0m17:34:58.885801 [debug] [Thread-1 (]: On model.queries.stg_repeat_names_cluster: /* {"app": "dbt", "dbt_version": "1.9.4", "profile_name": "rj_smas_dev", "target_name": "dev", "node_id": "model.queries.stg_repeat_names_cluster"} */
+
+  
+    
+
+    create or replace table `rj-smas-dev`.`dashboard_arcgis_dev`.`stg_repeat_names_cluster`
+      
+    
+    
+
+    OPTIONS()
+    as (
+      
+
+-- 1. Base com nomes normalizados
+WITH base AS (
+    SELECT
+        parentrowid,
+        nome_usuario_norm AS nm,
+        nome_mae_norm     AS mm
+    FROM `rj-smas-dev`.`dashboard_arcgis_dev`.`stg_repeat_names`
+),
+
+-- 2. Bloqueio A  (SOUNDEX do nome)  ·········································
+blk_a AS (
+    SELECT
+        *,
+        SOUNDEX(nm) AS blk
+    FROM base
+    QUALIFY ROW_NUMBER() OVER (PARTITION BY blk ORDER BY parentrowid) <= 2000
+),
+
+pairs_a AS (
+    SELECT
+        a.parentrowid AS id_a,
+        b.parentrowid AS id_b,
+        a.nm, a.mm,
+        b.nm AS nm_b, b.mm AS mm_b
+    FROM blk_a a
+    JOIN blk_a b USING (blk)
+    WHERE a.parentrowid < b.parentrowid
+),
+
+-- 3. Bloqueio B  (SOUNDEX do nome + último sobrenome da mãe) ···············
+blk_b AS (
+    SELECT
+        *,
+        CONCAT(
+          SOUNDEX(nm), '_',
+          SOUNDEX(SPLIT(mm, ' ')[SAFE_OFFSET(-1)])  -- último token
+        ) AS blk
+    FROM base
+    QUALIFY ROW_NUMBER() OVER (PARTITION BY blk ORDER BY parentrowid) <= 2000
+),
+
+pairs_b AS (
+    SELECT
+        a.parentrowid AS id_a,
+        b.parentrowid AS id_b,
+        a.nm, a.mm,
+        b.nm AS nm_b, b.mm AS mm_b
+    FROM blk_b a
+    JOIN blk_b b USING (blk)
+    WHERE a.parentrowid < b.parentrowid
+),
+
+-- 4. União dos pares candidatos ·············································
+pairs AS (
+    SELECT * FROM pairs_a
+    UNION ALL
+    SELECT * FROM pairs_b
+),
+
+-- 5. Métricas de distância e contenção ······································
+scored AS (
+    SELECT
+        id_a, id_b,
+        EDIT_DISTANCE(nm,  nm_b) AS d_nm,
+        EDIT_DISTANCE(mm,  mm_b) AS d_mm,
+
+        ARRAY_LENGTH(
+          ARRAY(
+            SELECT x FROM UNNEST(SPLIT(nm, ' ')) x
+            INTERSECT DISTINCT
+            SELECT y FROM UNNEST(SPLIT(nm_b,' ')) y
+          )
+        ) / LEAST(
+              ARRAY_LENGTH(SPLIT(nm,  ' ')),
+              ARRAY_LENGTH(SPLIT(nm_b,' '))
+          )                                   AS cont_nm,
+
+        ARRAY_LENGTH(
+          ARRAY(
+            SELECT x FROM UNNEST(SPLIT(mm, ' ')) x
+            INTERSECT DISTINCT
+            SELECT y FROM UNNEST(SPLIT(mm_b,' ')) y
+          )
+        ) / LEAST(
+              ARRAY_LENGTH(SPLIT(mm,  ' ')),
+              ARRAY_LENGTH(SPLIT(mm_b,' '))
+          )                                   AS cont_mm
+    FROM pairs
+),
+
+-- 6. Pares que satisfazem a regra de duplicidade ····························
+dupes AS (
+    SELECT id_a, id_b
+    FROM scored
+    WHERE (d_nm <= 2 OR cont_nm >= 0.8)
+      AND (d_mm <= 2 OR cont_mm >= 0.8)
+),
+
+-- 7. Grafo não-direcionado (componentes conexas) ····························
+graph AS (
+    SELECT parentrowid, parentrowid AS neigh FROM base
+    UNION ALL
+    SELECT id_a, id_b FROM dupes
+    UNION ALL
+    SELECT id_b, id_a FROM dupes
+),
+
+seed AS (
+    SELECT
+        parentrowid,
+        MIN(neigh) OVER (PARTITION BY parentrowid) AS cluster_seed
+    FROM graph
+),
+
+-- 8. Resultado final (uma linha por parentrowid) ····························
+final AS (
+    SELECT
+        b.parentrowid,
+        b.nm,
+        b.mm,
+        MIN(cluster_seed) OVER (PARTITION BY cluster_seed) AS cluster_id,
+        COUNT(*)        OVER (PARTITION BY cluster_seed)   AS cluster_size
+    FROM base b
+    JOIN seed USING (parentrowid)
+)
+
+SELECT
+    parentrowid,
+    nm,
+    mm,
+    cluster_id,
+    cluster_size,
+    cluster_size > 1 AS is_duplicado
+FROM final
+    );
+  
+[0m17:34:58.886575 [debug] [Thread-1 (]: Opening a new connection, currently in state closed
+[0m17:34:59.855246 [debug] [Thread-1 (]: BigQuery adapter: https://console.cloud.google.com/bigquery?project=rj-smas-dev&j=bq:US:632c75c9-af5f-417d-a7eb-c773eacb7d5b&page=queryresults
+[0m17:35:45.083447 [debug] [Thread-1 (]: Sending event: {'category': 'dbt', 'action': 'run_model', 'label': 'c5d3a252-81d7-4a63-acb1-3e01d5122e34', 'context': [<snowplow_tracker.self_describing_json.SelfDescribingJson object at 0x7f2705ac06d0>]}
+[0m17:35:45.084522 [info ] [Thread-1 (]: 1 of 1 OK created sql table model dashboard_arcgis_dev.stg_repeat_names_cluster  [[32mCREATE TABLE (18.3m rows, 22.9 MiB processed)[0m in 46.27s]
+[0m17:35:45.085318 [debug] [Thread-1 (]: Finished running node model.queries.stg_repeat_names_cluster
+[0m17:35:45.087007 [debug] [MainThread]: Opening a new connection, currently in state closed
+[0m17:35:45.133359 [debug] [MainThread]: Connection 'master' was properly closed.
+[0m17:35:45.134127 [debug] [MainThread]: Connection 'model.queries.stg_repeat_names_cluster' was properly closed.
+[0m17:35:45.134758 [info ] [MainThread]: 
+[0m17:35:45.135539 [info ] [MainThread]: Finished running 1 table model in 0 hours 0 minutes and 47.70 seconds (47.70s).
+[0m17:35:45.136626 [debug] [MainThread]: Command end result
+[0m17:35:45.169517 [debug] [MainThread]: Wrote artifact WritableManifest to queries/target/manifest.json
+[0m17:35:45.171614 [debug] [MainThread]: Wrote artifact SemanticManifest to queries/target/semantic_manifest.json
+[0m17:35:45.188004 [debug] [MainThread]: Wrote artifact RunExecutionResult to queries/target/run_results.json
+[0m17:35:45.188590 [info ] [MainThread]: 
+[0m17:35:45.189130 [info ] [MainThread]: [32mCompleted successfully[0m
+[0m17:35:45.189517 [info ] [MainThread]: 
+[0m17:35:45.189943 [info ] [MainThread]: Done. PASS=1 WARN=0 ERROR=0 SKIP=0 TOTAL=1
+[0m17:35:45.190713 [debug] [MainThread]: Resource report: {"command_name": "run", "command_success": true, "command_wall_clock_time": 52.700253, "process_in_blocks": "8", "process_kernel_time": 0.722727, "process_mem_max_rss": "399076", "process_out_blocks": "3264", "process_user_time": 7.119389}
+[0m17:35:45.191379 [debug] [MainThread]: Command `dbt run` succeeded at 17:35:45.191257 after 52.70 seconds
+[0m17:35:45.191858 [debug] [MainThread]: Sending event: {'category': 'dbt', 'action': 'invocation', 'label': 'end', 'context': [<snowplow_tracker.self_describing_json.SelfDescribingJson object at 0x7f2720645390>, <snowplow_tracker.self_describing_json.SelfDescribingJson object at 0x7f271fd2b490>, <snowplow_tracker.self_describing_json.SelfDescribingJson object at 0x7f2720711240>]}
+[0m17:35:45.192337 [debug] [MainThread]: Flushing usage events
+[0m17:35:45.746280 [debug] [MainThread]: An error was encountered while trying to flush usage events
+[0m21:16:55.511714 [debug] [MainThread]: Sending event: {'category': 'dbt', 'action': 'invocation', 'label': 'start', 'context': [<snowplow_tracker.self_describing_json.SelfDescribingJson object at 0x7fcd371853f0>, <snowplow_tracker.self_describing_json.SelfDescribingJson object at 0x7fcd36373b20>, <snowplow_tracker.self_describing_json.SelfDescribingJson object at 0x7fcd36373ac0>]}
+
+
+============================== 21:16:55.518113 | daaca3b6-0b75-4e42-8c41-0b313c50d900 ==============================
+[0m21:16:55.518113 [info ] [MainThread]: Running with dbt=1.9.4
+[0m21:16:55.519026 [debug] [MainThread]: running dbt with arguments {'printer_width': '80', 'indirect_selection': 'eager', 'write_json': 'True', 'log_cache_events': 'False', 'partial_parse': 'True', 'cache_selected_only': 'False', 'profiles_dir': 'queries', 'debug': 'False', 'warn_error': 'None', 'log_path': 'queries/logs', 'fail_fast': 'False', 'version_check': 'True', 'use_colors': 'True', 'use_experimental_parser': 'False', 'no_print': 'None', 'quiet': 'False', 'empty': 'False', 'warn_error_options': 'WarnErrorOptions(include=[], exclude=[])', 'introspect': 'True', 'log_format': 'default', 'invocation_command': 'dbt run --project-dir queries --profiles-dir queries --select stg_repeat_names', 'target_path': 'None', 'static_parser': 'True', 'send_anonymous_usage_stats': 'True'}
+[0m21:17:00.675176 [debug] [MainThread]: Sending event: {'category': 'dbt', 'action': 'project_id', 'label': 'daaca3b6-0b75-4e42-8c41-0b313c50d900', 'context': [<snowplow_tracker.self_describing_json.SelfDescribingJson object at 0x7fcd38d74cd0>]}
+[0m21:17:00.777386 [debug] [MainThread]: Sending event: {'category': 'dbt', 'action': 'adapter_info', 'label': 'daaca3b6-0b75-4e42-8c41-0b313c50d900', 'context': [<snowplow_tracker.self_describing_json.SelfDescribingJson object at 0x7fcd1c5f6740>]}
+[0m21:17:00.786684 [info ] [MainThread]: Registered adapter: bigquery=1.9.2
+[0m21:17:01.066007 [debug] [MainThread]: checksum: 53ed91fada2233efb98368d1716b44ab532c83a9c293cf1890b7905d5b45fb25, vars: {}, profile: , target: dev, version: 1.9.4
+[0m21:17:01.300638 [debug] [MainThread]: Partial parsing enabled: 0 files deleted, 0 files added, 1 files changed.
+[0m21:17:01.301505 [debug] [MainThread]: Partial parsing: updated file: queries://models/dashboard_arcgis/staging/stg_repeat_names.sql
+[0m21:17:01.852968 [debug] [MainThread]: Sending event: {'category': 'dbt', 'action': 'load_project', 'label': 'daaca3b6-0b75-4e42-8c41-0b313c50d900', 'context': [<snowplow_tracker.self_describing_json.SelfDescribingJson object at 0x7fcd171dc220>]}
+[0m21:17:02.009877 [debug] [MainThread]: Wrote artifact WritableManifest to queries/target/manifest.json
+[0m21:17:02.012623 [debug] [MainThread]: Wrote artifact SemanticManifest to queries/target/semantic_manifest.json
+[0m21:17:02.038736 [debug] [MainThread]: Sending event: {'category': 'dbt', 'action': 'resource_counts', 'label': 'daaca3b6-0b75-4e42-8c41-0b313c50d900', 'context': [<snowplow_tracker.self_describing_json.SelfDescribingJson object at 0x7fcd16d77cd0>]}
+[0m21:17:02.039801 [info ] [MainThread]: Found 4 models, 2 sources, 494 macros
+[0m21:17:02.040510 [debug] [MainThread]: Sending event: {'category': 'dbt', 'action': 'runnable_timing', 'label': 'daaca3b6-0b75-4e42-8c41-0b313c50d900', 'context': [<snowplow_tracker.self_describing_json.SelfDescribingJson object at 0x7fcd16f18820>]}
+[0m21:17:02.042800 [info ] [MainThread]: 
+[0m21:17:02.043398 [info ] [MainThread]: Concurrency: 2 threads (target='dev')
+[0m21:17:02.043994 [info ] [MainThread]: 
+[0m21:17:02.044824 [debug] [MainThread]: Acquiring new bigquery connection 'master'
+[0m21:17:02.046681 [debug] [ThreadPool]: Acquiring new bigquery connection 'list_rj-smas-dev'
+[0m21:17:02.047629 [debug] [ThreadPool]: Opening a new connection, currently in state init
+[0m21:17:03.126683 [debug] [ThreadPool]: Re-using an available connection from the pool (formerly list_rj-smas-dev, now list_rj-smas-dev_dashboard_arcgis_dev)
+[0m21:17:03.127566 [debug] [ThreadPool]: Opening a new connection, currently in state closed
+[0m21:17:03.773273 [debug] [MainThread]: Sending event: {'category': 'dbt', 'action': 'runnable_timing', 'label': 'daaca3b6-0b75-4e42-8c41-0b313c50d900', 'context': [<snowplow_tracker.self_describing_json.SelfDescribingJson object at 0x7fcd16ce8070>]}
+[0m21:17:03.774129 [debug] [MainThread]: Opening a new connection, currently in state init
+[0m21:17:03.825105 [debug] [Thread-1 (]: Began running node model.queries.stg_repeat_names
+[0m21:17:03.826252 [info ] [Thread-1 (]: 1 of 1 START sql view model dashboard_arcgis_dev.stg_repeat_names .............. [RUN]
+[0m21:17:03.827095 [debug] [Thread-1 (]: Re-using an available connection from the pool (formerly list_rj-smas-dev_dashboard_arcgis_dev, now model.queries.stg_repeat_names)
+[0m21:17:03.827842 [debug] [Thread-1 (]: Began compiling node model.queries.stg_repeat_names
+[0m21:17:03.840475 [debug] [Thread-1 (]: Writing injected SQL for node "model.queries.stg_repeat_names"
+[0m21:17:03.841477 [debug] [Thread-1 (]: Began executing node model.queries.stg_repeat_names
+[0m21:17:03.884029 [debug] [Thread-1 (]: Writing runtime sql for node "model.queries.stg_repeat_names"
+[0m21:17:03.885326 [debug] [Thread-1 (]: On model.queries.stg_repeat_names: /* {"app": "dbt", "dbt_version": "1.9.4", "profile_name": "rj_smas_dev", "target_name": "dev", "node_id": "model.queries.stg_repeat_names"} */
+
+
+  create or replace view `rj-smas-dev`.`dashboard_arcgis_dev`.`stg_repeat_names`
+  OPTIONS()
+  as 
+
+WITH base AS (
+  SELECT
+    parentrowid,
+    repeat_nome_usuario,
+    repeat_nome_mae,
+    ano_num_data_abordagem
+  FROM `rj-smas-dev`.`arcgis_raw`.`abordagem_repeat_raw`
+  WHERE = '2025'
+),
+
+tokens AS (
+  SELECT
+    parentrowid,
+    repeat_nome_usuario,
+    repeat_nome_mae,
+
+    -- explode em palavras já normalizadas
+    SPLIT(
+    TRIM(                                                         
+      REGEXP_REPLACE(
+        REGEXP_REPLACE(
+          LOWER(
+            REGEXP_REPLACE(NORMALIZE(repeat_nome_usuario, NFD), r'\p{M}', '')  -- remove acentos
+          ),
+          r'[^a-z\s]', ' '        -- pontuação → espaço
+        ),
+        r'\s+', ' '               -- espaços duplicados
+      )
+    )
+, ' ')     AS arr_usuario,
+    SPLIT(
+    TRIM(                                                         
+      REGEXP_REPLACE(
+        REGEXP_REPLACE(
+          LOWER(
+            REGEXP_REPLACE(NORMALIZE(repeat_nome_mae, NFD), r'\p{M}', '')  -- remove acentos
+          ),
+          r'[^a-z\s]', ' '        -- pontuação → espaço
+        ),
+        r'\s+', ' '               -- espaços duplicados
+      )
+    )
+,     ' ')     AS arr_mae
+  FROM base
+),
+
+filtered AS (
+  SELECT
+    parentrowid,
+    repeat_nome_usuario,
+    repeat_nome_mae,
+
+    -- remove stop-words simples
+    ARRAY(
+      SELECT t
+      FROM UNNEST(arr_usuario) t
+      WHERE t NOT IN ('de','da','do','das','dos','e','a','o','os','as')
+    ) AS arr_usuario_ok,
+
+    ARRAY(
+      SELECT t
+      FROM UNNEST(arr_mae) t
+      WHERE t NOT IN ('de','da','do','das','dos','e','a','o','os','as')
+    ) AS arr_mae_ok
+  FROM tokens
+)
+
+SELECT
+  parentrowid,
+  repeat_nome_usuario,
+  repeat_nome_mae,
+
+  ARRAY_TO_STRING(arr_usuario_ok, ' ')  AS nome_usuario_norm,
+  ARRAY_TO_STRING(arr_mae_ok,     ' ')  AS nome_mae_norm
+FROM filtered;
+
+
+[0m21:17:03.886074 [debug] [Thread-1 (]: Opening a new connection, currently in state closed
+[0m21:17:04.559523 [debug] [Thread-1 (]: BigQuery adapter: https://console.cloud.google.com/bigquery?project=rj-smas-dev&j=bq:US:05c791ef-39cd-4e75-9699-4f65fdf3a914&page=queryresults
+[0m21:17:04.561160 [error] [Thread-1 (]: BigQuery adapter: https://console.cloud.google.com/bigquery?project=rj-smas-dev&j=bq:US:05c791ef-39cd-4e75-9699-4f65fdf3a914&page=queryresults
+[0m21:17:04.573226 [debug] [Thread-1 (]: Database Error in model stg_repeat_names (models/dashboard_arcgis/staging/stg_repeat_names.sql)
+  Syntax error: Unexpected "=" at [15:9]
+  compiled code at target/run/queries/models/dashboard_arcgis/staging/stg_repeat_names.sql
+[0m21:17:04.576940 [debug] [Thread-1 (]: Sending event: {'category': 'dbt', 'action': 'run_model', 'label': 'daaca3b6-0b75-4e42-8c41-0b313c50d900', 'context': [<snowplow_tracker.self_describing_json.SelfDescribingJson object at 0x7fcd37463580>]}
+[0m21:17:04.578792 [error] [Thread-1 (]: 1 of 1 ERROR creating sql view model dashboard_arcgis_dev.stg_repeat_names ..... [[31mERROR[0m in 0.75s]
+[0m21:17:04.579933 [debug] [Thread-1 (]: Finished running node model.queries.stg_repeat_names
+[0m21:17:04.581039 [debug] [Thread-5 (]: Marking all children of 'model.queries.stg_repeat_names' to be skipped because of status 'error'.  Reason: Database Error in model stg_repeat_names (models/dashboard_arcgis/staging/stg_repeat_names.sql)
+  Syntax error: Unexpected "=" at [15:9]
+  compiled code at target/run/queries/models/dashboard_arcgis/staging/stg_repeat_names.sql.
+[0m21:17:04.583937 [debug] [MainThread]: Opening a new connection, currently in state closed
+[0m21:17:04.630403 [debug] [MainThread]: Connection 'master' was properly closed.
+[0m21:17:04.631124 [debug] [MainThread]: Connection 'model.queries.stg_repeat_names' was properly closed.
+[0m21:17:04.631600 [info ] [MainThread]: 
+[0m21:17:04.632073 [info ] [MainThread]: Finished running 1 view model in 0 hours 0 minutes and 2.59 seconds (2.59s).
+[0m21:17:04.632941 [debug] [MainThread]: Command end result
+[0m21:17:04.663208 [debug] [MainThread]: Wrote artifact WritableManifest to queries/target/manifest.json
+[0m21:17:04.665443 [debug] [MainThread]: Wrote artifact SemanticManifest to queries/target/semantic_manifest.json
+[0m21:17:04.674520 [debug] [MainThread]: Wrote artifact RunExecutionResult to queries/target/run_results.json
+[0m21:17:04.675130 [info ] [MainThread]: 
+[0m21:17:04.675637 [info ] [MainThread]: [31mCompleted with 1 error, 0 partial successes, and 0 warnings:[0m
+[0m21:17:04.676080 [info ] [MainThread]: 
+[0m21:17:04.676568 [error] [MainThread]:   Database Error in model stg_repeat_names (models/dashboard_arcgis/staging/stg_repeat_names.sql)
+  Syntax error: Unexpected "=" at [15:9]
+  compiled code at target/run/queries/models/dashboard_arcgis/staging/stg_repeat_names.sql
+[0m21:17:04.676969 [info ] [MainThread]: 
+[0m21:17:04.677386 [info ] [MainThread]: Done. PASS=0 WARN=0 ERROR=1 SKIP=0 TOTAL=1
+[0m21:17:04.686439 [debug] [MainThread]: Resource report: {"command_name": "run", "command_success": false, "command_wall_clock_time": 9.274599, "process_in_blocks": "386600", "process_kernel_time": 0.985897, "process_mem_max_rss": "395852", "process_out_blocks": "3248", "process_user_time": 7.074266}
+[0m21:17:04.687156 [debug] [MainThread]: Command `dbt run` failed at 21:17:04.687010 after 9.28 seconds
+[0m21:17:04.687701 [debug] [MainThread]: Sending event: {'category': 'dbt', 'action': 'invocation', 'label': 'end', 'context': [<snowplow_tracker.self_describing_json.SelfDescribingJson object at 0x7fcd371853f0>, <snowplow_tracker.self_describing_json.SelfDescribingJson object at 0x7fcd16c91660>, <snowplow_tracker.self_describing_json.SelfDescribingJson object at 0x7fcd37054910>]}
+[0m21:17:04.688194 [debug] [MainThread]: Flushing usage events
+[0m21:17:05.287116 [debug] [MainThread]: An error was encountered while trying to flush usage events
+[0m21:17:55.943828 [debug] [MainThread]: Sending event: {'category': 'dbt', 'action': 'invocation', 'label': 'start', 'context': [<snowplow_tracker.self_describing_json.SelfDescribingJson object at 0x7f58ddb5d420>, <snowplow_tracker.self_describing_json.SelfDescribingJson object at 0x7f58dcd47b50>, <snowplow_tracker.self_describing_json.SelfDescribingJson object at 0x7f58dcd47af0>]}
+
+
+============================== 21:17:55.946995 | b60f8f0c-acd4-474d-82e8-02558b4efe55 ==============================
+[0m21:17:55.946995 [info ] [MainThread]: Running with dbt=1.9.4
+[0m21:17:55.947623 [debug] [MainThread]: running dbt with arguments {'printer_width': '80', 'indirect_selection': 'eager', 'log_cache_events': 'False', 'write_json': 'True', 'partial_parse': 'True', 'cache_selected_only': 'False', 'warn_error': 'None', 'debug': 'False', 'fail_fast': 'False', 'log_path': 'queries/logs', 'profiles_dir': 'queries', 'version_check': 'True', 'use_colors': 'True', 'use_experimental_parser': 'False', 'no_print': 'None', 'quiet': 'False', 'empty': 'False', 'warn_error_options': 'WarnErrorOptions(include=[], exclude=[])', 'static_parser': 'True', 'introspect': 'True', 'invocation_command': 'dbt run --project-dir queries --profiles-dir queries --select stg_repeat_names', 'target_path': 'None', 'log_format': 'default', 'send_anonymous_usage_stats': 'True'}
+[0m21:17:59.537156 [debug] [MainThread]: Sending event: {'category': 'dbt', 'action': 'project_id', 'label': 'b60f8f0c-acd4-474d-82e8-02558b4efe55', 'context': [<snowplow_tracker.self_describing_json.SelfDescribingJson object at 0x7f58dcd07160>]}
+[0m21:17:59.644503 [debug] [MainThread]: Sending event: {'category': 'dbt', 'action': 'adapter_info', 'label': 'b60f8f0c-acd4-474d-82e8-02558b4efe55', 'context': [<snowplow_tracker.self_describing_json.SelfDescribingJson object at 0x7f58bdded600>]}
+[0m21:17:59.645441 [info ] [MainThread]: Registered adapter: bigquery=1.9.2
+[0m21:17:59.917697 [debug] [MainThread]: checksum: 53ed91fada2233efb98368d1716b44ab532c83a9c293cf1890b7905d5b45fb25, vars: {}, profile: , target: dev, version: 1.9.4
+[0m21:18:00.099920 [debug] [MainThread]: Partial parsing enabled: 0 files deleted, 0 files added, 1 files changed.
+[0m21:18:00.100799 [debug] [MainThread]: Partial parsing: updated file: queries://models/dashboard_arcgis/staging/stg_repeat_names.sql
+[0m21:18:00.596230 [debug] [MainThread]: Sending event: {'category': 'dbt', 'action': 'load_project', 'label': 'b60f8f0c-acd4-474d-82e8-02558b4efe55', 'context': [<snowplow_tracker.self_describing_json.SelfDescribingJson object at 0x7f58bd64b700>]}
+[0m21:18:00.710761 [debug] [MainThread]: Wrote artifact WritableManifest to queries/target/manifest.json
+[0m21:18:00.712875 [debug] [MainThread]: Wrote artifact SemanticManifest to queries/target/semantic_manifest.json
+[0m21:18:00.724980 [debug] [MainThread]: Sending event: {'category': 'dbt', 'action': 'resource_counts', 'label': 'b60f8f0c-acd4-474d-82e8-02558b4efe55', 'context': [<snowplow_tracker.self_describing_json.SelfDescribingJson object at 0x7f58bd8f8d90>]}
+[0m21:18:00.725728 [info ] [MainThread]: Found 4 models, 2 sources, 494 macros
+[0m21:18:00.726191 [debug] [MainThread]: Sending event: {'category': 'dbt', 'action': 'runnable_timing', 'label': 'b60f8f0c-acd4-474d-82e8-02558b4efe55', 'context': [<snowplow_tracker.self_describing_json.SelfDescribingJson object at 0x7f58bd8f8c70>]}
+[0m21:18:00.727800 [info ] [MainThread]: 
+[0m21:18:00.728322 [info ] [MainThread]: Concurrency: 2 threads (target='dev')
+[0m21:18:00.728759 [info ] [MainThread]: 
+[0m21:18:00.729387 [debug] [MainThread]: Acquiring new bigquery connection 'master'
+[0m21:18:00.731022 [debug] [ThreadPool]: Acquiring new bigquery connection 'list_rj-smas-dev'
+[0m21:18:00.732230 [debug] [ThreadPool]: Opening a new connection, currently in state init
+[0m21:18:01.523823 [debug] [ThreadPool]: Re-using an available connection from the pool (formerly list_rj-smas-dev, now list_rj-smas-dev_dashboard_arcgis_dev)
+[0m21:18:01.525070 [debug] [ThreadPool]: Opening a new connection, currently in state closed
+[0m21:18:02.545764 [debug] [MainThread]: Sending event: {'category': 'dbt', 'action': 'runnable_timing', 'label': 'b60f8f0c-acd4-474d-82e8-02558b4efe55', 'context': [<snowplow_tracker.self_describing_json.SelfDescribingJson object at 0x7f58dcce0d90>]}
+[0m21:18:02.546679 [debug] [MainThread]: Opening a new connection, currently in state init
+[0m21:18:02.594617 [debug] [Thread-1 (]: Began running node model.queries.stg_repeat_names
+[0m21:18:02.595972 [info ] [Thread-1 (]: 1 of 1 START sql view model dashboard_arcgis_dev.stg_repeat_names .............. [RUN]
+[0m21:18:02.596988 [debug] [Thread-1 (]: Re-using an available connection from the pool (formerly list_rj-smas-dev_dashboard_arcgis_dev, now model.queries.stg_repeat_names)
+[0m21:18:02.597824 [debug] [Thread-1 (]: Began compiling node model.queries.stg_repeat_names
+[0m21:18:02.614569 [debug] [Thread-1 (]: Writing injected SQL for node "model.queries.stg_repeat_names"
+[0m21:18:02.615507 [debug] [Thread-1 (]: Began executing node model.queries.stg_repeat_names
+[0m21:18:02.657112 [debug] [Thread-1 (]: Writing runtime sql for node "model.queries.stg_repeat_names"
+[0m21:18:02.658293 [debug] [Thread-1 (]: On model.queries.stg_repeat_names: /* {"app": "dbt", "dbt_version": "1.9.4", "profile_name": "rj_smas_dev", "target_name": "dev", "node_id": "model.queries.stg_repeat_names"} */
+
+
+  create or replace view `rj-smas-dev`.`dashboard_arcgis_dev`.`stg_repeat_names`
+  OPTIONS()
+  as 
+
+WITH base AS (
+  SELECT
+    parentrowid,
+    repeat_nome_usuario,
+    repeat_nome_mae,
+    ano_num_data_abordagem
+  FROM `rj-smas-dev`.`arcgis_raw`.`abordagem_repeat_raw`
+),
+
+tokens AS (
+  SELECT
+    parentrowid,
+    repeat_nome_usuario,
+    repeat_nome_mae,
+
+    -- explode em palavras já normalizadas
+    SPLIT(
+    TRIM(                                                         
+      REGEXP_REPLACE(
+        REGEXP_REPLACE(
+          LOWER(
+            REGEXP_REPLACE(NORMALIZE(repeat_nome_usuario, NFD), r'\p{M}', '')  -- remove acentos
+          ),
+          r'[^a-z\s]', ' '        -- pontuação → espaço
+        ),
+        r'\s+', ' '               -- espaços duplicados
+      )
+    )
+, ' ')     AS arr_usuario,
+    SPLIT(
+    TRIM(                                                         
+      REGEXP_REPLACE(
+        REGEXP_REPLACE(
+          LOWER(
+            REGEXP_REPLACE(NORMALIZE(repeat_nome_mae, NFD), r'\p{M}', '')  -- remove acentos
+          ),
+          r'[^a-z\s]', ' '        -- pontuação → espaço
+        ),
+        r'\s+', ' '               -- espaços duplicados
+      )
+    )
+,     ' ')     AS arr_mae
+  FROM base
+),
+
+filtered AS (
+  SELECT
+    parentrowid,
+    repeat_nome_usuario,
+    repeat_nome_mae,
+
+    -- remove stop-words simples
+    ARRAY(
+      SELECT t
+      FROM UNNEST(arr_usuario) t
+      WHERE t NOT IN ('de','da','do','das','dos','e','a','o','os','as')
+    ) AS arr_usuario_ok,
+
+    ARRAY(
+      SELECT t
+      FROM UNNEST(arr_mae) t
+      WHERE t NOT IN ('de','da','do','das','dos','e','a','o','os','as')
+    ) AS arr_mae_ok
+  FROM tokens
+)
+
+SELECT
+  parentrowid,
+  repeat_nome_usuario,
+  repeat_nome_mae,
+  ano_num_data_abordagem,
+
+  ARRAY_TO_STRING(arr_usuario_ok, ' ')  AS nome_usuario_norm,
+  ARRAY_TO_STRING(arr_mae_ok,     ' ')  AS nome_mae_norm
+FROM filtered;
+
+
+[0m21:18:02.659077 [debug] [Thread-1 (]: Opening a new connection, currently in state closed
+[0m21:18:03.663498 [debug] [Thread-1 (]: BigQuery adapter: https://console.cloud.google.com/bigquery?project=rj-smas-dev&j=bq:US:a1df02c4-ae6f-497b-9cff-192ebdc5241a&page=queryresults
+[0m21:18:03.939479 [error] [Thread-1 (]: BigQuery adapter: https://console.cloud.google.com/bigquery?project=rj-smas-dev&j=bq:US:a1df02c4-ae6f-497b-9cff-192ebdc5241a&page=queryresults
+[0m21:18:03.945450 [debug] [Thread-1 (]: Database Error in model stg_repeat_names (models/dashboard_arcgis/staging/stg_repeat_names.sql)
+  Unrecognized name: ano_num_data_abordagem at [78:3]
+  compiled code at target/run/queries/models/dashboard_arcgis/staging/stg_repeat_names.sql
+[0m21:18:03.948702 [debug] [Thread-1 (]: Sending event: {'category': 'dbt', 'action': 'run_model', 'label': 'b60f8f0c-acd4-474d-82e8-02558b4efe55', 'context': [<snowplow_tracker.self_describing_json.SelfDescribingJson object at 0x7f58dde39540>]}
+[0m21:18:03.949835 [error] [Thread-1 (]: 1 of 1 ERROR creating sql view model dashboard_arcgis_dev.stg_repeat_names ..... [[31mERROR[0m in 1.35s]
+[0m21:18:03.950829 [debug] [Thread-1 (]: Finished running node model.queries.stg_repeat_names
+[0m21:18:03.952072 [debug] [Thread-5 (]: Marking all children of 'model.queries.stg_repeat_names' to be skipped because of status 'error'.  Reason: Database Error in model stg_repeat_names (models/dashboard_arcgis/staging/stg_repeat_names.sql)
+  Unrecognized name: ano_num_data_abordagem at [78:3]
+  compiled code at target/run/queries/models/dashboard_arcgis/staging/stg_repeat_names.sql.
+[0m21:18:03.962752 [debug] [MainThread]: Opening a new connection, currently in state closed
+[0m21:18:04.031771 [debug] [MainThread]: Connection 'master' was properly closed.
+[0m21:18:04.032371 [debug] [MainThread]: Connection 'model.queries.stg_repeat_names' was properly closed.
+[0m21:18:04.032835 [info ] [MainThread]: 
+[0m21:18:04.033284 [info ] [MainThread]: Finished running 1 view model in 0 hours 0 minutes and 3.30 seconds (3.30s).
+[0m21:18:04.034245 [debug] [MainThread]: Command end result
+[0m21:18:04.066732 [debug] [MainThread]: Wrote artifact WritableManifest to queries/target/manifest.json
+[0m21:18:04.068763 [debug] [MainThread]: Wrote artifact SemanticManifest to queries/target/semantic_manifest.json
+[0m21:18:04.077446 [debug] [MainThread]: Wrote artifact RunExecutionResult to queries/target/run_results.json
+[0m21:18:04.078041 [info ] [MainThread]: 
+[0m21:18:04.078567 [info ] [MainThread]: [31mCompleted with 1 error, 0 partial successes, and 0 warnings:[0m
+[0m21:18:04.079049 [info ] [MainThread]: 
+[0m21:18:04.079743 [error] [MainThread]:   Database Error in model stg_repeat_names (models/dashboard_arcgis/staging/stg_repeat_names.sql)
+  Unrecognized name: ano_num_data_abordagem at [78:3]
+  compiled code at target/run/queries/models/dashboard_arcgis/staging/stg_repeat_names.sql
+[0m21:18:04.080205 [info ] [MainThread]: 
+[0m21:18:04.080762 [info ] [MainThread]: Done. PASS=0 WARN=0 ERROR=1 SKIP=0 TOTAL=1
+[0m21:18:04.081417 [debug] [MainThread]: Resource report: {"command_name": "run", "command_success": false, "command_wall_clock_time": 8.231492, "process_in_blocks": "0", "process_kernel_time": 0.76827, "process_mem_max_rss": "395876", "process_out_blocks": "3248", "process_user_time": 6.823204}
+[0m21:18:04.081972 [debug] [MainThread]: Command `dbt run` failed at 21:18:04.081864 after 8.23 seconds
+[0m21:18:04.082460 [debug] [MainThread]: Sending event: {'category': 'dbt', 'action': 'invocation', 'label': 'end', 'context': [<snowplow_tracker.self_describing_json.SelfDescribingJson object at 0x7f58ddb5d420>, <snowplow_tracker.self_describing_json.SelfDescribingJson object at 0x7f58ddc00df0>, <snowplow_tracker.self_describing_json.SelfDescribingJson object at 0x7f58bcedf700>]}
+[0m21:18:04.082928 [debug] [MainThread]: Flushing usage events
+[0m21:18:04.620970 [debug] [MainThread]: An error was encountered while trying to flush usage events
+[0m21:19:07.669572 [debug] [MainThread]: Sending event: {'category': 'dbt', 'action': 'invocation', 'label': 'start', 'context': [<snowplow_tracker.self_describing_json.SelfDescribingJson object at 0x7f5b2f439420>, <snowplow_tracker.self_describing_json.SelfDescribingJson object at 0x7f5b2e627b50>, <snowplow_tracker.self_describing_json.SelfDescribingJson object at 0x7f5b2e627af0>]}
+
+
+============================== 21:19:07.672962 | 3d5aef0a-0f9a-41e6-96a7-5fd51a48f249 ==============================
+[0m21:19:07.672962 [info ] [MainThread]: Running with dbt=1.9.4
+[0m21:19:07.673790 [debug] [MainThread]: running dbt with arguments {'printer_width': '80', 'indirect_selection': 'eager', 'write_json': 'True', 'log_cache_events': 'False', 'partial_parse': 'True', 'cache_selected_only': 'False', 'profiles_dir': 'queries', 'debug': 'False', 'fail_fast': 'False', 'log_path': 'queries/logs', 'version_check': 'True', 'warn_error': 'None', 'use_colors': 'True', 'use_experimental_parser': 'False', 'empty': 'False', 'quiet': 'False', 'no_print': 'None', 'log_format': 'default', 'invocation_command': 'dbt run --project-dir queries --profiles-dir queries --select stg_repeat_names', 'warn_error_options': 'WarnErrorOptions(include=[], exclude=[])', 'introspect': 'True', 'target_path': 'None', 'static_parser': 'True', 'send_anonymous_usage_stats': 'True'}
+[0m21:19:11.291355 [debug] [MainThread]: Sending event: {'category': 'dbt', 'action': 'project_id', 'label': '3d5aef0a-0f9a-41e6-96a7-5fd51a48f249', 'context': [<snowplow_tracker.self_describing_json.SelfDescribingJson object at 0x7f5b2e5e3160>]}
+[0m21:19:11.407818 [debug] [MainThread]: Sending event: {'category': 'dbt', 'action': 'adapter_info', 'label': '3d5aef0a-0f9a-41e6-96a7-5fd51a48f249', 'context': [<snowplow_tracker.self_describing_json.SelfDescribingJson object at 0x7f5b0f725600>]}
+[0m21:19:11.409135 [info ] [MainThread]: Registered adapter: bigquery=1.9.2
+[0m21:19:11.691243 [debug] [MainThread]: checksum: 53ed91fada2233efb98368d1716b44ab532c83a9c293cf1890b7905d5b45fb25, vars: {}, profile: , target: dev, version: 1.9.4
+[0m21:19:11.891945 [debug] [MainThread]: Partial parsing enabled: 0 files deleted, 0 files added, 1 files changed.
+[0m21:19:11.892906 [debug] [MainThread]: Partial parsing: updated file: queries://models/dashboard_arcgis/staging/stg_repeat_names.sql
+[0m21:19:12.409473 [debug] [MainThread]: Sending event: {'category': 'dbt', 'action': 'load_project', 'label': '3d5aef0a-0f9a-41e6-96a7-5fd51a48f249', 'context': [<snowplow_tracker.self_describing_json.SelfDescribingJson object at 0x7f5b0ef7b700>]}
+[0m21:19:12.532015 [debug] [MainThread]: Wrote artifact WritableManifest to queries/target/manifest.json
+[0m21:19:12.534108 [debug] [MainThread]: Wrote artifact SemanticManifest to queries/target/semantic_manifest.json
+[0m21:19:12.546950 [debug] [MainThread]: Sending event: {'category': 'dbt', 'action': 'resource_counts', 'label': '3d5aef0a-0f9a-41e6-96a7-5fd51a48f249', 'context': [<snowplow_tracker.self_describing_json.SelfDescribingJson object at 0x7f5b0f22cd90>]}
+[0m21:19:12.547915 [info ] [MainThread]: Found 4 models, 2 sources, 494 macros
+[0m21:19:12.548576 [debug] [MainThread]: Sending event: {'category': 'dbt', 'action': 'runnable_timing', 'label': '3d5aef0a-0f9a-41e6-96a7-5fd51a48f249', 'context': [<snowplow_tracker.self_describing_json.SelfDescribingJson object at 0x7f5b0f22cc70>]}
+[0m21:19:12.550443 [info ] [MainThread]: 
+[0m21:19:12.550976 [info ] [MainThread]: Concurrency: 2 threads (target='dev')
+[0m21:19:12.551378 [info ] [MainThread]: 
+[0m21:19:12.552063 [debug] [MainThread]: Acquiring new bigquery connection 'master'
+[0m21:19:12.553796 [debug] [ThreadPool]: Acquiring new bigquery connection 'list_rj-smas-dev'
+[0m21:19:12.554981 [debug] [ThreadPool]: Opening a new connection, currently in state init
+[0m21:19:13.363162 [debug] [ThreadPool]: Re-using an available connection from the pool (formerly list_rj-smas-dev, now list_rj-smas-dev_dashboard_arcgis_dev)
+[0m21:19:13.363956 [debug] [ThreadPool]: Opening a new connection, currently in state closed
+[0m21:19:14.029143 [debug] [MainThread]: Sending event: {'category': 'dbt', 'action': 'runnable_timing', 'label': '3d5aef0a-0f9a-41e6-96a7-5fd51a48f249', 'context': [<snowplow_tracker.self_describing_json.SelfDescribingJson object at 0x7f5b2e5c8b80>]}
+[0m21:19:14.030034 [debug] [MainThread]: Opening a new connection, currently in state init
+[0m21:19:14.082808 [debug] [Thread-1 (]: Began running node model.queries.stg_repeat_names
+[0m21:19:14.083836 [info ] [Thread-1 (]: 1 of 1 START sql view model dashboard_arcgis_dev.stg_repeat_names .............. [RUN]
+[0m21:19:14.084687 [debug] [Thread-1 (]: Re-using an available connection from the pool (formerly list_rj-smas-dev_dashboard_arcgis_dev, now model.queries.stg_repeat_names)
+[0m21:19:14.085383 [debug] [Thread-1 (]: Began compiling node model.queries.stg_repeat_names
+[0m21:19:14.097723 [debug] [Thread-1 (]: Writing injected SQL for node "model.queries.stg_repeat_names"
+[0m21:19:14.098715 [debug] [Thread-1 (]: Began executing node model.queries.stg_repeat_names
+[0m21:19:14.139723 [debug] [Thread-1 (]: Writing runtime sql for node "model.queries.stg_repeat_names"
+[0m21:19:14.140873 [debug] [Thread-1 (]: On model.queries.stg_repeat_names: /* {"app": "dbt", "dbt_version": "1.9.4", "profile_name": "rj_smas_dev", "target_name": "dev", "node_id": "model.queries.stg_repeat_names"} */
+
+
+  create or replace view `rj-smas-dev`.`dashboard_arcgis_dev`.`stg_repeat_names`
+  OPTIONS()
+  as 
+
+WITH base AS (
+  SELECT
+    parentrowid,
+    repeat_nome_usuario,
+    repeat_nome_mae,
+    ano_num_data_abordagem
+  FROM `rj-smas-dev`.`arcgis_raw`.`abordagem_repeat_raw`
+),
+
+tokens AS (
+  SELECT
+    parentrowid,
+    repeat_nome_usuario,
+    repeat_nome_mae,
+    ano_num_data_abordagem,
+
+    -- explode em palavras já normalizadas
+    SPLIT(
+    TRIM(                                                         
+      REGEXP_REPLACE(
+        REGEXP_REPLACE(
+          LOWER(
+            REGEXP_REPLACE(NORMALIZE(repeat_nome_usuario, NFD), r'\p{M}', '')  -- remove acentos
+          ),
+          r'[^a-z\s]', ' '        -- pontuação → espaço
+        ),
+        r'\s+', ' '               -- espaços duplicados
+      )
+    )
+, ' ')     AS arr_usuario,
+    SPLIT(
+    TRIM(                                                         
+      REGEXP_REPLACE(
+        REGEXP_REPLACE(
+          LOWER(
+            REGEXP_REPLACE(NORMALIZE(repeat_nome_mae, NFD), r'\p{M}', '')  -- remove acentos
+          ),
+          r'[^a-z\s]', ' '        -- pontuação → espaço
+        ),
+        r'\s+', ' '               -- espaços duplicados
+      )
+    )
+,     ' ')     AS arr_mae
+  FROM base
+),
+
+filtered AS (
+  SELECT
+    parentrowid,
+    repeat_nome_usuario,
+    repeat_nome_mae,
+    ano_num_data_abordagem,
+
+    -- remove stop-words simples
+    ARRAY(
+      SELECT t
+      FROM UNNEST(arr_usuario) t
+      WHERE t NOT IN ('de','da','do','das','dos','e','a','o','os','as')
+    ) AS arr_usuario_ok,
+
+    ARRAY(
+      SELECT t
+      FROM UNNEST(arr_mae) t
+      WHERE t NOT IN ('de','da','do','das','dos','e','a','o','os','as')
+    ) AS arr_mae_ok
+  FROM tokens
+)
+
+SELECT
+  parentrowid,
+  repeat_nome_usuario,
+  repeat_nome_mae,
+  ano_num_data_abordagem,
+
+  ARRAY_TO_STRING(arr_usuario_ok, ' ')  AS nome_usuario_norm,
+  ARRAY_TO_STRING(arr_mae_ok,     ' ')  AS nome_mae_norm
+FROM filtered;
+
+
+[0m21:19:14.141646 [debug] [Thread-1 (]: Opening a new connection, currently in state closed
+[0m21:19:15.003224 [debug] [Thread-1 (]: BigQuery adapter: https://console.cloud.google.com/bigquery?project=rj-smas-dev&j=bq:US:eaec0e2d-0447-4c88-972a-0fd3fba90886&page=queryresults
+[0m21:19:15.586825 [debug] [Thread-1 (]: Sending event: {'category': 'dbt', 'action': 'run_model', 'label': '3d5aef0a-0f9a-41e6-96a7-5fd51a48f249', 'context': [<snowplow_tracker.self_describing_json.SelfDescribingJson object at 0x7f5b0eff2d40>]}
+[0m21:19:15.587903 [info ] [Thread-1 (]: 1 of 1 OK created sql view model dashboard_arcgis_dev.stg_repeat_names ......... [[32mCREATE VIEW (0 processed)[0m in 1.50s]
+[0m21:19:15.588822 [debug] [Thread-1 (]: Finished running node model.queries.stg_repeat_names
+[0m21:19:15.590892 [debug] [MainThread]: Opening a new connection, currently in state closed
+[0m21:19:15.636594 [debug] [MainThread]: Connection 'master' was properly closed.
+[0m21:19:15.637265 [debug] [MainThread]: Connection 'model.queries.stg_repeat_names' was properly closed.
+[0m21:19:15.637742 [info ] [MainThread]: 
+[0m21:19:15.638492 [info ] [MainThread]: Finished running 1 view model in 0 hours 0 minutes and 3.09 seconds (3.09s).
+[0m21:19:15.639407 [debug] [MainThread]: Command end result
+[0m21:19:15.670399 [debug] [MainThread]: Wrote artifact WritableManifest to queries/target/manifest.json
+[0m21:19:15.672374 [debug] [MainThread]: Wrote artifact SemanticManifest to queries/target/semantic_manifest.json
+[0m21:19:15.681332 [debug] [MainThread]: Wrote artifact RunExecutionResult to queries/target/run_results.json
+[0m21:19:15.686148 [info ] [MainThread]: 
+[0m21:19:15.686935 [info ] [MainThread]: [32mCompleted successfully[0m
+[0m21:19:15.687484 [info ] [MainThread]: 
+[0m21:19:15.688032 [info ] [MainThread]: Done. PASS=1 WARN=0 ERROR=0 SKIP=0 TOTAL=1
+[0m21:19:15.688822 [debug] [MainThread]: Resource report: {"command_name": "run", "command_success": true, "command_wall_clock_time": 8.118737, "process_in_blocks": "1640", "process_kernel_time": 0.772234, "process_mem_max_rss": "400292", "process_out_blocks": "3240", "process_user_time": 6.938233}
+[0m21:19:15.689385 [debug] [MainThread]: Command `dbt run` succeeded at 21:19:15.689262 after 8.12 seconds
+[0m21:19:15.689890 [debug] [MainThread]: Sending event: {'category': 'dbt', 'action': 'invocation', 'label': 'end', 'context': [<snowplow_tracker.self_describing_json.SelfDescribingJson object at 0x7f5b2f439420>, <snowplow_tracker.self_describing_json.SelfDescribingJson object at 0x7f5b2e5e3160>, <snowplow_tracker.self_describing_json.SelfDescribingJson object at 0x7f5b2f4dcdf0>]}
+[0m21:19:15.690402 [debug] [MainThread]: Flushing usage events
+[0m21:19:16.293383 [debug] [MainThread]: An error was encountered while trying to flush usage events
+[0m21:20:38.806758 [debug] [MainThread]: Sending event: {'category': 'dbt', 'action': 'invocation', 'label': 'start', 'context': [<snowplow_tracker.self_describing_json.SelfDescribingJson object at 0x7faeaa9693c0>, <snowplow_tracker.self_describing_json.SelfDescribingJson object at 0x7faea9b57b50>, <snowplow_tracker.self_describing_json.SelfDescribingJson object at 0x7faea9b57af0>]}
+
+
+============================== 21:20:38.810089 | 98549210-f2c8-4cac-a22c-e4a7e466cd51 ==============================
+[0m21:20:38.810089 [info ] [MainThread]: Running with dbt=1.9.4
+[0m21:20:38.810852 [debug] [MainThread]: running dbt with arguments {'printer_width': '80', 'indirect_selection': 'eager', 'log_cache_events': 'False', 'write_json': 'True', 'partial_parse': 'True', 'cache_selected_only': 'False', 'profiles_dir': 'queries', 'debug': 'False', 'version_check': 'True', 'log_path': 'queries/logs', 'warn_error': 'None', 'fail_fast': 'False', 'use_colors': 'True', 'use_experimental_parser': 'False', 'no_print': 'None', 'quiet': 'False', 'empty': 'False', 'log_format': 'default', 'invocation_command': 'dbt run --project-dir queries --profiles-dir queries --select stg_repeat_names_cluster', 'static_parser': 'True', 'warn_error_options': 'WarnErrorOptions(include=[], exclude=[])', 'target_path': 'None', 'introspect': 'True', 'send_anonymous_usage_stats': 'True'}
+[0m21:20:42.364167 [debug] [MainThread]: Sending event: {'category': 'dbt', 'action': 'project_id', 'label': '98549210-f2c8-4cac-a22c-e4a7e466cd51', 'context': [<snowplow_tracker.self_describing_json.SelfDescribingJson object at 0x7faeaa83a710>]}
+[0m21:20:42.472497 [debug] [MainThread]: Sending event: {'category': 'dbt', 'action': 'adapter_info', 'label': '98549210-f2c8-4cac-a22c-e4a7e466cd51', 'context': [<snowplow_tracker.self_describing_json.SelfDescribingJson object at 0x7fae8aa2b700>]}
+[0m21:20:42.473480 [info ] [MainThread]: Registered adapter: bigquery=1.9.2
+[0m21:20:42.739062 [debug] [MainThread]: checksum: 53ed91fada2233efb98368d1716b44ab532c83a9c293cf1890b7905d5b45fb25, vars: {}, profile: , target: dev, version: 1.9.4
+[0m21:20:42.917918 [debug] [MainThread]: Partial parsing enabled: 0 files deleted, 0 files added, 1 files changed.
+[0m21:20:42.918921 [debug] [MainThread]: Partial parsing: updated file: queries://models/dashboard_arcgis/staging/stg_repeat_names_cluster.sql
+[0m21:20:43.393950 [debug] [MainThread]: Sending event: {'category': 'dbt', 'action': 'load_project', 'label': '98549210-f2c8-4cac-a22c-e4a7e466cd51', 'context': [<snowplow_tracker.self_describing_json.SelfDescribingJson object at 0x7fae89d68130>]}
+[0m21:20:43.518482 [debug] [MainThread]: Wrote artifact WritableManifest to queries/target/manifest.json
+[0m21:20:43.520590 [debug] [MainThread]: Wrote artifact SemanticManifest to queries/target/semantic_manifest.json
+[0m21:20:43.533477 [debug] [MainThread]: Sending event: {'category': 'dbt', 'action': 'resource_counts', 'label': '98549210-f2c8-4cac-a22c-e4a7e466cd51', 'context': [<snowplow_tracker.self_describing_json.SelfDescribingJson object at 0x7fae89d69f60>]}
+[0m21:20:43.534221 [info ] [MainThread]: Found 4 models, 2 sources, 494 macros
+[0m21:20:43.534973 [debug] [MainThread]: Sending event: {'category': 'dbt', 'action': 'runnable_timing', 'label': '98549210-f2c8-4cac-a22c-e4a7e466cd51', 'context': [<snowplow_tracker.self_describing_json.SelfDescribingJson object at 0x7faeab7a09d0>]}
+[0m21:20:43.536635 [info ] [MainThread]: 
+[0m21:20:43.537211 [info ] [MainThread]: Concurrency: 2 threads (target='dev')
+[0m21:20:43.537705 [info ] [MainThread]: 
+[0m21:20:43.538442 [debug] [MainThread]: Acquiring new bigquery connection 'master'
+[0m21:20:43.539505 [debug] [ThreadPool]: Acquiring new bigquery connection 'list_rj-smas-dev'
+[0m21:20:43.539978 [debug] [ThreadPool]: Opening a new connection, currently in state init
+[0m21:20:44.276986 [debug] [ThreadPool]: Re-using an available connection from the pool (formerly list_rj-smas-dev, now list_rj-smas-dev_dashboard_arcgis_dev)
+[0m21:20:44.277957 [debug] [ThreadPool]: Opening a new connection, currently in state closed
+[0m21:20:44.933205 [debug] [MainThread]: Sending event: {'category': 'dbt', 'action': 'runnable_timing', 'label': '98549210-f2c8-4cac-a22c-e4a7e466cd51', 'context': [<snowplow_tracker.self_describing_json.SelfDescribingJson object at 0x7faeac1e7f10>]}
+[0m21:20:44.933935 [debug] [MainThread]: Opening a new connection, currently in state init
+[0m21:20:44.980488 [debug] [Thread-1 (]: Began running node model.queries.stg_repeat_names_cluster
+[0m21:20:44.981328 [info ] [Thread-1 (]: 1 of 1 START sql table model dashboard_arcgis_dev.stg_repeat_names_cluster ..... [RUN]
+[0m21:20:44.982247 [debug] [Thread-1 (]: Re-using an available connection from the pool (formerly list_rj-smas-dev_dashboard_arcgis_dev, now model.queries.stg_repeat_names_cluster)
+[0m21:20:44.982728 [debug] [Thread-1 (]: Began compiling node model.queries.stg_repeat_names_cluster
+[0m21:20:44.993941 [debug] [Thread-1 (]: Writing injected SQL for node "model.queries.stg_repeat_names_cluster"
+[0m21:20:44.995008 [debug] [Thread-1 (]: Began executing node model.queries.stg_repeat_names_cluster
+[0m21:20:45.016818 [debug] [Thread-1 (]: Opening a new connection, currently in state closed
+[0m21:20:45.686108 [debug] [Thread-1 (]: Writing runtime sql for node "model.queries.stg_repeat_names_cluster"
+[0m21:20:45.687904 [debug] [Thread-1 (]: On model.queries.stg_repeat_names_cluster: /* {"app": "dbt", "dbt_version": "1.9.4", "profile_name": "rj_smas_dev", "target_name": "dev", "node_id": "model.queries.stg_repeat_names_cluster"} */
+
+  
+    
+
+    create or replace table `rj-smas-dev`.`dashboard_arcgis_dev`.`stg_repeat_names_cluster`
+      
+    
+    
+
+    OPTIONS()
+    as (
+      
+
+-- 1. Base com nomes normalizados
+WITH base AS (
+    SELECT
+        parentrowid,
+        nome_usuario_norm AS nm,
+        nome_mae_norm     AS mm,
+        ano_num_data_abordagem
+    FROM `rj-smas-dev`.`dashboard_arcgis_dev`.`stg_repeat_names`
+),
+
+-- 2. Bloqueio A  (SOUNDEX do nome)  ·········································
+blk_a AS (
+    SELECT
+        *,
+        SOUNDEX(nm) AS blk
+    FROM base
+    QUALIFY ROW_NUMBER() OVER (PARTITION BY blk ORDER BY parentrowid) <= 2000
+),
+
+pairs_a AS (
+    SELECT
+        a.parentrowid AS id_a,
+        b.parentrowid AS id_b,
+        a.nm, a.mm,
+        b.nm AS nm_b, b.mm AS mm_b
+    FROM blk_a a
+    JOIN blk_a b USING (blk)
+    WHERE a.parentrowid < b.parentrowid
+),
+
+-- 3. Bloqueio B  (SOUNDEX do nome + último sobrenome da mãe) ···············
+blk_b AS (
+    SELECT
+        *,
+        CONCAT(
+          SOUNDEX(nm), '_',
+          SOUNDEX(SPLIT(mm, ' ')[SAFE_OFFSET(-1)])  -- último token
+        ) AS blk
+    FROM base
+    QUALIFY ROW_NUMBER() OVER (PARTITION BY blk ORDER BY parentrowid) <= 2000
+),
+
+pairs_b AS (
+    SELECT
+        a.parentrowid AS id_a,
+        b.parentrowid AS id_b,
+        a.nm, a.mm,
+        b.nm AS nm_b, b.mm AS mm_b
+    FROM blk_b a
+    JOIN blk_b b USING (blk)
+    WHERE a.parentrowid < b.parentrowid
+),
+
+-- 4. União dos pares candidatos ·············································
+pairs AS (
+    SELECT * FROM pairs_a
+    UNION ALL
+    SELECT * FROM pairs_b
+),
+
+-- 5. Métricas de distância e contenção ······································
+scored AS (
+    SELECT
+        id_a, id_b,
+        EDIT_DISTANCE(nm,  nm_b) AS d_nm,
+        EDIT_DISTANCE(mm,  mm_b) AS d_mm,
+
+        ARRAY_LENGTH(
+          ARRAY(
+            SELECT x FROM UNNEST(SPLIT(nm, ' ')) x
+            INTERSECT DISTINCT
+            SELECT y FROM UNNEST(SPLIT(nm_b,' ')) y
+          )
+        ) / LEAST(
+              ARRAY_LENGTH(SPLIT(nm,  ' ')),
+              ARRAY_LENGTH(SPLIT(nm_b,' '))
+          )                                   AS cont_nm,
+
+        ARRAY_LENGTH(
+          ARRAY(
+            SELECT x FROM UNNEST(SPLIT(mm, ' ')) x
+            INTERSECT DISTINCT
+            SELECT y FROM UNNEST(SPLIT(mm_b,' ')) y
+          )
+        ) / LEAST(
+              ARRAY_LENGTH(SPLIT(mm,  ' ')),
+              ARRAY_LENGTH(SPLIT(mm_b,' '))
+          )                                   AS cont_mm
+    FROM pairs
+),
+
+-- 6. Pares que satisfazem a regra de duplicidade ····························
+dupes AS (
+    SELECT id_a, id_b
+    FROM scored
+    WHERE (d_nm <= 2 OR cont_nm >= 0.8)
+      AND (d_mm <= 2 OR cont_mm >= 0.8)
+),
+
+-- 7. Grafo não-direcionado (componentes conexas) ····························
+graph AS (
+    SELECT parentrowid, parentrowid AS neigh FROM base
+    UNION ALL
+    SELECT id_a, id_b FROM dupes
+    UNION ALL
+    SELECT id_b, id_a FROM dupes
+),
+
+seed AS (
+    SELECT
+        parentrowid,
+        MIN(neigh) OVER (PARTITION BY parentrowid) AS cluster_seed
+    FROM graph
+),
+
+-- 8. Resultado final (uma linha por parentrowid) ····························
+final AS (
+    SELECT
+        b.parentrowid,
+        b.nm,
+        b.mm,
+        b.ano_num_data_abordagem,
+        MIN(cluster_seed) OVER (PARTITION BY cluster_seed) AS cluster_id,
+        COUNT(*)        OVER (PARTITION BY cluster_seed)   AS cluster_size
+    FROM base b
+    JOIN seed USING (parentrowid)
+)
+
+SELECT
+    parentrowid,
+    nm,
+    mm,
+    ano_num_data_abordagem,
+    cluster_id,
+    cluster_size,
+    cluster_size > 1 AS is_duplicado
+FROM final
+    );
+  
+[0m21:20:46.325856 [debug] [Thread-1 (]: BigQuery adapter: https://console.cloud.google.com/bigquery?project=rj-smas-dev&j=bq:US:38fb1f10-982d-4a78-b32a-a9519dbf1432&page=queryresults
+[0m21:21:27.470141 [debug] [Thread-1 (]: Sending event: {'category': 'dbt', 'action': 'run_model', 'label': '98549210-f2c8-4cac-a22c-e4a7e466cd51', 'context': [<snowplow_tracker.self_describing_json.SelfDescribingJson object at 0x7fae8fdb4c70>]}
+[0m21:21:27.471189 [info ] [Thread-1 (]: 1 of 1 OK created sql table model dashboard_arcgis_dev.stg_repeat_names_cluster  [[32mCREATE TABLE (18.3m rows, 24.4 MiB processed)[0m in 42.49s]
+[0m21:21:27.471992 [debug] [Thread-1 (]: Finished running node model.queries.stg_repeat_names_cluster
+[0m21:21:27.473700 [debug] [MainThread]: Opening a new connection, currently in state closed
+[0m21:21:27.516771 [debug] [MainThread]: Connection 'master' was properly closed.
+[0m21:21:27.517369 [debug] [MainThread]: Connection 'model.queries.stg_repeat_names_cluster' was properly closed.
+[0m21:21:27.517986 [info ] [MainThread]: 
+[0m21:21:27.518622 [info ] [MainThread]: Finished running 1 table model in 0 hours 0 minutes and 43.98 seconds (43.98s).
+[0m21:21:27.519492 [debug] [MainThread]: Command end result
+[0m21:21:27.552205 [debug] [MainThread]: Wrote artifact WritableManifest to queries/target/manifest.json
+[0m21:21:27.554828 [debug] [MainThread]: Wrote artifact SemanticManifest to queries/target/semantic_manifest.json
+[0m21:21:27.564701 [debug] [MainThread]: Wrote artifact RunExecutionResult to queries/target/run_results.json
+[0m21:21:27.565287 [info ] [MainThread]: 
+[0m21:21:27.565904 [info ] [MainThread]: [32mCompleted successfully[0m
+[0m21:21:27.566306 [info ] [MainThread]: 
+[0m21:21:27.566773 [info ] [MainThread]: Done. PASS=1 WARN=0 ERROR=0 SKIP=0 TOTAL=1
+[0m21:21:27.567437 [debug] [MainThread]: Resource report: {"command_name": "run", "command_success": true, "command_wall_clock_time": 48.865696, "process_in_blocks": "0", "process_kernel_time": 0.801472, "process_mem_max_rss": "402924", "process_out_blocks": "3256", "process_user_time": 6.856792}
+[0m21:21:27.568000 [debug] [MainThread]: Command `dbt run` succeeded at 21:21:27.567882 after 48.87 seconds
+[0m21:21:27.568459 [debug] [MainThread]: Sending event: {'category': 'dbt', 'action': 'invocation', 'label': 'end', 'context': [<snowplow_tracker.self_describing_json.SelfDescribingJson object at 0x7faeaa9693c0>, <snowplow_tracker.self_describing_json.SelfDescribingJson object at 0x7faeaa83a710>, <snowplow_tracker.self_describing_json.SelfDescribingJson object at 0x7fae8a58fc40>]}
+[0m21:21:27.568927 [debug] [MainThread]: Flushing usage events
+[0m21:21:28.123201 [debug] [MainThread]: An error was encountered while trying to flush usage events
