@@ -122,8 +122,9 @@ graph AS (
 seed AS (
     SELECT
         parentrowid,
-        MIN(neigh) OVER (PARTITION BY parentrowid) AS cluster_seed
+        MIN(neigh) AS cluster_seed          
     FROM graph
+    GROUP BY parentrowid                   
 ),
 
 -- 8. Resultado final (uma linha por parentrowid) ····························
