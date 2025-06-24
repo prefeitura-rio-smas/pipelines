@@ -1,12 +1,25 @@
 {
   "name": "pipeline-arcgis",
-  "image": "mcr.microsoft.com/devcontainers/python:3.11-jammy",
+  "image": "mcr.microsoft.com/devcontainers/python:3.10",
 
   "features": {
-    "ghcr.io/devcontainers/features/common-utils:2": {},
-    "ghcr.io/devcontainers-contrib/features/poetry:2": {}
+    "ghcr.io/devcontainers/features/common-utils:2": {}
   },
 
-  "postCreateCommand": "poetry --version",
+  "customizations": {
+    "vscode": {
+      "settings": {
+        "python.defaultInterpreterPath": "/usr/local/bin/python"
+      },
+      "extensions": [
+        "ms-python.python",
+        "ms-python.vscode-pylance"
+      ]
+    }
+  },
+
+  // Comando para instalar e rodar o poetry.
+  "postCreateCommand": "pipx install poetry && poetry config virtualenvs.in-project true && poetry install --no-root",
+
   "remoteUser": "vscode"
 }
