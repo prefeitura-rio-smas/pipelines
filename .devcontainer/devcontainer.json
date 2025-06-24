@@ -1,9 +1,12 @@
 {
   "name": "pipeline-arcgis",
+  "image": "mcr.microsoft.com/devcontainers/python:3.11-jammy",
+
   "features": {
-    "ghcr.io/devcontainers/features/python:1": {
-      "version": "3.11",        
-      "installPoetry": "true" 
-    }
-  }
+    "ghcr.io/devcontainers/features/common-utils:2": {},
+    "ghcr.io/devcontainers-contrib/features/poetry:2": {}
+  },
+
+  "postCreateCommand": "poetry --version",
+  "remoteUser": "vscode"
 }
