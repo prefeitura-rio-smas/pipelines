@@ -2,4 +2,7 @@
 .env
 .env__pycache__/
 *.pyc
+target/
+dbt_packages/
+logs/
 /sandbox/ 
