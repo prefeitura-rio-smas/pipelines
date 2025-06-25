@@ -18,8 +18,13 @@
     }
   },
 
-  // Comando para instalar e rodar o poetry.
-  "postCreateCommand": "pipx install poetry && poetry config virtualenvs.in-project true && poetry install --no-root",
+  "postCreateCommand": [
+    // Instalação do Poetry
+    "pipx install poetry && poetry config virtualenvs.in-project true && poetry install --no-root",
+    
+    // Criação da credencial
+    "if [ ! -z \"$GCP_CREDENTIALS_JSON\" ]; then mkdir -p ~/.gcp && echo $GCP_CREDENTIALS_JSON > ~/.gcp/gcp-credentials.json; fi"
+  ],
 
   "remoteUser": "vscode"
 }
