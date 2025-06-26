@@ -7,7 +7,7 @@ rj_smas_dev:
       method: service-account
       project: rj-smas-dev
       dataset: dashboard_arcgis
-      keyfile: /etc/gcp/credentials/leoneabreu-smas.json
+      keyfile: "{{ env_var('DBT_KEYFILE_PATH') }}"
       threads: 2
       location: US
       timeout_seconds: 300
@@ -17,7 +17,7 @@ rj_smas_dev:
       method: service-account
       project: rj-smas-dev
       dataset: dashboard_arcgis_dev
-      keyfile: /etc/gcp/credentials/leoneabreu-smas.json
+      keyfile: "{{ env_var('DBT_KEYFILE_PATH') }}"
       threads: 2
       location: US
       timeout_seconds: 300
