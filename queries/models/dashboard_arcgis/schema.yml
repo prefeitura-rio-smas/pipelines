@@ -6,7 +6,6 @@ sources:
     schema: arcgis_raw
     tables:
       - name: abordagem_repeat_raw
-      - name: abordagem_ficha_raw
 
 models:
   - name: abordagem_repeat
@@ -19,6 +18,12 @@ models:
       - name: repeat_unidade_calculo_tratada
         description: ""
       - name: repeat_unidade_cas
+        description: ""
+      - name: repeat_cpf
+        description: ""
+      - name: repeat_data_nascimento_iso
+        description: ""
+      - name: repeat_grupo_familiar
         description: ""
       - name: repeat_nome_usuario
         description: ""

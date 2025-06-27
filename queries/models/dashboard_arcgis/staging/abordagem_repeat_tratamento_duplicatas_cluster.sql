@@ -1,4 +1,4 @@
-{{ config(materialized = 'table') }}
+{{ config(materialized = 'ephemeral') }}
 
 -- 1. Base com nomes normalizados
 WITH base AS (
@@ -8,7 +8,7 @@ WITH base AS (
         nome_usuario_norm AS nm,
         nome_mae_norm     AS mm,
         ano_num_data_abordagem
-    FROM {{ ref('stg_repeat_names') }}
+    FROM {{ ref('abordagem_repeat_padronizacao_nomes') }}
 ),
 
 -- 2. Bloqueio A  (SOUNDEX do nome)  ·········································
