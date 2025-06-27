@@ -23,8 +23,11 @@ SELECT
    END AS repeat_unidade_calculo_tratada,
   repeat_unidade_cas,
   repeat_nome_usuario,
+  repeat_cpf,
 
   SAFE.PARSE_DATE('%d/%m/%Y', repeat_data_nascimento) AS repeat_data_nascimento,
+  repeat_data_nascimento_iso,
+  repeat_grupo_familiar,
 
   repeat_idade,
   repeat_faixa_etaria,

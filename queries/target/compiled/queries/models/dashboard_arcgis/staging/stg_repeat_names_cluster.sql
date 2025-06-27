@@ -3,6 +3,7 @@
 -- 1. Base com nomes normalizados
 WITH base AS (
     SELECT
+        globalid,
         parentrowid,
         nome_usuario_norm AS nm,
         nome_mae_norm     AS mm,
@@ -119,6 +120,7 @@ seed AS (
 -- 8. Resultado final (uma linha por parentrowid) ····························
 final AS (
     SELECT
+        b.globalid,
         b.parentrowid,
         b.nm,
         b.mm,
@@ -130,6 +132,7 @@ final AS (
 )
 
 SELECT
+    globalid,
     parentrowid,
     nm,
     mm,

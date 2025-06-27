@@ -2,6 +2,7 @@
 
 WITH base AS (
   SELECT
+    globalid,
     parentrowid,
     repeat_nome_usuario,
     repeat_nome_mae,
@@ -11,10 +12,7 @@ WITH base AS (
 
 tokens AS (
   SELECT
-    parentrowid,
-    repeat_nome_usuario,
-    repeat_nome_mae,
-    ano_num_data_abordagem,
+    *,
 
     -- explode em palavras já normalizadas
     SPLIT(
@@ -48,10 +46,7 @@ tokens AS (
 
 filtered AS (
   SELECT
-    parentrowid,
-    repeat_nome_usuario,
-    repeat_nome_mae,
-    ano_num_data_abordagem,
+    *,
 
     -- remove stop-words simples
     ARRAY(
@@ -69,6 +64,7 @@ filtered AS (
 )
 
 SELECT
+  globalid,
   parentrowid,
   repeat_nome_usuario,
   repeat_nome_mae,

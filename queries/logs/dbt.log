@@ -5520,3 +5520,1242 @@ FROM final
 [0m20:03:49.347892 [debug] [MainThread]: Sending event: {'category': 'dbt', 'action': 'invocation', 'label': 'end', 'context': [<snowplow_tracker.self_describing_json.SelfDescribingJson object at 0x7f4a49f613f0>, <snowplow_tracker.self_describing_json.SelfDescribingJson object at 0x7f4a4a005cf0>, <snowplow_tracker.self_describing_json.SelfDescribingJson object at 0x7f4a29ba2620>]}
 [0m20:03:49.348430 [debug] [MainThread]: Flushing usage events
 [0m20:03:49.900582 [debug] [MainThread]: An error was encountered while trying to flush usage events
+[0m13:38:22.620311 [debug] [MainThread]: Sending event: {'category': 'dbt', 'action': 'invocation', 'label': 'start', 'context': [<snowplow_tracker.self_describing_json.SelfDescribingJson object at 0x738068f6c550>, <snowplow_tracker.self_describing_json.SelfDescribingJson object at 0x7380681eb6a0>, <snowplow_tracker.self_describing_json.SelfDescribingJson object at 0x7380681eb670>]}
+
+
+============================== 13:38:22.668557 | b80ed6a0-afa9-4c7c-a1f6-6c7512cd3895 ==============================
+[0m13:38:22.668557 [info ] [MainThread]: Running with dbt=1.9.4
+[0m13:38:22.669288 [debug] [MainThread]: running dbt with arguments {'printer_width': '80', 'indirect_selection': 'eager', 'log_cache_events': 'False', 'write_json': 'True', 'partial_parse': 'True', 'cache_selected_only': 'False', 'profiles_dir': '/workspaces/pipeline_arcgis/queries', 'version_check': 'True', 'debug': 'False', 'log_path': '/workspaces/pipeline_arcgis/queries/logs', 'warn_error': 'None', 'fail_fast': 'False', 'use_colors': 'True', 'use_experimental_parser': 'False', 'empty': 'None', 'quiet': 'False', 'no_print': 'None', 'warn_error_options': 'WarnErrorOptions(include=[], exclude=[])', 'invocation_command': 'dbt debug', 'static_parser': 'True', 'introspect': 'True', 'target_path': 'None', 'log_format': 'default', 'send_anonymous_usage_stats': 'True'}
+[0m13:38:22.719924 [info ] [MainThread]: dbt version: 1.9.4
+[0m13:38:22.720576 [info ] [MainThread]: python version: 3.10.17
+[0m13:38:22.721124 [info ] [MainThread]: python path: /workspaces/pipeline_arcgis/.venv/bin/python
+[0m13:38:22.721610 [info ] [MainThread]: os info: Linux-6.8.0-1027-azure-x86_64-with-glibc2.36
+[0m13:38:35.721390 [info ] [MainThread]: Using profiles dir at /workspaces/pipeline_arcgis/queries
+[0m13:38:35.722987 [info ] [MainThread]: Using profiles.yml file at /workspaces/pipeline_arcgis/queries/profiles.yml
+[0m13:38:35.723934 [info ] [MainThread]: Using dbt_project.yml file at /workspaces/pipeline_arcgis/queries/dbt_project.yml
+[0m13:38:35.724764 [info ] [MainThread]: adapter type: bigquery
+[0m13:38:35.725705 [info ] [MainThread]: adapter version: 1.9.2
+[0m13:38:35.869435 [info ] [MainThread]: Configuration:
+[0m13:38:35.870676 [info ] [MainThread]:   profiles.yml file [[32mOK found and valid[0m]
+[0m13:38:35.871498 [info ] [MainThread]:   dbt_project.yml file [[32mOK found and valid[0m]
+[0m13:38:35.872262 [info ] [MainThread]: Required dependencies:
+[0m13:38:35.873071 [debug] [MainThread]: Executing "git --help"
+[0m13:38:35.879483 [debug] [MainThread]: STDOUT: "b"usage: git [-v | --version] [-h | --help] [-C <path>] [-c <name>=<value>]\n           [--exec-path[=<path>]] [--html-path] [--man-path] [--info-path]\n           [-p | --paginate | -P | --no-pager] [--no-replace-objects] [--no-lazy-fetch]\n           [--no-optional-locks] [--no-advice] [--bare] [--git-dir=<path>]\n           [--work-tree=<path>] [--namespace=<name>] [--config-env=<name>=<envvar>]\n           <command> [<args>]\n\nThese are common Git commands used in various situations:\n\nstart a working area (see also: git help tutorial)\n   clone      Clone a repository into a new directory\n   init       Create an empty Git repository or reinitialize an existing one\n\nwork on the current change (see also: git help everyday)\n   add        Add file contents to the index\n   mv         Move or rename a file, a directory, or a symlink\n   restore    Restore working tree files\n   rm         Remove files from the working tree and from the index\n\nexamine the history and state (see also: git help revisions)\n   bisect     Use binary search to find the commit that introduced a bug\n   diff       Show changes between commits, commit and working tree, etc\n   grep       Print lines matching a pattern\n   log        Show commit logs\n   show       Show various types of objects\n   status     Show the working tree status\n\ngrow, mark and tweak your common history\n   backfill   Download missing objects in a partial clone\n   branch     List, create, or delete branches\n   commit     Record changes to the repository\n   merge      Join two or more development histories together\n   rebase     Reapply commits on top of another base tip\n   reset      Reset current HEAD to the specified state\n   switch     Switch branches\n   tag        Create, list, delete or verify a tag object signed with GPG\n\ncollaborate (see also: git help workflows)\n   fetch      Download objects and refs from another repository\n   pull       Fetch from and integrate with another repository or a local branch\n   push       Update remote refs along with associated objects\n\n'git help -a' and 'git help -g' list available subcommands and some\nconcept guides. See 'git help <command>' or 'git help <concept>'\nto read about a specific subcommand or concept.\nSee 'git help git' for an overview of the system.\n""
+[0m13:38:35.880381 [debug] [MainThread]: STDERR: "b''"
+[0m13:38:35.881102 [info ] [MainThread]:  - git [[32mOK found[0m]
+
+[0m13:38:35.882018 [info ] [MainThread]: Connection:
+[0m13:38:35.882879 [info ] [MainThread]:   method: service-account
+[0m13:38:35.883688 [info ] [MainThread]:   database: rj-smas-dev
+[0m13:38:35.884531 [info ] [MainThread]:   execution_project: rj-smas-dev
+[0m13:38:35.885302 [info ] [MainThread]:   schema: dashboard_arcgis_dev
+[0m13:38:35.885924 [info ] [MainThread]:   location: US
+[0m13:38:35.886528 [info ] [MainThread]:   priority: None
+[0m13:38:35.887576 [info ] [MainThread]:   maximum_bytes_billed: None
+[0m13:38:35.888566 [info ] [MainThread]:   impersonate_service_account: None
+[0m13:38:35.889436 [info ] [MainThread]:   job_retry_deadline_seconds: None
+[0m13:38:35.890267 [info ] [MainThread]:   job_retries: 1
+[0m13:38:35.891111 [info ] [MainThread]:   job_creation_timeout_seconds: None
+[0m13:38:35.891896 [info ] [MainThread]:   job_execution_timeout_seconds: 300
+[0m13:38:35.892768 [info ] [MainThread]:   timeout_seconds: 300
+[0m13:38:35.893733 [info ] [MainThread]:   client_id: None
+[0m13:38:35.894583 [info ] [MainThread]:   token_uri: None
+[0m13:38:35.895425 [info ] [MainThread]:   compute_region: None
+[0m13:38:35.896251 [info ] [MainThread]:   dataproc_cluster_name: None
+[0m13:38:35.897075 [info ] [MainThread]:   gcs_bucket: None
+[0m13:38:35.897894 [info ] [MainThread]:   dataproc_batch: None
+[0m13:38:35.898957 [info ] [MainThread]: Registered adapter: bigquery=1.9.2
+[0m13:38:36.310514 [debug] [MainThread]: Acquiring new bigquery connection 'debug'
+[0m13:38:36.311122 [debug] [MainThread]: On debug: select 1 as id
+[0m13:38:36.311610 [debug] [MainThread]: Opening a new connection, currently in state init
+[0m13:38:36.785064 [debug] [MainThread]: BigQuery adapter: https://console.cloud.google.com/bigquery?project=rj-smas-dev&j=bq:US:06d6ff02-d3dd-442d-8988-dc7c3be18b3c&page=queryresults
+[0m13:38:37.308799 [info ] [MainThread]:   Connection test: [[32mOK connection ok[0m]
+
+[0m13:38:37.309509 [info ] [MainThread]: [32mAll checks passed![0m
+[0m13:38:37.310312 [debug] [MainThread]: Resource report: {"command_name": "debug", "command_success": true, "command_wall_clock_time": 14.763074, "process_in_blocks": "384976", "process_kernel_time": 1.510163, "process_mem_max_rss": "385180", "process_out_blocks": "166416", "process_user_time": 13.044572}
+[0m13:38:37.310910 [debug] [MainThread]: Command `dbt debug` succeeded at 13:38:37.310763 after 14.76 seconds
+[0m13:38:37.311340 [debug] [MainThread]: Connection 'debug' was properly closed.
+[0m13:38:37.311849 [debug] [MainThread]: Sending event: {'category': 'dbt', 'action': 'invocation', 'label': 'end', 'context': [<snowplow_tracker.self_describing_json.SelfDescribingJson object at 0x738068f6c550>, <snowplow_tracker.self_describing_json.SelfDescribingJson object at 0x7380681ea740>, <snowplow_tracker.self_describing_json.SelfDescribingJson object at 0x73804e5efd90>]}
+[0m13:38:37.312491 [debug] [MainThread]: Flushing usage events
+[0m13:38:37.377287 [debug] [MainThread]: An error was encountered while trying to flush usage events
+[0m13:42:09.094485 [debug] [MainThread]: Sending event: {'category': 'dbt', 'action': 'invocation', 'label': 'start', 'context': [<snowplow_tracker.self_describing_json.SelfDescribingJson object at 0x7a89672be290>, <snowplow_tracker.self_describing_json.SelfDescribingJson object at 0x7a8966259630>, <snowplow_tracker.self_describing_json.SelfDescribingJson object at 0x7a89662595d0>]}
+
+
+============================== 13:42:09.098053 | 42462c33-cc54-49cf-ad4f-b891e52d246b ==============================
+[0m13:42:09.098053 [info ] [MainThread]: Running with dbt=1.9.4
+[0m13:42:09.098858 [debug] [MainThread]: running dbt with arguments {'printer_width': '80', 'indirect_selection': 'eager', 'log_cache_events': 'False', 'write_json': 'True', 'partial_parse': 'True', 'cache_selected_only': 'False', 'profiles_dir': '/workspaces/pipeline_arcgis/queries', 'version_check': 'True', 'fail_fast': 'False', 'log_path': '/workspaces/pipeline_arcgis/queries/logs', 'debug': 'False', 'warn_error': 'None', 'use_colors': 'True', 'use_experimental_parser': 'False', 'empty': 'False', 'quiet': 'False', 'no_print': 'None', 'warn_error_options': 'WarnErrorOptions(include=[], exclude=[])', 'invocation_command': 'dbt run', 'static_parser': 'True', 'log_format': 'default', 'target_path': 'None', 'introspect': 'True', 'send_anonymous_usage_stats': 'True'}
+[0m13:42:12.464412 [debug] [MainThread]: Sending event: {'category': 'dbt', 'action': 'project_id', 'label': '42462c33-cc54-49cf-ad4f-b891e52d246b', 'context': [<snowplow_tracker.self_describing_json.SelfDescribingJson object at 0x7a894c2a99c0>]}
+[0m13:42:12.547512 [debug] [MainThread]: Sending event: {'category': 'dbt', 'action': 'adapter_info', 'label': '42462c33-cc54-49cf-ad4f-b891e52d246b', 'context': [<snowplow_tracker.self_describing_json.SelfDescribingJson object at 0x7a894c2a9b70>]}
+[0m13:42:12.548222 [info ] [MainThread]: Registered adapter: bigquery=1.9.2
+[0m13:42:12.952293 [debug] [MainThread]: checksum: b5597158181700c50f5bc1c71fe28b37a6fb85633dc5323885263678b6bc782c, vars: {}, profile: , target: , version: 1.9.4
+[0m13:42:13.057062 [info ] [MainThread]: Unable to do partial parsing because config vars, config profile, or config target have changed
+[0m13:42:13.057683 [debug] [MainThread]: previous checksum: b5597158181700c50f5bc1c71fe28b37a6fb85633dc5323885263678b6bc782c, current checksum: 53ed91fada2233efb98368d1716b44ab532c83a9c293cf1890b7905d5b45fb25
+[0m13:42:13.058205 [debug] [MainThread]: Sending event: {'category': 'dbt', 'action': 'partial_parser', 'label': '42462c33-cc54-49cf-ad4f-b891e52d246b', 'context': [<snowplow_tracker.self_describing_json.SelfDescribingJson object at 0x7a89666d0af0>]}
+[0m13:42:14.548897 [debug] [MainThread]: Sending event: {'category': 'dbt', 'action': 'load_project', 'label': '42462c33-cc54-49cf-ad4f-b891e52d246b', 'context': [<snowplow_tracker.self_describing_json.SelfDescribingJson object at 0x7a894b75e410>]}
+[0m13:42:14.641053 [debug] [MainThread]: Wrote artifact WritableManifest to /workspaces/pipeline_arcgis/queries/target/manifest.json
+[0m13:42:14.642919 [debug] [MainThread]: Wrote artifact SemanticManifest to /workspaces/pipeline_arcgis/queries/target/semantic_manifest.json
+[0m13:42:14.675733 [debug] [MainThread]: Sending event: {'category': 'dbt', 'action': 'resource_counts', 'label': '42462c33-cc54-49cf-ad4f-b891e52d246b', 'context': [<snowplow_tracker.self_describing_json.SelfDescribingJson object at 0x7a894b472ad0>]}
+[0m13:42:14.676432 [info ] [MainThread]: Found 4 models, 2 sources, 494 macros
+[0m13:42:14.676993 [debug] [MainThread]: Sending event: {'category': 'dbt', 'action': 'runnable_timing', 'label': '42462c33-cc54-49cf-ad4f-b891e52d246b', 'context': [<snowplow_tracker.self_describing_json.SelfDescribingJson object at 0x7a894b472860>]}
+[0m13:42:14.678849 [info ] [MainThread]: 
+[0m13:42:14.679359 [info ] [MainThread]: Concurrency: 2 threads (target='dev')
+[0m13:42:14.679867 [info ] [MainThread]: 
+[0m13:42:14.680586 [debug] [MainThread]: Acquiring new bigquery connection 'master'
+[0m13:42:14.687285 [debug] [ThreadPool]: Acquiring new bigquery connection 'list_rj-smas-dev'
+[0m13:42:14.687849 [debug] [ThreadPool]: Opening a new connection, currently in state init
+[0m13:42:15.152521 [debug] [ThreadPool]: Re-using an available connection from the pool (formerly list_rj-smas-dev, now list_rj-smas-dev_dashboard_arcgis_dev)
+[0m13:42:15.153164 [debug] [ThreadPool]: Opening a new connection, currently in state closed
+[0m13:42:15.444114 [debug] [MainThread]: Sending event: {'category': 'dbt', 'action': 'runnable_timing', 'label': '42462c33-cc54-49cf-ad4f-b891e52d246b', 'context': [<snowplow_tracker.self_describing_json.SelfDescribingJson object at 0x7a896881fdf0>]}
+[0m13:42:15.444785 [debug] [MainThread]: Opening a new connection, currently in state init
+[0m13:42:15.490214 [debug] [Thread-1 (]: Began running node model.queries.abordagem_ficha
+[0m13:42:15.491675 [debug] [Thread-2 (]: Began running node model.queries.abordagem_repeat
+[0m13:42:15.491201 [info ] [Thread-1 (]: 1 of 4 START sql table model dashboard_arcgis_dev.abordagem_ficha .............. [RUN]
+[0m13:42:15.492544 [info ] [Thread-2 (]: 2 of 4 START sql table model dashboard_arcgis_dev.abordagem_repeat ............. [RUN]
+[0m13:42:15.493500 [debug] [Thread-1 (]: Re-using an available connection from the pool (formerly list_rj-smas-dev_dashboard_arcgis_dev, now model.queries.abordagem_ficha)
+[0m13:42:15.494575 [debug] [Thread-2 (]: Acquiring new bigquery connection 'model.queries.abordagem_repeat'
+[0m13:42:15.495288 [debug] [Thread-1 (]: Began compiling node model.queries.abordagem_ficha
+[0m13:42:15.495851 [debug] [Thread-2 (]: Began compiling node model.queries.abordagem_repeat
+[0m13:42:15.506430 [debug] [Thread-1 (]: Writing injected SQL for node "model.queries.abordagem_ficha"
+[0m13:42:15.512755 [debug] [Thread-1 (]: Began executing node model.queries.abordagem_ficha
+[0m13:42:15.520350 [debug] [Thread-2 (]: Writing injected SQL for node "model.queries.abordagem_repeat"
+[0m13:42:15.556879 [debug] [Thread-2 (]: Began executing node model.queries.abordagem_repeat
+[0m13:42:15.560587 [debug] [Thread-1 (]: Writing runtime sql for node "model.queries.abordagem_ficha"
+[0m13:42:15.563409 [debug] [Thread-2 (]: Writing runtime sql for node "model.queries.abordagem_repeat"
+[0m13:42:15.564725 [debug] [Thread-1 (]: On model.queries.abordagem_ficha: /* {"app": "dbt", "dbt_version": "1.9.4", "profile_name": "rj_smas_dev", "target_name": "dev", "node_id": "model.queries.abordagem_ficha"} */
+
+  
+    
+
+    create or replace table `rj-smas-dev`.`dashboard_arcgis_dev`.`abordagem_ficha`
+      
+    
+    
+
+    OPTIONS()
+    as (
+      -- models/dashboard_arcgis/abordagem_ficha.sql
+
+SELECT 
+  uniquerowid,
+  unidade_calculo,
+  nome_usuario,
+  SAFE.PARSE_DATE('%d/%m/%Y', data_nascimento) AS data_nascimento,
+  cpf,
+  nome_mae,
+  filtro_ano_ultima_abordagem,
+  filtro_data_abordagem,
+  IFNULL(excluir_ficha, 'Não') AS excluir_ficha,  
+  created_user
+
+ FROM `rj-smas-dev`.`arcgis_raw`.`abordagem_ficha_raw`
+    );
+  
+[0m13:42:15.566158 [debug] [Thread-2 (]: On model.queries.abordagem_repeat: /* {"app": "dbt", "dbt_version": "1.9.4", "profile_name": "rj_smas_dev", "target_name": "dev", "node_id": "model.queries.abordagem_repeat"} */
+
+  
+    
+
+    create or replace table `rj-smas-dev`.`dashboard_arcgis_dev`.`abordagem_repeat`
+      
+    
+    
+
+    OPTIONS()
+    as (
+      SELECT
+  objectid,
+  globalid,
+  CASE
+   WHEN repeat_unidade_calculo = 'CREAS MARIA LINA DE CASTRO LIMA' THEN 'Creas Maria Lina De Castro Lima'
+   WHEN repeat_unidade_calculo = 'CREAS SIMONE DE BEAUVOIR' THEN 'Creas Simone De Beauvoir'
+   WHEN repeat_unidade_calculo = 'CREAS ARLINDO RODRIGUES' THEN 'Creas Arlindo Rodrigues'
+   WHEN repeat_unidade_calculo = 'CREAS JANETE CLAIR' THEN 'Creas Janete Clair'
+   WHEN repeat_unidade_calculo = 'CREAS PROFESSORA ALDAIZA SPOSATI' THEN 'Creas Professora Aldaiza Sposati'
+   WHEN repeat_unidade_calculo = 'CREAS PROFESSORA MÁRCIA LOPES' THEN 'Creas Professora Marcia Lopes'
+   WHEN repeat_unidade_calculo = 'CREAS STELLA MARIS' THEN 'Creas Stella Maris'
+   WHEN repeat_unidade_calculo = 'CREAS NELSON CARNEIRO' THEN 'Creas Nelson Carneiro'
+   WHEN repeat_unidade_calculo = 'CREAS WANDA ENGEL ADUAN' THEN 'Creas Wanda Engel Aduan'
+   WHEN repeat_unidade_calculo = 'CREAS JOÃO HÉLIO FERNANDES VIEITES' THEN 'Creas Joao Helio Fernandes Vieites'
+   WHEN repeat_unidade_calculo = 'CREAS DANIELA PEREZ' THEN 'Creas Daniela Perez'
+   WHEN repeat_unidade_calculo = 'CREAS PADRE GUILHERME DECAMINADA' THEN 'Creas Padre Guilherme Decaminada'
+   WHEN repeat_unidade_calculo = 'CREAS ZILDA ARNS NEUMANN' THEN 'Creas Zilda Arns Neumann'
+   WHEN repeat_unidade_calculo = 'CREAS JOÃO MANUEL MONTEIRO' THEN 'Creas Joao Manuel Monteiro'
+    WHEN repeat_unidade_calculo = 'CENTRO POP JOSÉ SARAMAGO' THEN 'Centro Pop José Saramago'
+   WHEN repeat_unidade_calculo = 'CENTRO POP BÁRBARA CALAZANS' THEN 'Centro Pop Barbara  Calazans'
+   ELSE repeat_unidade_calculo
+   END AS repeat_unidade_calculo_tratada,
+  repeat_unidade_cas,
+  repeat_nome_usuario,
+
+  SAFE.PARSE_DATE('%d/%m/%Y', repeat_data_nascimento) AS repeat_data_nascimento,
+
+  repeat_idade,
+  repeat_faixa_etaria,
+  CASE
+   WHEN repeat_estado_nascimento = 'rio_de_janeiro' THEN 'Rio de Janeiro'
+   WHEN repeat_estado_nascimento = 'outros_estados' THEN 'Outros Estados'
+   WHEN repeat_estado_nascimento = 'outro_pais' THEN 'Outro País'
+   WHEN repeat_estado_nascimento = 'ns_nr' THEN 'NS/NR'
+   ELSE repeat_estado_nascimento
+   END AS repeat_estado_nascimento_tratada,
+  repeat_nome_mae,
+  repeat_nome_pai,
+  CASE 
+   WHEN repeat_raca_cor_etnia = 'parda' THEN 'Parda'
+   WHEN repeat_raca_cor_etnia = 'branca' THEN 'Branca'
+   WHEN repeat_raca_cor_etnia = 'preta' THEN 'Preta'
+   WHEN repeat_raca_cor_etnia = 'amarela' THEN 'Amarela'
+   WHEN repeat_raca_cor_etnia = 'indígena' THEN 'Indígena'
+   WHEN repeat_raca_cor_etnia = 'nao_sabe_nao_quis_responder' THEN 'NS/NR'
+   ELSE repeat_raca_cor_etnia
+   END AS repeat_raca_cor_etnia_tratada,
+  CASE
+   WHEN repeat_sexo = 'masculino' THEN 'Masculino'
+   WHEN repeat_sexo = 'feminino' THEN 'Feminino'
+   WHEN repeat_sexo = 'intersexo' THEN 'Intersexo'
+   WHEN repeat_sexo = 'nao_sabe_nao_quis_responder' THEN 'NS/NR'
+   ELSE repeat_sexo
+   END AS repeat_sexo,
+  turno_abordagem,
+
+  DATE(data_abordagem) AS data_abordagem,
+  ano_num_data_abordagem,
+  dia_num_data_abordagem,
+  CASE
+  WHEN RIGHT(mes_abrev_data_abordagem, 1) = '.' THEN mes_abrev_data_abordagem
+  ELSE CONCAT(mes_abrev_data_abordagem, '.')
+  END AS mes_abrev_data_abordagem,
+
+  ano_mes_data_abordagem,
+  bairro_abord,
+
+  CONCAT(y, ', ', x) AS coordenadas,
+
+  CASE
+   WHEN note_creas = 'CREAS Janete Clair' THEN 'Creas Janete Clair'
+   WHEN note_creas = 'CREAS Maria Lina de Castro Lima' THEN 'Creas Maria Lina De Castro Lima'
+   WHEN note_creas = 'CREAS Daniela Perez' THEN 'Creas Daniela Perez'
+   WHEN note_creas = 'CREAS Stella Maris' THEN 'Creas Stella Maris'
+   WHEN note_creas = 'CREAS Nélson Carneiro' THEN 'Creas Nelson Carneiro'
+   WHEN note_creas = 'CREAS Padre Guilherme Decaminada' THEN 'Creas Padre Guilherme Decaminada'
+   WHEN note_creas = 'CREAS Professora Márcia Lopes' THEN 'Creas Professora Márcia Lopes'
+   WHEN note_creas = 'CREAS Professora Aldaíza Sposati' THEN 'Creas Professora Aldaíza Sposati'
+   WHEN note_creas = 'CREAS João Hélio Fernandes Vieites' THEN 'Creas João Hélio Fernandes Vieites'
+   WHEN note_creas = 'CREAS Wanda Engel Aduan' THEN 'Creas Wanda Engel Aduan'
+   WHEN note_creas = 'CREAS Zilda Arns Neumann' THEN 'Creas Zilda Arns Neumann'
+   WHEN note_creas = 'CREAS Nelson Carneiro' THEN 'Creas Nelson Carneiro'
+   WHEN note_creas = 'CREAS João Manoel Monteiro' THEN 'Creas João Manoel Monteiro'
+   WHEN note_creas = 'CREAS Simone de Beauvoir' THEN 'Creas Simone de Beauvoir'
+   WHEN note_creas = 'CREAS Arlindo Rodrigues' THEN 'Creas Arlindo Rodrigues'
+   ELSE note_creas
+   END AS note_creas_tratada,
+  CASE
+   WHEN resp_abordagem = 'cgppsr' THEN 'CTPR'
+   WHEN resp_abordagem = 'creas' THEN 'CREAS'
+   WHEN resp_abordagem = 'centro_pop' THEN 'CENTRO POP'
+   ELSE resp_abordagem
+   END AS resp_abordagem,
+  CASE resp_abordagem1
+   WHEN 'ouvidoria1' THEN 'Ouvidoria CTPR'
+   WHEN'ouvidoria2' THEN 'Ouvidoria CREAS'
+   WHEN'ouvidoria3' THEN 'Ouvidoria Centro POP'
+   WHEN'tenda_acol_direitos' THEN 'Tenda acolhe com direitos'
+   WHEN'abord_itinerante' THEN 'Abordagem CTPR'
+   WHEN'deman_emergencial1' THEN 'Demanda emergencial CTPR'
+   WHEN'naas' THEN 'NAAS'
+   WHEN'itinerante' THEN 'Abordagem CREAS'
+   WHEN'deman_emergencial2' THEN 'Demanda emergencial CREAS'
+   WHEN'abordagem_social' THEN 'Abordagem Centro POP'
+   WHEN'demanda_emergencial' THEN 'Demanda emergencial Centro POP'
+   WHEN'ncp' THEN 'NCP'
+   ELSE resp_abordagem1
+   END AS resp_abordagem1,
+  acao_conjunta,
+  CASE
+   WHEN permanencia_rua = 'h24' THEN '24 horas'
+   WHEN permanencia_rua = 'apenas_durante_dia' THEN 'Apenas durante o dia'
+   WHEN permanencia_rua = 'durante_semana_retorna_casa_final_de_semana' THEN 'Durante a semana'
+   WHEN permanencia_rua = 'frequenta_cenas_de_uso_esporadicamente' THEN 'Frequenta cenas de uso'
+   WHEN permanencia_rua = 'apenas_durante_noite' THEN 'Apenas durante a noite'
+   WHEN permanencia_rua = 'nao_sabe_nao_respondeu' THEN 'NS/NR'
+   ELSE permanencia_rua
+   END AS permanencia_rua_tratada,
+  CASE
+   WHEN tempo_permanencia = 'de_1_a_3_anos' THEN 'De 1 a 3 anos'
+   WHEN tempo_permanencia = 'de_3_a_6_anos' THEN 'De 3 a 6 anos'
+   WHEN tempo_permanencia = 'de_1_a_3_meses' THEN 'De 1 a 3 meses'
+   WHEN tempo_permanencia = 'menos_3_dias' THEN 'Menos de 3 dias'
+   WHEN tempo_permanencia = 'de_6_meses_a_1_ano' THEN 'De 6 meses a 1 ano'
+   WHEN tempo_permanencia = 'de_6_a_10_anos' THEN 'De 6 a 10 anos'
+   WHEN tempo_permanencia = 'de_3_a_6_meses' THEN 'De 3 a 6 meses'
+   WHEN tempo_permanencia = 'mais_de_10_anos' THEN 'Mais de 10 anos'
+   WHEN tempo_permanencia = 'de_7_a_30_dias' THEN 'De 7 a 30 anos'
+   WHEN tempo_permanencia = 'de_3_a_7_dias' THEN 'De 3 a 7 dias'
+   WHEN tempo_permanencia = 'ns_nr' THEN 'NS/NR'
+   ELSE tempo_permanencia
+   END AS tempo_permanencia_tratada,
+  principal_motivo_permanencia,
+
+  flag_conflito_familiar,
+  flag_abandono_familiar,
+  flag_desocupacao,
+  flag_orfandade,
+  flag_acesso_a_renda,
+  flag_desemprego,
+  flag_desemprego_dos_pais,
+  flag_transtorno_psiquiatrico,
+  flag_uso_drogas_ilicitas,
+  flag_trabalho_infantil,
+  flag_exploracao_sexual,
+  flag_egresso_sistema_prisional,
+  flag_alcoolismo_motivo,
+  flag_violencia_conflito_comuni,
+  flag_preferencia_vontade_prop,
+  flag_egresso_mse,
+  flag_imigrante,
+  flag_migrante,
+  flag_refugiado,
+  flag_ns_nr_motivo,
+  e_migrante,
+  CASE
+   WHEN migrante_terra_natal = 'nao_sabe_nao_quis_responder' THEN 'NS/NR'
+   WHEN migrante_terra_natal = 'sim' THEN 'Sim'
+   WHEN migrante_terra_natal = 'nao' THEN 'Não'
+   ELSE migrante_terra_natal
+   END AS migrante_terra_natal_tratada,
+  CASE
+   WHEN possui_referencia = 'nao_sabe_nao_quis_responder' THEN 'NS/NR'
+    WHEN possui_referencia = 'sim' THEN 'Sim'
+    WHEN possui_referencia = 'nao' THEN 'Não'
+   ELSE possui_referencia
+   END AS possui_referencia_tratada,
+  possui_documento,
+  documentacao,
+
+  flg_documentacao_identidade,
+  flg_documentacao_cnh,
+  flg_documentacao_registro_nasc,
+  flg_documentacao_ctps,
+  flg_documentacao_cpf,
+  flg_documentacao_passaporte,
+  CASE
+   WHEN escolaridade = 'medio_incompleto' THEN 'Médio incompleto'
+   WHEN escolaridade = 'fundamental_incompleto' THEN 'Fundamental incompleto'
+   WHEN escolaridade = 'medio_completo' THEN 'Médio completo'
+   WHEN escolaridade = 'fundamental_completo' THEN 'Fundamental completo'
+   WHEN escolaridade = 'nao_alfabetizado' THEN 'Não alfabetizado'
+   WHEN escolaridade = 'nao_sabe_nao_respondeu' THEN 'Não sabe/Não respondeu'
+   WHEN escolaridade = 'superior_completo' THEN 'Superior completo'
+   WHEN escolaridade = 'superior_incompleto' THEN 'Superior incompleto'
+   WHEN escolaridade = 'nao_escolarizado' THEN 'Não escolarizado'
+   ELSE escolaridade
+   END AS escolaridade_tratada,
+  recebe_beneficio,
+  beneficios,
+
+  flag_bolsa_familia,
+  flag_bpc,
+  flag_seguro_desemprego,
+  flag_aposentadoria,
+  flag_pensionista,
+  flag_outros_ben,
+  beneficios_outros,
+  CASE
+   WHEN ocupacao = 'catador' THEN 'Catador'
+   WHEN ocupacao = 'pedinte' THEN 'Pedinte'
+   WHEN ocupacao = 'ambulante' THEN 'Ambulante'
+   WHEN ocupacao = 'bicos' THEN 'Bicos'
+   WHEN ocupacao = 'outros' THEN 'Outros'
+   WHEN ocupacao = 'impossibilitado_para_trabalho' THEN 'Impossibilitado'
+   WHEN ocupacao = 'prostituicao' THEN 'Prostituição'
+   WHEN ocupacao = 'ns_nr' THEN 'NS/NR' 
+   ELSE ocupacao
+   END AS ocupacao_tratada,
+
+  flag_nao_tem_interesse,
+  flag_gastronomia,
+  flag_beleza,
+  flag_pequenos_reparos,
+  flag_jardinagem,
+  flag_empreendedorismo,
+  flag_producao_artesanal,
+  flag_inclusao_digital,
+  flag_outros_curso,
+  flag_curso_ns_nr,
+  flag_nao_tem,
+
+  flag_alcoolismo,
+  flag_asma_bronquite,
+  flag_covid_19,
+  flag_cancer_tumores,
+  flag_diabetes,
+  flag_dengue,
+  flag_depen_quimica,
+  flag_epilepsia,
+  flag_escabiose,
+  flag_hanseniase,
+  flag_hepatite,
+  flag_hipertensao_doenca_cardio,
+  flag_hiv_aids,
+  flag_pneumonia,
+  flag_sarampo,
+  flag_sifilis,
+  flag_transtorno_mental,
+  flag_trauma_fisico,
+  flag_tuberculose,
+  flag_ns_nr,
+
+  CASE
+   WHEN aceita_acolhimento IS NULL THEN 'nao'
+   WHEN TRIM(LOWER(aceita_acolhimento)) = 'n/a' THEN 'nao'
+   ELSE aceita_acolhimento
+   END AS aceita_acolhimento_tratada,
+  motivo_acolhimento_nao,
+  outro_motivo,
+
+  flag_motivo_renda,
+  flag_motivo_regra,
+  flag_motivo_moradia,
+  flag_motivo_animal,
+  flag_motivo_n_interesse,
+  flag_motivo_outro,
+  CASE
+   WHEN unidade_destino = 'albergue' THEN 'Albergue'
+   WHEN unidade_destino = 'central_recepcao' THEN 'Central de Recepção'
+   WHEN unidade_destino = 'outros' THEN 'Outros'
+   WHEN unidade_destino = 'com_terapeutica' THEN 'Comunidade Terapêutica'
+   WHEN unidade_destino = 'urs' THEN 'URS'
+   ELSE unidade_destino
+   END AS unidade_destino_tratada,
+  CASE equipamento_destino
+    WHEN 'albergue_dercy_gonçalves' THEN 'Albergue Dercy Gonçalves'
+    WHEN 'albergue_nise_da_silveira' THEN 'Albergue Nise da Silveira'
+    WHEN 'craf_tom_jobim' THEN 'Craf Tom Jobim'
+    WHEN 'assoc_maranatha_rj_madureira' THEN 'Associação Maranatha RJ Madureira'
+    WHEN 'albergue_martin_luther_kingjr' THEN 'Albergue Martin Luther King Jr'
+    WHEN 'assoc_maranatha_rj_lins_de_vasconcelos' THEN 'Associação Maranatha RJ Lins de Vasconcelos'
+    WHEN 'inst_social_marca_de_cristo' THEN 'Instituto Social Marca de Cristo'
+    WHEN 'urs_rio_acolhedor_paciencia' THEN 'Urs Rio Acolhedor Paciência'
+    WHEN 'cri_pastor_carlos_portela' THEN 'Cri Pastor Carlos Portela'
+    WHEN 'urs_haroldo_costa' THEN 'Urs Haroldo Costa'
+    WHEN 'albergue_mais_tempo_lgbtqia' THEN 'Albergue Mais Tempo LGBTQIA'
+    WHEN 'assoc_maranatha_rj_padre_miguel' THEN 'Associação Maranatha RJ Padre Miguel'
+    WHEN 'assoc_maranatha_rj_vila_kennedy' THEN 'Associação Maranatha RJ Vila Kennedy'
+    WHEN 'albergue_betinho' THEN 'Albergue Betinho'
+    WHEN 'inst_revivendo_com_cristo' THEN 'Instituto Revivendo com Cristo'
+    WHEN 'crca_ademar_ferreira_de_oliveira' THEN 'CRCA Ademar Ferreira de Oliveira'
+    WHEN 'assoc_maranatha_rj_bangu' THEN 'Associação Maranatha RJ Bangu'
+    WHEN 'crca_taiguara' THEN 'CRCA Taiguara'
+    WHEN 'assoc_maranatha_rj_sepetiba' THEN 'Associação Maranatha RJ Sepetiba'
+    WHEN 'albergue_alfonso_lavalle' THEN 'Albergue Alfonso Lavalle'
+    WHEN 'assoc_maranatha_rj_vila_valqueire' THEN 'Associação Maranatha RJ Vila Valqueire'
+    WHEN 'assoc_de_assistencia_social_videira' THEN 'Associação de Assistência Social Videira'
+    WHEN 'projeto_alcançando_vidas' THEN 'Projeto Alcançando Vidas'
+    WHEN 'camor' THEN 'CAMOR'
+    WHEN 'assoc_maranatha_rj_engenho_de_dentro' THEN 'Associação Maranatha RJ Engenho de Dentro'
+    WHEN 'inst_social_manasses_campo_grande2' THEN 'Instituto Social Manassés Campo Grande 2'
+    WHEN 'inst_social_manasses_campo_grande1' THEN 'Instituto Social Manassés Campo Grande 1'
+    WHEN 'comt_valentes_de_davi_escola_de_profetas' THEN 'COMT Valentes de Davi Escola de Profetas'
+   ELSE equipamento_destino
+   END AS equipamento_destino_tratada,
+  CASE
+   WHEN encam_creas = 'creas_maria_lina_de_castro_lima' THEN 'Creas Maria Lina De Castro Lima'
+   WHEN encam_creas = 'creas_simone_de_beauvoir' THEN 'Creas Simone De Beauvoir'
+   WHEN encam_creas = 'creas_arlindo_rodrigues' THEN 'Creas Arlindo Rodrigues'
+   WHEN encam_creas = 'creas_janete_clair' THEN 'Creas Janete Clair'
+   WHEN encam_creas = 'creas_professora_aldaiza_sposati' THEN 'Creas Professora Aldaiza Sposati'
+   WHEN encam_creas = 'creas_professora_marcia_lopes' THEN 'Creas Professora Marcia Lopes'
+   WHEN encam_creas = 'creas_stella_maris' THEN 'Creas Stella Maris'
+   WHEN encam_creas = 'creas_nelson_carneiro' THEN 'Creas Nelson Carneiro'
+   WHEN encam_creas = 'creas_wanda_engel_aduan' THEN 'Creas Wanda Engel Aduan'
+   WHEN encam_creas = 'creas_joao_helio_fernandes_vieites' THEN 'Creas Joao Helio Fernandes Vieites'
+   WHEN encam_creas = 'creas_daniela_perez' THEN 'Creas Daniela Perez'
+   WHEN encam_creas = 'creas_padre_guilherme_decaminada' THEN 'Creas Padre Guilherme Decaminada'
+   WHEN encam_creas = 'creas_zilda_arns_neumann' THEN 'Creas Zilda Arns Neumann'
+   WHEN encam_creas = 'creas_joao_manuel_monteiro' THEN 'Creas Joao Manuel Monteiro'
+   ELSE encam_creas
+   END AS encam_creas_tratada,
+  CASE
+   WHEN encam_centropop = 'centro_pop_jose_saramago' THEN 'Centro Pop José Saramago'
+   WHEN encam_centropop = 'centro_pop_barbara_calazans' THEN 'Centro Pop Barbara  Calazans'
+   ELSE encam_centropop
+   END AS encam_centropop_tratada,
+  encam_cras,
+
+  encaminhamento_rede,
+  ARRAY_TO_STRING(
+    ARRAY(
+      SELECT
+
+        CASE
+          WHEN LOWER(TRIM(part)) = 'cras' THEN 'CRAS'
+          WHEN LOWER(TRIM(part)) = 'defensoria_publica' THEN 'Defensoria Pública'
+          WHEN LOWER(TRIM(part)) = 'fundacao_leaoxii' THEN 'Fundação Leão XIII'
+          WHEN LOWER(TRIM(part)) = 'outros' THEN 'Outros'
+          WHEN LOWER(TRIM(part)) = 'creas' THEN 'CREAS'
+          WHEN LOWER(TRIM(part)) = 'conselho_tutelar' THEN 'Conselho Tutelar'
+          WHEN LOWER(TRIM(part)) = 'detran' THEN 'DETRAN'
+          WHEN LOWER(TRIM(part)) = 'receita_federal' THEN 'Receita Federal'
+          WHEN LOWER(TRIM(part)) = 'centro_pop' THEN 'Centro POP'
+          WHEN LOWER(TRIM(part)) = 'encaminhamento_de_saude' THEN 'Encaminhamento de Saúde'
+          WHEN LOWER(TRIM(part)) = 'cartorio' THEN 'Cartório'
+          WHEN LOWER(TRIM(part)) = 'delegacia' THEN 'Delegacia'
+          WHEN LOWER(TRIM(part)) = 'nao_houve_encaminhamento' THEN 'Sem encaminhamentos'
+          ELSE encaminhamento_rede
+        END
+      FROM UNNEST(SPLIT(encaminhamento_rede, ',')) AS part
+    ),
+    ', '
+  ) AS encaminhamento_rede_tratada,
+
+  flg_sem_encaminhamento,
+  flg_encam_creas,
+  flg_encam_centropop,
+  flg_encam_cras,
+  flg_encam_conselhotutelar,
+  flg_encam_encaminhamento_saude,
+  flg_encam_defensoria_publica,
+  flg_encam_detran,
+  flg_encam_cartorio,
+  flg_encam_fundacao_leaoxiii,
+  flg_encam_receita_federal,
+  flg_encam_delegacia,
+  flg_encam_outros,
+  parentrowid,
+  created_user
+
+ FROM `rj-smas-dev`.`arcgis_raw`.`abordagem_repeat_raw`
+    );
+  
+[0m13:42:15.567968 [debug] [Thread-1 (]: Opening a new connection, currently in state closed
+[0m13:42:15.568609 [debug] [Thread-2 (]: Opening a new connection, currently in state init
+[0m13:42:16.175494 [debug] [Thread-2 (]: BigQuery adapter: https://console.cloud.google.com/bigquery?project=rj-smas-dev&j=bq:US:6307eae5-ff14-4d71-b32c-5f455daadec9&page=queryresults
+[0m13:42:16.275184 [debug] [Thread-1 (]: BigQuery adapter: https://console.cloud.google.com/bigquery?project=rj-smas-dev&j=bq:US:4d4a206f-74f3-4699-bd47-181becdd5a01&page=queryresults
+[0m13:42:20.369183 [debug] [Thread-1 (]: Sending event: {'category': 'dbt', 'action': 'run_model', 'label': '42462c33-cc54-49cf-ad4f-b891e52d246b', 'context': [<snowplow_tracker.self_describing_json.SelfDescribingJson object at 0x7a895154e9e0>]}
+[0m13:42:20.370279 [info ] [Thread-1 (]: 1 of 4 OK created sql table model dashboard_arcgis_dev.abordagem_ficha ......... [[32mCREATE TABLE (188.7k rows, 32.0 MiB processed)[0m in 4.87s]
+[0m13:42:20.371219 [debug] [Thread-1 (]: Finished running node model.queries.abordagem_ficha
+[0m13:42:20.371764 [debug] [Thread-1 (]: Began running node model.queries.stg_repeat_names
+[0m13:42:20.372470 [info ] [Thread-1 (]: 3 of 4 START sql view model dashboard_arcgis_dev.stg_repeat_names .............. [RUN]
+[0m13:42:20.373116 [debug] [Thread-1 (]: Re-using an available connection from the pool (formerly model.queries.abordagem_ficha, now model.queries.stg_repeat_names)
+[0m13:42:20.373619 [debug] [Thread-1 (]: Began compiling node model.queries.stg_repeat_names
+[0m13:42:20.377924 [debug] [Thread-1 (]: Writing injected SQL for node "model.queries.stg_repeat_names"
+[0m13:42:20.378917 [debug] [Thread-1 (]: Began executing node model.queries.stg_repeat_names
+[0m13:42:20.402010 [debug] [Thread-1 (]: Writing runtime sql for node "model.queries.stg_repeat_names"
+[0m13:42:20.403120 [debug] [Thread-1 (]: On model.queries.stg_repeat_names: /* {"app": "dbt", "dbt_version": "1.9.4", "profile_name": "rj_smas_dev", "target_name": "dev", "node_id": "model.queries.stg_repeat_names"} */
+
+
+  create or replace view `rj-smas-dev`.`dashboard_arcgis_dev`.`stg_repeat_names`
+  OPTIONS()
+  as 
+
+WITH base AS (
+  SELECT
+    globalid,
+    parentrowid,
+    repeat_nome_usuario,
+    repeat_nome_mae,
+    ano_num_data_abordagem
+  FROM `rj-smas-dev`.`arcgis_raw`.`abordagem_repeat_raw`
+),
+
+tokens AS (
+  SELECT
+    *,
+
+    -- explode em palavras já normalizadas
+    SPLIT(
+    TRIM(                                                         
+      REGEXP_REPLACE(
+        REGEXP_REPLACE(
+          LOWER(
+            REGEXP_REPLACE(NORMALIZE(repeat_nome_usuario, NFD), r'\p{M}', '')  -- remove acentos
+          ),
+          r'[^a-z\s]', ' '        -- pontuação → espaço
+        ),
+        r'\s+', ' '               -- espaços duplicados
+      )
+    )
+, ' ')     AS arr_usuario,
+    SPLIT(
+    TRIM(                                                         
+      REGEXP_REPLACE(
+        REGEXP_REPLACE(
+          LOWER(
+            REGEXP_REPLACE(NORMALIZE(repeat_nome_mae, NFD), r'\p{M}', '')  -- remove acentos
+          ),
+          r'[^a-z\s]', ' '        -- pontuação → espaço
+        ),
+        r'\s+', ' '               -- espaços duplicados
+      )
+    )
+,     ' ')     AS arr_mae
+  FROM base
+),
+
+filtered AS (
+  SELECT
+    *,
+
+    -- remove stop-words simples
+    ARRAY(
+      SELECT t
+      FROM UNNEST(arr_usuario) t
+      WHERE t NOT IN ('de','da','do','das','dos','e','a','o','os','as')
+    ) AS arr_usuario_ok,
+
+    ARRAY(
+      SELECT t
+      FROM UNNEST(arr_mae) t
+      WHERE t NOT IN ('de','da','do','das','dos','e','a','o','os','as')
+    ) AS arr_mae_ok
+  FROM tokens
+)
+
+SELECT
+  globalid,
+  parentrowid,
+  repeat_nome_usuario,
+  repeat_nome_mae,
+  ano_num_data_abordagem,
+
+  ARRAY_TO_STRING(arr_usuario_ok, ' ')  AS nome_usuario_norm,
+  ARRAY_TO_STRING(arr_mae_ok,     ' ')  AS nome_mae_norm
+FROM filtered;
+
+
+[0m13:42:20.404192 [debug] [Thread-1 (]: Opening a new connection, currently in state closed
+[0m13:42:20.867463 [debug] [Thread-1 (]: BigQuery adapter: https://console.cloud.google.com/bigquery?project=rj-smas-dev&j=bq:US:c42602d5-3ff3-4718-a2bc-bc9b9741ef43&page=queryresults
+[0m13:42:21.408430 [debug] [Thread-1 (]: Sending event: {'category': 'dbt', 'action': 'run_model', 'label': '42462c33-cc54-49cf-ad4f-b891e52d246b', 'context': [<snowplow_tracker.self_describing_json.SelfDescribingJson object at 0x7a89488d6ce0>]}
+[0m13:42:21.409301 [info ] [Thread-1 (]: 3 of 4 OK created sql view model dashboard_arcgis_dev.stg_repeat_names ......... [[32mCREATE VIEW (0 processed)[0m in 1.04s]
+[0m13:42:21.410125 [debug] [Thread-1 (]: Finished running node model.queries.stg_repeat_names
+[0m13:42:21.410902 [debug] [Thread-1 (]: Began running node model.queries.stg_repeat_names_cluster
+[0m13:42:21.411496 [info ] [Thread-1 (]: 4 of 4 START sql table model dashboard_arcgis_dev.stg_repeat_names_cluster ..... [RUN]
+[0m13:42:21.412126 [debug] [Thread-1 (]: Re-using an available connection from the pool (formerly model.queries.stg_repeat_names, now model.queries.stg_repeat_names_cluster)
+[0m13:42:21.412617 [debug] [Thread-1 (]: Began compiling node model.queries.stg_repeat_names_cluster
+[0m13:42:21.418207 [debug] [Thread-1 (]: Writing injected SQL for node "model.queries.stg_repeat_names_cluster"
+[0m13:42:21.419032 [debug] [Thread-1 (]: Began executing node model.queries.stg_repeat_names_cluster
+[0m13:42:21.421986 [debug] [Thread-1 (]: Writing runtime sql for node "model.queries.stg_repeat_names_cluster"
+[0m13:42:21.422984 [debug] [Thread-1 (]: On model.queries.stg_repeat_names_cluster: /* {"app": "dbt", "dbt_version": "1.9.4", "profile_name": "rj_smas_dev", "target_name": "dev", "node_id": "model.queries.stg_repeat_names_cluster"} */
+
+  
+    
+
+    create or replace table `rj-smas-dev`.`dashboard_arcgis_dev`.`stg_repeat_names_cluster`
+      
+    
+    
+
+    OPTIONS()
+    as (
+      
+
+-- 1. Base com nomes normalizados
+WITH base AS (
+    SELECT
+        globalid,
+        parentrowid,
+        nome_usuario_norm AS nm,
+        nome_mae_norm     AS mm,
+        ano_num_data_abordagem
+    FROM `rj-smas-dev`.`dashboard_arcgis_dev`.`stg_repeat_names`
+),
+
+-- 2. Bloqueio A  (SOUNDEX do nome)  ·········································
+blk_a AS (
+    SELECT
+        *,
+        SOUNDEX(nm) AS blk
+    FROM base
+    QUALIFY ROW_NUMBER() OVER (PARTITION BY blk ORDER BY parentrowid) <= 2000
+),
+
+pairs_a AS (
+    SELECT
+        a.parentrowid AS id_a,
+        b.parentrowid AS id_b,
+        a.nm, a.mm,
+        b.nm AS nm_b, b.mm AS mm_b
+    FROM blk_a a
+    JOIN blk_a b USING (blk)
+    WHERE a.parentrowid < b.parentrowid
+),
+
+-- 3. Bloqueio B  (SOUNDEX do nome + último sobrenome da mãe) ···············
+blk_b AS (
+    SELECT
+        *,
+        CONCAT(
+          SOUNDEX(nm), '_',
+          SOUNDEX(SPLIT(mm, ' ')[SAFE_OFFSET(-1)])  -- último token
+        ) AS blk
+    FROM base
+    QUALIFY ROW_NUMBER() OVER (PARTITION BY blk ORDER BY parentrowid) <= 2000
+),
+
+pairs_b AS (
+    SELECT
+        a.parentrowid AS id_a,
+        b.parentrowid AS id_b,
+        a.nm, a.mm,
+        b.nm AS nm_b, b.mm AS mm_b
+    FROM blk_b a
+    JOIN blk_b b USING (blk)
+    WHERE a.parentrowid < b.parentrowid
+),
+
+-- 4. União dos pares candidatos ·············································
+pairs AS (
+    SELECT * FROM pairs_a
+    UNION ALL
+    SELECT * FROM pairs_b
+),
+
+-- 5. Métricas de distância e contenção ······································
+scored AS (
+    SELECT
+        id_a, id_b,
+        EDIT_DISTANCE(nm,  nm_b) AS d_nm,
+        EDIT_DISTANCE(mm,  mm_b) AS d_mm,
+
+        ARRAY_LENGTH(
+          ARRAY(
+            SELECT x FROM UNNEST(SPLIT(nm, ' ')) x
+            INTERSECT DISTINCT
+            SELECT y FROM UNNEST(SPLIT(nm_b,' ')) y
+          )
+        ) / LEAST(
+              ARRAY_LENGTH(SPLIT(nm,  ' ')),
+              ARRAY_LENGTH(SPLIT(nm_b,' '))
+          )                                   AS cont_nm,
+
+        ARRAY_LENGTH(
+          ARRAY(
+            SELECT x FROM UNNEST(SPLIT(mm, ' ')) x
+            INTERSECT DISTINCT
+            SELECT y FROM UNNEST(SPLIT(mm_b,' ')) y
+          )
+        ) / LEAST(
+              ARRAY_LENGTH(SPLIT(mm,  ' ')),
+              ARRAY_LENGTH(SPLIT(mm_b,' '))
+          )                                   AS cont_mm
+    FROM pairs
+),
+
+-- 6. Pares que satisfazem a regra de duplicidade ····························
+dupes AS (
+    SELECT id_a, id_b
+    FROM scored
+    WHERE (d_nm <= 2 OR cont_nm >= 0.8)
+      AND (d_mm <= 2 OR cont_mm >= 0.8)
+),
+
+-- 7. Grafo não-direcionado (componentes conexas) ····························
+graph AS (
+    SELECT parentrowid, parentrowid AS neigh FROM base
+    UNION ALL
+    SELECT id_a, id_b FROM dupes
+    UNION ALL
+    SELECT id_b, id_a FROM dupes
+),
+
+seed AS (
+    SELECT
+        parentrowid,
+        MIN(neigh) AS cluster_seed          
+    FROM graph
+    GROUP BY parentrowid                   
+),
+
+-- 8. Resultado final (uma linha por parentrowid) ····························
+final AS (
+    SELECT
+        b.globalid,
+        b.parentrowid,
+        b.nm,
+        b.mm,
+        b.ano_num_data_abordagem,
+        MIN(cluster_seed) OVER (PARTITION BY cluster_seed) AS cluster_id,
+        COUNT(*)        OVER (PARTITION BY cluster_seed)   AS cluster_size
+    FROM base b
+    JOIN seed USING (parentrowid)
+)
+
+SELECT
+    globalid,
+    parentrowid,
+    nm,
+    mm,
+    ano_num_data_abordagem,
+    cluster_id,
+    cluster_size,
+    cluster_size > 1 AS is_duplicado
+FROM final
+    );
+  
+[0m13:42:21.423660 [debug] [Thread-1 (]: Opening a new connection, currently in state closed
+[0m13:42:22.408110 [debug] [Thread-1 (]: BigQuery adapter: https://console.cloud.google.com/bigquery?project=rj-smas-dev&j=bq:US:db3e75cc-b8c8-42f5-8532-d4547c432bc2&page=queryresults
+[0m13:42:27.576093 [debug] [Thread-2 (]: Sending event: {'category': 'dbt', 'action': 'run_model', 'label': '42462c33-cc54-49cf-ad4f-b891e52d246b', 'context': [<snowplow_tracker.self_describing_json.SelfDescribingJson object at 0x7a894b471780>]}
+[0m13:42:27.577042 [info ] [Thread-2 (]: 2 of 4 OK created sql table model dashboard_arcgis_dev.abordagem_repeat ........ [[32mCREATE TABLE (266.1k rows, 307.9 MiB processed)[0m in 12.08s]
+[0m13:42:27.577905 [debug] [Thread-2 (]: Finished running node model.queries.abordagem_repeat
+[0m13:43:08.798167 [debug] [Thread-1 (]: Sending event: {'category': 'dbt', 'action': 'run_model', 'label': '42462c33-cc54-49cf-ad4f-b891e52d246b', 'context': [<snowplow_tracker.self_describing_json.SelfDescribingJson object at 0x7a894b5d7880>]}
+[0m13:43:08.799114 [info ] [Thread-1 (]: 4 of 4 OK created sql table model dashboard_arcgis_dev.stg_repeat_names_cluster  [[32mCREATE TABLE (266.1k rows, 35.0 MiB processed)[0m in 47.39s]
+[0m13:43:08.799972 [debug] [Thread-1 (]: Finished running node model.queries.stg_repeat_names_cluster
+[0m13:43:08.801285 [debug] [MainThread]: Opening a new connection, currently in state closed
+[0m13:43:08.843559 [debug] [MainThread]: Connection 'master' was properly closed.
+[0m13:43:08.843984 [debug] [MainThread]: Connection 'model.queries.stg_repeat_names_cluster' was properly closed.
+[0m13:43:08.844400 [debug] [MainThread]: Connection 'model.queries.abordagem_repeat' was properly closed.
+[0m13:43:08.844942 [info ] [MainThread]: 
+[0m13:43:08.845480 [info ] [MainThread]: Finished running 3 table models, 1 view model in 0 hours 0 minutes and 54.16 seconds (54.16s).
+[0m13:43:08.846807 [debug] [MainThread]: Command end result
+[0m13:43:08.876642 [debug] [MainThread]: Wrote artifact WritableManifest to /workspaces/pipeline_arcgis/queries/target/manifest.json
+[0m13:43:08.878635 [debug] [MainThread]: Wrote artifact SemanticManifest to /workspaces/pipeline_arcgis/queries/target/semantic_manifest.json
+[0m13:43:08.885993 [debug] [MainThread]: Wrote artifact RunExecutionResult to /workspaces/pipeline_arcgis/queries/target/run_results.json
+[0m13:43:08.886434 [info ] [MainThread]: 
+[0m13:43:08.887059 [info ] [MainThread]: [32mCompleted successfully[0m
+[0m13:43:08.887540 [info ] [MainThread]: 
+[0m13:43:08.888108 [info ] [MainThread]: Done. PASS=4 WARN=0 ERROR=0 SKIP=0 TOTAL=4
+[0m13:43:08.888850 [debug] [MainThread]: Resource report: {"command_name": "run", "command_success": true, "command_wall_clock_time": 59.865612, "process_in_blocks": "170920", "process_kernel_time": 0.880543, "process_mem_max_rss": "400432", "process_out_blocks": "3648", "process_user_time": 6.84045}
+[0m13:43:08.889425 [debug] [MainThread]: Command `dbt run` succeeded at 13:43:08.889305 after 59.87 seconds
+[0m13:43:08.889910 [debug] [MainThread]: Sending event: {'category': 'dbt', 'action': 'invocation', 'label': 'end', 'context': [<snowplow_tracker.self_describing_json.SelfDescribingJson object at 0x7a89672be290>, <snowplow_tracker.self_describing_json.SelfDescribingJson object at 0x7a894b74b580>, <snowplow_tracker.self_describing_json.SelfDescribingJson object at 0x7a8967fb6770>]}
+[0m13:43:08.890407 [debug] [MainThread]: Flushing usage events
+[0m13:43:09.938997 [debug] [MainThread]: An error was encountered while trying to flush usage events
+[0m13:48:04.915361 [debug] [MainThread]: Sending event: {'category': 'dbt', 'action': 'invocation', 'label': 'start', 'context': [<snowplow_tracker.self_describing_json.SelfDescribingJson object at 0x70e7439be260>, <snowplow_tracker.self_describing_json.SelfDescribingJson object at 0x70e74295d630>, <snowplow_tracker.self_describing_json.SelfDescribingJson object at 0x70e74295d5d0>]}
+
+
+============================== 13:48:04.918932 | d09712e5-a6e0-4204-9c2d-26a0dd655ec6 ==============================
+[0m13:48:04.918932 [info ] [MainThread]: Running with dbt=1.9.4
+[0m13:48:04.919682 [debug] [MainThread]: running dbt with arguments {'printer_width': '80', 'indirect_selection': 'eager', 'log_cache_events': 'False', 'write_json': 'True', 'partial_parse': 'True', 'cache_selected_only': 'False', 'warn_error': 'None', 'version_check': 'True', 'fail_fast': 'False', 'log_path': '/workspaces/pipeline_arcgis/queries/logs', 'debug': 'False', 'profiles_dir': '/workspaces/pipeline_arcgis/queries', 'use_colors': 'True', 'use_experimental_parser': 'False', 'empty': 'False', 'quiet': 'False', 'no_print': 'None', 'log_format': 'default', 'static_parser': 'True', 'introspect': 'True', 'warn_error_options': 'WarnErrorOptions(include=[], exclude=[])', 'target_path': 'None', 'invocation_command': 'dbt run --select abordagem_repeat', 'send_anonymous_usage_stats': 'True'}
+[0m13:48:08.187522 [debug] [MainThread]: Sending event: {'category': 'dbt', 'action': 'project_id', 'label': 'd09712e5-a6e0-4204-9c2d-26a0dd655ec6', 'context': [<snowplow_tracker.self_describing_json.SelfDescribingJson object at 0x70e7289519c0>]}
+[0m13:48:08.269932 [debug] [MainThread]: Sending event: {'category': 'dbt', 'action': 'adapter_info', 'label': 'd09712e5-a6e0-4204-9c2d-26a0dd655ec6', 'context': [<snowplow_tracker.self_describing_json.SelfDescribingJson object at 0x70e742e21ba0>]}
+[0m13:48:08.270675 [info ] [MainThread]: Registered adapter: bigquery=1.9.2
+[0m13:48:08.665549 [debug] [MainThread]: checksum: b5597158181700c50f5bc1c71fe28b37a6fb85633dc5323885263678b6bc782c, vars: {}, profile: , target: , version: 1.9.4
+[0m13:48:08.831922 [debug] [MainThread]: Partial parsing enabled: 1 files deleted, 0 files added, 1 files changed.
+[0m13:48:08.832609 [debug] [MainThread]: Partial parsing: deleted file: queries://models/dashboard_arcgis/abordagem_ficha.sql
+[0m13:48:08.833214 [debug] [MainThread]: Partial parsing: updated file: queries://models/dashboard_arcgis/abordagem_repeat.sql
+[0m13:48:09.184989 [warn ] [MainThread]: [[33mWARNING[0m]: Did not find matching node for patch with name 'abordagem_ficha' in the 'models' section of file 'models/dashboard_arcgis/schema.yml'
+[0m13:48:09.263907 [debug] [MainThread]: Sending event: {'category': 'dbt', 'action': 'load_project', 'label': 'd09712e5-a6e0-4204-9c2d-26a0dd655ec6', 'context': [<snowplow_tracker.self_describing_json.SelfDescribingJson object at 0x70e727e8b3d0>]}
+[0m13:48:09.352371 [debug] [MainThread]: Wrote artifact WritableManifest to /workspaces/pipeline_arcgis/queries/target/manifest.json
+[0m13:48:09.354186 [debug] [MainThread]: Wrote artifact SemanticManifest to /workspaces/pipeline_arcgis/queries/target/semantic_manifest.json
+[0m13:48:09.374330 [debug] [MainThread]: Sending event: {'category': 'dbt', 'action': 'resource_counts', 'label': 'd09712e5-a6e0-4204-9c2d-26a0dd655ec6', 'context': [<snowplow_tracker.self_describing_json.SelfDescribingJson object at 0x70e727dbbf10>]}
+[0m13:48:09.374985 [info ] [MainThread]: Found 3 models, 2 sources, 494 macros
+[0m13:48:09.375505 [debug] [MainThread]: Sending event: {'category': 'dbt', 'action': 'runnable_timing', 'label': 'd09712e5-a6e0-4204-9c2d-26a0dd655ec6', 'context': [<snowplow_tracker.self_describing_json.SelfDescribingJson object at 0x70e727dbbeb0>]}
+[0m13:48:09.376958 [info ] [MainThread]: 
+[0m13:48:09.377466 [info ] [MainThread]: Concurrency: 2 threads (target='dev')
+[0m13:48:09.377977 [info ] [MainThread]: 
+[0m13:48:09.378742 [debug] [MainThread]: Acquiring new bigquery connection 'master'
+[0m13:48:09.379781 [debug] [ThreadPool]: Acquiring new bigquery connection 'list_rj-smas-dev'
+[0m13:48:09.380361 [debug] [ThreadPool]: Opening a new connection, currently in state init
+[0m13:48:09.927598 [debug] [ThreadPool]: Re-using an available connection from the pool (formerly list_rj-smas-dev, now list_rj-smas-dev_dashboard_arcgis_dev)
+[0m13:48:09.928284 [debug] [ThreadPool]: Opening a new connection, currently in state closed
+[0m13:48:10.249065 [debug] [MainThread]: Sending event: {'category': 'dbt', 'action': 'runnable_timing', 'label': 'd09712e5-a6e0-4204-9c2d-26a0dd655ec6', 'context': [<snowplow_tracker.self_describing_json.SelfDescribingJson object at 0x70e74291db40>]}
+[0m13:48:10.249720 [debug] [MainThread]: Opening a new connection, currently in state init
+[0m13:48:10.294309 [debug] [Thread-1 (]: Began running node model.queries.abordagem_repeat
+[0m13:48:10.295036 [info ] [Thread-1 (]: 1 of 1 START sql table model dashboard_arcgis_dev.abordagem_repeat ............. [RUN]
+[0m13:48:10.295687 [debug] [Thread-1 (]: Re-using an available connection from the pool (formerly list_rj-smas-dev_dashboard_arcgis_dev, now model.queries.abordagem_repeat)
+[0m13:48:10.296219 [debug] [Thread-1 (]: Began compiling node model.queries.abordagem_repeat
+[0m13:48:10.307624 [debug] [Thread-1 (]: Writing injected SQL for node "model.queries.abordagem_repeat"
+[0m13:48:10.308409 [debug] [Thread-1 (]: Began executing node model.queries.abordagem_repeat
+[0m13:48:10.324283 [debug] [Thread-1 (]: Opening a new connection, currently in state closed
+[0m13:48:10.650018 [debug] [Thread-1 (]: Writing runtime sql for node "model.queries.abordagem_repeat"
+[0m13:48:10.651723 [debug] [Thread-1 (]: On model.queries.abordagem_repeat: /* {"app": "dbt", "dbt_version": "1.9.4", "profile_name": "rj_smas_dev", "target_name": "dev", "node_id": "model.queries.abordagem_repeat"} */
+
+  
+    
+
+    create or replace table `rj-smas-dev`.`dashboard_arcgis_dev`.`abordagem_repeat`
+      
+    
+    
+
+    OPTIONS()
+    as (
+      SELECT
+  objectid,
+  globalid,
+  CASE
+   WHEN repeat_unidade_calculo = 'CREAS MARIA LINA DE CASTRO LIMA' THEN 'Creas Maria Lina De Castro Lima'
+   WHEN repeat_unidade_calculo = 'CREAS SIMONE DE BEAUVOIR' THEN 'Creas Simone De Beauvoir'
+   WHEN repeat_unidade_calculo = 'CREAS ARLINDO RODRIGUES' THEN 'Creas Arlindo Rodrigues'
+   WHEN repeat_unidade_calculo = 'CREAS JANETE CLAIR' THEN 'Creas Janete Clair'
+   WHEN repeat_unidade_calculo = 'CREAS PROFESSORA ALDAIZA SPOSATI' THEN 'Creas Professora Aldaiza Sposati'
+   WHEN repeat_unidade_calculo = 'CREAS PROFESSORA MÁRCIA LOPES' THEN 'Creas Professora Marcia Lopes'
+   WHEN repeat_unidade_calculo = 'CREAS STELLA MARIS' THEN 'Creas Stella Maris'
+   WHEN repeat_unidade_calculo = 'CREAS NELSON CARNEIRO' THEN 'Creas Nelson Carneiro'
+   WHEN repeat_unidade_calculo = 'CREAS WANDA ENGEL ADUAN' THEN 'Creas Wanda Engel Aduan'
+   WHEN repeat_unidade_calculo = 'CREAS JOÃO HÉLIO FERNANDES VIEITES' THEN 'Creas Joao Helio Fernandes Vieites'
+   WHEN repeat_unidade_calculo = 'CREAS DANIELA PEREZ' THEN 'Creas Daniela Perez'
+   WHEN repeat_unidade_calculo = 'CREAS PADRE GUILHERME DECAMINADA' THEN 'Creas Padre Guilherme Decaminada'
+   WHEN repeat_unidade_calculo = 'CREAS ZILDA ARNS NEUMANN' THEN 'Creas Zilda Arns Neumann'
+   WHEN repeat_unidade_calculo = 'CREAS JOÃO MANUEL MONTEIRO' THEN 'Creas Joao Manuel Monteiro'
+    WHEN repeat_unidade_calculo = 'CENTRO POP JOSÉ SARAMAGO' THEN 'Centro Pop José Saramago'
+   WHEN repeat_unidade_calculo = 'CENTRO POP BÁRBARA CALAZANS' THEN 'Centro Pop Barbara  Calazans'
+   ELSE repeat_unidade_calculo
+   END AS repeat_unidade_calculo_tratada,
+  repeat_unidade_cas,
+  repeat_nome_usuario,
+  repeat_cpf,
+
+  SAFE.PARSE_DATE('%d/%m/%Y', repeat_data_nascimento) AS repeat_data_nascimento,
+  repeat_data_nascimento_iso,
+  repeat_grupo_familiar,
+
+  repeat_idade,
+  repeat_faixa_etaria,
+  CASE
+   WHEN repeat_estado_nascimento = 'rio_de_janeiro' THEN 'Rio de Janeiro'
+   WHEN repeat_estado_nascimento = 'outros_estados' THEN 'Outros Estados'
+   WHEN repeat_estado_nascimento = 'outro_pais' THEN 'Outro País'
+   WHEN repeat_estado_nascimento = 'ns_nr' THEN 'NS/NR'
+   ELSE repeat_estado_nascimento
+   END AS repeat_estado_nascimento_tratada,
+  repeat_nome_mae,
+  repeat_nome_pai,
+  CASE 
+   WHEN repeat_raca_cor_etnia = 'parda' THEN 'Parda'
+   WHEN repeat_raca_cor_etnia = 'branca' THEN 'Branca'
+   WHEN repeat_raca_cor_etnia = 'preta' THEN 'Preta'
+   WHEN repeat_raca_cor_etnia = 'amarela' THEN 'Amarela'
+   WHEN repeat_raca_cor_etnia = 'indígena' THEN 'Indígena'
+   WHEN repeat_raca_cor_etnia = 'nao_sabe_nao_quis_responder' THEN 'NS/NR'
+   ELSE repeat_raca_cor_etnia
+   END AS repeat_raca_cor_etnia_tratada,
+  CASE
+   WHEN repeat_sexo = 'masculino' THEN 'Masculino'
+   WHEN repeat_sexo = 'feminino' THEN 'Feminino'
+   WHEN repeat_sexo = 'intersexo' THEN 'Intersexo'
+   WHEN repeat_sexo = 'nao_sabe_nao_quis_responder' THEN 'NS/NR'
+   ELSE repeat_sexo
+   END AS repeat_sexo,
+  turno_abordagem,
+
+  DATE(data_abordagem) AS data_abordagem,
+  ano_num_data_abordagem,
+  dia_num_data_abordagem,
+  CASE
+  WHEN RIGHT(mes_abrev_data_abordagem, 1) = '.' THEN mes_abrev_data_abordagem
+  ELSE CONCAT(mes_abrev_data_abordagem, '.')
+  END AS mes_abrev_data_abordagem,
+
+  ano_mes_data_abordagem,
+  bairro_abord,
+
+  CONCAT(y, ', ', x) AS coordenadas,
+
+  CASE
+   WHEN note_creas = 'CREAS Janete Clair' THEN 'Creas Janete Clair'
+   WHEN note_creas = 'CREAS Maria Lina de Castro Lima' THEN 'Creas Maria Lina De Castro Lima'
+   WHEN note_creas = 'CREAS Daniela Perez' THEN 'Creas Daniela Perez'
+   WHEN note_creas = 'CREAS Stella Maris' THEN 'Creas Stella Maris'
+   WHEN note_creas = 'CREAS Nélson Carneiro' THEN 'Creas Nelson Carneiro'
+   WHEN note_creas = 'CREAS Padre Guilherme Decaminada' THEN 'Creas Padre Guilherme Decaminada'
+   WHEN note_creas = 'CREAS Professora Márcia Lopes' THEN 'Creas Professora Márcia Lopes'
+   WHEN note_creas = 'CREAS Professora Aldaíza Sposati' THEN 'Creas Professora Aldaíza Sposati'
+   WHEN note_creas = 'CREAS João Hélio Fernandes Vieites' THEN 'Creas João Hélio Fernandes Vieites'
+   WHEN note_creas = 'CREAS Wanda Engel Aduan' THEN 'Creas Wanda Engel Aduan'
+   WHEN note_creas = 'CREAS Zilda Arns Neumann' THEN 'Creas Zilda Arns Neumann'
+   WHEN note_creas = 'CREAS Nelson Carneiro' THEN 'Creas Nelson Carneiro'
+   WHEN note_creas = 'CREAS João Manoel Monteiro' THEN 'Creas João Manoel Monteiro'
+   WHEN note_creas = 'CREAS Simone de Beauvoir' THEN 'Creas Simone de Beauvoir'
+   WHEN note_creas = 'CREAS Arlindo Rodrigues' THEN 'Creas Arlindo Rodrigues'
+   ELSE note_creas
+   END AS note_creas_tratada,
+  CASE
+   WHEN resp_abordagem = 'cgppsr' THEN 'CTPR'
+   WHEN resp_abordagem = 'creas' THEN 'CREAS'
+   WHEN resp_abordagem = 'centro_pop' THEN 'CENTRO POP'
+   ELSE resp_abordagem
+   END AS resp_abordagem,
+  CASE resp_abordagem1
+   WHEN 'ouvidoria1' THEN 'Ouvidoria CTPR'
+   WHEN'ouvidoria2' THEN 'Ouvidoria CREAS'
+   WHEN'ouvidoria3' THEN 'Ouvidoria Centro POP'
+   WHEN'tenda_acol_direitos' THEN 'Tenda acolhe com direitos'
+   WHEN'abord_itinerante' THEN 'Abordagem CTPR'
+   WHEN'deman_emergencial1' THEN 'Demanda emergencial CTPR'
+   WHEN'naas' THEN 'NAAS'
+   WHEN'itinerante' THEN 'Abordagem CREAS'
+   WHEN'deman_emergencial2' THEN 'Demanda emergencial CREAS'
+   WHEN'abordagem_social' THEN 'Abordagem Centro POP'
+   WHEN'demanda_emergencial' THEN 'Demanda emergencial Centro POP'
+   WHEN'ncp' THEN 'NCP'
+   ELSE resp_abordagem1
+   END AS resp_abordagem1,
+  acao_conjunta,
+  CASE
+   WHEN permanencia_rua = 'h24' THEN '24 horas'
+   WHEN permanencia_rua = 'apenas_durante_dia' THEN 'Apenas durante o dia'
+   WHEN permanencia_rua = 'durante_semana_retorna_casa_final_de_semana' THEN 'Durante a semana'
+   WHEN permanencia_rua = 'frequenta_cenas_de_uso_esporadicamente' THEN 'Frequenta cenas de uso'
+   WHEN permanencia_rua = 'apenas_durante_noite' THEN 'Apenas durante a noite'
+   WHEN permanencia_rua = 'nao_sabe_nao_respondeu' THEN 'NS/NR'
+   ELSE permanencia_rua
+   END AS permanencia_rua_tratada,
+  CASE
+   WHEN tempo_permanencia = 'de_1_a_3_anos' THEN 'De 1 a 3 anos'
+   WHEN tempo_permanencia = 'de_3_a_6_anos' THEN 'De 3 a 6 anos'
+   WHEN tempo_permanencia = 'de_1_a_3_meses' THEN 'De 1 a 3 meses'
+   WHEN tempo_permanencia = 'menos_3_dias' THEN 'Menos de 3 dias'
+   WHEN tempo_permanencia = 'de_6_meses_a_1_ano' THEN 'De 6 meses a 1 ano'
+   WHEN tempo_permanencia = 'de_6_a_10_anos' THEN 'De 6 a 10 anos'
+   WHEN tempo_permanencia = 'de_3_a_6_meses' THEN 'De 3 a 6 meses'
+   WHEN tempo_permanencia = 'mais_de_10_anos' THEN 'Mais de 10 anos'
+   WHEN tempo_permanencia = 'de_7_a_30_dias' THEN 'De 7 a 30 anos'
+   WHEN tempo_permanencia = 'de_3_a_7_dias' THEN 'De 3 a 7 dias'
+   WHEN tempo_permanencia = 'ns_nr' THEN 'NS/NR'
+   ELSE tempo_permanencia
+   END AS tempo_permanencia_tratada,
+  principal_motivo_permanencia,
+
+  flag_conflito_familiar,
+  flag_abandono_familiar,
+  flag_desocupacao,
+  flag_orfandade,
+  flag_acesso_a_renda,
+  flag_desemprego,
+  flag_desemprego_dos_pais,
+  flag_transtorno_psiquiatrico,
+  flag_uso_drogas_ilicitas,
+  flag_trabalho_infantil,
+  flag_exploracao_sexual,
+  flag_egresso_sistema_prisional,
+  flag_alcoolismo_motivo,
+  flag_violencia_conflito_comuni,
+  flag_preferencia_vontade_prop,
+  flag_egresso_mse,
+  flag_imigrante,
+  flag_migrante,
+  flag_refugiado,
+  flag_ns_nr_motivo,
+  e_migrante,
+  CASE
+   WHEN migrante_terra_natal = 'nao_sabe_nao_quis_responder' THEN 'NS/NR'
+   WHEN migrante_terra_natal = 'sim' THEN 'Sim'
+   WHEN migrante_terra_natal = 'nao' THEN 'Não'
+   ELSE migrante_terra_natal
+   END AS migrante_terra_natal_tratada,
+  CASE
+   WHEN possui_referencia = 'nao_sabe_nao_quis_responder' THEN 'NS/NR'
+    WHEN possui_referencia = 'sim' THEN 'Sim'
+    WHEN possui_referencia = 'nao' THEN 'Não'
+   ELSE possui_referencia
+   END AS possui_referencia_tratada,
+  possui_documento,
+  documentacao,
+
+  flg_documentacao_identidade,
+  flg_documentacao_cnh,
+  flg_documentacao_registro_nasc,
+  flg_documentacao_ctps,
+  flg_documentacao_cpf,
+  flg_documentacao_passaporte,
+  CASE
+   WHEN escolaridade = 'medio_incompleto' THEN 'Médio incompleto'
+   WHEN escolaridade = 'fundamental_incompleto' THEN 'Fundamental incompleto'
+   WHEN escolaridade = 'medio_completo' THEN 'Médio completo'
+   WHEN escolaridade = 'fundamental_completo' THEN 'Fundamental completo'
+   WHEN escolaridade = 'nao_alfabetizado' THEN 'Não alfabetizado'
+   WHEN escolaridade = 'nao_sabe_nao_respondeu' THEN 'Não sabe/Não respondeu'
+   WHEN escolaridade = 'superior_completo' THEN 'Superior completo'
+   WHEN escolaridade = 'superior_incompleto' THEN 'Superior incompleto'
+   WHEN escolaridade = 'nao_escolarizado' THEN 'Não escolarizado'
+   ELSE escolaridade
+   END AS escolaridade_tratada,
+  recebe_beneficio,
+  beneficios,
+
+  flag_bolsa_familia,
+  flag_bpc,
+  flag_seguro_desemprego,
+  flag_aposentadoria,
+  flag_pensionista,
+  flag_outros_ben,
+  beneficios_outros,
+  CASE
+   WHEN ocupacao = 'catador' THEN 'Catador'
+   WHEN ocupacao = 'pedinte' THEN 'Pedinte'
+   WHEN ocupacao = 'ambulante' THEN 'Ambulante'
+   WHEN ocupacao = 'bicos' THEN 'Bicos'
+   WHEN ocupacao = 'outros' THEN 'Outros'
+   WHEN ocupacao = 'impossibilitado_para_trabalho' THEN 'Impossibilitado'
+   WHEN ocupacao = 'prostituicao' THEN 'Prostituição'
+   WHEN ocupacao = 'ns_nr' THEN 'NS/NR' 
+   ELSE ocupacao
+   END AS ocupacao_tratada,
+
+  flag_nao_tem_interesse,
+  flag_gastronomia,
+  flag_beleza,
+  flag_pequenos_reparos,
+  flag_jardinagem,
+  flag_empreendedorismo,
+  flag_producao_artesanal,
+  flag_inclusao_digital,
+  flag_outros_curso,
+  flag_curso_ns_nr,
+  flag_nao_tem,
+
+  flag_alcoolismo,
+  flag_asma_bronquite,
+  flag_covid_19,
+  flag_cancer_tumores,
+  flag_diabetes,
+  flag_dengue,
+  flag_depen_quimica,
+  flag_epilepsia,
+  flag_escabiose,
+  flag_hanseniase,
+  flag_hepatite,
+  flag_hipertensao_doenca_cardio,
+  flag_hiv_aids,
+  flag_pneumonia,
+  flag_sarampo,
+  flag_sifilis,
+  flag_transtorno_mental,
+  flag_trauma_fisico,
+  flag_tuberculose,
+  flag_ns_nr,
+
+  CASE
+   WHEN aceita_acolhimento IS NULL THEN 'nao'
+   WHEN TRIM(LOWER(aceita_acolhimento)) = 'n/a' THEN 'nao'
+   ELSE aceita_acolhimento
+   END AS aceita_acolhimento_tratada,
+  motivo_acolhimento_nao,
+  outro_motivo,
+
+  flag_motivo_renda,
+  flag_motivo_regra,
+  flag_motivo_moradia,
+  flag_motivo_animal,
+  flag_motivo_n_interesse,
+  flag_motivo_outro,
+  CASE
+   WHEN unidade_destino = 'albergue' THEN 'Albergue'
+   WHEN unidade_destino = 'central_recepcao' THEN 'Central de Recepção'
+   WHEN unidade_destino = 'outros' THEN 'Outros'
+   WHEN unidade_destino = 'com_terapeutica' THEN 'Comunidade Terapêutica'
+   WHEN unidade_destino = 'urs' THEN 'URS'
+   ELSE unidade_destino
+   END AS unidade_destino_tratada,
+  CASE equipamento_destino
+    WHEN 'albergue_dercy_gonçalves' THEN 'Albergue Dercy Gonçalves'
+    WHEN 'albergue_nise_da_silveira' THEN 'Albergue Nise da Silveira'
+    WHEN 'craf_tom_jobim' THEN 'Craf Tom Jobim'
+    WHEN 'assoc_maranatha_rj_madureira' THEN 'Associação Maranatha RJ Madureira'
+    WHEN 'albergue_martin_luther_kingjr' THEN 'Albergue Martin Luther King Jr'
+    WHEN 'assoc_maranatha_rj_lins_de_vasconcelos' THEN 'Associação Maranatha RJ Lins de Vasconcelos'
+    WHEN 'inst_social_marca_de_cristo' THEN 'Instituto Social Marca de Cristo'
+    WHEN 'urs_rio_acolhedor_paciencia' THEN 'Urs Rio Acolhedor Paciência'
+    WHEN 'cri_pastor_carlos_portela' THEN 'Cri Pastor Carlos Portela'
+    WHEN 'urs_haroldo_costa' THEN 'Urs Haroldo Costa'
+    WHEN 'albergue_mais_tempo_lgbtqia' THEN 'Albergue Mais Tempo LGBTQIA'
+    WHEN 'assoc_maranatha_rj_padre_miguel' THEN 'Associação Maranatha RJ Padre Miguel'
+    WHEN 'assoc_maranatha_rj_vila_kennedy' THEN 'Associação Maranatha RJ Vila Kennedy'
+    WHEN 'albergue_betinho' THEN 'Albergue Betinho'
+    WHEN 'inst_revivendo_com_cristo' THEN 'Instituto Revivendo com Cristo'
+    WHEN 'crca_ademar_ferreira_de_oliveira' THEN 'CRCA Ademar Ferreira de Oliveira'
+    WHEN 'assoc_maranatha_rj_bangu' THEN 'Associação Maranatha RJ Bangu'
+    WHEN 'crca_taiguara' THEN 'CRCA Taiguara'
+    WHEN 'assoc_maranatha_rj_sepetiba' THEN 'Associação Maranatha RJ Sepetiba'
+    WHEN 'albergue_alfonso_lavalle' THEN 'Albergue Alfonso Lavalle'
+    WHEN 'assoc_maranatha_rj_vila_valqueire' THEN 'Associação Maranatha RJ Vila Valqueire'
+    WHEN 'assoc_de_assistencia_social_videira' THEN 'Associação de Assistência Social Videira'
+    WHEN 'projeto_alcançando_vidas' THEN 'Projeto Alcançando Vidas'
+    WHEN 'camor' THEN 'CAMOR'
+    WHEN 'assoc_maranatha_rj_engenho_de_dentro' THEN 'Associação Maranatha RJ Engenho de Dentro'
+    WHEN 'inst_social_manasses_campo_grande2' THEN 'Instituto Social Manassés Campo Grande 2'
+    WHEN 'inst_social_manasses_campo_grande1' THEN 'Instituto Social Manassés Campo Grande 1'
+    WHEN 'comt_valentes_de_davi_escola_de_profetas' THEN 'COMT Valentes de Davi Escola de Profetas'
+   ELSE equipamento_destino
+   END AS equipamento_destino_tratada,
+  CASE
+   WHEN encam_creas = 'creas_maria_lina_de_castro_lima' THEN 'Creas Maria Lina De Castro Lima'
+   WHEN encam_creas = 'creas_simone_de_beauvoir' THEN 'Creas Simone De Beauvoir'
+   WHEN encam_creas = 'creas_arlindo_rodrigues' THEN 'Creas Arlindo Rodrigues'
+   WHEN encam_creas = 'creas_janete_clair' THEN 'Creas Janete Clair'
+   WHEN encam_creas = 'creas_professora_aldaiza_sposati' THEN 'Creas Professora Aldaiza Sposati'
+   WHEN encam_creas = 'creas_professora_marcia_lopes' THEN 'Creas Professora Marcia Lopes'
+   WHEN encam_creas = 'creas_stella_maris' THEN 'Creas Stella Maris'
+   WHEN encam_creas = 'creas_nelson_carneiro' THEN 'Creas Nelson Carneiro'
+   WHEN encam_creas = 'creas_wanda_engel_aduan' THEN 'Creas Wanda Engel Aduan'
+   WHEN encam_creas = 'creas_joao_helio_fernandes_vieites' THEN 'Creas Joao Helio Fernandes Vieites'
+   WHEN encam_creas = 'creas_daniela_perez' THEN 'Creas Daniela Perez'
+   WHEN encam_creas = 'creas_padre_guilherme_decaminada' THEN 'Creas Padre Guilherme Decaminada'
+   WHEN encam_creas = 'creas_zilda_arns_neumann' THEN 'Creas Zilda Arns Neumann'
+   WHEN encam_creas = 'creas_joao_manuel_monteiro' THEN 'Creas Joao Manuel Monteiro'
+   ELSE encam_creas
+   END AS encam_creas_tratada,
+  CASE
+   WHEN encam_centropop = 'centro_pop_jose_saramago' THEN 'Centro Pop José Saramago'
+   WHEN encam_centropop = 'centro_pop_barbara_calazans' THEN 'Centro Pop Barbara  Calazans'
+   ELSE encam_centropop
+   END AS encam_centropop_tratada,
+  encam_cras,
+
+  encaminhamento_rede,
+  ARRAY_TO_STRING(
+    ARRAY(
+      SELECT
+
+        CASE
+          WHEN LOWER(TRIM(part)) = 'cras' THEN 'CRAS'
+          WHEN LOWER(TRIM(part)) = 'defensoria_publica' THEN 'Defensoria Pública'
+          WHEN LOWER(TRIM(part)) = 'fundacao_leaoxii' THEN 'Fundação Leão XIII'
+          WHEN LOWER(TRIM(part)) = 'outros' THEN 'Outros'
+          WHEN LOWER(TRIM(part)) = 'creas' THEN 'CREAS'
+          WHEN LOWER(TRIM(part)) = 'conselho_tutelar' THEN 'Conselho Tutelar'
+          WHEN LOWER(TRIM(part)) = 'detran' THEN 'DETRAN'
+          WHEN LOWER(TRIM(part)) = 'receita_federal' THEN 'Receita Federal'
+          WHEN LOWER(TRIM(part)) = 'centro_pop' THEN 'Centro POP'
+          WHEN LOWER(TRIM(part)) = 'encaminhamento_de_saude' THEN 'Encaminhamento de Saúde'
+          WHEN LOWER(TRIM(part)) = 'cartorio' THEN 'Cartório'
+          WHEN LOWER(TRIM(part)) = 'delegacia' THEN 'Delegacia'
+          WHEN LOWER(TRIM(part)) = 'nao_houve_encaminhamento' THEN 'Sem encaminhamentos'
+          ELSE encaminhamento_rede
+        END
+      FROM UNNEST(SPLIT(encaminhamento_rede, ',')) AS part
+    ),
+    ', '
+  ) AS encaminhamento_rede_tratada,
+
+  flg_sem_encaminhamento,
+  flg_encam_creas,
+  flg_encam_centropop,
+  flg_encam_cras,
+  flg_encam_conselhotutelar,
+  flg_encam_encaminhamento_saude,
+  flg_encam_defensoria_publica,
+  flg_encam_detran,
+  flg_encam_cartorio,
+  flg_encam_fundacao_leaoxiii,
+  flg_encam_receita_federal,
+  flg_encam_delegacia,
+  flg_encam_outros,
+  parentrowid,
+  created_user
+
+ FROM `rj-smas-dev`.`arcgis_raw`.`abordagem_repeat_raw`
+    );
+  
+[0m13:48:11.139622 [debug] [Thread-1 (]: BigQuery adapter: https://console.cloud.google.com/bigquery?project=rj-smas-dev&j=bq:US:806ac372-b721-43a6-a1a5-c7825a8f978f&page=queryresults
+[0m13:48:22.720719 [debug] [Thread-1 (]: Sending event: {'category': 'dbt', 'action': 'run_model', 'label': 'd09712e5-a6e0-4204-9c2d-26a0dd655ec6', 'context': [<snowplow_tracker.self_describing_json.SelfDescribingJson object at 0x70e727d979d0>]}
+[0m13:48:22.721989 [info ] [Thread-1 (]: 1 of 1 OK created sql table model dashboard_arcgis_dev.abordagem_repeat ........ [[32mCREATE TABLE (266.1k rows, 315.1 MiB processed)[0m in 12.42s]
+[0m13:48:22.723269 [debug] [Thread-1 (]: Finished running node model.queries.abordagem_repeat
+[0m13:48:22.725068 [debug] [MainThread]: Opening a new connection, currently in state closed
+[0m13:48:22.768950 [debug] [MainThread]: Connection 'master' was properly closed.
+[0m13:48:22.769429 [debug] [MainThread]: Connection 'model.queries.abordagem_repeat' was properly closed.
+[0m13:48:22.769928 [info ] [MainThread]: 
+[0m13:48:22.770495 [info ] [MainThread]: Finished running 1 table model in 0 hours 0 minutes and 13.39 seconds (13.39s).
+[0m13:48:22.771388 [debug] [MainThread]: Command end result
+[0m13:48:22.801632 [debug] [MainThread]: Wrote artifact WritableManifest to /workspaces/pipeline_arcgis/queries/target/manifest.json
+[0m13:48:22.803672 [debug] [MainThread]: Wrote artifact SemanticManifest to /workspaces/pipeline_arcgis/queries/target/semantic_manifest.json
+[0m13:48:22.812506 [debug] [MainThread]: Wrote artifact RunExecutionResult to /workspaces/pipeline_arcgis/queries/target/run_results.json
+[0m13:48:22.813084 [info ] [MainThread]: 
+[0m13:48:22.815525 [info ] [MainThread]: [32mCompleted successfully[0m
+[0m13:48:22.816121 [info ] [MainThread]: 
+[0m13:48:22.816755 [info ] [MainThread]: Done. PASS=1 WARN=0 ERROR=0 SKIP=0 TOTAL=1
+[0m13:48:22.821239 [debug] [MainThread]: Resource report: {"command_name": "run", "command_success": true, "command_wall_clock_time": 17.976765, "process_in_blocks": "169712", "process_kernel_time": 0.85482, "process_mem_max_rss": "396896", "process_out_blocks": "3352", "process_user_time": 5.507841}
+[0m13:48:22.822336 [debug] [MainThread]: Command `dbt run` succeeded at 13:48:22.822176 after 17.98 seconds
+[0m13:48:22.825045 [debug] [MainThread]: Sending event: {'category': 'dbt', 'action': 'invocation', 'label': 'end', 'context': [<snowplow_tracker.self_describing_json.SelfDescribingJson object at 0x70e7439be260>, <snowplow_tracker.self_describing_json.SelfDescribingJson object at 0x70e7289519c0>, <snowplow_tracker.self_describing_json.SelfDescribingJson object at 0x70e7288ba050>]}
+[0m13:48:22.825761 [debug] [MainThread]: Flushing usage events
+[0m13:48:22.930853 [debug] [MainThread]: An error was encountered while trying to flush usage events
