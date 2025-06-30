@@ -2,6 +2,7 @@ rj_smas_dev:
   # alvo-padrão para quem for rodar local: DEV
   target: dev
   outputs:
+
     prod:         
       type: bigquery
       method: service-account
@@ -21,3 +22,11 @@ rj_smas_dev:
       threads: 2
       location: US
       timeout_seconds: 300
+
+    ci:                       
+      type: bigquery
+      method: oauth           
+      project: rj-smas-dev    
+      dataset: dashboard_arcgis_dev
+      threads: 2
+      location: US

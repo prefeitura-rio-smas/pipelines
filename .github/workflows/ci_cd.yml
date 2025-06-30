@@ -64,7 +64,7 @@ jobs:
 
       - name: dbt compile
         run: |
-          dbt parse --project-dir queries --profiles-dir queries --target prod
+          dbt parse --project-dir queries --profiles-dir queries --target ci
 
   build-push:                       # 3️⃣ publica imagem só se smoke OK
     needs: smoke-dbt
