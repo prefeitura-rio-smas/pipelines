@@ -8,3 +8,9 @@
     ficha: 0                                    # <apelido>: <índice da layer>
     repeat: 1
 
+- name: gestao_vagas
+  feature_id: 9daec57e5a3a4a12b63947fb4aafd7d9  
+  account: siurb                                
+  layers:
+    ficha: 0                                    
+    repeat: 1
