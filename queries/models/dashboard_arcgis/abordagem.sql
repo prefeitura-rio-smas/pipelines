@@ -12,7 +12,7 @@ SELECT
 FROM 
   {{ ref('abordagem_repeat') }} as r
 LEFT JOIN 
-  `rj-smas-dev.dashboard_arcgis_dev.abordagem_filtro_emails` as e
+  `rj-smas-dev.dashboard_arcgis.abordagem_filtro_emails` as e
 ON
   r.repeat_unidade_cas = e.cas
 LEFT JOIN  
