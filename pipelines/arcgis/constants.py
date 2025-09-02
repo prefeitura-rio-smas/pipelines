@@ -20,7 +20,7 @@ class Settings(BaseSettings):
 
     # ✅ aceita variáveis a mais e ignora
     model_config = SettingsConfigDict(
-        env_file      = Path(__file__).parents[1] / ".env",  # ajuste caminho se quiser
+        env_file      = Path(__file__).parents[1] / "../.env",  # ajuste caminho se quiser
         extra         = "ignore",
         case_sensitive=False,
     )

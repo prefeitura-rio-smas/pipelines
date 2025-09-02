@@ -9,7 +9,7 @@ from .tasks import extract_arcgis, stage_to_parquet, load_to_bigquery
 # Caminho para o YAML de configurações de ingestão
 CONFIG_PATH = Path(__file__).with_name("pipelines.yaml")
 # Diretório do projeto dbt (pasta paralela `queries`)
-DBT_PROJECT_DIR = Path(__file__).parent.parent / "queries"
+DBT_PROJECT_DIR = Path(__file__).parent.parent / "../queries"
 
 def incremental_flow() -> None:
     """
