@@ -1,0 +1,41 @@
+version: 2
+  
+  - name: brutos_acolherio_staging
+    schema: brutos_acolherio_staging
+    tables:
+      - name: gh_atendimentos
+      - name: gh_cbo
+      - name: gh_cidadao_pac
+      - name: gh_contas
+      - name: gh_contas_us
+      - name: gh_encam_atend
+      - name: gh_origens
+      - name: gh_pac_ciclos
+      - name: gh_pac_dados
+      - name: gh_pac_transf
+      - name: gh_pacientes_sm
+      - name: gh_prof
+      - name: gh_profocup
+      - name: gh_tpatendimentos
+      - name: gh_us
+      - name: gh_us_config
+      - name: gh_us_tipo
+
+models:
+  - name: relatorio_contas_associadas
+    description: "Tabela com todas as informações para o relatório de contas associadas da SUPBSE"
+    columns:
+      - name: dscus
+        description: "Nome da unidade"
+      - name: nompess
+        description: "Nome do operador da conta"
+      - name: cpfprof
+        description: "Cpf cadastrado na conta do operador"
+      - name: dscemail 
+        description: "Email cadastrado na conta do operador"
+      - name: dsctel 
+        description: "Telefone cadastrado na conta do operador"
+      - name: indnivel
+        description: "Nível de acesso da conta do operador"
+      - name: indstatuser
+        description: "Status da conta do operador"
