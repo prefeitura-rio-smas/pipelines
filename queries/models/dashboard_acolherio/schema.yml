@@ -1,6 +1,8 @@
 version: 2
-  
+
+sources:
   - name: brutos_acolherio_staging
+    database: rj-smas
     schema: brutos_acolherio_staging
     tables:
       - name: gh_atendimentos
@@ -20,22 +22,41 @@ version: 2
       - name: gh_us
       - name: gh_us_config
       - name: gh_us_tipo
+      - name: gh_contas_modulos
 
 models:
-  - name: relatorio_contas_associadas
-    description: "Tabela com todas as informações para o relatório de contas associadas da SUPBSE"
+  - name: atendimentos.sql
+    description: "Tabela com todas as informações relacionadas ao atendimento do sistema acolherio"
     columns:
-      - name: dscus
-        description: "Nome da unidade"
-      - name: nompess
-        description: "Nome do operador da conta"
-      - name: cpfprof
-        description: "Cpf cadastrado na conta do operador"
-      - name: dscemail 
-        description: "Email cadastrado na conta do operador"
-      - name: dsctel 
-        description: "Telefone cadastrado na conta do operador"
-      - name: indnivel
-        description: "Nível de acesso da conta do operador"
-      - name: indstatuser
-        description: "Status da conta do operador"
+      - name: unidade_atendimento
+        description: "Nome da unidade do atendimento"
+      - name: seq_atendimento
+        description: "Chave primária do atendimento"
+      - name: data_de_atendimento
+        description: "Data do atendimento"
+      - name: nome_usuario 
+        description: "Nome da pessoa atendida"
+      - name: documentacao 
+        description: "Documento que a pessoa forneceu no atendimento"
+      - name: numero_documento
+        description: "Número do documento fornecido no atendimento"
+      - name: endereco
+        description: "Endereço da da pessoa atendida"
+      - name: endereco_numero
+        description: "Número do endereço"
+      - name: endereco_complemento
+        description: "Complemento do endereço fornecido"
+      - name: bairro
+        description: "Nome do bairro"
+      - name: referencia_ou_comunidade
+        description: "Referencia ao local de moradia"
+      - name: nome_atendimento
+        description: "Nome do tipo de atendimento"
+      - name: data_nascimento
+        description: "Data de nascimento do usuário"
+      - name: idade
+        description: "Idade do usuário"
+      - name: raca_cor
+        description: "Cor de pele do usuário"
+      - name: sexo
+        description: "Sexo do usuário"
