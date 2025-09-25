@@ -2,6 +2,7 @@
 from functools import lru_cache
 from typing import Literal
 import pandas as pd
+import geopandas as gpd
 from arcgis.gis       import GIS
 from arcgis.features  import FeatureLayer
 from google.cloud     import bigquery, storage
@@ -32,14 +33,32 @@ def fetch_dataframe(
     max_records: int = 5000,
     return_geometry: bool = False,
 ):
-    """Baixa dados sem geometria e devolve DataFrame Polars/Pandas."""
+    """Baixa dados e devolve DataFrame Polars/Pandas."""
     fl  = get_feature_layer(account, feature_id, layer)
     sdf = fl.query(
         where=where,
         out_fields="*",
-        return_geometry=False,
+        return_geometry=return_geometry,
         max_records=max_records,
     ).sdf  # ArcGIS devolve Spatial DataFrame (pandas)
+
+    if return_geometry and not sdf.empty and "SHAPE" in sdf.columns:
+        gdf = gpd.GeoDataFrame(sdf, geometry='SHAPE')
+
+        # Fix invalid geometries
+        gdf.geometry = gdf.geometry.buffer(0)
+
+        if sdf.spatial.sr:
+            gdf = gdf.set_crs(epsg=sdf.spatial.sr['wkid'])
+            gdf = gdf.to_crs("EPSG:4326")
+
+        # Check if the geometry type is Point and add lat/lon
+        if not gdf.empty and gdf.geom_type.iloc[0] == 'Point':
+            gdf['longitude'] = gdf.geometry.x
+            gdf['latitude'] = gdf.geometry.y
+        
+        return gdf
+
     return sdf
 
 # ---------- BigQuery / GCS ----------
