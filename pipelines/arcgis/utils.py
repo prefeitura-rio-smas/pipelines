@@ -30,6 +30,7 @@ def fetch_dataframe(
     layer: int,
     where: str = "1=1",
     max_records: int = 5000,
+    return_geometry: bool = False,
 ):
     """Baixa dados sem geometria e devolve DataFrame Polars/Pandas."""
     fl  = get_feature_layer(account, feature_id, layer)

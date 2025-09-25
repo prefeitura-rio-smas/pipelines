@@ -11,9 +11,17 @@ def extract_arcgis(
     layer: int = 1,
     where: str = "1=1",
     max_records: int = 5000,
+    return_geometry: bool = False,
 ) -> pd.DataFrame:
     """E = Extract."""
-    return fetch_dataframe(account=account, feature_id=feature_id, layer=layer , where=where, max_records=max_records)
+    return fetch_dataframe(
+        account=account,
+        feature_id=feature_id,
+        layer=layer,
+        where=where,
+        max_records=max_records,
+        return_geometry=return_geometry,
+    )
 
 def stage_to_parquet(df: pd.DataFrame, path: Path) -> Path:
     """Salva dataframe localmente em parquet (formato rápido)."""

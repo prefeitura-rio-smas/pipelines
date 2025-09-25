@@ -31,6 +31,7 @@ def incremental_flow() -> None:
                 feature_id = job["feature_id"],
                 account    = account,
                 layer      = idx,
+                return_geometry = job.get("return_geometry", False),
             )
             if df.empty:
                 print("   • Nada a carregar.")
