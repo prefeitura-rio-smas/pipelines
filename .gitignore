@@ -2,7 +2,10 @@
 .env
 .env__pycache__/
 *.pyc
-target/
+**/target/
 dbt_packages/
-logs/
-/sandbox/ 
+**/logs/
+
+.venv/
+
+/sandbox/

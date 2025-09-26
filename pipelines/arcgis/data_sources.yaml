@@ -1,0 +1,29 @@
+# Cada bloco descreve UM Feature Service e suas camadas
+
+- name: abordagem                               # prefixo dos nomes Projetos
+  feature_id: 6832ff4ca54c4608b169682ae3a5b088  # ArcGIS item.id (Feature Service)
+  account: siurb                                # opcional; default = siurb
+  return_geometry: false                        # Se quer pegar SHAPE (pontos e poligonos)
+  layers:
+    repeat: 1                                   # <apelido>: <índice da layer>
+
+- name: gestao_vagas
+  feature_id: 9daec57e5a3a4a12b63947fb4aafd7d9  
+  account: siurb          
+  return_geometry: false                      
+  layers:                                
+    repeat: 1
+
+- name: equipamentos
+  feature_id: 134851a668ca407c8f6b4cb2fd8dfdf8
+  account: siurb
+  return_geometry: false
+  layers:
+    smas: 0
+
+- name: cras_cas_poligonos
+  feature_id: dd9ebc1eee144c77989055b4457ec66d
+  account: siurb
+  return_geometry: true
+  layers:
+    smas: 0
