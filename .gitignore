@@ -5,4 +5,7 @@
 **/target/
 dbt_packages/
 **/logs/
-/sandbox/ 
+
+.venv/
+
+/sandbox/
