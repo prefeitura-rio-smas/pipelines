@@ -8,6 +8,7 @@ load_dotenv(dotenv_path=dotenv_path)
 import yaml
 import sys
 import subprocess
+import time
 
 from .tasks import load_arcgis_to_bigquery
 
@@ -20,6 +21,7 @@ def incremental_flow() -> None:
     """
     Percorre o YAML e executa a carga de cada layers do ArcGIS para o BigQuery.
     """
+    start_time = time.monotonic()
     cfg = yaml.safe_load(CONFIG_PATH.read_text())
 
     for job in cfg:
@@ -46,6 +48,11 @@ def incremental_flow() -> None:
         print(result.stderr)
         raise RuntimeError("❌ dbt run falhou")
     print("✅ dbt concluído com sucesso.")
+
+    end_time = time.monotonic()
+    duration = end_time - start_time
+    minutes, seconds = divmod(duration, 60)
+    print(f"\n🏁 Pipeline concluída com sucesso em {int(minutes)}m {int(seconds)}s.")
 
 if __name__ == "__main__":
     incremental_flow()
