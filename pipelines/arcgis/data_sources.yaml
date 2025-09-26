@@ -1,4 +1,3 @@
-# pipeline/pipelines.yaml
 # Cada bloco descreve UM Feature Service e suas camadas
 
 - name: abordagem                               # prefixo dos nomes Projetos
@@ -6,15 +5,13 @@
   account: siurb                                # opcional; default = siurb
   return_geometry: false                        # Se quer pegar SHAPE (pontos e poligonos)
   layers:
-    ficha: 0                                    # <apelido>: <índice da layer>
-    repeat: 1
+    repeat: 1                                   # <apelido>: <índice da layer>
 
 - name: gestao_vagas
   feature_id: 9daec57e5a3a4a12b63947fb4aafd7d9  
   account: siurb          
   return_geometry: false                      
-  layers:
-    ficha: 0                                    
+  layers:                                
     repeat: 1
 
 - name: equipamentos
@@ -25,7 +22,7 @@
     smas: 0
 
 - name: cras_cas_poligonos
-  feature_id: 271992cd9d5942d8a7c375cb781a6934
+  feature_id: dd9ebc1eee144c77989055b4457ec66d
   account: siurb
   return_geometry: true
   layers:

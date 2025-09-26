@@ -61,6 +61,49 @@ def fetch_dataframe(
 
     return sdf
 
+
+def fetch_features_in_chunks(
+    account: str,
+    feature_id: str,
+    layer: int,
+    where: str = "1=1",
+    chunk_size: int = 10000,
+    return_geometry: bool = False,
+):
+    """
+    Busca features em lotes (chunks) e retorna um gerador de DataFrames.
+    """
+    fl = get_feature_layer(account, feature_id, layer)
+    
+    # 1. Obter o número total de registros
+    total_records = fl.query(where=where, return_count_only=True)
+    
+    # 2. Iterar em chunks
+    for offset in range(0, total_records, chunk_size):
+        records_to_fetch = min(chunk_size, total_records - offset)
+        sdf = fl.query(
+            where=where,
+            out_fields="*",
+            return_geometry=return_geometry,
+            result_offset=offset,
+            result_record_count=records_to_fetch
+        ).sdf
+        
+        if sdf.empty:
+            continue
+
+        if return_geometry and "SHAPE" in sdf.columns:
+            gdf = gpd.GeoDataFrame(sdf, geometry='SHAPE')
+            gdf.geometry = gdf.geometry.buffer(0)
+            if sdf.spatial.sr:
+                gdf = gdf.set_crs(epsg=sdf.spatial.sr['wkid']).to_crs("EPSG:4326")
+            if not gdf.empty and gdf.geom_type.iloc[0] == 'Point':
+                gdf['longitude'] = gdf.geometry.x
+                gdf['latitude'] = gdf.geometry.y
+            yield gdf
+        else:
+            yield sdf
+
 # ---------- BigQuery / GCS ----------
 @lru_cache
 def bq_client() -> bigquery.Client:
