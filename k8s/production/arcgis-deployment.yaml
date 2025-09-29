@@ -1,0 +1,21 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: arcgis-pipeline-production
+  namespace: production
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: arcgis-pipeline-production
+  template:
+    metadata:
+      labels:
+        app: arcgis-pipeline-production
+    spec:
+      containers:
+      - name: pipeline
+        image: ghcr.io/prefeitura-rio-smas/pipelines:latest
+        envFrom:
+        - secretRef:
+            name: arcgis-secrets
