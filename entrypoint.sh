@@ -13,7 +13,7 @@ while true; do
   echo "⏱️  $(date) [$LOG_TAG] — disparando incremental_flow"
 
   # Executa o fluxo; $? guarda o exit code
-  if python -m pipelines.flows incremental_flow; then
+  if python -m pipelines.arcgis.flows incremental_flow; then
     echo "✅  $(date) [$LOG_TAG] — sucesso. Dormindo ${SUCCESS_DELAY}s…"
     sleep "$SUCCESS_DELAY"
   else
