@@ -91,6 +91,7 @@ jobs:
           context: .
           push: true
           tags: |
-            ghcr.io/${{ github.repository }}:latest
+            ghcr.io/prefeitura-rio-smas/pipeline_arcgis:latest
           labels: |
             org.opencontainers.image.source=https://github.com/${{ github.repository }}
+            com.centurylinklabs.watchtower.enable=true
