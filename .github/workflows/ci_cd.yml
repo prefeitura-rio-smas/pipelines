@@ -1,8 +1,8 @@
-name: CI · Build · Push
-
 on:
   push:
-    branches: [main]
+    branches:
+      - main
+      - 'staging/**'
   pull_request:
   workflow_dispatch:
 
@@ -85,13 +85,19 @@ jobs:
           username: ${{ github.actor }}
           password: ${{ secrets.GITHUB_TOKEN }}
 
+      - name: Set docker tag
+        id: docker_meta
+        uses: docker/metadata-action@v5
+        with:
+          images: ghcr.io/${{ github.repository }}
+          tags: |
+            type=ref,event=branch
+            type=raw,value=latest,enable={{is_default_branch}}
+
       - name: Build & Push
         uses: docker/build-push-action@v5
         with:
           context: .
           push: true
-          tags: |
-            ghcr.io/prefeitura-rio-smas/pipeline_arcgis:latest
-          labels: |
-            org.opencontainers.image.source=https://github.com/${{ github.repository }}
-            com.centurylinklabs.watchtower.enable=true
+          tags: ${{ steps.docker_meta.outputs.tags }}
+          labels: ${{ steps.docker_meta.outputs.labels }}
