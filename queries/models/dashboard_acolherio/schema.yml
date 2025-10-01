@@ -23,9 +23,14 @@ sources:
       - name: gh_us_config
       - name: gh_us_tipo
       - name: gh_contas_modulos
+  - name: filtro_email
+    database: rj-smas-dev
+    schema: dashboard_acolherio
+    tables:
+      - name: filtro_email
 
 models:
-  - name: atendimentos.sql
+  - name: atendimentos
     description: "Tabela com todas as informações relacionadas ao atendimento do sistema acolherio"
     columns:
       - name: unidade_atendimento
