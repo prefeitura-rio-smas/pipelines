@@ -16,25 +16,18 @@ models:
         tests:
           - not_null
           - unique
-
       - name: SHAPE_Area
         description: "Área do polígono"
-
       - name: cod_unid
         description: "Código da unidade"
-
       - name: nome_unid
         description: "Nome da unidade"
-
       - name: categoria
         description: "Categoria da unidade"
-
       - name: SHAPE_Leng
         description: "Comprimento do polígono (formato alternativo)"
-
       - name: SHAPE_Length
         description: "Comprimento do polígono"
-
       - name: shape
         description: "Geometria do polígono"
 
