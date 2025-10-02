@@ -6,6 +6,8 @@ sources:
     schema: brutos_acolherio_staging
     tables:
       - name: gh_atendimentos
+      - name: gh_atend_familia
+      - name: gh_familias_membros
       - name: gh_cbo
       - name: gh_cidadao_pac
       - name: gh_contas
