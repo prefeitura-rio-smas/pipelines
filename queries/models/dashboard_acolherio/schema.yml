@@ -33,35 +33,79 @@ models:
   - name: atendimentos
     description: "Tabela com todas as informações relacionadas ao atendimento do sistema acolherio"
     columns:
-      - name: unidade_atendimento
-        description: "Nome da unidade do atendimento"
-      - name: seq_atendimento
-        description: "Chave primária do atendimento"
-      - name: data_de_atendimento
+      - name: CAS
+        description: "Número identificador do território do município"
+      - name: TIPO_UNIDADE
+        description: "Tipo da unidade de atendimento"
+      - name: UNIDADE_ATENDIMENTO
+        description: "Nome da unidade de atendimento"
+      - name: EMAIL_UNIDADE 
+        description: "Email da unidade de atendimento"
+      - name: EMAIL_CAS 
+        description: "Email do CAS"
+      - name: SEQ_ATENDIMENTO
+        description: "Identificador único do atendimento"
+      - name: DATA_DE_ATENDIMENTO
         description: "Data do atendimento"
-      - name: nome_usuario 
-        description: "Nome da pessoa atendida"
-      - name: documentacao 
-        description: "Documento que a pessoa forneceu no atendimento"
-      - name: numero_documento
-        description: "Número do documento fornecido no atendimento"
-      - name: endereco
-        description: "Endereço da da pessoa atendida"
-      - name: endereco_numero
-        description: "Número do endereço"
-      - name: endereco_complemento
-        description: "Complemento do endereço fornecido"
-      - name: bairro
-        description: "Nome do bairro"
-      - name: referencia_ou_comunidade
-        description: "Referencia ao local de moradia"
-      - name: nome_atendimento
-        description: "Nome do tipo de atendimento"
-      - name: data_nascimento
+      - name: HORA_DE_ATENDIMENTO_ORIGINAL
+        description: "Hora original do atendimento"
+      - name: HORA_DE_ATENDIMENTO
+        description: "Hora formatada em HH:MM"
+      - name: ID_USUARIO
+        description: "Identificador do único do usuário"
+      - name: ID_FAMILIA
+        description: "Identificador do único do usuário"
+      - name: NOME_USUARIO
+        description: "Nome do usuário atendido"
+      - name: DOCUMENTACAO
+        description: "Tipo de documentação do usuário atendido"
+      - name: NUMERO_DOCUMENTO
+        description: "Número do documento"
+      - name: ENDERECO
+        description: "Endereço do usuário"
+      - name: ENDERECO_NUMERO
+        description: "Número do endereço do usuário"
+      - name: ENDERECO_COMPLEMENTO
+        description: "Complemento do endereço do usuário"
+      - name: BAIRRO
+        description: "Bairro do usuário"
+      - name: REFERENCIA_OU_COMUNIDADE
+        description: "Se há referência ou se é comunidade"
+      - name: NOME_ATENDIMENTO_ORIGINAL
+        description: "Descrição do tipo de atendimento realizado"
+      - name: DATA_NASCIMENTO
         description: "Data de nascimento do usuário"
-      - name: idade
-        description: "Idade do usuário"
-      - name: raca_cor
-        description: "Cor de pele do usuário"
-      - name: sexo
+      - name: IDADE
+        description: "Idade calculada do usuário"
+      - name: RACA_COR
+        description: "Etnia do usuário"
+      - name: SEXO
         description: "Sexo do usuário"
+      - name: PROFISSIONAL_ID
+        description: "Id único do profissional que realizou o atendimento"
+      - name: PROFISSIONAL
+        description: "Nome do Profissional"
+      - name: PROFISSIONAL_CBO_ORIGINAL
+        description: "Número do CBO do profissional"
+      - name: PROFISSIONAL_CBO
+        description: "Descrição da profissão do profissional"
+      - name: CADASTRANTE
+        description: "Número de quem realizou o cadastro do atendimento"
+      - name: DATA_CADASTRO_ATENDIMENTO
+        description: "Data de cadastro do atendimento"
+      - name: PROFISSIONAL_CBO_ORIGINAL
+        description: "Número do CBO do profissional"
+      - name: PROFISSIONAL_CBO_ORIGINAL
+        description: "Número do CBO do profissional"
+      - name: PROFISSIONAL_CBO_ORIGINAL
+        description: "Número do CBO do profissional"
+      - name: PROFISSIONAL_CBO_ORIGINAL
+        description: "Número do CBO do profissional"
+      - name: TIPO_ATENDIMENTO
+        description: "Tipo de atendimento realizado formatado"
+      - name: NOME_ATENDIMENTO
+        description: "Tipo de atendimento realizado formatado com condição da profissão de quem realizou o atendimento"
+      - name: IDADE_FAIXA
+        description: "Faixa de idade do usuário atendido"
+      - name: EMAIL
+        description: "Email das pessoas que podem consumir o relatório looker"
