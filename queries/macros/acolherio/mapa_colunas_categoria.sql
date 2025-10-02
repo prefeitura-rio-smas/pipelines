@@ -29,7 +29,7 @@
     WHEN {{ coluna }} = '03' THEN 'Parda'
     WHEN {{ coluna }} = '04' THEN 'Amarelo'
     WHEN {{ coluna }} = '05' THEN 'Indígena'
-  END AS ETNIA,
+  END AS ETNIA
 {% endmacro %}
 
 -- Coluna GENERO do models relatorio_geral
@@ -79,7 +79,7 @@
     WHEN {{ coluna }} = '16' THEN 'Ensino Médio - 2º Ano'
     WHEN {{ coluna }} = '17' THEN 'Ensino Médio - 3º Ano'
     WHEN {{ coluna }} = '18' THEN 'Ensino Superior'
-  END AS ESCOLARIDADE,
+  END AS ESCOLARIDADE
 {% endmacro %}
 
 -- Coluna TIPO_CURATELA do models relatorio_geral
@@ -90,4 +90,42 @@
     WHEN {{ coluna }} = '3' THEN 'Conhecido/amigo'
     WHEN {{ coluna }} = '4' THEN 'Conselho de contabilidade'
   END AS TIPO_CURATELA
+{% endmacro %}
+
+-- Coluna DECISAO_APOIADA do models relatorio_geral
+{% macro map_coluna_decisao_apoiada (coluna ) %}
+  CASE
+    WHEN {{ coluna }} IS NULL THEN 'N'
+  END AS DECISAO_APOIADA
+{% endmacro %}
+
+-- Coluna SITUACAO_DE_RUA do models relatorio_geral
+{% macro map_coluna_situacao_de_rua (coluna ) %}
+  CASE 
+      WHEN {{ coluna }} = '5' THEN 'S'
+      ELSE 'N'  
+  END AS SITUACAO_DE_RUA
+{% endmacro %}
+
+-- Coluna SAUDE_MENTAL do models relatorio_geral
+{% macro map_coluna_saude_mental(coluna ) %}
+  CASE 
+      WHEN {{ coluna }} = 'A' THEN 'Pessoa com aparente agravo de saúde mental'
+      WHEN {{ coluna }} = 'D' THEN 'Pessoa com diagnóstico (laudo médico) de doença mental'
+      ELSE {{ coluna }}  
+  END AS SAUDE_MENTAL
+{% endmacro %}
+
+-- Coluna MOTIV_ACOLHIMENTO do models relatorio_geral
+{% macro map_coluna_tipo_motiv_acolhimento (coluna ) %}
+  CASE
+    WHEN {{ coluna }} = '1' THEN 'Negligência'
+    WHEN {{ coluna }} = '2' THEN 'Abandono'
+    WHEN {{ coluna }} = '3' THEN 'Maus tratos'
+    WHEN {{ coluna }} = '4' THEN 'Conflito familiar'
+    WHEN {{ coluna }} = '5' THEN 'Uso abusivo de drogas'
+    WHEN {{ coluna }} = '6' THEN 'Perdido da família'
+    WHEN {{ coluna }} = '7' THEN 'Violência Sexual'
+    WHEN {{ coluna }} = '8' THEN 'Violência Psicológica'
+  END AS MOTIV_ACOLHIMENTO
 {% endmacro %}
