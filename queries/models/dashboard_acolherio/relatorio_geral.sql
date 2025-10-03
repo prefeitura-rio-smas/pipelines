@@ -4,6 +4,7 @@ WITH usuario_cadastrado AS (
   SELECT
   fam.seqfamil AS ID_FAMILIA,
   pac.dscnomepac AS NOME_USUARIO,
+  pac.seqpac AS ID_USUARIO,
   pac.dscnomsoci AS NOME_SOCIAL,
   pac.datnascim AS DATA_NASCIMENTO,
   {{ map_coluna_nacionalidade('pac.nacional') }},
