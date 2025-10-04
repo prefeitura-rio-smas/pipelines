@@ -33,6 +33,8 @@ def incremental_flow() -> None:
                 layer_idx=idx,
                 account=job.get("account", "siurb"),
                 return_geometry=job.get("return_geometry", False),
+                chunk_size=job.get("chunk_size"),
+                order_by_field=job.get("order_by_field"),
             )
 
     # Transform (dbt)

@@ -4,6 +4,8 @@
   feature_id: 6832ff4ca54c4608b169682ae3a5b088  # ArcGIS item.id (Feature Service)
   account: siurb                                # opcional; default = siurb
   return_geometry: false                        # Se quer pegar SHAPE (pontos e poligonos)
+  chunk_size: 180000                            # Tamanho do chunk para esta camada
+  order_by_field: objectid                      # Campo para ordenar e estabilizar a paginação
   layers:
     repeat: 1                                   # <apelido>: <índice da layer>
 
