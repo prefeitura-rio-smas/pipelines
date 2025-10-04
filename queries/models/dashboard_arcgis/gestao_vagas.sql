@@ -1,5 +1,3 @@
-{{ config(materialized = 'table') }}
-
 WITH clusters AS (
     {{ tratamento_duplicatas_cluster(
          source_relation   = source('arcgis_raw','gestao_vagas_repeat_raw'),
