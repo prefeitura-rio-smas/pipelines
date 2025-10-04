@@ -284,25 +284,3 @@ models:
         description: ""
 
 
-models:
-  - name: abordagem_ficha
-    description: "Tabela gold para BI, gerada a partir da abordagem_ficha_raw."
-    columns:
-      - name: uniquerowid
-        description: "Identificador único da ficha."
-      - name: unidade_calculo
-        description: "Unidade de cálculo do registro."
-      - name: nome_usuario
-        description: "Nome do usuário."
-      - name: data_nascimento
-        description: "Data de nascimento, formatada."
-      - name: cpf
-        description: "CPF do usuário."
-      - name: nome_mae
-        description: "Nome da mãe do usuário."
-      - name: filtro_ano_ultima_abordagem
-        description: "Ano da última abordagem."
-      - name: excluir_ficha
-        description: "Indicador de ficha excluída."
-      - name: created_user
-        description: "Usuário que criou o registro."

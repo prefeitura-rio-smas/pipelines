@@ -7,3 +7,7 @@ models:
   queries:
     dashboard_arcgis:
       materialized: table
+      +schema: "{{ 'dashboard_arcgis' if target.name == 'prod' else 'gerenciamento__dbt' }}"
+    equipamentos:
+      materialized: table
+      +schema: "{{ 'equipamentos' if target.name == 'prod' else 'gerenciamento__dbt' }}"

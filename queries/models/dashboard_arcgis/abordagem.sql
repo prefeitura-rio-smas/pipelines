@@ -1,5 +1,3 @@
-{{ config(materialized = 'table') }}
-
 SELECT
   r.*,
   e.cas,
