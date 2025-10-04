@@ -67,8 +67,9 @@ def fetch_features_in_chunks(
     feature_id: str,
     layer: int,
     where: str = "1=1",
-    chunk_size: int = 10000,
+    chunk_size: int = 200000, # Default alto, será sobreposto pelo YAML
     return_geometry: bool = False,
+    order_by_field: str = None,
 ):
     """
     Busca features em lotes (chunks) e retorna um gerador de DataFrames.
@@ -81,13 +82,18 @@ def fetch_features_in_chunks(
     # 2. Iterar em chunks
     for offset in range(0, total_records, chunk_size):
         records_to_fetch = min(chunk_size, total_records - offset)
-        sdf = fl.query(
-            where=where,
-            out_fields="*",
-            return_geometry=return_geometry,
-            result_offset=offset,
-            result_record_count=records_to_fetch
-        ).sdf
+
+        query_params = {
+            "where": where,
+            "out_fields": "*",
+            "return_geometry": return_geometry,
+            "result_offset": offset,
+            "result_record_count": records_to_fetch,
+        }
+        if order_by_field:
+            query_params["order_by_fields"] = order_by_field
+
+        sdf = fl.query(**query_params).sdf
         
         if sdf.empty:
             continue
