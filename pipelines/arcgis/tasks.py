@@ -32,16 +32,23 @@ def extract_arcgis_in_chunks(
     where: str = "1=1",
     chunk_size: int = 200000,
     return_geometry: bool = False,
+    order_by_field: str = None,
 ):
     """Extract in chunks (generator)."""
-    return fetch_features_in_chunks(
-        account=account,
-        feature_id=feature_id,
-        layer=layer,
-        where=where,
-        chunk_size=chunk_size,
-        return_geometry=return_geometry,
-    )
+    # Filtra argumentos não nulos para não sobreescrever defaults com None
+    kwargs = {
+        "account": account,
+        "feature_id": feature_id,
+        "layer": layer,
+        "where": where,
+        "return_geometry": return_geometry,
+    }
+    if chunk_size is not None:
+        kwargs["chunk_size"] = chunk_size
+    if order_by_field is not None:
+        kwargs["order_by_field"] = order_by_field
+
+    return fetch_features_in_chunks(**kwargs)
 
 def stage_to_parquet(df: pd.DataFrame, path: Path) -> Path:
     """Salva dataframe localmente em parquet (formato rápido)."""
@@ -80,6 +87,8 @@ def load_arcgis_to_bigquery(
     layer_idx: int,
     account: str,
     return_geometry: bool,
+    chunk_size: int = None,
+    order_by_field: str = None,
 ):
     """
     Extrai dados de uma camada do ArcGIS em chunks e carrega para o BigQuery
@@ -100,6 +109,8 @@ def load_arcgis_to_bigquery(
         account=account,
         layer=layer_idx,
         return_geometry=return_geometry,
+        chunk_size=chunk_size,
+        order_by_field=order_by_field,
     )
 
     for i, df_chunk in enumerate(chunks):
