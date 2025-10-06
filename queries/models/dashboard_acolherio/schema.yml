@@ -29,7 +29,7 @@ sources:
     database: rj-smas-dev
     schema: dashboard_acolherio
     tables:
-      - name: filtro_email
+      - name: filtro_email_dev
 
 models:
   - name: atendimentos
