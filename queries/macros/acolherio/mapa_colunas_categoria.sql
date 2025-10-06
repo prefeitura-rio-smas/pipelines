@@ -129,3 +129,47 @@
     WHEN {{ coluna }} = '8' THEN 'Violência Psicológica'
   END AS MOTIV_ACOLHIMENTO
 {% endmacro %}
+
+-- Coluna TIPO_DEFICIENCIA do models tipo_deficiencia_unnest
+{% macro map_coluna_tipo_deficiencia (coluna ) %}
+  CASE
+    WHEN {{ coluna }} = '1' THEN 'Deficiência auditiva total'
+    WHEN {{ coluna }} = '2' THEN 'Deficiência visual parcial'
+    WHEN {{ coluna }} = '3' THEN 'Deficiência visual total'
+    WHEN {{ coluna }} = '4' THEN 'Deficiência motora'
+    WHEN {{ coluna }} = '5' THEN 'Deficiência mental ou intelectual'
+    WHEN {{ coluna }} = '6' THEN 'Deficiência auditiva parcial'
+  END AS TIPO_DEFICIENCIA
+{% endmacro %}
+
+-- Coluna VIOLACAO_DIREITO do models tipo_deficiencia_tratada
+{% macro map_coluna_violacao_de_direito (coluna ) %}
+  CASE
+    WHEN {{ coluna }} = '01' THEN 'Violência Sexual'
+    WHEN {{ coluna }} = '02' THEN 'Violência Psicológica'
+    WHEN {{ coluna }} = '03' THEN 'Violência financeira ou patrimonial'
+    WHEN {{ coluna }} = '04' THEN 'Negligência e abandono'
+    WHEN {{ coluna }} = '05' THEN 'Violência medicamentosa'
+    WHEN {{ coluna }} = '06' THEN 'Violência doméstica'
+    WHEN {{ coluna }} = '07' THEN 'Violência por tráfico de seres humanos'
+    WHEN {{ coluna }} = '08' THEN 'Violência por trabalho escravo'
+    WHEN {{ coluna }} = '09' THEN 'Violência institucional'
+    WHEN {{ coluna }} = '10' THEN 'Adoção Ilegal'
+    WHEN {{ coluna }} = '11' THEN 'Afastamento do convívio familiar devido a aplicação de MSE ou medida de proteção'
+    WHEN {{ coluna }} = '12' THEN 'Auto Negligência'
+    WHEN {{ coluna }} = '13' THEN 'Cárcere Privado'
+    WHEN {{ coluna }} = '14' THEN 'Conflitos Territoriais / Conflitos Urbanos'
+    WHEN {{ coluna }} = '15' THEN 'Discriminação Étnica/Racial'
+    WHEN {{ coluna }} = '16' THEN 'Discriminação Religiosa'
+    WHEN {{ coluna }} = '17' THEN 'Discriminação Sexual / Gênero'
+    WHEN {{ coluna }} = '18' THEN 'Outras violências sexuais'
+    WHEN {{ coluna }} = '19' THEN 'Trabalho Infantil'
+    WHEN {{ coluna }} = '20' THEN 'Deficiência visual parcial'
+    WHEN {{ coluna }} = '21' THEN 'Deficiência visual total'
+    WHEN {{ coluna }} = '22' THEN 'Deficiência motora'
+    WHEN {{ coluna }} = '23' THEN 'Deficiência mental ou intelectual'
+    WHEN {{ coluna }} = '24' THEN 'Deficiência auditiva parcial'
+    WHEN {{ coluna }} = '25' THEN 'Deficiência mental ou intelectual'
+    WHEN {{ coluna }} = '26' THEN 'Deficiência auditiva parcial'
+  END AS VIOLACAO_DIREITO
+{% endmacro %}
