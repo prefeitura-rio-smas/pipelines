@@ -15,19 +15,19 @@ WITH usuario_cadastrado AS (
   pac.numcpfpac AS CPF,
   pac.indsexo AS SEXO,
   {{ map_coluna_genero('pac.indgenero') }},
-  {{ map_coluna_orientacao_sexual('ORIENTACAO_SEXUAL') }},
+  {{ map_coluna_orientacao_sexual('dados.indorientsex') }},
   {{ map_coluna_filiacao('pac.estcivil') }},
   ori.dscoripcsm AS ORIGEM_DEMANDA,
   pac.nuprontpapel AS PRONTUARIO,
   pac.datcadast AS DATA_CADASTRAMENTO,
-  pac.seqlogin AS CADASTRANTE,
+  trim(upper(s.nompess)) AS CADASTRANTE,
   sm.indtrab AS TRABALHA,
   sm.nmprofi AS PROFISSAO,
   sm.indtrab AS ATVD_REMUNERADA,
   sm.dsctipovinc AS TIPO_VINCULO,
   sm.indfreqescol AS FREQ_ESCOLA,
   {{ map_coluna_escolaridade('sm.indserie') }},
-  pac.indcadunico AS CADUNICO,
+  dados.indcadunico AS CADUNICO,
   sm.indrecbenef AS RENDA_BENEF,
   sm.indqualbenef AS BENEFICIO,
   sm.indcuratela AS CURATELA,
@@ -46,6 +46,7 @@ WITH usuario_cadastrado AS (
   LEFT JOIN rj-smas.brutos_acolherio_staging.gh_pacientes_sm sm ON sm.seqpacsm = pac.seqpac
   LEFT JOIN rj-smas.brutos_acolherio_staging.gh_pac_dados dados ON dados.seqpac = pac.seqpac
   LEFT JOIN rj-smas.brutos_acolherio_staging.gh_origens ori ON ori.codorigem = sm.codorigem
+  LEFT JOIN {{ source('brutos_acolherio_staging', 'gh_contas') }} s ON s.seqlogin = pac.seqlogin
 )
 
 SELECT DISTINCT * FROM usuario_cadastrado
