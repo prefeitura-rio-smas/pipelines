@@ -142,7 +142,7 @@
   END AS TIPO_DEFICIENCIA
 {% endmacro %}
 
--- Coluna VIOLACAO_DIREITO do models tipo_deficiencia_tratada
+-- Coluna VIOLACAO_DIREITO do models violacao_direito
 {% macro map_coluna_violacao_de_direito (coluna ) %}
   CASE
     WHEN {{ coluna }} = '01' THEN 'Violência Sexual'
@@ -172,4 +172,43 @@
     WHEN {{ coluna }} = '25' THEN 'Deficiência mental ou intelectual'
     WHEN {{ coluna }} = '26' THEN 'Deficiência auditiva parcial'
   END AS VIOLACAO_DIREITO
+{% endmacro %}
+
+-- Coluna BENEFICIO do models tipo_beneficio
+{% macro map_coluna_beneficio(coluna) %}
+  CASE
+    WHEN {{ coluna }} = '1' THEN 'Aposentadoria'
+    WHEN {{ coluna }} = '2' THEN 'Auxilio Doença'
+    WHEN {{ coluna }} = '5' THEN 'Bolsa Família'
+    WHEN {{ coluna }} = '8' THEN 'Cartão Família Carioca (CFC)'
+    WHEN {{ coluna }} = '9' THEN 'BPC-Benefício de Prestação Continuada'
+    WHEN {{ coluna }} = '11' THEN 'Auxilio Emergêncial'
+    WHEN {{ coluna }} = '13' THEN 'Assalariado'
+    WHEN {{ coluna }} = '14' THEN 'Agente Experiente'
+    WHEN {{ coluna }} = '16' THEN 'Apoio Moradia'
+    WHEN {{ coluna }} = '17' THEN 'Benefício comprometido em empréstimo'
+    WHEN {{ coluna }} = '18' THEN 'Benefícios eventuais'
+    WHEN {{ coluna }} = '19' THEN 'Pensão Alimentícia'
+    WHEN {{ coluna }} = '20' THEN 'Pensão por morte'
+    WHEN {{ coluna }} = '21' THEN 'Outro Benefício'
+    WHEN {{ coluna }} = '22' THEN 'Outro tipo de Pensão'
+    WHEN {{ coluna }} = '23' THEN 'Não sabe / Não lembra'
+    WHEN {{ coluna }} = '24' THEN 'Não respondeu'
+    WHEN {{ coluna }} = '26' THEN 'Auxílio moradia temporário'
+    WHEN {{ coluna }} = '27' THEN 'Idoso em família'
+    WHEN {{ coluna }} = '31' THEN 'Acidente de trabalho'
+    WHEN {{ coluna }} = '32' THEN 'Aposentadoria por invalidez'
+  END AS BENEFICIO
+{% endmacro %}
+
+-- Coluna ORIENTACAO_SEXUAL do models relatorio_geral
+{% macro map_coluna_orientacao_sexual (coluna ) %}
+  CASE
+    WHEN {{ coluna }} = '1' THEN 'Lésbica'
+    WHEN {{ coluna }} = '2' THEN 'Gay'
+    WHEN {{ coluna }} = '3' THEN 'Bissexual'
+    WHEN {{ coluna }} = '4' THEN 'Heterossexual'
+    WHEN {{ coluna }} = '5' THEN 'Pansexual'
+    WHEN {{ coluna }} = '6' THEN 'Não informado'
+  END AS ORIENTACAO_SEXUAL
 {% endmacro %}
