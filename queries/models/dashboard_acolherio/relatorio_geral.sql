@@ -48,4 +48,4 @@ WITH usuario_cadastrado AS (
   LEFT JOIN rj-smas.brutos_acolherio_staging.gh_origens ori ON ori.codorigem = sm.codorigem
 )
 
-SELECT * FROM  usuario_cadastrado
+SELECT DISTINCT * FROM usuario_cadastrado
