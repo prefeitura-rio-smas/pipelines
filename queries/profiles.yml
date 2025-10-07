@@ -15,7 +15,7 @@ rj_smas_dev:
 
     dev:
       type: bigquery
-      method: service-account
+      method: oauth
       project: rj-smas-dev
       dataset: gerenciamento__dbt
       keyfile: "{{ env_var('DBT_KEYFILE_PATH') }}"

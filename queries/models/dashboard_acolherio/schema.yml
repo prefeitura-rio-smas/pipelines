@@ -1,0 +1,113 @@
+version: 2
+
+sources:
+  - name: brutos_acolherio_staging
+    database: rj-smas
+    schema: brutos_acolherio_staging
+    tables:
+      - name: gh_atendimentos
+      - name: gh_atend_familia
+      - name: gh_familias_membros
+      - name: gh_cbo
+      - name: gh_cidadao_pac
+      - name: gh_contas
+      - name: gh_contas_us
+      - name: gh_encam_atend
+      - name: gh_origens
+      - name: gh_pac_ciclos
+      - name: gh_pac_dados
+      - name: gh_pac_transf
+      - name: gh_pacientes_sm
+      - name: gh_prof
+      - name: gh_profocup
+      - name: gh_tpatendimentos
+      - name: gh_us
+      - name: gh_us_config
+      - name: gh_us_tipo
+      - name: gh_contas_modulos
+  - name: filtro_email
+    database: rj-smas-dev
+    schema: dashboard_acolherio
+    tables:
+      - name: filtro_email_dev
+
+models:
+  - name: atendimentos
+    description: "Tabela com todas as informações relacionadas ao atendimento do sistema acolherio"
+    columns:
+      - name: CAS
+        description: "Número identificador do território do município"
+      - name: TIPO_UNIDADE
+        description: "Tipo da unidade de atendimento"
+      - name: UNIDADE_ATENDIMENTO
+        description: "Nome da unidade de atendimento"
+      - name: EMAIL_UNIDADE 
+        description: "Email da unidade de atendimento"
+      - name: EMAIL_CAS 
+        description: "Email do CAS"
+      - name: SEQ_ATENDIMENTO
+        description: "Identificador único do atendimento"
+      - name: DATA_DE_ATENDIMENTO
+        description: "Data do atendimento"
+      - name: HORA_DE_ATENDIMENTO_ORIGINAL
+        description: "Hora original do atendimento"
+      - name: HORA_DE_ATENDIMENTO
+        description: "Hora formatada em HH:MM"
+      - name: ID_USUARIO
+        description: "Identificador do único do usuário"
+      - name: ID_FAMILIA
+        description: "Identificador do único do usuário"
+      - name: NOME_USUARIO
+        description: "Nome do usuário atendido"
+      - name: DOCUMENTACAO
+        description: "Tipo de documentação do usuário atendido"
+      - name: NUMERO_DOCUMENTO
+        description: "Número do documento"
+      - name: ENDERECO
+        description: "Endereço do usuário"
+      - name: ENDERECO_NUMERO
+        description: "Número do endereço do usuário"
+      - name: ENDERECO_COMPLEMENTO
+        description: "Complemento do endereço do usuário"
+      - name: BAIRRO
+        description: "Bairro do usuário"
+      - name: REFERENCIA_OU_COMUNIDADE
+        description: "Se há referência ou se é comunidade"
+      - name: NOME_ATENDIMENTO_ORIGINAL
+        description: "Descrição do tipo de atendimento realizado"
+      - name: DATA_NASCIMENTO
+        description: "Data de nascimento do usuário"
+      - name: IDADE
+        description: "Idade calculada do usuário"
+      - name: RACA_COR
+        description: "Etnia do usuário"
+      - name: SEXO
+        description: "Sexo do usuário"
+      - name: PROFISSIONAL_ID
+        description: "Id único do profissional que realizou o atendimento"
+      - name: PROFISSIONAL
+        description: "Nome do Profissional"
+      - name: PROFISSIONAL_CBO_ORIGINAL
+        description: "Número do CBO do profissional"
+      - name: PROFISSIONAL_CBO
+        description: "Descrição da profissão do profissional"
+      - name: CADASTRANTE
+        description: "Número de quem realizou o cadastro do atendimento"
+      - name: DATA_CADASTRO_ATENDIMENTO
+        description: "Data de cadastro do atendimento"
+      - name: PROFISSIONAL_CBO_ORIGINAL
+        description: "Número do CBO do profissional"
+      - name: PROFISSIONAL_CBO_ORIGINAL
+        description: "Número do CBO do profissional"
+      - name: PROFISSIONAL_CBO_ORIGINAL
+        description: "Número do CBO do profissional"
+      - name: PROFISSIONAL_CBO_ORIGINAL
+        description: "Número do CBO do profissional"
+      - name: TIPO_ATENDIMENTO
+        description: "Tipo de atendimento realizado formatado"
+      - name: NOME_ATENDIMENTO
+        description: "Tipo de atendimento realizado formatado com condição da profissão de quem realizou o atendimento"
+      - name: IDADE_FAIXA
+        description: "Faixa de idade do usuário atendido"
+      - name: EMAIL
+        description: "Email das pessoas que podem consumir o relatório looker"
