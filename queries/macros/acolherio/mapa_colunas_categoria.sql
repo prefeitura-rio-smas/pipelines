@@ -1,5 +1,5 @@
 -- Coluna NACIONALIDADE do models relatorio_geral
-{% macro map_coluna_nacionalidade (coluna ) %}
+{% macro map_coluna_nacionalidade (coluna) %}
   CASE
     WHEN {{ coluna }} = '1' THEN 'Brasileira'
     WHEN {{ coluna }} = '2' THEN 'Brasileiro'
@@ -8,7 +8,7 @@
 {% endmacro %}
 
 -- Coluna COND_ESTRANGEIRO do models relatorio_geral
-{% macro map_coluna_cond_estrangeiro (coluna ) %}
+{% macro map_coluna_cond_estrangeiro (coluna) %}
   CASE
     WHEN {{ coluna }} = '1' THEN 'Apatrida'
     WHEN {{ coluna }} = '2' THEN 'Asilado'
@@ -22,7 +22,7 @@
 {% endmacro %}
 
 -- Coluna ETNIA do models relatorio_geral
-{% macro map_coluna_etnia (coluna ) %}
+{% macro map_coluna_etnia (coluna) %}
   CASE
     WHEN {{ coluna }} = '01' THEN 'Branca'
     WHEN {{ coluna }} = '02' THEN 'Preta'
@@ -33,7 +33,7 @@
 {% endmacro %}
 
 -- Coluna GENERO do models relatorio_geral
-{% macro map_coluna_genero (coluna ) %}
+{% macro map_coluna_genero (coluna) %}
   CASE
     WHEN {{ coluna }} = '02' THEN 'Travesti'
     WHEN {{ coluna }} = '03' THEN 'Homem transgênero'
@@ -48,7 +48,7 @@
 {% endmacro %}
 
 -- Coluna FILIACAO do models relatorio_geral
-{% macro map_coluna_filiacao (coluna ) %}
+{% macro map_coluna_filiacao (coluna) %}
   CASE
     WHEN {{ coluna }} = '1' THEN 'Solteiro'
     WHEN {{ coluna }} = '2' THEN 'Casado'
@@ -59,7 +59,7 @@
 {% endmacro %}
 
 -- Coluna ESCOLARIDADE do models relatorio_geral
-{% macro map_coluna_escolaridade (coluna ) %}
+{% macro map_coluna_escolaridade (coluna) %}
   CASE
     WHEN {{ coluna }} = '1' THEN 'Infantil - G1'
     WHEN {{ coluna }} = '2' THEN 'Infantil - G2'
@@ -83,7 +83,7 @@
 {% endmacro %}
 
 -- Coluna TIPO_CURATELA do models relatorio_geral
-{% macro map_coluna_tipo_curatela (coluna ) %}
+{% macro map_coluna_tipo_curatela (coluna) %}
   CASE
     WHEN {{ coluna }} = '1' THEN 'Família extensa'
     WHEN {{ coluna }} = '2' THEN 'Público'
@@ -93,14 +93,14 @@
 {% endmacro %}
 
 -- Coluna DECISAO_APOIADA do models relatorio_geral
-{% macro map_coluna_decisao_apoiada (coluna ) %}
+{% macro map_coluna_decisao_apoiada (coluna) %}
   CASE
     WHEN {{ coluna }} IS NULL THEN 'N'
   END AS DECISAO_APOIADA
 {% endmacro %}
 
 -- Coluna SITUACAO_DE_RUA do models relatorio_geral
-{% macro map_coluna_situacao_de_rua (coluna ) %}
+{% macro map_coluna_situacao_de_rua (coluna) %}
   CASE 
       WHEN {{ coluna }} = '5' THEN 'S'
       ELSE 'N'  
@@ -117,7 +117,7 @@
 {% endmacro %}
 
 -- Coluna MOTIV_ACOLHIMENTO do models relatorio_geral
-{% macro map_coluna_tipo_motiv_acolhimento (coluna ) %}
+{% macro map_coluna_tipo_motiv_acolhimento (coluna) %}
   CASE
     WHEN {{ coluna }} = '1' THEN 'Negligência'
     WHEN {{ coluna }} = '2' THEN 'Abandono'
@@ -131,7 +131,7 @@
 {% endmacro %}
 
 -- Coluna TIPO_DEFICIENCIA do models tipo_deficiencia_unnest
-{% macro map_coluna_tipo_deficiencia (coluna ) %}
+{% macro map_coluna_tipo_deficiencia (coluna) %}
   CASE
     WHEN {{ coluna }} = '1' THEN 'Deficiência auditiva total'
     WHEN {{ coluna }} = '2' THEN 'Deficiência visual parcial'
@@ -143,7 +143,7 @@
 {% endmacro %}
 
 -- Coluna VIOLACAO_DIREITO do models violacao_direito
-{% macro map_coluna_violacao_de_direito (coluna ) %}
+{% macro map_coluna_violacao_de_direito (coluna) %}
   CASE
     WHEN {{ coluna }} = '01' THEN 'Violência Sexual'
     WHEN {{ coluna }} = '02' THEN 'Violência Psicológica'
@@ -202,7 +202,7 @@
 {% endmacro %}
 
 -- Coluna ORIENTACAO_SEXUAL do models relatorio_geral
-{% macro map_coluna_orientacao_sexual (coluna ) %}
+{% macro map_coluna_orientacao_sexual (coluna) %}
   CASE
     WHEN {{ coluna }} = '1' THEN 'Lésbica'
     WHEN {{ coluna }} = '2' THEN 'Gay'
@@ -214,7 +214,7 @@
 {% endmacro %}
 
 -- Coluna MOTIVO_DESLIGAMENTO do models acolhimentos
-{% macro map_coluna_motivo_desligamento (coluna ) %}
+{% macro map_coluna_motivo_desligamento (coluna) %}
   CASE
     WHEN {{ coluna }} = '2' THEN 'Deslig. por decisão da direção e/ou equipe téc. por conflito com prof. da unid. de acolhim.'
     WHEN {{ coluna }} = '3' THEN 'Deslig. por decisão da direção e/ou equipe téc. por não aceitação das regras da instituição'
@@ -240,4 +240,39 @@
     WHEN {{ coluna }} = 'Z' THEN 'Demanda por serviço noturno'
 
   END AS MOTIVO_DESLIGAMENTO
+{% endmacro %}
+
+-- Coluna PERFIL_ACESSO do models contas_associadas
+{% macro map_coluna_perfil_acesso (coluna) %}
+  CASE
+    WHEN {{ coluna }} = 1 THEN 'Profissional de Nível Médio'
+    WHEN {{ coluna }} = 2 THEN 'Profissional de Nível Superior '
+    WHEN {{ coluna }} = 3 THEN 'Gestor local'
+    WHEN {{ coluna }} = 4 THEN 'Relatório'
+    WHEN {{ coluna }} = 5 THEN 'Gestor Local / Prof. Nível Superior'
+    WHEN {{ coluna }} = 6 THEN 'Assessoria '
+    WHEN {{ coluna }} = 8 THEN 'Acesso Personalizado (Acesso Cadastro)'
+    WHEN {{ coluna }} = 98 THEN 'Gestor central '
+    WHEN {{ coluna }} = 99 THEN 'MASTER'
+  END AS PERFIL_ACESSO
+{% endmacro %}
+
+-- Coluna STATUS_CONTA do models contas_associadas
+{% macro map_coluna_status_conta (coluna) %}
+  CASE
+    WHEN {{ coluna }} = '0' THEN 'Inativo'
+    WHEN {{ coluna }} = '1' THEN 'Ativo'
+    WHEN {{ coluna }} = '2' THEN 'Trocar  senha'
+    WHEN {{ coluna }} = '3' THEN 'Bloqueado'
+    WHEN {{ coluna }} = '4' THEN 'Atualizar cadastro'
+  END AS STATUS_CONTA
+{% endmacro %}
+
+-- Coluna UNIDADE_ATIVA do models lista_unidades
+{% macro map_coluna_unidade_ativa (coluna) %}
+  CASE
+    WHEN {{ coluna }} = 'N' THEN 'S'
+    WHEN {{ coluna }} = 'S' THEN 'N'
+    ELSE 'S'
+  END AS UNIDADE_ATIVA
 {% endmacro %}
