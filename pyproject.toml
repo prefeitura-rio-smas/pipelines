@@ -6,7 +6,7 @@ authors = ["Leone Barreto de Abreu <leone.abreu@prefeitura.rio>"]
 package-mode = false 
 
 [tool.poetry.dependencies]
-python = ">=3.10,<3.11"
+python = ">=3.10,<3.12"
 agate = "1.9.1"
 aiohappyeyeballs = "2.6.1"
 aiohttp = "3.12.1"
@@ -173,7 +173,7 @@ pyarrow = "16.1.0"
 pyasn1 = "0.6.1"
 pyasn1-modules = "0.4.2"
 pycparser = "2.22"
-pydantic = "2.11.4"
+
 pydantic-settings = "2.9.1"
 pydantic-core = "2.33.2"
 pydata-google-auth = "1.9.1"
@@ -241,6 +241,7 @@ websocket-client = "1.8.0"
 websockets = "15.0.1"
 yarl = "1.20.0"
 zipp = "3.21.0"
+prefect = "^3.4.25"
 
 [build-system]
 requires = ["poetry-core>=1.0.0"]

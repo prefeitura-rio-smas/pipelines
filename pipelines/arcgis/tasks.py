@@ -1,10 +1,13 @@
 # pipeline/tasks.py
+from prefect import task
 from pathlib import Path
 import pandas as pd
 from google.cloud import bigquery
 from .utils import bq_client, dataset_ref, add_timestamp, fetch_dataframe, fetch_features_in_chunks
 from datetime import datetime, timezone
 
+
+@task
 def extract_arcgis(
     *,
     feature_id: str, 
@@ -24,6 +27,8 @@ def extract_arcgis(
         return_geometry=return_geometry,
     )
 
+
+@task
 def extract_arcgis_in_chunks(
     *,
     feature_id: str, 
@@ -50,6 +55,8 @@ def extract_arcgis_in_chunks(
 
     return fetch_features_in_chunks(**kwargs)
 
+
+@task
 def stage_to_parquet(df: pd.DataFrame, path: Path) -> Path:
     """Salva dataframe localmente em parquet (formato rápido)."""
     add_timestamp(df)
@@ -57,6 +64,8 @@ def stage_to_parquet(df: pd.DataFrame, path: Path) -> Path:
     df.to_parquet(path, index=False)
     return path
 
+
+@task
 def load_to_bigquery(
     path: Path,
     table: str,
@@ -79,6 +88,8 @@ def load_to_bigquery(
     job.result()  # espera terminar
     return job.output_rows
 
+
+@task
 def load_arcgis_to_bigquery(
     *,
     job_name: str,
