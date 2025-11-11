@@ -69,5 +69,4 @@ def incremental_flow() -> None:
     print(f"\n🏁 Pipeline concluída com sucesso em {int(minutes)}m {int(seconds)}s.")
 
 
-if __name__ == "__main__":
-    incremental_flow.serve(name="arcgis-deployment")
+
