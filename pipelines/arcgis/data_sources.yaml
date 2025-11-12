@@ -29,3 +29,10 @@
   return_geometry: true
   layers:
     smas: 0
+
+- name: limite_bairros_25
+  feature_id: adfebea0627a4818a3bdabdb2e267505
+  account: siurb
+  return_geometry: true
+  layers:
+    smas: 0
