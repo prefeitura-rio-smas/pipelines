@@ -34,7 +34,7 @@ def abordagem_flow() -> None:
         order_by_field=order_by_field,
     )
 
-    run_dbt_models()
+    run_dbt_models(model_name="abordagem")
 
 if __name__ == "__main__":
     abordagem_flow()

@@ -34,7 +34,7 @@ def cras_cas_poligonos_flow() -> None:
         order_by_field=order_by_field,
     )
 
-    run_dbt_models()
+    run_dbt_models(model_name="poligonos_rmi")
 
 if __name__ == "__main__":
     cras_cas_poligonos_flow()
