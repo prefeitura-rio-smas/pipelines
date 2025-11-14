@@ -6,7 +6,7 @@ import pandas as pd
 from google.cloud import bigquery
 from datetime import datetime, timezone, timedelta
 import prefect
-from prefect_dbt.core.cli import DbtCoreCli
+from prefect_dbt.cli.commands import DbtCoreOperation
 
 from .utils import bq_client, dataset_ref, add_timestamp, fetch_dataframe
 
@@ -323,7 +323,7 @@ def run_dbt_models():
     logger = prefect.get_run_logger()
     logger.info("🔄 Executando dbt models (gold)...")
 
-    dbt_run_op = DbtCoreCli(
+    dbt_run_op = DbtCoreOperation(
         commands=["dbt run"],
         project_dir=DBT_PROJECT_DIR,
         profiles_dir=DBT_PROJECT_DIR, # Assumindo que profiles.yml está no mesmo diretório
