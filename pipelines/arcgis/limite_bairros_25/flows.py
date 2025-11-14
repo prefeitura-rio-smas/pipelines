@@ -6,7 +6,7 @@ from prefect import flow
 dotenv_path = Path(__file__).parent.parent.parent.parent / '.env'
 load_dotenv(dotenv_path=dotenv_path)
 
-from ...tasks import load_arcgis_to_bigquery, run_dbt_models
+from ..tasks import load_arcgis_to_bigquery, run_dbt_models
 
 @flow(name="Limite Bairros 25 | Carga ArcGIS")
 def limite_bairros_25_flow() -> None:
