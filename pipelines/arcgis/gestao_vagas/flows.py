@@ -19,7 +19,7 @@ def gestao_vagas_flow() -> None:
     account = "siurb"
     return_geometry = False
     batch_size = None
-    order_by_field = "None"
+    order_by_field = None
     layer_name = "repeat"
     layer_idx = 1
 

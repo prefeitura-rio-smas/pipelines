@@ -19,7 +19,7 @@ def cras_cas_poligonos_flow() -> None:
     account = "siurb"
     return_geometry = True
     batch_size = None
-    order_by_field = "None"
+    order_by_field = None
     layer_name = "smas"
     layer_idx = 0
 
