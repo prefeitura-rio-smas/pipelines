@@ -2541,6 +2541,18 @@ protobuf = ">=3.20.2,<4.21.1 || >4.21.1,<4.21.2 || >4.21.2,<4.21.3 || >4.21.3,<4
 grpc = ["grpcio (>=1.44.0,<2.0.0)"]
 
 [[package]]
+name = "graphql-core"
+version = "3.2.7"
+description = "GraphQL implementation for Python, a port of GraphQL.js, the JavaScript reference implementation for GraphQL."
+optional = false
+python-versions = "<4,>=3.7"
+groups = ["main"]
+files = [
+    {file = "graphql_core-3.2.7-py3-none-any.whl", hash = "sha256:17fc8f3ca4a42913d8e24d9ac9f08deddf0a0b2483076575757f6c412ead2ec0"},
+    {file = "graphql_core-3.2.7.tar.gz", hash = "sha256:27b6904bdd3b43f2a0556dad5d579bdfdeab1f38e8e8788e555bdcb586a6f62c"},
+]
+
+[[package]]
 name = "graphviz"
 version = "0.21"
 description = "Simple Python interface for Graphviz"
@@ -5207,6 +5219,48 @@ snowflake = ["prefect-snowflake (>=0.28.0)"]
 sqlalchemy = ["prefect-sqlalchemy (>=0.5.0)"]
 
 [[package]]
+name = "prefect-dbt"
+version = "0.7.8"
+description = "Prefect integrations for working with dbt"
+optional = false
+python-versions = ">=3.9"
+groups = ["main"]
+files = [
+    {file = "prefect_dbt-0.7.8-py3-none-any.whl", hash = "sha256:de8f86dbbe64342e0d3f5d2cba17ad49b1301985a5886e84e4c279a85275a1a5"},
+    {file = "prefect_dbt-0.7.8.tar.gz", hash = "sha256:1a626db6f7b9014d9d27c2f2fa708bd8d56e1e3b566f9985bc7507f0bcedff5f"},
+]
+
+[package.dependencies]
+dbt-core = ">=1.7.0"
+prefect = ">=3.4.9"
+prefect_shell = ">=0.3.0"
+sgqlc = ">=16.0.0"
+
+[package.extras]
+all-extras = ["dbt-bigquery", "dbt-postgres", "dbt-snowflake", "prefect-gcp[bigquery] (>=0.6.0)", "prefect-snowflake (>=0.28.0)", "prefect-sqlalchemy (>=0.5.1)"]
+bigquery = ["dbt-bigquery", "prefect-gcp[bigquery] (>=0.6.0)"]
+postgres = ["dbt-postgres", "prefect-sqlalchemy (>=0.5.1)"]
+snowflake = ["dbt-snowflake", "prefect-snowflake (>=0.28.0)"]
+
+[[package]]
+name = "prefect-shell"
+version = "0.3.1"
+description = "Prefect integrations for interacting with shell commands."
+optional = false
+python-versions = ">=3.9"
+groups = ["main"]
+files = [
+    {file = "prefect_shell-0.3.1-py3-none-any.whl", hash = "sha256:44bd65f659a803fbaa811732b2443bfef069eceefdef1f8a58f39a4defb3f5cf"},
+    {file = "prefect_shell-0.3.1.tar.gz", hash = "sha256:48e6287789679a4e175118b1e77375668acbd7f0aae2f72f5d359da7cdef5e12"},
+]
+
+[package.dependencies]
+prefect = ">=3.0.0"
+
+[package.extras]
+dev = ["aiohttp", "coverage", "interrogate", "mkdocs", "mkdocs-gen-files", "mkdocs-material", "mkdocstrings[python]", "mypy", "pillow", "pre-commit", "pytest (>=8.3)", "pytest-asyncio", "pytest-env", "pytest-xdist"]
+
+[[package]]
 name = "prometheus-client"
 version = "0.21.1"
 description = "Python client for the Prometheus monitoring system."
@@ -6756,6 +6810,27 @@ test = ["build[virtualenv] (>=1.0.3)", "filelock (>=3.4.0)", "ini2toml[lite] (>=
 type = ["importlib_metadata (>=7.0.2) ; python_version < \"3.10\"", "jaraco.develop (>=7.21) ; sys_platform != \"cygwin\"", "mypy (==1.14.*)", "pytest-mypy"]
 
 [[package]]
+name = "sgqlc"
+version = "17.1"
+description = "Simple GraphQL Client"
+optional = false
+python-versions = "<4,>=3.8"
+groups = ["main"]
+files = [
+    {file = "sgqlc-17.1-py3-none-any.whl", hash = "sha256:d4d030ee687b66a840d605c81060585998fc22bba805b55e496911108800fc48"},
+    {file = "sgqlc-17.1.tar.gz", hash = "sha256:93309057889894899819e6aefee544e3d9aa85e33f694b88fb657526c45df4a4"},
+]
+
+[package.dependencies]
+graphql-core = ">=3.2.6,<3.3.0"
+
+[package.extras]
+httpx = ["httpx"]
+pytest = ["pytest"]
+requests = ["requests"]
+websocket = ["websocket-client"]
+
+[[package]]
 name = "shapely"
 version = "2.1.1"
 description = "Manipulation and analysis of geometric objects"
@@ -8073,4 +8148,4 @@ type = ["pytest-mypy"]
 [metadata]
 lock-version = "2.1"
 python-versions = ">=3.10,<3.12"
-content-hash = "552a75f73afcf4ece6fe5c553e6b147bce580d1789899167875bc49a0f228b37"
+content-hash = "a30f5a5378cbbc403eb707b311cd690325046c18cb4964185eccc83d70947e84"
