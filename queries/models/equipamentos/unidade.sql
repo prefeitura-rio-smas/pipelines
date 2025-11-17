@@ -1,5 +1,5 @@
 SELECT 
-    Código_sic      AS codigo_unidade,
+    codigo_sic      AS codigo_unidade,
     nome_equip      AS nome_oficial,
     nome_equ_1      AS nome_popular,
     tipoequipa      AS categoria,
@@ -37,10 +37,9 @@ SELECT
     perfil_f_5      AS perfil_idoso,
     perfil_pcd      AS perfil_pcd,
     perfil_gra      AS perfil_gestante,
-    his_inaug       AS historico_inauguracao,
+    hist_inaug       AS historico_inauguracao,
     obs_gerais      AS observacao_geral,
     data_de_pr      AS data_atualizacao,
     tipo_abrev      AS tipo_equipamento,
-    cod_unidad      AS codigo_unidade_rma,
-    ST_UNION_AGG(shape) AS geometry
+    cod_unidades_rma      AS codigo_unidade_rma,
 FROM {{ source('arcgis_raw', 'equipamentos_smas_raw') }}
