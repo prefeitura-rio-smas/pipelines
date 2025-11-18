@@ -18,7 +18,7 @@ rj_smas_dev:
       method: oauth
       project: rj-smas-dev
       dataset: gerenciamento__dbt
-      keyfile: "{{ env_var('DBT_KEYFILE_PATH') }}"
+      #keyfile: "{{ env_var('DBT_KEYFILE_PATH') }}"
       threads: 10
       location: US
       timeout_seconds: 300
