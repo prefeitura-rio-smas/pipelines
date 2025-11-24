@@ -29,3 +29,10 @@
   return_geometry: true
   layers:
     smas: 0
+
+- name: pipeline_primeira_infancia_carioca_raw_teste
+  feature_id: ef6fe5c04520445f91be8a57c4adcd96
+  account: siurb
+  return_geometry: false
+  layers:
+    smas: 0
