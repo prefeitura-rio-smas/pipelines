@@ -13,4 +13,4 @@ models:
       +schema: "{{ 'equipamentos' if target.name == 'prod' else 'gerenciamento__dbt' }}"
     dashboard_acolherio:
       materialized: table
-      +schema: "{{ 'acolherio' if target.name == 'prod' else 'gerenciamento__dbt' }}"
+      +schema: "{{ 'acolherio' if target.name == 'prod' else 'dashboard_acolherio' }}"
