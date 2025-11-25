@@ -33,6 +33,7 @@ def extract_arcgis_in_chunks(
     chunk_size: int = 200000,
     return_geometry: bool = False,
     order_by_field: str = None,
+    source_type: str = "layer",
 ):
     """Extract in chunks (generator)."""
     # Filtra argumentos não nulos para não sobreescrever defaults com None
@@ -42,6 +43,7 @@ def extract_arcgis_in_chunks(
         "layer": layer,
         "where": where,
         "return_geometry": return_geometry,
+        "source_type": source_type,
     }
     if chunk_size is not None:
         kwargs["chunk_size"] = chunk_size
@@ -89,6 +91,7 @@ def load_arcgis_to_bigquery(
     return_geometry: bool,
     chunk_size: int = None,
     order_by_field: str = None,
+    source_type: str = "layer",
 ):
     """
     Extrai dados de uma camada do ArcGIS em chunks e carrega para o BigQuery
@@ -111,6 +114,7 @@ def load_arcgis_to_bigquery(
         return_geometry=return_geometry,
         chunk_size=chunk_size,
         order_by_field=order_by_field,
+        source_type=source_type,
     )
 
     for i, df_chunk in enumerate(chunks):

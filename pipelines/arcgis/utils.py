@@ -25,6 +25,20 @@ def get_feature_layer(account: str, feature_id: str, layer: int) -> FeatureLayer
     )
     return item.layers[layer] 
 
+def get_table(account: str, feature_id: str, layer: int) -> FeatureLayer:
+    gis  = _get_gis(account)
+    item = gis.content.get(
+        feature_id
+    )
+    return item.tables[layer]
+
+def get_source(account: str, feature_id: str, layer: int, source_type: str) -> FeatureLayer:
+    if source_type == "table":
+        return get_table(account, feature_id, layer)
+    # Default to layer
+    return get_feature_layer(account, feature_id, layer)
+
+
 def fetch_dataframe(
     account: str,
     feature_id: str,
@@ -32,9 +46,10 @@ def fetch_dataframe(
     where: str = "1=1",
     max_records: int = 5000,
     return_geometry: bool = False,
+    source_type: str = "layer",
 ):
     """Baixa dados e devolve DataFrame Polars/Pandas."""
-    fl  = get_feature_layer(account, feature_id, layer)
+    fl  = get_source(account, feature_id, layer, source_type)
     sdf = fl.query(
         where=where,
         out_fields="*",
@@ -70,11 +85,12 @@ def fetch_features_in_chunks(
     chunk_size: int = 200000, # Default alto, será sobreposto pelo YAML
     return_geometry: bool = False,
     order_by_field: str = None,
+    source_type: str = "layer",
 ):
     """
     Busca features em lotes (chunks) e retorna um gerador de DataFrames.
     """
-    fl = get_feature_layer(account, feature_id, layer)
+    fl = get_source(account, feature_id, layer, source_type)
     
     # 1. Obter o número total de registros
     total_records = fl.query(where=where, return_count_only=True)

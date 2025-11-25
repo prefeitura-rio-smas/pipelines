@@ -35,6 +35,7 @@ def incremental_flow() -> None:
                 return_geometry=job.get("return_geometry", False),
                 chunk_size=job.get("chunk_size"),
                 order_by_field=job.get("order_by_field"),
+                source_type=job.get("source_type", "layer"),
             )
 
     # Transform (dbt)

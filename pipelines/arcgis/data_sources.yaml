@@ -36,3 +36,18 @@
   return_geometry: true
   layers:
     smas: 0
+
+- name: cartao_primeira_infancia_carioca
+  feature_id: ef6fe5c04520445f91be8a57c4adcd96
+  account: siurb
+  return_geometry: false
+  layers:
+    smas: 0
+
+- name: controle_cas
+  feature_id: 6855307d763b49f6bfb1c5d83b069952
+  account: siurb
+  source_type: table
+  return_geometry: false
+  layers:
+    smas: 0
