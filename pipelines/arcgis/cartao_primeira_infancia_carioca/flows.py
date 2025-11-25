@@ -8,20 +8,20 @@ load_dotenv(dotenv_path=dotenv_path)
 
 from ..tasks import load_arcgis_to_bigquery, run_dbt_models
 
-@flow(name="Abordagem | Carga ArcGIS")
-def abordagem_flow() -> None:
+@flow(name="Cartão PIC | Carga ArcGIS")
+def cartao_primeira_infancia_carioca_flow() -> None:
     """
-    Fluxo para carregar dados do ArcGIS para o BigQuery para o produto abordagem.
+    Fluxo para carregar dados do ArcGIS para o BigQuery para o produto limite_bairros_25.
     """
     # Configuration for this product
-    job_name = "abordagem"
-    feature_id = "6832ff4ca54c4608b169682ae3a5b088"
+    job_name = "cartao_primeira_infancia_carioca"
+    feature_id = "ef6fe5c04520445f91be8a57c4adcd96"
     account = "siurb"
-    return_geometry = False
-    batch_size = 20000
-    order_by_field = "objectid"
-    layer_name = "repeat"
-    layer_idx = 1
+    return_geometry = True
+    batch_size = None
+    order_by_field = None
+    layer_name = "smas"
+    layer_idx = 0
 
     load_arcgis_to_bigquery(
         job_name=job_name,
@@ -34,7 +34,7 @@ def abordagem_flow() -> None:
         order_by_field=order_by_field,
     )
 
-    run_dbt_models(model_name="abordagem")
+    run_dbt_models(model_name=None)
 
 if __name__ == "__main__":
-    abordagem_flow()
+    cartao_primeira_infancia_carioca_flow()

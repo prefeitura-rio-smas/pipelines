@@ -1,17 +1,15 @@
-# Imagem base enxuta
-FROM python:3.10-slim
+# Imagem base enxuta com Python 3.13
+FROM python:3.13-slim
 
-# Instala o Poetry (versão fixa p/ reprodutibilidade)
-ENV POETRY_VERSION=1.8.2 \
-    POETRY_VIRTUALENVS_CREATE=false \
-    POETRY_HOME=/opt/poetry
-RUN pip install --no-cache-dir "poetry==$POETRY_VERSION"
+# Instala o uv (versão mais rápida e moderna que Poetry)
+ENV UV_VERSION=0.2.25
+RUN pip install --no-cache-dir "uv==$UV_VERSION"
 
 WORKDIR /app
 
-# Copia manifests e instala dependências
-COPY pyproject.toml poetry.lock /app/
-RUN poetry install --no-interaction --no-ansi --no-dev
+# Copia manifests e instala dependências com uv
+COPY pyproject.toml /app/
+RUN uv pip install --system --no-cache --requirement <(uv pip compile pyproject.toml)
 
 # Copia o resto do código + entrypoint
 COPY . /app
