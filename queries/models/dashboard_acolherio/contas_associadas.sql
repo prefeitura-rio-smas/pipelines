@@ -20,3 +20,4 @@ WITH contas_associadas AS (
 )
 
 SELECT * FROM contas_associadas
+
