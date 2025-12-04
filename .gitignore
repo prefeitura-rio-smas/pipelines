@@ -9,3 +9,4 @@ dbt_packages/
 .venv/
 
 /sandbox/
+/queries/dbt_internal_packages
