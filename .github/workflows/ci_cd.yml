@@ -8,10 +8,6 @@ on:
   pull_request:
   workflow_dispatch:
 
-# Define o diretório padrão para todos os jobs
-defaults:
-  run:
-    working-directory: pipelines/arcgis
 
 jobs:
   # -----------------------------------------------------------------------------
