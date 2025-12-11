@@ -1,9 +1,11 @@
 # pipeline/constants.py
 import os
 from pathlib import Path
-from typing import Optional, Literal
-from pydantic_settings import BaseSettings, SettingsConfigDict
+from typing import Literal
+
 from pydantic import model_validator
+from pydantic_settings import BaseSettings, SettingsConfigDict
+
 
 class Settings(BaseSettings):
     # --- Mode ---
@@ -21,12 +23,12 @@ class Settings(BaseSettings):
     SIURB_LAYER_ID: str
 
     # --- GCP (Configurados dinamicamente baseados no MODE) ---
-    GCP_PROJECT: Optional[str] = None
-    GCP_DATASET: Optional[str] = None
-    GCS_BUCKET: Optional[str] = None
-    
+    GCP_PROJECT: str | None = None
+    GCP_DATASET: str | None = None
+    GCS_BUCKET: str | None = None
+
     # Credencial GCP (Service Account JSON Path)
-    GOOGLE_APPLICATION_CREDENTIALS: Optional[str] = None
+    GOOGLE_APPLICATION_CREDENTIALS: str | None = None
 
     # Configuração Pydantic
     model_config = SettingsConfigDict(
@@ -41,7 +43,7 @@ class Settings(BaseSettings):
         Define as configurações do GCP com base no MODE, se não forem passadas explicitamente.
         """
         mode = self.MODE
-        
+
         # Defaults por ambiente
         defaults = {
             "prod": {
@@ -57,21 +59,21 @@ class Settings(BaseSettings):
             "dev": {
                 "project": "rj-smas-dev",
                 "bucket": "rj-smas-dev",
-                "dataset": "arcgis_raw" 
+                "dataset": "arcgis_raw"
             }
         }
-        
+
         if mode == 'dev':
-            defaults['dev']['dataset'] = 'arcgis_raw' 
+            defaults['dev']['dataset'] = 'arcgis_raw'
 
         env_config = defaults[mode]
 
         if not self.GCP_PROJECT:
             self.GCP_PROJECT = env_config["project"]
-        
+
         if not self.GCS_BUCKET:
             self.GCS_BUCKET = env_config["bucket"]
-            
+
         if not self.GCP_DATASET:
             self.GCP_DATASET = env_config["dataset"]
 

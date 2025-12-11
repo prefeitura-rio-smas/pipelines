@@ -1,14 +1,14 @@
 # pipeline/tasks.py
-from prefect import task
-from prefect import unmapped
+from datetime import UTC, datetime
 from pathlib import Path
-import pandas as pd
+
 from google.cloud import bigquery
-from datetime import datetime, timezone, timedelta
+import pandas as pd
 import prefect
+from prefect import task
 from prefect_dbt.cli.commands import DbtCoreOperation
 
-from .utils import bq_client, dataset_ref, add_timestamp
+from .utils import add_timestamp, bq_client, dataset_ref
 
 
 @task
@@ -23,20 +23,21 @@ def get_feature_layer_metadata(
     logger = prefect.get_run_logger()
     logger.info(f"Obtendo metadados para feature_id: {feature_id}, layer: {layer_idx}, account: {account}")
 
-    from .utils import get_layer_service_url, _get_arcgis_token
     import requests
-    
+
+    from .utils import _get_arcgis_token, get_layer_service_url
+
     service_url = get_layer_service_url(account, feature_id)
     token = _get_arcgis_token(account)
     url = f"{service_url}/{layer_idx}/query"
-    
+
     params = {
         "where": "1=1",
         "returnCountOnly": "true",
         "f": "json",
         "token": token,
     }
-    
+
     try:
         response = requests.get(url, params=params, timeout=30)
         response.raise_for_status()
@@ -44,7 +45,7 @@ def get_feature_layer_metadata(
         total_records = data.get("count")
         if total_records is None:
             total_records = 0
-            
+
     except requests.exceptions.RequestException as e:
         logger.error(f"Erro ao conectar com o servidor: {e}")
         raise ValueError(f"Erro ao conectar com o servidor: {e}")
@@ -71,7 +72,6 @@ def save_batch_to_staging(
 
     logger.info(f"Processando batch {batch_index}: {len(batch_data)} registros")
 
-    from .utils import add_timestamp
     if not batch_data.empty:
         add_timestamp(batch_data)
 
@@ -124,7 +124,6 @@ def atomic_replace_raw_table(
     """
     logger = prefect.get_run_logger()
     logger.info(f"Substituindo tabela final '{final_table}' com dados da staging '{staging_table}'")
-    from .utils import bq_client, dataset_ref
     client = bq_client()
     query = f"CREATE OR REPLACE TABLE `{dataset_ref()}.{final_table}` AS SELECT * FROM `{dataset_ref()}.{staging_table}`"
     query_job = client.query(query)
@@ -139,8 +138,9 @@ def get_layer_info(feature_id: str, layer_idx: int, account: str) -> dict:
     """Gets the schema and CRS of an ArcGIS layer."""
     logger = prefect.get_run_logger()
     logger.info(f"Obtendo schema e CRS para feature_id: {feature_id}, layer: {layer_idx}")
-    from .utils import get_layer_service_url, _get_arcgis_token
     import requests
+
+    from .utils import _get_arcgis_token, get_layer_service_url
     service_url = get_layer_service_url(account, feature_id)
     token = _get_arcgis_token(account)
     url = f"{service_url}/{layer_idx}"
@@ -164,7 +164,7 @@ def arcgis_to_bq_schema(arcgis_fields: list, return_geometry: bool) -> list:
         return bq_schema
     for field in arcgis_fields:
         bq_schema.append(bigquery.SchemaField(field['name'], "STRING"))
-    
+
     # Also add columns that might be added during processing
     bq_schema.append(bigquery.SchemaField("timestamp_captura", "TIMESTAMP"))
     if return_geometry:
@@ -193,7 +193,7 @@ def load_arcgis_to_bigquery(
     logger = prefect.get_run_logger()
     logger.info(f"↳ Processando {job_name}/{layer_name} (layer {layer_idx})…")
 
-    timestamp = datetime.now(timezone.utc).strftime('%Y%m%d%H%M%S')
+    timestamp = datetime.now(UTC).strftime('%Y%m%d%H%M%S')
     final_table = f"{job_name}_{layer_name}_raw"
     staging_table = f"{final_table}_staging_{timestamp}"
     logger.info(f"Tabela final: {final_table}, Tabela de Staging: {staging_table}")
@@ -215,7 +215,7 @@ def load_arcgis_to_bigquery(
         return
 
     logger.info("Iniciando extração sequencial por batches...")
-    
+
     offset = 0
     total_rows_loaded = 0
     batch_index = 0
@@ -224,12 +224,13 @@ def load_arcgis_to_bigquery(
         logger.info(f"Extraindo batch {batch_index}: offset={offset}, batch_size={batch_size}")
 
         import requests
-        from .utils import get_layer_service_url, _get_arcgis_token
-        
+
+        from .utils import _get_arcgis_token, get_layer_service_url
+
         service_url = get_layer_service_url(account, feature_id)
         token = _get_arcgis_token(account)
         url = f"{service_url}/{layer_idx}/query"
-        
+
         params = {
             "where": where_clause, "outFields": "*", "returnGeometry": str(return_geometry).lower(),
             "f": "json", "resultOffset": offset, "resultRecordCount": batch_size,
@@ -254,12 +255,12 @@ def load_arcgis_to_bigquery(
              # If we expected records but got none, something is wrong, but we can try to continue
              logger.warning(f"Recebido 0 registros no offset {offset} mas total de registros é {total_records}. Interrompendo.")
              break
-        elif num_features_received == 0:
+        if num_features_received == 0:
             logger.info("Recebido 0 registros. Fim da extração.")
             break
 
         import geopandas as gpd
-        from shapely.geometry import Point, Polygon, LineString
+        from shapely.geometry import LineString, Point, Polygon
 
         processed_data = []
         for feature in features:
@@ -297,7 +298,7 @@ def load_arcgis_to_bigquery(
         total_rows_loaded += rows_loaded
         offset += num_features_received
         batch_index += 1
-        
+
         if not data.get("exceededTransferLimit", False):
             break
 

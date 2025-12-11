@@ -1,4 +1,5 @@
 from pathlib import Path
+
 from dotenv import load_dotenv
 from prefect import flow
 
@@ -7,6 +8,7 @@ dotenv_path = Path(__file__).parent.parent.parent.parent / '.env'
 load_dotenv(dotenv_path=dotenv_path)
 
 from ..tasks import load_arcgis_to_bigquery, run_dbt_models
+
 
 @flow(name="Cras Cas Poligonos | Carga ArcGIS")
 def cras_cas_poligonos_flow() -> None:
