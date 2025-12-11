@@ -9,7 +9,8 @@ WORKDIR /app
 
 # Copia manifests e instala dependências com uv
 COPY pyproject.toml /app/
-RUN uv pip install --system --no-cache --requirement <(uv pip compile pyproject.toml)
+RUN uv pip compile pyproject.toml -o requirements.txt && \
+    uv pip install --system --no-cache -r requirements.txt
 
 # Copia o resto do código + entrypoint
 COPY . /app
