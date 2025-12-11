@@ -1,11 +1,17 @@
 # credenciais
 .env
 .env__pycache__/
+
+# Python
 *.pyc
+__pycache__/
+.venv/
+
+# dbt
 **/target/
 dbt_packages/
 **/logs/
 
-.venv/
-
+# Ferramentas
 /sandbox/
+uv.lock
