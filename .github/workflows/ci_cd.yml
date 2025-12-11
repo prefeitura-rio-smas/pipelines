@@ -72,6 +72,9 @@ jobs:
     permissions:
       contents: read
       packages: write
+    outputs:
+      image_tag: ${{ steps.docker_meta.outputs.version }}
+      image_repo: ghcr.io/${{ github.repository_owner }}/pipelines-rj-smas
 
     steps:
       - uses: actions/checkout@v4
@@ -89,7 +92,7 @@ jobs:
         id: docker_meta
         uses: docker/metadata-action@v5
         with:
-          images: ghcr.io/${{ github.repository }}
+          images: ghcr.io/${{ github.repository_owner }}/pipelines-rj-smas
           tags: |
             type=ref,event=branch
             type=raw,value=latest,enable={{is_default_branch}}
@@ -101,3 +104,40 @@ jobs:
           push: true
           tags: ${{ steps.docker_meta.outputs.tags }}
           labels: ${{ steps.docker_meta.outputs.labels }}
+
+  deploy-flows:
+    needs: build-push
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Setup Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+
+      - name: Install Prefect
+        run: pip install prefect
+
+      - name: Authenticate Prefect
+        run: |
+          prefect config set PREFECT_API_URL="${{ secrets.PREFECT_API_URL }}"
+          prefect config set PREFECT_API_AUTH_STRING="${{ secrets.PREFECT_API_AUTH_STRING }}"
+
+      - name: Deploy Staging Flows
+        if: startsWith(github.ref, 'refs/heads/staging/')
+        run: |
+          # Faz deploy apenas dos fluxos com sufixo -staging
+          prefect deploy --all \
+            --param image_repo=${{ needs.build-push.outputs.image_repo }} \
+            --param tag=${{ needs.build-push.outputs.image_tag }} \
+            --name "*-staging"
+
+      - name: Deploy Prod Flows
+        if: github.ref == 'refs/heads/main'
+        run: |
+          # Faz deploy apenas dos fluxos com sufixo -prod
+          prefect deploy --all \
+            --param image_repo=${{ needs.build-push.outputs.image_repo }} \
+            --param tag=${{ needs.build-push.outputs.image_tag }} \
+            --name "*-prod"
