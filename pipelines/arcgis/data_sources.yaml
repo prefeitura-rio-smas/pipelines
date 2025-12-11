@@ -17,7 +17,7 @@
     repeat: 1
 
 - name: equipamentos
-  feature_id: 134851a668ca407c8f6b4cb2fd8dfdf8
+  feature_id: 1ab2f9c74d8f48239a12157d5a3a87f4
   account: siurb
   return_geometry: false
   layers:

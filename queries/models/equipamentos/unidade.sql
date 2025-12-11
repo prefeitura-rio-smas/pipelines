@@ -18,8 +18,8 @@ SELECT
     cep             AS cep,
     endereco_c      AS endereco_completo,
     ponto_refe      AS ponto_referencia,
-    x               AS longitude_unidade,
-    y               AS latitude_unidade,
+    Longitude       AS longitude_unidade,
+    Latitude        AS latitude_unidade,
     bairro          AS bairro,
     codbairro       AS codigo_bairro,
     ra              AS regiao_admnistrativa,
@@ -41,5 +41,5 @@ SELECT
     obs_gerais      AS observacao_geral,
     data_de_pr      AS data_atualizacao,
     tipo_abrev      AS tipo_equipamento,
-    cod_unidades_rma      AS codigo_unidade_rma,
+    cod_unidad     AS codigo_unidade_rma,
 FROM {{ source('arcgis_raw', 'equipamentos_smas_raw') }}
