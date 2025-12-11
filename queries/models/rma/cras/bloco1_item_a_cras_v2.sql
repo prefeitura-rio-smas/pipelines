@@ -4,7 +4,7 @@ WITH total_acompanhamento_paif_por_unidade AS (
     SELECT 
         unidade, 
         COUNT(seqfamil) AS total_familias_acomp_paif
-    FROM {{ ref('base_filtro_contas_uma_unidade')}} 
+    FROM {{ ref('base_filtro_bloco1_item_a_v2')}} 
     GROUP BY unidade
 ),
 
@@ -14,7 +14,7 @@ filtro_mes_atual AS(
         *,
         EXTRACT(MONTH FROM datcadastr) AS mes_cadastro_assist,
         EXTRACT(MONTH FROM CURRENT_DATE()) AS mes_atual
-    FROM {{ ref('base_filtro_contas_uma_unidade')}}
+    FROM {{ ref('base_filtro_bloco1_item_a_v2')}}
 ),
 -- Item A2
 total_acompanhamento_paif_novos_mes_atual AS (
