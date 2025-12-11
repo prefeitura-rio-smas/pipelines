@@ -1,12 +1,5 @@
-from pathlib import Path
-from dotenv import load_dotenv
 from prefect import flow
-
-# Carregando variáveis de ambiente do .env no project root
-dotenv_path = Path(__file__).parent.parent.parent.parent / '.env'
-load_dotenv(dotenv_path=dotenv_path)
-
-from ..tasks import load_arcgis_to_bigquery, run_dbt_models
+from pipelines.arcgis.tasks import load_arcgis_to_bigquery, run_dbt_models
 
 @flow(name="Abordagem | Carga ArcGIS")
 def abordagem_flow() -> None:
