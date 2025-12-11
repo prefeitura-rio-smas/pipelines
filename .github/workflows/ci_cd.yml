@@ -142,13 +142,13 @@ jobs:
       - name: Deploy Staging Flows
         if: startsWith(github.ref, 'refs/heads/staging/')
         run: |
-                    prefect deploy \             --param image_repo=${{ needs.build-push.outputs.image_repo }} \
+            prefect deploy \             --param image_repo=${{ needs.build-push.outputs.image_repo }} \
             --param tag=${{ needs.build-push.outputs.image_tag }} \
             --name "*-staging"
 
       - name: Deploy Prod Flows
         if: github.ref == 'refs/heads/main'
         run: |
-                    prefect deploy \             --param image_repo=${{ needs.build-push.outputs.image_repo }} \
+            prefect deploy \             --param image_repo=${{ needs.build-push.outputs.image_repo }} \
             --param tag=${{ needs.build-push.outputs.image_tag }} \
             --name "*-prod"
