@@ -1,3 +1,5 @@
+name: CI/CD Pipeline
+
 on:
   push:
     branches:
@@ -6,128 +8,143 @@ on:
   pull_request:
   workflow_dispatch:
 
+# Define o diretório padrão para todos os jobs
+defaults:
+  run:
+    working-directory: pipelines/arcgis
+
 jobs:
+  # -----------------------------------------------------------------------------
+  # Job 1: Testes e Qualidade de Código
+  # -----------------------------------------------------------------------------
   test:
     runs-on: ubuntu-latest
-
     steps:
       - uses: actions/checkout@v4
 
-      - uses: actions/setup-python@v5
+      - name: Install uv
+        uses: astral-sh/setup-uv@v3
         with:
-          python-version: '3.10'
+          version: "0.4.15"
 
-      # instala Poetry de forma idempotente + cache ----------------------------
-      - uses: snok/install-poetry@v1
-        with:
-          version: 1.8.2
-          virtualenvs-create: true
-          virtualenvs-in-project: true
-          installer-parallel: true
+      - name: Set up Python
+        run: uv python install 3.13
 
-      - uses: actions/cache@v4
-        with:
-          path: |
-            ~/.cache/pypoetry
-            ~/.cache/pip
-            .venv            # venv local criada pelo Poetry
-          key: >-
-            ${{ runner.os }}-poetry-
-            ${{ hashFiles('poetry.lock') }}
+      - name: Install dependencies
+        run: uv sync --all-extras --dev
 
-      # instala deps normais + as de dev (flake8/pytest) ------------------------
-      - name: Install deps
-        run: |
-          poetry install --no-interaction --no-ansi
+      - name: Lint with Ruff
+        run: uv run ruff check .
 
-      - name: Lint
-        continue-on-error: true           # remova quando o código estiver limpo
-        run: poetry run flake8 pipeline
+      # Habilite quando tiver testes implementados
+      # - name: Run Tests
+      #   run: uv run pytest
 
-      - name: Tests
-        continue-on-error: true           # até criar testes de verdade
-        run: poetry run pytest
-
-
-  smoke-dbt:                         # 2️⃣ compila o dbt
+  # -----------------------------------------------------------------------------
+  # Job 2: Smoke Test DBT (Compilação)
+  # -----------------------------------------------------------------------------
+  smoke-dbt:
     needs: test
     runs-on: ubuntu-latest
     env:
+      # Aponta para o diretório de profiles (dentro de pipelines/arcgis/queries)
       DBT_PROFILES_DIR: queries
     steps:
       - uses: actions/checkout@v4
-      - uses: actions/setup-python@v5
-        with: { python-version: '3.10' }
 
-      - name: Install dbt only
-        run: pip install --quiet dbt-core dbt-bigquery
+      - name: Install uv
+        uses: astral-sh/setup-uv@v3
 
-      - name: dbt compile
+      - name: Set up Python
+        run: uv python install 3.13
+
+      - name: Install dependencies (incluindo dbt)
+        run: uv sync
+
+      - name: DBT Parse
+        # O working-directory global já nos coloca em pipelines/arcgis
+        # O projeto dbt está em queries/
         run: |
-          dbt parse --project-dir queries --profiles-dir queries --target ci
+          uv run dbt parse --project-dir queries --profiles-dir queries --target ci
 
-  build-push:                       # 3️⃣ publica imagem só se smoke OK
+  # -----------------------------------------------------------------------------
+  # Job 3: Build e Push da Imagem Docker
+  # -----------------------------------------------------------------------------
+  build-push:
     needs: smoke-dbt
     runs-on: ubuntu-latest
     permissions:
       contents: read
       packages: write
     outputs:
-      image_tag: ${{ steps.docker_meta.outputs.version }}
+      image_tag: ${{ steps.meta.outputs.version }}
       image_repo: ghcr.io/${{ github.repository_owner }}/pipelines-rj-smas
 
     steps:
       - uses: actions/checkout@v4
-      - name: Setup Buildx
+
+      - name: Set up Docker Buildx
         uses: docker/setup-buildx-action@v3
 
-      - name: Login to GHCR
+      - name: Login to GitHub Container Registry
         uses: docker/login-action@v3
         with:
           registry: ghcr.io
           username: ${{ github.actor }}
           password: ${{ secrets.GITHUB_TOKEN }}
 
-      - name: Set docker tag
-        id: docker_meta
+      - name: Docker Metadata
+        id: meta
         uses: docker/metadata-action@v5
         with:
           images: ghcr.io/${{ github.repository_owner }}/pipelines-rj-smas
           tags: |
             type=ref,event=branch
             type=raw,value=latest,enable={{is_default_branch}}
+            type=sha,format=short
 
-      - name: Build & Push
+      - name: Build and Push
         uses: docker/build-push-action@v5
         with:
-          context: .
+          context: pipelines/arcgis
+          file: pipelines/arcgis/Dockerfile
           push: true
-          tags: ${{ steps.docker_meta.outputs.tags }}
-          labels: ${{ steps.docker_meta.outputs.labels }}
+          tags: ${{ steps.meta.outputs.tags }}
+          labels: ${{ steps.meta.outputs.labels }}
+          cache-from: type=gha
+          cache-to: type=gha,mode=max
 
+  # -----------------------------------------------------------------------------
+  # Job 4: Deploy dos Flows no Prefect
+  # -----------------------------------------------------------------------------
   deploy-flows:
     needs: build-push
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
 
-      - name: Setup Python
+      - name: Set up Python
         uses: actions/setup-python@v5
         with:
           python-version: '3.12'
 
-      - name: Install Prefect
+      - name: Install Prefect CLI
         run: pip install prefect
 
       - name: Authenticate Prefect
         run: |
           prefect config set PREFECT_API_URL="${{ secrets.PREFECT_API_URL }}"
+          # Configura Basic Auth se houver (header Authorization)
+          # Se sua string for user:pass, o prefect precisa disso formatado ou suportado pelo client.
+          # Se for API Key do Cloud, seria PREFECT_API_KEY.
+          # Para self-hosted basic auth, geralmente se embuti na URL ou usa headers extras.
+          # Assumindo que PREFECT_API_AUTH_STRING é o segredo correto configurado no seu ambiente.
+          # Se não funcionar direto, pode ser necessário passar via header extra no profile.
           prefect config set PREFECT_API_AUTH_STRING="${{ secrets.PREFECT_API_AUTH_STRING }}"
 
       - name: Deploy Staging Flows
         if: startsWith(github.ref, 'refs/heads/staging/')
         run: |
-          # Faz deploy apenas dos fluxos com sufixo -staging
           prefect deploy --all \
             --param image_repo=${{ needs.build-push.outputs.image_repo }} \
             --param tag=${{ needs.build-push.outputs.image_tag }} \
@@ -136,7 +153,6 @@ jobs:
       - name: Deploy Prod Flows
         if: github.ref == 'refs/heads/main'
         run: |
-          # Faz deploy apenas dos fluxos com sufixo -prod
           prefect deploy --all \
             --param image_repo=${{ needs.build-push.outputs.image_repo }} \
             --param tag=${{ needs.build-push.outputs.image_tag }} \
