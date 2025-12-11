@@ -1,0 +1,164 @@
+name: pipelines-rj-smas
+prefect-version: 3.0.0
+
+# 1. Build da Imagem Docker
+build:
+  - prefect_docker.deployments.steps.build_docker_image:
+      id: build_image
+      requires: prefect-docker>=0.3.0
+      image_name: "my-org/pipelines-rj-smas" 
+      tag: "{{ tag }}"
+      dockerfile: Dockerfile
+      platform: "linux/amd64"
+
+# 2. Push da Imagem para o Registry
+push:
+  - prefect_docker.deployments.steps.push_docker_image:
+      requires: prefect-docker>=0.3.0
+      image_name: "{{ build_image.image_name }}"
+      tag: "{{ build_image.tag }}"
+
+# 3. Pull (Define o diretório de trabalho no container)
+pull:
+  - prefect.deployments.steps.set_working_directory:
+      directory: /app 
+
+# 4. Definições dos Deployments
+deployments:
+  # ---------------------------------------------------------------------------
+  # Abordagem
+  # ---------------------------------------------------------------------------
+  - name: abordagem-staging
+    entrypoint: pipelines/arcgis/abordagem/flows.py:abordagem_flow
+    work_pool:
+      name: docker-pool
+      job_variables:
+        image: "{{ build_image.image }}"
+        env:
+          MODE: staging
+    tags: ["staging", "arcgis"]
+
+  - name: abordagem-prod
+    entrypoint: pipelines/arcgis/abordagem/flows.py:abordagem_flow
+    work_pool:
+      name: docker-pool
+      job_variables:
+        image: "{{ build_image.image }}"
+        env:
+          MODE: prod
+    tags: ["prod", "arcgis"]
+
+  # ---------------------------------------------------------------------------
+  # Cartão Primeira Infância Carioca
+  # ---------------------------------------------------------------------------
+  - name: cartao-pic-staging
+    entrypoint: pipelines/arcgis/cartao_primeira_infancia_carioca/flows.py:cartao_primeira_infancia_carioca_flow
+    work_pool:
+      name: docker-pool
+      job_variables:
+        image: "{{ build_image.image }}"
+        env:
+          MODE: staging
+    tags: ["staging", "arcgis"]
+
+  - name: cartao-pic-prod
+    entrypoint: pipelines/arcgis/cartao_primeira_infancia_carioca/flows.py:cartao_primeira_infancia_carioca_flow
+    work_pool:
+      name: docker-pool
+      job_variables:
+        image: "{{ build_image.image }}"
+        env:
+          MODE: prod
+    tags: ["prod", "arcgis"]
+
+  # ---------------------------------------------------------------------------
+  # CRAS/CAS Polígonos
+  # ---------------------------------------------------------------------------
+  - name: cras-cas-poligonos-staging
+    entrypoint: pipelines/arcgis/cras_cas_poligonos/flows.py:cras_cas_poligonos_flow
+    work_pool:
+      name: docker-pool
+      job_variables:
+        image: "{{ build_image.image }}"
+        env:
+          MODE: staging
+    tags: ["staging", "arcgis"]
+
+  - name: cras-cas-poligonos-prod
+    entrypoint: pipelines/arcgis/cras_cas_poligonos/flows.py:cras_cas_poligonos_flow
+    work_pool:
+      name: docker-pool
+      job_variables:
+        image: "{{ build_image.image }}"
+        env:
+          MODE: prod
+    tags: ["prod", "arcgis"]
+
+  # ---------------------------------------------------------------------------
+  # Equipamentos
+  # ---------------------------------------------------------------------------
+  - name: equipamentos-staging
+    entrypoint: pipelines/arcgis/equipamentos/flows.py:equipamentos_flow
+    work_pool:
+      name: docker-pool
+      job_variables:
+        image: "{{ build_image.image }}"
+        env:
+          MODE: staging
+    tags: ["staging", "arcgis"]
+
+  - name: equipamentos-prod
+    entrypoint: pipelines/arcgis/equipamentos/flows.py:equipamentos_flow
+    work_pool:
+      name: docker-pool
+      job_variables:
+        image: "{{ build_image.image }}"
+        env:
+          MODE: prod
+    tags: ["prod", "arcgis"]
+
+  # ---------------------------------------------------------------------------
+  # Gestão Vagas
+  # ---------------------------------------------------------------------------
+  - name: gestao-vagas-staging
+    entrypoint: pipelines/arcgis/gestao_vagas/flows.py:gestao_vagas_flow
+    work_pool:
+      name: docker-pool
+      job_variables:
+        image: "{{ build_image.image }}"
+        env:
+          MODE: staging
+    tags: ["staging", "arcgis"]
+
+  - name: gestao-vagas-prod
+    entrypoint: pipelines/arcgis/gestao_vagas/flows.py:gestao_vagas_flow
+    work_pool:
+      name: docker-pool
+      job_variables:
+        image: "{{ build_image.image }}"
+        env:
+          MODE: prod
+    tags: ["prod", "arcgis"]
+
+  # ---------------------------------------------------------------------------
+  # Limite Bairros 25
+  # ---------------------------------------------------------------------------
+  - name: limite-bairros-25-staging
+    entrypoint: pipelines/arcgis/limite_bairros_25/flows.py:limite_bairros_25_flow
+    work_pool:
+      name: docker-pool
+      job_variables:
+        image: "{{ build_image.image }}"
+        env:
+          MODE: staging
+    tags: ["staging", "arcgis"]
+
+  - name: limite-bairros-25-prod
+    entrypoint: pipelines/arcgis/limite_bairros_25/flows.py:limite_bairros_25_flow
+    work_pool:
+      name: docker-pool
+      job_variables:
+        image: "{{ build_image.image }}"
+        env:
+          MODE: prod
+    tags: ["prod", "arcgis"]
