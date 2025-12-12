@@ -40,6 +40,7 @@ jobs:
     needs: test
     runs-on: ubuntu-latest
     env:
+      # Aponta para o diretório de profiles (dentro de pipelines/arcgis/queries)
       DBT_PROFILES_DIR: queries
     steps:
       - uses: actions/checkout@v4
@@ -91,7 +92,8 @@ jobs:
              echo "TAG=prod-${SHA_SHORT}" >> $GITHUB_ENV
           else
              # Extrai o nome da branch limpo (ex: staging/arcgis -> staging-arcgis)
-             BRANCH_NAME=$(echo "${{ github.ref_name }}" | sed 's/\//-/g')
+             # Substitui barra por hifen
+             BRANCH_NAME=$(echo "${{ github.ref_name }}" | sed 's/\///-/g')
              echo "TAG=${BRANCH_NAME}-${SHA_SHORT}" >> $GITHUB_ENV
           fi
 
@@ -108,16 +110,31 @@ jobs:
           username: ${{ github.actor }}
           password: ${{ secrets.GITHUB_TOKEN }}
 
+      # Build e Push usando actions nativas (para evitar problemas de auth/timeout)
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
+
+      - name: Build and Push Docker Image
+        uses: docker/build-push-action@v5
+        with:
+          context: .
+          file: Dockerfile
+          push: true
+          tags: ${{ env.IMAGE_REPO }}:${{ env.TAG }}
+          cache-from: type=gha
+          cache-to: type=gha,mode=max
+
       # Deploy Staging: Roda apenas se for branch de staging
-      # O comando 'prefect deploy' vai ler prefect.yaml, que lerá $IMAGE_REPO e $TAG
-      # e executará o build e push internamente.
+      # Usa a flag --image para pular o build do prefect.yaml
       - name: Deploy Staging Flows
         if: startsWith(github.ref, 'refs/heads/staging/')
         run: |
-          prefect deploy --name "*-staging"
+          prefect deploy --name "*-staging" \
+            --image "${{ env.IMAGE_REPO }}:${{ env.TAG }}"
 
       # Deploy Prod: Roda apenas se for branch main
       - name: Deploy Prod Flows
         if: github.ref == 'refs/heads/main'
         run: |
-          prefect deploy --name "*-prod"
+          prefect deploy --name "*-prod" \
+            --image "${{ env.IMAGE_REPO }}:${{ env.TAG }}"
