@@ -1,12 +1,6 @@
 name: pipelines-rj-smas
 prefect-version: 3.0.0
 
-# Definições de variáveis padrão
-definitions:
-  variables:
-    image_repo: "ghcr.io/default/pipelines-rj-smas"
-    tag: "latest"
-
 # 3. Pull (Define o diretório de trabalho no container)
 pull:
   - prefect.deployments.steps.set_working_directory:
@@ -22,7 +16,7 @@ deployments:
     work_pool:
       name: docker-pool
       job_variables:
-        image: "{{ $IMAGE_REPO }}:{{ $TAG }}"
+        image: "{{ image }}"
         env:
           MODE: staging
     tags: ["staging", "arcgis"]
@@ -32,7 +26,7 @@ deployments:
     work_pool:
       name: docker-pool
       job_variables:
-        image: "{{ $IMAGE_REPO }}:{{ $TAG }}"
+        image: "{{ image }}"
         env:
           MODE: prod
     tags: ["prod", "arcgis"]
@@ -45,7 +39,7 @@ deployments:
     work_pool:
       name: docker-pool
       job_variables:
-        image: "{{ $IMAGE_REPO }}:{{ $TAG }}"
+        image: "{{ image }}"
         env:
           MODE: staging
     tags: ["staging", "arcgis"]
@@ -55,7 +49,7 @@ deployments:
     work_pool:
       name: docker-pool
       job_variables:
-        image: "{{ $IMAGE_REPO }}:{{ $TAG }}"
+        image: "{{ image }}"
         env:
           MODE: prod
     tags: ["prod", "arcgis"]
@@ -68,7 +62,7 @@ deployments:
     work_pool:
       name: docker-pool
       job_variables:
-        image: "{{ $IMAGE_REPO }}:{{ $TAG }}"
+        image: "{{ image }}"
         env:
           MODE: staging
     tags: ["staging", "arcgis"]
@@ -78,7 +72,7 @@ deployments:
     work_pool:
       name: docker-pool
       job_variables:
-        image: "{{ $IMAGE_REPO }}:{{ $TAG }}"
+        image: "{{ image }}"
         env:
           MODE: prod
     tags: ["prod", "arcgis"]
@@ -91,7 +85,7 @@ deployments:
     work_pool:
       name: docker-pool
       job_variables:
-        image: "{{ $IMAGE_REPO }}:{{ $TAG }}"
+        image: "{{ image }}"
         env:
           MODE: staging
     tags: ["staging", "arcgis"]
@@ -101,7 +95,7 @@ deployments:
     work_pool:
       name: docker-pool
       job_variables:
-        image: "{{ $IMAGE_REPO }}:{{ $TAG }}"
+        image: "{{ image }}"
         env:
           MODE: prod
     tags: ["prod", "arcgis"]
@@ -114,7 +108,7 @@ deployments:
     work_pool:
       name: docker-pool
       job_variables:
-        image: "{{ $IMAGE_REPO }}:{{ $TAG }}"
+        image: "{{ image }}"
         env:
           MODE: staging
     tags: ["staging", "arcgis"]
@@ -124,7 +118,7 @@ deployments:
     work_pool:
       name: docker-pool
       job_variables:
-        image: "{{ $IMAGE_REPO }}:{{ $TAG }}"
+        image: "{{ image }}"
         env:
           MODE: prod
     tags: ["prod", "arcgis"]
@@ -137,7 +131,7 @@ deployments:
     work_pool:
       name: docker-pool
       job_variables:
-        image: "{{ $IMAGE_REPO }}:{{ $TAG }}"
+        image: "{{ image }}"
         env:
           MODE: staging
     tags: ["staging", "arcgis"]
@@ -147,7 +141,7 @@ deployments:
     work_pool:
       name: docker-pool
       job_variables:
-        image: "{{ $IMAGE_REPO }}:{{ $TAG }}"
+        image: "{{ image }}"
         env:
           MODE: prod
     tags: ["prod", "arcgis"]
