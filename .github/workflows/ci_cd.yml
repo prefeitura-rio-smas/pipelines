@@ -111,106 +111,50 @@ jobs:
           cache-from: type=gha
           cache-to: type=gha,mode=max
 
-    # -----------------------------------------------------------------------------
+  # -----------------------------------------------------------------------------
+  # Job 4: Deploy dos Flows no Prefect
+  # -----------------------------------------------------------------------------
+  deploy-flows:
+    needs: build-push
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
 
-    # Job 4: Deploy dos Flows no Prefect
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
 
-    # -----------------------------------------------------------------------------
+      - name: Install Prefect CLI
+        run: pip install prefect prefect-docker
 
-    deploy-flows:
+      - name: Authenticate Prefect
+        run: |
+          prefect config set PREFECT_API_URL="${{ secrets.PREFECT_API_URL }}"
+          # Configura Basic Auth se houver
+          prefect config set PREFECT_API_AUTH_STRING="${{ secrets.PREFECT_API_AUTH_STRING }}"
 
-      needs: build-push
+      - name: Login to GitHub Container Registry
+        uses: docker/login-action@v3
+        with:
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
 
-      runs-on: ubuntu-latest
+      - name: Deploy Staging Flows
+        if: startsWith(github.ref, 'refs/heads/staging/')
+        env:
+          IMAGE_REPO: ${{ needs.build-push.outputs.image_repo }}
+          TAG: ${{ needs.build-push.outputs.image_tag }}
+        run: |
+          # Faz deploy apenas dos fluxos com sufixo -staging
+          prefect deploy --name "*-staging"
 
-      steps:
-
-        - uses: actions/checkout@v4
-
-  
-
-        - name: Set up Python
-
-          uses: actions/setup-python@v5
-
-          with:
-
-            python-version: '3.12'
-
-  
-
-        - name: Install Prefect CLI
-
-          run: pip install prefect prefect-docker
-
-  
-
-        - name: Authenticate Prefect
-
-          run: |
-
-            prefect config set PREFECT_API_URL="${{ secrets.PREFECT_API_URL }}"
-
-            # Configura Basic Auth se houver (header Authorization)
-
-            # Se sua string for user:pass, o prefect precisa disso formatado ou suportado pelo client.
-
-            # Se for API Key do Cloud, seria PREFECT_API_KEY.
-
-            # Para self-hosted basic auth, geralmente se embuti na URL ou usa headers extras.
-
-            # Assumindo que PREFECT_API_AUTH_STRING é o segredo correto configurado no seu ambiente.
-
-            # Se não funcionar direto, pode ser necessário passar via header extra no profile.
-
-            prefect config set PREFECT_API_AUTH_STRING="${{ secrets.PREFECT_API_AUTH_STRING }}"
-
-  
-
-        - name: Login to GitHub Container Registry
-
-          uses: docker/login-action@v3
-
-          with:
-
-            registry: ghcr.io
-
-            username: ${{ github.actor }}
-
-            password: ${{ secrets.GITHUB_TOKEN }}
-
-  
-
-        - name: Deploy Staging Flows
-
-          if: startsWith(github.ref, 'refs/heads/staging/')
-
-          env:
-
-            IMAGE_REPO: ${{ needs.build-push.outputs.image_repo }}
-
-            TAG: ${{ needs.build-push.outputs.image_tag }}
-
-          run: |
-
-            # Faz deploy apenas dos fluxos com sufixo -staging
-
-            prefect deploy --name "*-staging"
-
-  
-
-        - name: Deploy Prod Flows
-
-          if: github.ref == 'refs/heads/main'
-
-          env:
-
-            IMAGE_REPO: ${{ needs.build-push.outputs.image_repo }}
-
-            TAG: ${{ needs.build-push.outputs.image_tag }}
-
-          run: |
-
-            # Faz deploy apenas dos fluxos com sufixo -prod
-
-            prefect deploy --name "*-prod"
+      - name: Deploy Prod Flows
+        if: github.ref == 'refs/heads/main'
+        env:
+          IMAGE_REPO: ${{ needs.build-push.outputs.image_repo }}
+          TAG: ${{ needs.build-push.outputs.image_tag }}
+        run: |
+          # Faz deploy apenas dos fluxos com sufixo -prod
+          prefect deploy --name "*-prod"
