@@ -139,6 +139,13 @@ jobs:
           # Se não funcionar direto, pode ser necessário passar via header extra no profile.
           prefect config set PREFECT_API_AUTH_STRING="${{ secrets.PREFECT_API_AUTH_STRING }}"
 
+      - name: Login to GitHub Container Registry
+        uses: docker/login-action@v3
+        with:
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+
       - name: Deploy Staging Flows
         if: startsWith(github.ref, 'refs/heads/staging/')
         run: |
