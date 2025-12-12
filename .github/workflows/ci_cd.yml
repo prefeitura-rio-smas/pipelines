@@ -143,18 +143,15 @@ jobs:
 
       - name: Deploy Staging Flows
         if: startsWith(github.ref, 'refs/heads/staging/')
-        env:
-          IMAGE_REPO: ${{ needs.build-push.outputs.image_repo }}
-          TAG: ${{ needs.build-push.outputs.image_tag }}
         run: |
           # Faz deploy apenas dos fluxos com sufixo -staging
-          prefect deploy --name "*-staging"
+          # Usar --image pula o build/push do prefect.yaml
+          prefect deploy --name "*-staging" \
+            --image "${{ needs.build-push.outputs.image_repo }}:${{ needs.build-push.outputs.image_tag }}"
 
       - name: Deploy Prod Flows
         if: github.ref == 'refs/heads/main'
-        env:
-          IMAGE_REPO: ${{ needs.build-push.outputs.image_repo }}
-          TAG: ${{ needs.build-push.outputs.image_tag }}
         run: |
           # Faz deploy apenas dos fluxos com sufixo -prod
-          prefect deploy --name "*-prod"
+          prefect deploy --name "*-prod" \
+            --image "${{ needs.build-push.outputs.image_repo }}:${{ needs.build-push.outputs.image_tag }}"
