@@ -6,7 +6,7 @@ build:
   - prefect_docker.deployments.steps.build_docker_image:
       id: build_image
       requires: prefect-docker>=0.3.0
-      image_name: "ghcr.io/{{ github.repository_owner }}/pipelines-rj-smas" 
+      image_name: "{{ image_repo }}"
       tag: "{{ tag }}"
       dockerfile: Dockerfile
       platform: "linux/amd64"
