@@ -1,13 +1,20 @@
 name: pipelines-rj-smas
 prefect-version: 3.0.0
 
+# Definições de variáveis padrão
+definitions:
+  variables:
+    image_repo: "ghcr.io/default/pipelines-rj-smas"
+    tag: "latest"
+
 # 1. Build da Imagem Docker
 build:
   - prefect_docker.deployments.steps.build_docker_image:
       id: build_image
       requires: prefect-docker>=0.3.0
-      image_name: "{{ image_repo }}"
-      tag: "{{ tag }}"
+      # Acessa variáveis de ambiente (mais robusto para CI/CD)
+      image_name: "{{ $IMAGE_REPO }}"
+      tag: "{{ $TAG }}"
       dockerfile: Dockerfile
       platform: "linux/amd64"
 
@@ -15,7 +22,7 @@ build:
 push:
   - prefect_docker.deployments.steps.push_docker_image:
       requires: prefect-docker>=0.3.0
-      image_name: "{{ build_image.image_repo }}"
+      image_name: "{{ build_image.image_name }}"
       tag: "{{ build_image.tag }}"
 
 # 3. Pull (Define o diretório de trabalho no container)
