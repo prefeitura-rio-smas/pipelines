@@ -33,10 +33,6 @@ jobs:
         continue-on-error: true
         run: uv run python -m ruff check .
 
-      # Habilite quando tiver testes implementados
-      # - name: Run Tests
-      #   run: uv run pytest
-
   # -----------------------------------------------------------------------------
   # Job 2: Smoke Test DBT (Compilação)
   # -----------------------------------------------------------------------------
@@ -44,7 +40,6 @@ jobs:
     needs: test
     runs-on: ubuntu-latest
     env:
-      # Aponta para o diretório de profiles (dentro de pipelines/arcgis/queries)
       DBT_PROFILES_DIR: queries
     steps:
       - uses: actions/checkout@v4
@@ -59,64 +54,19 @@ jobs:
         run: uv sync
 
       - name: DBT Parse
-        # O working-directory global já nos coloca em pipelines/arcgis
-        # O projeto dbt está em queries/
         run: |
           uv run dbt parse --project-dir queries --profiles-dir queries --target ci
 
   # -----------------------------------------------------------------------------
-  # Job 3: Build e Push da Imagem Docker
+  # Job 3: Build, Push e Deploy (Unificado)
   # -----------------------------------------------------------------------------
-  build-push:
+  deploy-flows:
     needs: smoke-dbt
     runs-on: ubuntu-latest
     permissions:
       contents: read
       packages: write
-    outputs:
-      image_tag: ${{ steps.meta.outputs.version }}
-      image_repo: ghcr.io/${{ github.repository_owner }}/pipelines-rj-smas
 
-    steps:
-      - uses: actions/checkout@v4
-
-      - name: Set up Docker Buildx
-        uses: docker/setup-buildx-action@v3
-
-      - name: Login to GitHub Container Registry
-        uses: docker/login-action@v3
-        with:
-          registry: ghcr.io
-          username: ${{ github.actor }}
-          password: ${{ secrets.GITHUB_TOKEN }}
-
-      - name: Docker Metadata
-        id: meta
-        uses: docker/metadata-action@v5
-        with:
-          images: ghcr.io/${{ github.repository_owner }}/pipelines-rj-smas
-          tags: |
-            type=ref,event=branch
-            type=raw,value=latest,enable={{is_default_branch}}
-            type=sha,format=short
-
-      - name: Build and Push
-        uses: docker/build-push-action@v5
-        with:
-          context: .
-          file: Dockerfile
-          push: true
-          tags: ${{ steps.meta.outputs.tags }}
-          labels: ${{ steps.meta.outputs.labels }}
-          cache-from: type=gha
-          cache-to: type=gha,mode=max
-
-  # -----------------------------------------------------------------------------
-  # Job 4: Deploy dos Flows no Prefect
-  # -----------------------------------------------------------------------------
-  deploy-flows:
-    needs: build-push
-    runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
 
@@ -127,6 +77,23 @@ jobs:
 
       - name: Install Prefect CLI
         run: pip install prefect prefect-docker
+
+      # Configura variáveis de ambiente para a imagem e tag
+      - name: Define Image Metadata
+        run: |
+          # Define o repositório da imagem (lowercase para garantir compatibilidade docker)
+          REPO="ghcr.io/${{ github.repository_owner }}/pipelines-rj-smas"
+          echo "IMAGE_REPO=${REPO,,}" >> $GITHUB_ENV
+          
+          # Define a tag baseada na branch e SHA curto
+          SHA_SHORT=$(git rev-parse --short HEAD)
+          if [[ "${{ github.ref }}" == 'refs/heads/main' ]]; then
+             echo "TAG=prod-${SHA_SHORT}" >> $GITHUB_ENV
+          else
+             # Extrai o nome da branch limpo (ex: staging/arcgis -> staging-arcgis)
+             BRANCH_NAME=$(echo "${{ github.ref_name }}" | sed 's/\//-/g')
+             echo "TAG=${BRANCH_NAME}-${SHA_SHORT}" >> $GITHUB_ENV
+          fi
 
       - name: Authenticate Prefect
         run: |
@@ -141,17 +108,16 @@ jobs:
           username: ${{ github.actor }}
           password: ${{ secrets.GITHUB_TOKEN }}
 
+      # Deploy Staging: Roda apenas se for branch de staging
+      # O comando 'prefect deploy' vai ler prefect.yaml, que lerá $IMAGE_REPO e $TAG
+      # e executará o build e push internamente.
       - name: Deploy Staging Flows
         if: startsWith(github.ref, 'refs/heads/staging/')
         run: |
-          # Faz deploy apenas dos fluxos com sufixo -staging
-          # Usar --image pula o build/push do prefect.yaml
-          prefect deploy --name "*-staging" \
-            --image "${{ needs.build-push.outputs.image_repo }}:${{ needs.build-push.outputs.image_tag }}"
+          prefect deploy --name "*-staging"
 
+      # Deploy Prod: Roda apenas se for branch main
       - name: Deploy Prod Flows
         if: github.ref == 'refs/heads/main'
         run: |
-          # Faz deploy apenas dos fluxos com sufixo -prod
-          prefect deploy --name "*-prod" \
-            --image "${{ needs.build-push.outputs.image_repo }}:${{ needs.build-push.outputs.image_tag }}"
+          prefect deploy --name "*-prod"
