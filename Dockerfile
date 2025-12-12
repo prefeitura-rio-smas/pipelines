@@ -12,10 +12,11 @@ COPY pyproject.toml /app/
 RUN uv pip compile pyproject.toml -o requirements.txt && \
     uv pip install --system --no-cache -r requirements.txt
 
-# Copia o resto do código + entrypoint
+# Copia o resto do código
 COPY . /app
 COPY queries/profiles.yml /app/queries/profiles.yml
-COPY entrypoint.sh /app/entrypoint.sh
-RUN chmod +x /app/entrypoint.sh
 
-ENTRYPOINT ["./entrypoint.sh"]
+# Configura variável de ambiente do DBT
+ENV DBT_PROFILES_DIR=/app/queries
+
+# Não define ENTRYPOINT, permitindo que o Prefect (ou docker run) controle o comando
