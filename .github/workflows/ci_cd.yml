@@ -126,7 +126,7 @@ jobs:
           python-version: '3.12'
 
       - name: Install Prefect CLI
-        run: pip install prefect
+        run: pip install prefect prefect-docker
 
       - name: Authenticate Prefect
         run: |
