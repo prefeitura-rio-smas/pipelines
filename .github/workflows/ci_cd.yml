@@ -129,16 +129,15 @@ jobs:
           cache-to: type=gha,mode=max
 
       # Deploy Staging: Roda apenas se for branch de staging
-      # Usa a flag --image para pular o build do prefect.yaml
       - name: Deploy Staging Flows
         if: startsWith(github.ref, 'refs/heads/staging/')
         run: |
-          prefect deploy --name "*-staging" \
-            --image "${{ env.IMAGE_REPO }}:${{ env.TAG }}"
+          export PREFECT_DEPLOYMENT_IMAGE="${{ env.IMAGE_REPO }}:${{ env.TAG }}" && \
+          prefect deploy --name "*-staging"
 
       # Deploy Prod: Roda apenas se for branch main
       - name: Deploy Prod Flows
         if: github.ref == 'refs/heads/main'
         run: |
-          prefect deploy --name "*-prod" \
-            --image "${{ env.IMAGE_REPO }}:${{ env.TAG }}"
+          export PREFECT_DEPLOYMENT_IMAGE="${{ env.IMAGE_REPO }}:${{ env.TAG }}" && \
+          prefect deploy --name "*-prod"
