@@ -132,10 +132,12 @@ jobs:
       - name: Deploy Staging Flows
         if: startsWith(github.ref, 'refs/heads/staging/')
         run: |
-          prefect deploy --name "*-staging" --job-variable image="${{ env.IMAGE_REPO }}:${{ env.TAG }}"
+          export PREFECT_DEPLOYMENT_IMAGE="${{ env.IMAGE_REPO }}:${{ env.TAG }}" && \
+          prefect deploy --name "*-staging"
 
       # Deploy Prod: Roda apenas se for branch main
       - name: Deploy Prod Flows
         if: github.ref == 'refs/heads/main'
         run: |
-          prefect deploy --name "*-prod" --job-variable image="${{ env.IMAGE_REPO }}:${{ env.TAG }}"
+          export PREFECT_DEPLOYMENT_IMAGE="${{ env.IMAGE_REPO }}:${{ env.TAG }}" && \
+          prefect deploy --name "*-prod"
