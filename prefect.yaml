@@ -16,7 +16,7 @@ deployments:
     work_pool:
       name: docker-pool
       job_variables:
-        network: prefect_prefect-stack
+        networks: ["prefect_prefect-stack"]
         image: "{{ image }}"
         env:
           PREFECT_API_URL: http://prefect-api:4200/api
