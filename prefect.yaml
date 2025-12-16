@@ -17,7 +17,7 @@ deployments:
       name: docker-pool
       job_variables:
         networks: ["prefect_prefect-stack"]
-        image: "{{ env.PREFECT_DEPLOYMENT_IMAGE }}"
+        image: "{{ $PREFECT_DEPLOYMENT_IMAGE }}"
         env:
           PREFECT_API_URL: http://prefect-api:4200/api
           MODE: staging
@@ -28,7 +28,7 @@ deployments:
     work_pool:
       name: docker-pool
       job_variables:
-        image: "{{ image }}"
+        image: "{{ $PREFECT_DEPLOYMENT_IMAGE }}"
         env:
           MODE: prod
           PREFECT_EVENTS_ENABLED: "false"
@@ -47,7 +47,7 @@ deployments:
     work_pool:
       name: docker-pool
       job_variables:
-        image: "{{ image }}"
+        image: "{{ $PREFECT_DEPLOYMENT_IMAGE }}"
         env:
           MODE: staging
     tags: ["staging", "arcgis"]
@@ -57,7 +57,7 @@ deployments:
     work_pool:
       name: docker-pool
       job_variables:
-        image: "{{ image }}"
+        image: "{{ $PREFECT_DEPLOYMENT_IMAGE }}"
         env:
           MODE: prod
     tags: ["prod", "arcgis"]
@@ -70,7 +70,7 @@ deployments:
     work_pool:
       name: docker-pool
       job_variables:
-        image: "{{ image }}"
+        image: "{{ $PREFECT_DEPLOYMENT_IMAGE }}"
         env:
           MODE: staging
     tags: ["staging", "arcgis"]
@@ -80,7 +80,7 @@ deployments:
     work_pool:
       name: docker-pool
       job_variables:
-        image: "{{ image }}"
+        image: "{{ $PREFECT_DEPLOYMENT_IMAGE }}"
         env:
           MODE: prod
     tags: ["prod", "arcgis"]
@@ -93,7 +93,7 @@ deployments:
     work_pool:
       name: docker-pool
       job_variables:
-        image: "{{ image }}"
+        image: "{{ $PREFECT_DEPLOYMENT_IMAGE }}"
         env:
           MODE: staging
     tags: ["staging", "arcgis"]
@@ -103,7 +103,7 @@ deployments:
     work_pool:
       name: docker-pool
       job_variables:
-        image: "{{ image }}"
+        image: "{{ $PREFECT_DEPLOYMENT_IMAGE }}"
         env:
           MODE: prod
     tags: ["prod", "arcgis"]
@@ -116,7 +116,7 @@ deployments:
     work_pool:
       name: docker-pool
       job_variables:
-        image: "{{ image }}"
+        image: "{{ $PREFECT_DEPLOYMENT_IMAGE }}"
         env:
           MODE: staging
     tags: ["staging", "arcgis"]
@@ -126,7 +126,7 @@ deployments:
     work_pool:
       name: docker-pool
       job_variables:
-        image: "{{ image }}"
+        image: "{{ $PREFECT_DEPLOYMENT_IMAGE }}"
         env:
           MODE: prod
     tags: ["prod", "arcgis"]
@@ -139,7 +139,7 @@ deployments:
     work_pool:
       name: docker-pool
       job_variables:
-        image: "{{ image }}"
+        image: "{{ $PREFECT_DEPLOYMENT_IMAGE }}"
         env:
           MODE: staging
     tags: ["staging", "arcgis"]
@@ -149,7 +149,7 @@ deployments:
     work_pool:
       name: docker-pool
       job_variables:
-        image: "{{ image }}"
+        image: "{{ $PREFECT_DEPLOYMENT_IMAGE }}"
         env:
           MODE: prod
     tags: ["prod", "arcgis"]
