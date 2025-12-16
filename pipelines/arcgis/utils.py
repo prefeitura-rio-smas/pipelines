@@ -32,7 +32,7 @@ def _get_arcgis_token() -> str:
         "referer": url,
     }
 
-    logger.info(f"Gerando token para conta {account}...")
+    logger.info("Gerando token para conta SIURB...")
 
     try:
         response = requests.post(token_url, data=params, timeout=30)
@@ -87,7 +87,6 @@ def get_feature_layer(feature_id: str, layer: int) -> str:
     return layer_url
 
 def fetch_dataframe(
-    account: str,
     feature_id: str,
     layer: int,
     where: str = "1=1",
@@ -98,7 +97,7 @@ def fetch_dataframe(
     import prefect
     logger = prefect.get_run_logger()
 
-    logger.info(f"Iniciando fetch_dataframe - conta: {account}, feature_id: {feature_id}, layer: {layer}")
+    logger.info(f"Iniciando fetch_dataframe - feature_id: {feature_id}, layer: {layer}")
 
     # Construct the query URL
     base_url = _get_arcgis_url()
@@ -165,7 +164,6 @@ def fetch_dataframe(
 def download_data_from_arcgis_task(
     feature_id: str,
     layer: int,
-    account: str,
     where: str = "1=1",
     max_records: int = 5000,
     return_geometry: bool = False,
@@ -280,7 +278,6 @@ def download_data_from_arcgis_task(
     return dataframe
 
 def fetch_features_in_chunks(
-    account: str,
     feature_id: str,
     layer: int,
     where: str = "1=1",
@@ -294,9 +291,9 @@ def fetch_features_in_chunks(
     import prefect
     logger = prefect.get_run_logger()
 
-    logger.info(f"Iniciando fetch_features_in_chunks - conta: {account}, feature_id: {feature_id}, layer: {layer}")
+    logger.info(f"Iniciando fetch_features_in_chunks - feature_id: {feature_id}, layer: {layer}")
 
-    base_url = _get_arcgis_url(account)
+    base_url = _get_arcgis_url()
     url = f"{base_url}/sharing/rest/content/items/{feature_id}/layers/{layer}/query"
 
     # 1. Obter o número total de registros
