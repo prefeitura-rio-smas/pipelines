@@ -51,7 +51,7 @@ def _get_arcgis_url() -> str:
     return settings.SIURB_URL
 
 @lru_cache(maxsize=10)
-def get_layer_service_url(account: str, feature_id: str) -> str:
+def get_layer_service_url(feature_id: str) -> str:
     """Gets the service URL for a given feature item."""
     import prefect
     logger = prefect.get_run_logger()
