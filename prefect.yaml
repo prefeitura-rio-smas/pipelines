@@ -19,6 +19,12 @@ deployments:
         image: "{{ image }}"
         env:
           MODE: staging
+          PREFECT_EVENTS_ENABLED: "false"
+          PREFECT_SERVER_EVENTS_ENABLED: "false"
+          PREFECT_EVENTS_MESSAGING_ENABLED: "false"
+          PREFECT_SERVER_SERVICES_EVENT_PERSISTER_ENABLED: "false"
+          PREFECT_SERVER_SERVICES_EVENT_LOGGER_ENABLED: "false"
+          PREFECT_SERVER_EVENTS_STREAM_OUT_ENABLED: "false"
     tags: ["staging", "arcgis"]
 
   - name: abordagem-prod
@@ -29,6 +35,12 @@ deployments:
         image: "{{ image }}"
         env:
           MODE: prod
+          PREFECT_EVENTS_ENABLED: "false"
+          PREFECT_SERVER_EVENTS_ENABLED: "false"
+          PREFECT_EVENTS_MESSAGING_ENABLED: "false"
+          PREFECT_SERVER_SERVICES_EVENT_PERSISTER_ENABLED: "false"
+          PREFECT_SERVER_SERVICES_EVENT_LOGGER_ENABLED: "false"
+          PREFECT_SERVER_EVENTS_STREAM_OUT_ENABLED: "false"
     tags: ["prod", "arcgis"]
 
   # ---------------------------------------------------------------------------
