@@ -8,6 +8,10 @@ on:
   pull_request:
   workflow_dispatch:
 
+env:
+  PYTHON_VERSION_BUILD: '3.13'  # Versão usada nos jobs de build/test
+  PYTHON_VERSION_DEPLOY: '3.12'  # Versão compatível com o worker pool Docker do Prefect
+
 
 jobs:
   # -----------------------------------------------------------------------------
@@ -24,7 +28,7 @@ jobs:
           version: "0.4.15"
 
       - name: Set up Python
-        run: uv python install 3.13
+        run: uv python install ${{ env.PYTHON_VERSION_BUILD }}
 
       - name: Install dependencies
         run: uv sync --all-extras --dev
@@ -49,7 +53,7 @@ jobs:
         uses: astral-sh/setup-uv@v3
 
       - name: Set up Python
-        run: uv python install 3.13
+        run: uv python install ${{ env.PYTHON_VERSION_BUILD }}
 
       - name: Install dependencies (incluindo dbt)
         run: uv sync
@@ -74,7 +78,7 @@ jobs:
       - name: Set up Python
         uses: actions/setup-python@v5
         with:
-          python-version: '3.12'
+          python-version: ${{ env.PYTHON_VERSION_DEPLOY }}
 
       - name: Install Prefect CLI
         run: pip install prefect prefect-docker
@@ -85,15 +89,15 @@ jobs:
           # Define o repositório da imagem (lowercase para garantir compatibilidade docker)
           REPO="ghcr.io/${{ github.repository_owner }}/pipelines-rj-smas"
           echo "IMAGE_REPO=${REPO,,}" >> $GITHUB_ENV
-          
+
           # Define a tag baseada na branch e SHA curto
           SHA_SHORT=$(git rev-parse --short HEAD)
+          REF_NAME="${{ github.ref_name }}"
           if [[ "${{ github.ref }}" == 'refs/heads/main' ]]; then
              echo "TAG=prod-${SHA_SHORT}" >> $GITHUB_ENV
           else
-             # Extrai o nome da branch limpo (ex: staging/arcgis -> staging-arcgis)
-             # Substitui barra por hifen
-             BRANCH_NAME=$(echo "${{ github.ref_name }}" | sed 's/\///-/g')
+             # Substitui barras por hífens no nome da branch
+             BRANCH_NAME="${REF_NAME//\//-}"
              echo "TAG=${BRANCH_NAME}-${SHA_SHORT}" >> $GITHUB_ENV
           fi
 
