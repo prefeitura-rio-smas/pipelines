@@ -13,14 +13,9 @@ class Settings(BaseSettings):
     MODE: Literal["dev", "staging", "prod"] = "dev"
 
     # --- ArcGIS (Credenciais) ---
-    AGOL_URL: str
-    AGOL_USER: str
-    AGOL_PWD: str
     SIURB_URL: str
     SIURB_USER: str
     SIURB_PWD: str
-    AGOL_LAYER_ID: str
-    SIURB_LAYER_ID: str
 
     # --- GCP (Configurados dinamicamente baseados no MODE) ---
     GCP_PROJECT: str | None = None

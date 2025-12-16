@@ -13,22 +13,15 @@ from .constants import settings
 
 
 # ---------- ArcGIS ----------
-@lru_cache(maxsize=2)
-def _get_arcgis_token(account: Literal["siurb", "agol"]) -> str:
-    """Gets an ArcGIS token for the specified account."""
+@lru_cache(maxsize=1)
+def _get_arcgis_token() -> str:
+    """Gets an ArcGIS token for the SIURB account."""
     import prefect
     logger = prefect.get_run_logger()
 
-    if account == "siurb":
-        url = settings.SIURB_URL
-        user = settings.SIURB_USER
-        pwd = settings.SIURB_PWD
-    elif account == "agol":
-        url = settings.AGOL_URL
-        user = settings.AGOL_USER
-        pwd = settings.AGOL_PWD
-    else:
-        raise ValueError("account must be 'siurb' or 'agol'")
+    url = settings.SIURB_URL
+    user = settings.SIURB_USER
+    pwd = settings.SIURB_PWD
 
     token_url = f"{url}/sharing/rest/generateToken"
 
@@ -53,13 +46,9 @@ def _get_arcgis_token(account: Literal["siurb", "agol"]) -> str:
         logger.error(f"Erro ao gerar token: {e}")
         raise ValueError(f"Erro ao gerar token: {e}")
 
-def _get_arcgis_url(account: Literal["siurb", "agol"]) -> str:
-    """Get the base URL for the specified account."""
-    if account == "siurb":
-        return settings.SIURB_URL
-    if account == "agol":
-        return settings.AGOL_URL
-    raise ValueError("account must be 'siurb' or 'agol'")
+def _get_arcgis_url() -> str:
+    """Get the base URL for the SIURB account."""
+    return settings.SIURB_URL
 
 @lru_cache(maxsize=10)
 def get_layer_service_url(account: str, feature_id: str) -> str:
@@ -69,8 +58,8 @@ def get_layer_service_url(account: str, feature_id: str) -> str:
 
     logger.info(f"Buscando Service URL para feature_id: {feature_id}")
 
-    base_url = _get_arcgis_url(account)
-    token = _get_arcgis_token(account)
+    base_url = _get_arcgis_url()
+    token = _get_arcgis_token()
 
     item_url = f"{base_url}/sharing/rest/content/items/{feature_id}"
     params = {"f": "json", "token": token}
@@ -88,11 +77,11 @@ def get_layer_service_url(account: str, feature_id: str) -> str:
         logger.error(f"Erro ao buscar detalhes do item: {e}")
         raise ValueError(f"Erro ao buscar detalhes do item: {e}")
 
-def get_feature_layer(account: str, feature_id: str, layer: int) -> str:
+def get_feature_layer(feature_id: str, layer: int) -> str:
     """
     Returns the URL for the feature layer instead of the ArcGIS object.
     """
-    base_url = _get_arcgis_url(account)
+    base_url = _get_arcgis_url()
     # Construct the URL to the specific feature layer
     layer_url = f"{base_url}/sharing/rest/content/items/{feature_id}/layers/{layer}?f=json"
     return layer_url
@@ -112,7 +101,7 @@ def fetch_dataframe(
     logger.info(f"Iniciando fetch_dataframe - conta: {account}, feature_id: {feature_id}, layer: {layer}")
 
     # Construct the query URL
-    base_url = _get_arcgis_url(account)
+    base_url = _get_arcgis_url()
     query_url = f"{base_url}/sharing/rest/content/items/{feature_id}/layers/{layer}/query"
 
     params = {
@@ -188,7 +177,7 @@ def download_data_from_arcgis_task(
     import prefect
     logger = prefect.get_run_logger()
 
-    base_url = _get_arcgis_url(account)
+    base_url = _get_arcgis_url()
     url = f"{base_url}/sharing/rest/content/items/{feature_id}/layers/{layer}/query"
     url = url[:-1] if url.endswith("/") else url
     url = url + "/query" if not url.endswith("/query") else url

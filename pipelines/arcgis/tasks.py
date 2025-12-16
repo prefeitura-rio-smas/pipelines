@@ -15,20 +15,19 @@ from .utils import add_timestamp, bq_client, dataset_ref
 def get_feature_layer_metadata(
     feature_id: str,
     layer_idx: int,
-    account: str,
 ):
     """
     Obtém metadados da camada ArcGIS como número total de registros.
     """
     logger = prefect.get_run_logger()
-    logger.info(f"Obtendo metadados para feature_id: {feature_id}, layer: {layer_idx}, account: {account}")
+    logger.info(f"Obtendo metadados para feature_id: {feature_id}, layer: {layer_idx}")
 
     import requests
 
     from .utils import _get_arcgis_token, get_layer_service_url
 
-    service_url = get_layer_service_url(account, feature_id)
-    token = _get_arcgis_token(account)
+    service_url = get_layer_service_url(feature_id)
+    token = _get_arcgis_token()
     url = f"{service_url}/{layer_idx}/query"
 
     params = {
@@ -134,15 +133,15 @@ def atomic_replace_raw_table(
 
 
 @task
-def get_layer_info(feature_id: str, layer_idx: int, account: str) -> dict:
+def get_layer_info(feature_id: str, layer_idx: int) -> dict:
     """Gets the schema and CRS of an ArcGIS layer."""
     logger = prefect.get_run_logger()
     logger.info(f"Obtendo schema e CRS para feature_id: {feature_id}, layer: {layer_idx}")
     import requests
 
     from .utils import _get_arcgis_token, get_layer_service_url
-    service_url = get_layer_service_url(account, feature_id)
-    token = _get_arcgis_token(account)
+    service_url = get_layer_service_url(feature_id)
+    token = _get_arcgis_token()
     url = f"{service_url}/{layer_idx}"
     params = {"f": "json", "token": token}
     try:
@@ -181,7 +180,6 @@ def load_arcgis_to_bigquery(
     layer_name: str,
     feature_id: str,
     layer_idx: int,
-    account: str,
     return_geometry: bool,
     batch_size: int = 20000,
     order_by_field: str = None,
@@ -198,8 +196,8 @@ def load_arcgis_to_bigquery(
     staging_table = f"{final_table}_staging_{timestamp}"
     logger.info(f"Tabela final: {final_table}, Tabela de Staging: {staging_table}")
 
-    layer_info = get_layer_info(feature_id=feature_id, layer_idx=layer_idx, account=account)
-    total_records = get_feature_layer_metadata(feature_id=feature_id, layer_idx=layer_idx, account=account)
+    layer_info = get_layer_info(feature_id=feature_id, layer_idx=layer_idx)
+    total_records = get_feature_layer_metadata(feature_id=feature_id, layer_idx=layer_idx)
     bq_schema = arcgis_to_bq_schema(layer_info["fields"], return_geometry)
     source_crs_wkid = layer_info.get("crs", {}).get("wkid")
 
@@ -227,8 +225,8 @@ def load_arcgis_to_bigquery(
 
         from .utils import _get_arcgis_token, get_layer_service_url
 
-        service_url = get_layer_service_url(account, feature_id)
-        token = _get_arcgis_token(account)
+        service_url = get_layer_service_url(feature_id)
+        token = _get_arcgis_token()
         url = f"{service_url}/{layer_idx}/query"
 
         params = {

@@ -21,6 +21,9 @@ deployments:
         env:
           PREFECT_API_URL: http://prefect-api:4200/api
           MODE: staging
+          SIURB_URL: "{{ $SIURB_URL }}"
+          SIURB_USER: "{{ $SIURB_USER }}"
+          SIURB_PWD: "{{ $SIURB_PWD }}"
     tags: ["staging", "arcgis"]
 
   - name: abordagem-prod
@@ -37,119 +40,7 @@ deployments:
           PREFECT_SERVER_SERVICES_EVENT_PERSISTER_ENABLED: "false"
           PREFECT_SERVER_SERVICES_EVENT_LOGGER_ENABLED: "false"
           PREFECT_SERVER_EVENTS_STREAM_OUT_ENABLED: "false"
-    tags: ["prod", "arcgis"]
-
-  # ---------------------------------------------------------------------------
-  # Cartão Primeira Infância Carioca
-  # ---------------------------------------------------------------------------
-  - name: cartao-pic-staging
-    entrypoint: pipelines/arcgis/cartao_primeira_infancia_carioca/flows.py:cartao_primeira_infancia_carioca_flow
-    work_pool:
-      name: docker-pool
-      job_variables:
-        image: "{{ $PREFECT_DEPLOYMENT_IMAGE }}"
-        env:
-          MODE: staging
-    tags: ["staging", "arcgis"]
-
-  - name: cartao-pic-prod
-    entrypoint: pipelines/arcgis/cartao_primeira_infancia_carioca/flows.py:cartao_primeira_infancia_carioca_flow
-    work_pool:
-      name: docker-pool
-      job_variables:
-        image: "{{ $PREFECT_DEPLOYMENT_IMAGE }}"
-        env:
-          MODE: prod
-    tags: ["prod", "arcgis"]
-
-  # ---------------------------------------------------------------------------
-  # CRAS/CAS Polígonos
-  # ---------------------------------------------------------------------------
-  - name: cras-cas-poligonos-staging
-    entrypoint: pipelines/arcgis/cras_cas_poligonos/flows.py:cras_cas_poligonos_flow
-    work_pool:
-      name: docker-pool
-      job_variables:
-        image: "{{ $PREFECT_DEPLOYMENT_IMAGE }}"
-        env:
-          MODE: staging
-    tags: ["staging", "arcgis"]
-
-  - name: cras-cas-poligonos-prod
-    entrypoint: pipelines/arcgis/cras_cas_poligonos/flows.py:cras_cas_poligonos_flow
-    work_pool:
-      name: docker-pool
-      job_variables:
-        image: "{{ $PREFECT_DEPLOYMENT_IMAGE }}"
-        env:
-          MODE: prod
-    tags: ["prod", "arcgis"]
-
-  # ---------------------------------------------------------------------------
-  # Equipamentos
-  # ---------------------------------------------------------------------------
-  - name: equipamentos-staging
-    entrypoint: pipelines/arcgis/equipamentos/flows.py:equipamentos_flow
-    work_pool:
-      name: docker-pool
-      job_variables:
-        image: "{{ $PREFECT_DEPLOYMENT_IMAGE }}"
-        env:
-          MODE: staging
-    tags: ["staging", "arcgis"]
-
-  - name: equipamentos-prod
-    entrypoint: pipelines/arcgis/equipamentos/flows.py:equipamentos_flow
-    work_pool:
-      name: docker-pool
-      job_variables:
-        image: "{{ $PREFECT_DEPLOYMENT_IMAGE }}"
-        env:
-          MODE: prod
-    tags: ["prod", "arcgis"]
-
-  # ---------------------------------------------------------------------------
-  # Gestão Vagas
-  # ---------------------------------------------------------------------------
-  - name: gestao-vagas-staging
-    entrypoint: pipelines/arcgis/gestao_vagas/flows.py:gestao_vagas_flow
-    work_pool:
-      name: docker-pool
-      job_variables:
-        image: "{{ $PREFECT_DEPLOYMENT_IMAGE }}"
-        env:
-          MODE: staging
-    tags: ["staging", "arcgis"]
-
-  - name: gestao-vagas-prod
-    entrypoint: pipelines/arcgis/gestao_vagas/flows.py:gestao_vagas_flow
-    work_pool:
-      name: docker-pool
-      job_variables:
-        image: "{{ $PREFECT_DEPLOYMENT_IMAGE }}"
-        env:
-          MODE: prod
-    tags: ["prod", "arcgis"]
-
-  # ---------------------------------------------------------------------------
-  # Limite Bairros 25
-  # ---------------------------------------------------------------------------
-  - name: limite-bairros-25-staging
-    entrypoint: pipelines/arcgis/limite_bairros_25/flows.py:limite_bairros_25_flow
-    work_pool:
-      name: docker-pool
-      job_variables:
-        image: "{{ $PREFECT_DEPLOYMENT_IMAGE }}"
-        env:
-          MODE: staging
-    tags: ["staging", "arcgis"]
-
-  - name: limite-bairros-25-prod
-    entrypoint: pipelines/arcgis/limite_bairros_25/flows.py:limite_bairros_25_flow
-    work_pool:
-      name: docker-pool
-      job_variables:
-        image: "{{ $PREFECT_DEPLOYMENT_IMAGE }}"
-        env:
-          MODE: prod
+          SIURB_URL: "{{ $SIURB_URL }}"
+          SIURB_USER: "{{ $SIURB_USER }}"
+          SIURB_PWD: "{{ $SIURB_PWD }}"
     tags: ["prod", "arcgis"]
