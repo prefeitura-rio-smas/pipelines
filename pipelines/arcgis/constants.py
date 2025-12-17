@@ -39,7 +39,7 @@ class Settings(BaseSettings):
         Define as configurações do GCP com base no MODE e gerencia autenticação.
         """
         import tempfile
-
+        
         mode = self.MODE
 
         # Defaults por ambiente
@@ -79,6 +79,8 @@ class Settings(BaseSettings):
         # 1. Se recebermos o CONTEÚDO do JSON (cenário Server/CI/Docker)
         if self.GCP_CREDENTIALS and self.GCP_CREDENTIALS.strip().startswith("{"):
             # Cria um arquivo temporário com as credenciais
+            # Usamos delete=False para que o arquivo persista durante a execução
+            # O SO limpará /tmp eventualmente, ou o container morrerá
             with tempfile.NamedTemporaryFile(mode='w', delete=False, suffix='.json') as f:
                 f.write(self.GCP_CREDENTIALS)
                 temp_cred_path = f.name
