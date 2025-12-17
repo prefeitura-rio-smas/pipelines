@@ -133,6 +133,7 @@ jobs:
         if: startsWith(github.ref, 'refs/heads/staging/')
         run: |
           export PREFECT_DEPLOYMENT_IMAGE="${{ env.IMAGE_REPO }}:${{ env.TAG }}" && \
+          export GCP_CREDENTIALS="${{ secrets.GCP_CREDENTIALS }}" && \
           export SIURB_URL="${{ secrets.SIURB_URL }}" && \
           export SIURB_USER="${{ secrets.SIURB_USER }}" && \
           export SIURB_PWD="${{ secrets.SIURB_PWD }}" && \
@@ -143,4 +144,5 @@ jobs:
         if: github.ref == 'refs/heads/main'
         run: |
           export PREFECT_DEPLOYMENT_IMAGE="${{ env.IMAGE_REPO }}:${{ env.TAG }}" && \
-          prefect deploy --name "*-prod"
+          export GCP_CREDENTIALS="${{ secrets.GCP_CREDENTIALS }}" && \
+          export SIURB_URL="${{ secrets.SIURB_URL }}" && \
