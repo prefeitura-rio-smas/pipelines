@@ -5,7 +5,7 @@ WITH tratar_violacoes_direito AS (
     SELECT 
     NOME_USUARIO,
     ID_USUARIO,
-    NULLIF(TRIM(VIOLACAO_DIREITO),  '') AS VIOLACAO_DIREITO
+    NULLIF(TRIM(VIOLACAO_DIREITO),  '') AS violacao_direito
     FROM {{ ref('relatorio_geral')}}
     WHERE VIOLACAO_DIREITO != 'N'
 ),
@@ -15,16 +15,16 @@ tipo_violacao_direito_unnest AS (
     SELECT
     NOME_USUARIO,
     ID_USUARIO,
-    VIOLACAO_DIREITO
+    violacao_direito
     FROM tratar_violacoes_direito,
-    UNNEST(SPLIT(VIOLACAO_DIREITO, ',')) AS VIOLACAO_DIREITO
+    UNNEST(SPLIT(VIOLACAO_DIREITO, ',')) AS violacao_direito
 ),
 
 -- Tabela para fazer a equivalência do tipo de deficiência
 tabela_auxiliar_violacao_direito_tratada AS (
     SELECT
-    NOME_USUARIO,
-    ID_USUARIO,
+    NOME_USUARIO as nome_usuario,
+    ID_USUARIO as seqpac,
     {{ map_coluna_violacao_de_direito('VIOLACAO_DIREITO') }}
     FROM tipo_violacao_direito_unnest
 )

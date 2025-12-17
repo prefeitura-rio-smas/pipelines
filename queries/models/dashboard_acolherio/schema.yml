@@ -25,12 +25,15 @@ sources:
       - name: gh_us_config
       - name: gh_us_tipo
       - name: gh_contas_modulos
+      - name: gh_famil_servassist
+      - name: gh_famil_vulnerab
   - name: dashboard_acolherio
     database: rj-smas-dev
     schema: dashboard_acolherio
     tables:
       - name: filtro_email_dev
       - name: violacao_direito
+      - name: contas_associadas
     
 
 models:

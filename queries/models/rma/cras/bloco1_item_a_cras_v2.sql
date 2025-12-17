@@ -1,4 +1,4 @@
-{{ config(materialized='table') }}
+{{ config(materialized='ephemeral') }}
 -- Item A1
 WITH total_acompanhamento_paif_por_unidade AS (
     SELECT 
@@ -22,7 +22,6 @@ total_acompanhamento_paif_novos_mes_atual AS (
         unidade,
         COUNT(seqfamil) AS total_familias_acomp_paif_mes_atual
     FROM filtro_mes_atual
-    WHERE mes_cadastro_assist = mes_atual
     GROUP BY unidade
 ),
 

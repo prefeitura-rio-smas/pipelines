@@ -50,3 +50,4 @@ WITH usuario_cadastrado AS (
 )
 
 SELECT DISTINCT * FROM usuario_cadastrado
+

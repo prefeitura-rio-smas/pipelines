@@ -3,6 +3,8 @@
 /*
 Esta tabela pega todos os membros das famílias inseridas no ACOMPANHAMENTO PAEFI do mês alvo.
 A contagem de famílias ou indivíduos inseridos no ACOMPANHAMENTO PAEFI é feita por INDIVÍDUO
+
+A contagem está sendo por família e não por indivíduo
 */
 
 -- Busca famílias com ACOMPANHAMENTO PAEFI
@@ -27,33 +29,56 @@ membro_familia  AS (
     SELECT 
         a.seqfamil,
         b.seqmembro,
+        a.datcadastr,
         a.mes_cadastro,
         b.seqpac,
         b.datsaida
     from base_table a 
     LEFT JOIN rj-smas.brutos_acolherio_staging.gh_familias_membros b ON a.seqfamil = b.seqfamil
+    WHERE seqmembro = 1
 ),
 
--- Filtra unidades para cada família
-filtro_unidade AS (
+-- Filtrando membro indívidual de cada família
+membro_ind AS (
 SELECT 
 a.seqfamil,
 a.seqmembro,
 a.seqpac,
 a.mes_cadastro,
-c.dscus,
-b.datnascim AS data_nascimento
+b.datnascim AS data_nascimento,
+b.dscnomepac AS nome_usuario,
+b.sequsref
 FROM membro_familia a
 INNER JOIN rj-smas.brutos_acolherio_staging.gh_cidadao_pac b ON a.seqpac = b.seqpac
-LEFT JOIN rj-smas.brutos_acolherio_staging.gh_us c ON b.sequsref = c.sequs
 WHERE datsaida IS NULL
+),
+
+retirando_testes AS (
+    SELECT
+        *
+    FROM   membro_ind
+    WHERE NOT REGEXP_CONTAINS(nome_usuario, r'(?i)teste')
+),
+
+filtro_unidade AS (
+    SELECT
+        a.seqfamil,
+        a.seqmembro,
+        a.seqpac,
+        a.mes_cadastro,
+        a.data_nascimento,
+        a.nome_usuario,
+        a.sequsref,
+        b.dscus
+    FROM retirando_testes a 
+    LEFT JOIN rj-smas.brutos_acolherio_staging.gh_us b ON a.sequsref = b.sequs
 ),
 
 -- Total de indivíduos em acompanhamento PAEFI no sistema (Item A1 do RMA - CREAS)
 a1 AS (
     SELECT
         dscus,
-        COUNT(*) as total_paefi_sistema
+        COUNT(DISTINCT(seqpac)) as total_paefi_sistema
     FROM filtro_unidade
     GROUP BY dscus
 ),
@@ -62,7 +87,7 @@ a1 AS (
 a2 AS (
 SELECT
     dscus,
-    COUNT(*) as total_novos_paefi_11
+    COUNT(DISTINCT(seqpac)) as total_novos_paefi_11
  FROM filtro_unidade
  WHERE mes_cadastro = 11
  GROUP BY dscus
@@ -81,3 +106,4 @@ SELECT
 FROM dscus_all a
 LEFT JOIN a1 b ON a.dscus = b.dscus
 LEFT JOIN a2 c ON a.dscus = c.dscus
+

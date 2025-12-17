@@ -49,27 +49,56 @@ tipo_beneficios AS (
 usuarios_bolsa_familia AS (
     SELECT
         a.id_usuario,
+        b.mes_cadastro,
         a.beneficio,
+        b.datsaida,
         b.seqmembro,
         b.seqfamil
     FROM tipo_beneficios a
     INNER JOIN membro_familia b ON a.id_usuario = b.seqpac
     WHERE seqmembro = 1
+    
 ),
 
 -- Tabela para consultar a respectiva unidade de cada membro
-filtro_unidade AS (
+membro_ind AS (
 SELECT 
 a.seqfamil,
+a.mes_cadastro,
+a.datsaida,
 a.id_usuario,
+a.seqmembro,
 a.beneficio,
-c.dscus,
-b.datnascim AS data_nascimento
+b.datnascim AS data_nascimento,
+b.dscnomepac AS nome_usuario,
+b.sequsref
 FROM usuarios_bolsa_familia a
 INNER JOIN rj-smas.brutos_acolherio_staging.gh_cidadao_pac b ON a.id_usuario = b.seqpac
-LEFT JOIN rj-smas.brutos_acolherio_staging.gh_us c ON b.sequsref = c.sequs
 ),
 
+retirando_testes AS (
+    SELECT
+        *
+    FROM   membro_ind
+    WHERE NOT REGEXP_CONTAINS(nome_usuario, r'(?i)teste')
+    AND datsaida IS NULL
+),
+
+
+filtro_unidade AS (
+    SELECT
+        a.seqfamil,
+        a.beneficio,
+        a.seqmembro,
+        a.id_usuario,
+        a.mes_cadastro,
+        a.data_nascimento,
+        a.nome_usuario,
+        a.sequsref,
+        b.dscus
+    FROM retirando_testes a 
+    LEFT JOIN rj-smas.brutos_acolherio_staging.gh_us b ON a.sequsref = b.sequs
+),
 -- Query para buscar famílias beneficiários do Bolsa Família (ITEM B1 - RMA CREAS)
 b1 AS (
 SELECT 
@@ -146,3 +175,4 @@ LEFT JOIN b1 a ON gh_us.dscus = a.dscus
 LEFT JOIN b2 b ON gh_us.dscus = b.dscus
 LEFT JOIN b3 c ON gh_us.dscus = c.dscus
 LEFT JOIN b6 d ON gh_us.dscus = d.dscus
+

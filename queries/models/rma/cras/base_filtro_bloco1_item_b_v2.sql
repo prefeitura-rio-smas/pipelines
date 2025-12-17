@@ -11,10 +11,11 @@ WITH filtro_paif_ativo AS (
         seqfamil,
         seqlogincad,
         datcadastr,
+        EXTRACT(MONTH FROM datcadastr) AS mes_cadastro_assist,
+        EXTRACT(MONTH FROM CURRENT_DATE()) AS mes_atual,
         seqservassist
     FROM {{ source('brutos_acolherio_staging', 'gh_famil_servassist') }}
     WHERE datcancel IS NULL
-    AND seqservassist = 1
     AND seqlogincad NOT IN (SELECT seqlogin FROM {{ source('brutos_acolherio_staging', 'gh_contas_us') }} WHERE datacesso IS NOT NULL) 
 ),
 
@@ -24,6 +25,8 @@ membro_familia AS (
         a.seqfamil,
         a.seqlogincad,
         a.datcadastr,
+        a.mes_cadastro_assist,
+        a.mes_atual,
         b.seqmembro,
         b.seqpac,
         b.datsaida
@@ -37,11 +40,12 @@ SELECT
     a.seqfamil,
     a.seqlogincad,
     a.datcadastr,
+    a.mes_cadastro_assist,
+    a.mes_atual,
     a.seqmembro,
     a.seqpac,
     b.dscnomepac AS nome_usuario,
-    b.sequsref,
-    b.datnascim AS data_nascimento
+    b.datnascim AS data_nascimento,
 FROM membro_familia a
 INNER JOIN {{ source('brutos_acolherio_staging', 'gh_cidadao_pac') }} b ON a.seqpac = b.seqpac
 WHERE datsaida IS NULL -- Membro presente na família. Se não for null é porque ele não pertence mais à familia.
@@ -55,25 +59,28 @@ remover_usuarios_testes as (
   WHERE NOT REGEXP_CONTAINS(nome_usuario, r'(?i)teste')
 ),
 
--- Agrupa todos os membros por família, o login que fez o cadastro do PAIF dessa família e data do cadastro. Esta função verifica se há dados duplicados 
-agrupar_familia_cadastro_paif AS (
-SELECT 
-*, 
-ROW_NUMBER() OVER (
-  PARTITION BY seqfamil, seqlogincad, datcadastr
-  ORDER BY seqmembro ASC
-) AS quantidade
-FROM remover_usuarios_testes
+tipo_beneficios AS (
+  SELECT 
+    id_usuario,
+    beneficio
+  FROM {{ ref('tipo_beneficio')}}
+  WHERE id_usuario IS NOT NULL
 ),
 
-apenas_rf AS (
-SELECT * FROM agrupar_familia_cadastro_paif a 
-INNER JOIN rj-smas-dev.dashboard_acolherio.contas_associadas b ON a.seqlogincad = b.seqlogin
-WHERE a.quantidade = 1
-ORDER BY seqlogin DESC
+usuarios_com_beneficio_ativos_paif AS (
+    SELECT
+        a.id_usuario,
+        b.data_nascimento,
+        b.mes_cadastro_assist,
+        b.mes_atual,
+        a.beneficio,
+        b.seqmembro,
+        b.seqfamil,
+        b.seqlogincad
+    FROM tipo_beneficios a
+    INNER JOIN remover_usuarios_testes b ON a.id_usuario = b.seqpac
 ),
 
--- Pegar os profissionais de cada unidade
 profissionais_unidade AS (
   SELECT
     unidade,
@@ -88,16 +95,22 @@ profissionais_unidade AS (
 tabela_final_profissional_cadastrante_com_unidade AS (
 SELECT 
   a.seqfamil,
+  a.data_nascimento,
+  a.mes_cadastro_assist,
+  a.mes_atual,
+  a.beneficio,
+  a.seqmembro,
   a.seqlogincad,
-  a.datcadastr,
-  a.seqpac,
+  a.id_usuario,
   b.unidade,
   b.profissional,
   b.operador,
   b.perfil_acesso
-  FROM apenas_rf a
+  FROM usuarios_com_beneficio_ativos_paif a
   INNER JOIN profissionais_unidade b ON a.seqlogincad = b.seqlogin
 )
 
-SELECT * FROM tabela_final_profissional_cadastrante_com_unidade
-
+SELECT 
+    *,
+    DATE_DIFF(CURRENT_DATE(), data_nascimento, YEAR) AS idade
+FROM tabela_final_profissional_cadastrante_com_unidade

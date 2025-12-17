@@ -1,0 +1,22 @@
+version : 2
+
+sources:
+  - name: cras_rma_dev
+    database: rj-smas-dev
+    schema: dashboard_acolherio
+    tables:
+      - name: contas_associadas
+      - name: tipo_beneficio
+      - name: violacao_direito
+  - name: cras_rma_prod
+    database: rj-smas
+    schema: brutos_acolherio_staging
+    tables:
+      - name: gh_famil_servassist
+      - name: gh_us
+      - name: gh_cidadao_pac
+      - name: gh_contas_us
+      - name: gh_contas
+      - name: gh_familias_membros
+      - name: gh_famil_vulnerab
+
