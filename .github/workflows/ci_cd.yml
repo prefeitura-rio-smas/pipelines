@@ -131,18 +131,23 @@ jobs:
       # Deploy Staging: Roda apenas se for branch de staging
       - name: Deploy Staging Flows
         if: startsWith(github.ref, 'refs/heads/staging/')
+        env:
+          PREFECT_DEPLOYMENT_IMAGE: "${{ env.IMAGE_REPO }}:${{ env.TAG }}"
+          GCP_CREDENTIALS: ${{ secrets.GCP_CREDENTIALS }}
+          SIURB_URL: ${{ secrets.SIURB_URL }}
+          SIURB_USER: ${{ secrets.SIURB_USER }}
+          SIURB_PWD: ${{ secrets.SIURB_PWD }}
         run: |
-          export PREFECT_DEPLOYMENT_IMAGE="${{ env.IMAGE_REPO }}:${{ env.TAG }}" && \
-          export GCP_CREDENTIALS="${{ secrets.GCP_CREDENTIALS }}" && \
-          export SIURB_URL="${{ secrets.SIURB_URL }}" && \
-          export SIURB_USER="${{ secrets.SIURB_USER }}" && \
-          export SIURB_PWD="${{ secrets.SIURB_PWD }}" && \
           prefect deploy --name "*-staging"
 
       # Deploy Prod: Roda apenas se for branch main
       - name: Deploy Prod Flows
         if: github.ref == 'refs/heads/main'
+        env:
+          PREFECT_DEPLOYMENT_IMAGE: "${{ env.IMAGE_REPO }}:${{ env.TAG }}"
+          GCP_CREDENTIALS: ${{ secrets.GCP_CREDENTIALS }}
+          SIURB_URL: ${{ secrets.SIURB_URL }}
+          SIURB_USER: ${{ secrets.SIURB_USER }}
+          SIURB_PWD: ${{ secrets.SIURB_PWD }}
         run: |
-          export PREFECT_DEPLOYMENT_IMAGE="${{ env.IMAGE_REPO }}:${{ env.TAG }}" && \
-          export GCP_CREDENTIALS="${{ secrets.GCP_CREDENTIALS }}" && \
-          export SIURB_URL="${{ secrets.SIURB_URL }}" && \
+          prefect deploy --name "*-prod"
