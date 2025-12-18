@@ -38,6 +38,7 @@ ENV/
 # dbt
 **/target/
 dbt_packages/
+queries/dbt_internal_packages/
 **/logs/
 
 # ruff
