@@ -177,8 +177,7 @@ def create_bolsa_familia_table_if_not_exists(
 def load_bolsa_familia_to_bigquery(
     data_path: str | Path,
     dataset_id: str,
-    table_id: str,
-    batch_size: int = 10000
+    table_id: str
 ) -> int:
     """
     Load Bolsa Família data to BigQuery.
@@ -226,16 +225,16 @@ def load_bolsa_familia_to_bigquery(
                 if data_particao:
                     df["data_particao"] = data_particao
                 
-                # Upload batch to BigQuery
+                # Upload to BigQuery
                 if not df.empty:
                     job_config = bigquery.LoadJobConfig(
                         write_disposition="WRITE_APPEND",
                         schema_update_options=[bigquery.SchemaUpdateOption.ALLOW_FIELD_ADDITION]
                     )
-                    
+
                     job = client.load_table_from_dataframe(df, table_ref, job_config=job_config)
                     job.result()  # Wait for job to complete
-                    
+
                     rows_loaded = len(df)
                     total_rows_loaded += rows_loaded
                     logger.info(f"Loaded {rows_loaded} rows from {file_path.name}")

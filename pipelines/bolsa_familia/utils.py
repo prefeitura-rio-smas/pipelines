@@ -10,36 +10,37 @@ from google.cloud.storage.blob import Blob
 def parse_partition(blob: Blob) -> str:
     """
     Faz o parsing da partição de um blob do GCS baseado no nome do arquivo.
-    Este é um exemplo genérico - ajuste conforme a estrutura real dos arquivos do Bolsa Família.
+    Para Bolsa Família, o formato esperado é como: BEC.E2.BOD1.F03.C2508.P1466.A3304557.C.ZIP
+    Onde C2508 indica o mês de referência (C + YYMM, onde 25 = ano 2025, 08 = mês 08).
     """
-    # Exemplo de parsing baseado em um padrão no nome do arquivo
-    # Ajuste conforme o formato real dos arquivos do Bolsa Família
     name_parts = blob.name.split(".")
-    date_part = None
-    
-    # Procura por uma parte do nome que pareça com uma data
+
+    # Procura por uma parte que comece com "C" seguido de 6 dígitos (CYYMM)
     for part in name_parts:
-        if len(part) >= 6 and part.isdigit():  # YYYYMM ou YYYYMMDD
-            if len(part) == 6:
-                # Assume formato YYMMDD
-                date_part = part
-                break
-            elif len(part) == 8:
-                # Assume formato YYYYMMDD
-                date_part = part
-                break
-    
-    if date_part:
-        if len(date_part) == 6:
-            # YYMMDD format
-            parsed_date = datetime.strptime(date_part, "%y%m%d").strftime("%Y-%m-%d")
-        else:  # 8 digits
-            # YYYYMMDD format
-            parsed_date = datetime.strptime(date_part, "%Y%m%d").strftime("%Y-%m-%d")
-        return parsed_date
-    else:
-        # Retorna uma data padrão se não encontrar no nome
-        return datetime.now().strftime("%Y-%m-%d")
+        if part.startswith("C") and len(part) == 6 and part[1:].isdigit():
+            # Extrai YYMM do formato CYYMM
+            date_part = part[1:]  # Remove o "C", ex: "2508"
+            year = date_part[:2]   # "25"
+            month = date_part[2:]  # "08"
+
+            # Monta uma data no formato YYYY-MM-DD (primeiro dia do mês)
+            full_year = f"20{year}"  # Assume século 21, ex: "2025"
+            parsed_date = f"{full_year}-{month}-01"
+            return parsed_date
+
+    # Se não encontrar o padrão CYYMM, tenta o padrão do CadUnico (A + YYMMDD)
+    for part in name_parts:
+        if part.startswith("A") and len(part) >= 7:  # AYYMMDD ou A + mais dígitos
+            partition_info = part[1:]  # Remove o "A"
+            # Tenta encontrar um padrão YYMMDD dentro do restante
+            # Pode haver mais dígitos, então pegamos os 6 primeiros após A
+            date_str = partition_info[:6]
+            if len(date_str) == 6 and date_str.isdigit():
+                parsed_date = datetime.strptime(date_str, "%y%m%d").strftime("%Y-%m-%d")
+                return parsed_date
+
+    # Se não encontrar nenhum padrão conhecido, retorna uma data padrão
+    return datetime.now().strftime("%Y-%m-%d")
 
 
 def parse_txt_first_line(filepath: str) -> Tuple[str, str]:

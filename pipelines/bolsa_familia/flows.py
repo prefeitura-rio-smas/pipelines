@@ -1,5 +1,4 @@
-from prefect import flow, task
-from typing import List
+from prefect import flow
 from google.cloud.storage.blob import Blob
 
 from pipelines.bolsa_familia.tasks import (
@@ -21,11 +20,10 @@ def bolsa_familia_flow() -> None:
     """
     # Configuration for Bolsa Família
     job_name = "bolsa_familia"
-    dataset_id = settings.GCP_DATASET
+    dataset_id = settings.GCP_STAGING_DATASET  # Using staging dataset
     table_id = "registro_beneficios"
-    raw_prefix = "raw/bolsa_familia/registro_beneficios"
+    raw_prefix = "raw/bolsa_familia"
     bucket_name = settings.GCS_BUCKET
-    batch_size = 10000
 
     # Get project ID
     project_id = get_project_id_task()
@@ -36,26 +34,29 @@ def bolsa_familia_flow() -> None:
     # Get raw files to process
     raw_files = get_bolsa_familia_raw_files(raw_prefix, bucket_name)
 
-    # Process each raw file
-    output_directory = f"/tmp/{job_name}_processed"
-    for blob in raw_files:
-        # For now, process all files. In a more sophisticated implementation,
-        # we could check if the file's partition already exists
-        processed_files = process_bolsa_familia_zip_file(blob, output_directory)
+    # Check if there are files to process
+    has_files = len(raw_files) > 0
 
-    # Create table if it doesn't exist
-    table_exists = create_bolsa_familia_table_if_not_exists(dataset_id, table_id)
+    if has_files:
+        # Process each raw file
+        output_directory = f"/tmp/{job_name}_processed"
+        for blob in raw_files:
+            processed_files = process_bolsa_familia_zip_file(blob, output_directory)
 
-    # Load processed data to BigQuery
-    rows_loaded = load_bolsa_familia_to_bigquery(
-        data_path=output_directory,
-        dataset_id=dataset_id,
-        table_id=table_id,
-        batch_size=batch_size
-    )
+        # Create table if it doesn't exist
+        table_exists = create_bolsa_familia_table_if_not_exists(dataset_id, table_id)
 
-    # Execute DBT models for Bolsa Família
-    run_bolsa_familia_dbt_models(model_name="bolsa_familia")
+        # Load processed data to BigQuery
+        rows_loaded = load_bolsa_familia_to_bigquery(
+            data_path=output_directory,
+            dataset_id=dataset_id,
+            table_id=table_id
+        )
+
+        # Execute DBT models for Bolsa Família - including the "folha" table
+        run_bolsa_familia_dbt_models(model_name="bolsa_familia")
+    else:
+        print("No files to process.")
 
 
 if __name__ == "__main__":
