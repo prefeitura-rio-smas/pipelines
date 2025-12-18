@@ -6,11 +6,14 @@ model-paths: ["models"]
 models:
   queries:
     dashboard_arcgis:
-      materialized: table
+      +materialized: table
       +schema: "{{ 'dashboard_arcgis' if target.name == 'prod' else 'gerenciamento__dbt' }}"
     equipamentos:
-      materialized: table
+      +materialized: table
       +schema: "{{ 'equipamentos' if target.name == 'prod' else 'gerenciamento__dbt' }}"
     dashboard_acolherio:
-      materialized: table
+      +materialized: table
       +schema: "{{ 'acolherio' if target.name == 'prod' else 'gerenciamento__dbt' }}"
+    bolsa_familia:
+      +materialized: table
+      +schema: "{{ 'bolsa_familia' if target.name == 'prod' else 'gerenciamento__dbt' }}"

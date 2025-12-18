@@ -62,8 +62,8 @@ def parse_partition(blob: Blob) -> str:
                         # Continuar tentando com o próximo bloco possível
                         continue
 
-    # Se não encontrar nenhum padrão conhecido, retorna uma data padrão
-    return datetime.now().strftime("%Y-%m-%d")
+    # Se não encontrar nenhum padrão conhecido, lança erro
+    raise ValueError(f"Não foi possível identificar a data de partição no nome do arquivo: {blob.name}")
 
 
 def parse_txt_first_line(filepath: str) -> Tuple[str, str]:
