@@ -217,7 +217,7 @@ def load_bolsa_familia_to_bigquery(
                     df = pd.read_csv(file_path, sep='|', header=None, dtype=str, on_bad_lines='skip')  # Adjust separator as needed
                     df.columns = [f"col_{i}" for i in range(len(df.columns))]
                 else:  # .csv
-                    df = pd.read_csv(file_path, dtype=str)
+                    df = pd.read_csv(file_path, sep=';', dtype=str, on_bad_lines='skip')  # Bolsa Família files use semicolon separator
 
                 logger.info(f"Dataframe shape: {df.shape}")
                 logger.info(f"Columns: {list(df.columns)}")
