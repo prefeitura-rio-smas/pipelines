@@ -190,19 +190,22 @@ def load_bolsa_familia_to_bigquery(
     
     total_rows_loaded = 0
     
-    # Process each partition directory
+    # Process each partition directory recursively
     data_path = Path(data_path)
-    partition_dirs = [d for d in data_path.iterdir() if d.is_dir()]
-    
-    for partition_dir in partition_dirs:
-        logger.info(f"Processing partition directory: {partition_dir}")
-        
-        # Process each file in the partition directory
-        files = list(partition_dir.glob("*"))
-        for file_path in files:
-            if file_path.suffix.lower() in ['.txt', '.csv']:
-                logger.info(f"Processing file: {file_path}")
-                
+
+    logger.info(f"Looking for CSV/TXT files in: {data_path}")
+
+    # Find all CSV and TXT files recursively
+    csv_files = list(data_path.rglob("*.csv")) + list(data_path.rglob("*.txt"))
+    logger.info(f"Found CSV/TXT files: {csv_files}")
+
+    for file_path in csv_files:
+        logger.info(f"Processing file: {file_path} with size: {file_path.stat().st_size} bytes")
+
+        if file_path.suffix.lower() in ['.txt', '.csv']:
+            logger.info(f"Processing file: {file_path}")
+
+            try:
                 # Read the file
                 if file_path.suffix.lower() == '.txt':
                     # For TXT files, read as text format
@@ -210,21 +213,25 @@ def load_bolsa_familia_to_bigquery(
                     df.columns = [f"col_{i}" for i in range(len(df.columns))]
                 else:  # .csv
                     df = pd.read_csv(file_path, dtype=str)
-                
+
+                logger.info(f"Dataframe shape: {df.shape}")
+                logger.info(f"Columns: {list(df.columns)}")
+
                 # Add timestamp and partition info
                 df = add_timestamp(df)
-                
-                # Extract partition information from directory name
-                parts = partition_dir.parts
+
+                # Extract partition information from directory path
+                # Path format: /tmp/bolsa_familia_processed/ano_particao=2025/mes_particao=8/data_particao=2025-08-01/filename.csv
+                path_parts = file_path.parts
                 data_particao = None
-                for part in parts:
+                for part in path_parts:
                     if part.startswith("data_particao="):
                         data_particao = part.split("=")[1]
                         break
-                
+
                 if data_particao:
                     df["data_particao"] = data_particao
-                
+
                 # Upload to BigQuery
                 if not df.empty:
                     job_config = bigquery.LoadJobConfig(
@@ -238,6 +245,12 @@ def load_bolsa_familia_to_bigquery(
                     rows_loaded = len(df)
                     total_rows_loaded += rows_loaded
                     logger.info(f"Loaded {rows_loaded} rows from {file_path.name}")
+                else:
+                    logger.info(f"Dataframe is empty for file: {file_path}")
+
+            except Exception as e:
+                logger.info(f"Error processing file {file_path}: {str(e)}")
+                continue
     
     logger.info(f"Total rows loaded: {total_rows_loaded}")
     return total_rows_loaded

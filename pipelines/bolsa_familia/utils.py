@@ -15,18 +15,22 @@ def parse_partition(blob: Blob) -> str:
     """
     name_parts = blob.name.split(".")
 
-    # Procura por uma parte que comece com "C" seguido de 6 dígitos (CYYMM)
+    # Procura por uma parte que comece com "C" seguido de dígitos (CYYMM ou CYYM)
     for part in name_parts:
-        if part.startswith("C") and len(part) == 6 and part[1:].isdigit():
-            # Extrai YYMM do formato CYYMM
+        if part.startswith("C") and len(part) >= 4 and part[1:].isdigit():  # C + pelo menos 3 dígitos (ex: C2508)
+            # Extrai YYMM do formato CYYMM (ou YYM)
             date_part = part[1:]  # Remove o "C", ex: "2508"
-            year = date_part[:2]   # "25"
-            month = date_part[2:]  # "08"
 
-            # Monta uma data no formato YYYY-MM-DD (primeiro dia do mês)
-            full_year = f"20{year}"  # Assume século 21, ex: "2025"
-            parsed_date = f"{full_year}-{month}-01"
-            return parsed_date
+            if len(date_part) >= 4:  # Pelo menos YYM
+                year = date_part[:2]   # "25"
+                month = date_part[2:]  # "08" ou "8"
+
+                # Monta uma data no formato YYYY-MM-DD (primeiro dia do mês)
+                full_year = f"20{year}"  # Assume século 21, ex: "2025"
+                # Garantir que mês tenha 2 dígitos
+                month_padded = month.zfill(2)  # "08" ou "08"
+                parsed_date = f"{full_year}-{month_padded}-01"
+                return parsed_date
 
     # Se não encontrar o padrão CYYMM, tenta o padrão do CadUnico (A + YYMMDD)
     for part in name_parts:
@@ -34,10 +38,29 @@ def parse_partition(blob: Blob) -> str:
             partition_info = part[1:]  # Remove o "A"
             # Tenta encontrar um padrão YYMMDD dentro do restante
             # Pode haver mais dígitos, então pegamos os 6 primeiros após A
-            date_str = partition_info[:6]
-            if len(date_str) == 6 and date_str.isdigit():
-                parsed_date = datetime.strptime(date_str, "%y%m%d").strftime("%Y-%m-%d")
-                return parsed_date
+            for i in range(len(partition_info) - 5):  # Tenta com cada possível bloco de 6 dígitos
+                date_str = partition_info[i:i+6]
+                if len(date_str) == 6 and date_str.isdigit():
+                    try:
+                        # Tenta converter como YYMMDD
+                        # Validar se é uma data real (ex: ano entre 2000-2030)
+                        if int(date_str[:2]) <= 50:  # Supondo que anos entre 00-50 sejam 2000-2050
+                            year_suffix = date_str[:2]
+                            year = f"20{year_suffix}"
+                        else:
+                            year_suffix = date_str[:2]
+                            year = f"19{year_suffix}"
+
+                        # Verificar se os meses e dias são razoáveis (mês 01-12, dia 01-31)
+                        month = date_str[2:4]
+                        day = date_str[4:6]
+
+                        if 1 <= int(month) <= 12 and 1 <= int(day) <= 31:
+                            parsed_date = datetime.strptime(date_str, "%y%m%d").strftime("%Y-%m-%d")
+                            return parsed_date
+                    except ValueError:
+                        # Continuar tentando com o próximo bloco possível
+                        continue
 
     # Se não encontrar nenhum padrão conhecido, retorna uma data padrão
     return datetime.now().strftime("%Y-%m-%d")
