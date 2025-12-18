@@ -195,8 +195,13 @@ def load_bolsa_familia_to_bigquery(
 
     logger.info(f"Looking for CSV/TXT files in: {data_path}")
 
-    # Find all CSV and TXT files recursively
-    csv_files = list(data_path.rglob("*.csv")) + list(data_path.rglob("*.txt"))
+    # Find all CSV and TXT files recursively (both lowercase and uppercase extensions)
+    csv_files = (
+        list(data_path.rglob("*.csv")) +
+        list(data_path.rglob("*.CSV")) +
+        list(data_path.rglob("*.txt")) +
+        list(data_path.rglob("*.TXT"))
+    )
     logger.info(f"Found CSV/TXT files: {csv_files}")
 
     for file_path in csv_files:
