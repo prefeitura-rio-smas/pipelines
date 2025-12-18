@@ -4,7 +4,7 @@ prefect-version: 3.0.0
 # 3. Pull (Define o diretório de trabalho no container)
 pull:
   - prefect.deployments.steps.set_working_directory:
-      directory: /app 
+      directory: /app
 
 # 4. Definições dos Deployments
 deployments:
@@ -46,3 +46,42 @@ deployments:
           SIURB_USER: "{{ $SIURB_USER }}"
           SIURB_PWD: "{{ $SIURB_PWD }}"
     tags: ["prod", "arcgis"]
+
+  # ---------------------------------------------------------------------------
+  # Bolsa Família
+  # ---------------------------------------------------------------------------
+  - name: bolsa-familia-staging
+    entrypoint: pipelines/bolsa_familia/flows.py:bolsa_familia_flow
+    work_pool:
+      name: docker-pool
+      job_variables:
+        networks: ["prefect_prefect-stack"]
+        image: "{{ $PREFECT_DEPLOYMENT_IMAGE }}"
+        env:
+          PREFECT_API_URL: http://prefect-api:4200/api
+          MODE: staging
+          GCP_CREDENTIALS: "{{ $GCP_CREDENTIALS }}"
+          SIURB_URL: "{{ $SIURB_URL }}"
+          SIURB_USER: "{{ $SIURB_USER }}"
+          SIURB_PWD: "{{ $SIURB_PWD }}"
+    tags: ["staging", "bolsa-familia"]
+
+  - name: bolsa-familia-prod
+    entrypoint: pipelines/bolsa_familia/flows.py:bolsa_familia_flow
+    work_pool:
+      name: docker-pool
+      job_variables:
+        image: "{{ $PREFECT_DEPLOYMENT_IMAGE }}"
+        env:
+          MODE: prod
+          PREFECT_EVENTS_ENABLED: "false"
+          PREFECT_SERVER_EVENTS_ENABLED: "false"
+          PREFECT_EVENTS_MESSAGING_ENABLED: "false"
+          PREFECT_SERVER_SERVICES_EVENT_PERSISTER_ENABLED: "false"
+          PREFECT_SERVER_SERVICES_EVENT_LOGGER_ENABLED: "false"
+          PREFECT_SERVER_EVENTS_STREAM_OUT_ENABLED: "false"
+          GCP_CREDENTIALS: "{{ $GCP_CREDENTIALS }}"
+          SIURB_URL: "{{ $SIURB_URL }}"
+          SIURB_USER: "{{ $SIURB_USER }}"
+          SIURB_PWD: "{{ $SIURB_PWD }}"
+    tags: ["prod", "bolsa-familia"]
