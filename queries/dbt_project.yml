@@ -15,6 +15,7 @@ models:
       +materialized: table
       +schema: "{{ 'acolherio' if target.name == 'prod' else 'dashboard_acolherio' }}"
     rma:
+      +schema: "{{ 'acolherio' if target.name == 'prod' else 'gerenciamento__dbt' }}"
       cras:
           staging:
             +materialized: table
@@ -22,3 +23,6 @@ models:
           mart:
             +materialized: table
             +schema: "{{ 'dashboard_arcgis' if target.name == 'prod' else 'gerenciamento__dbt' }}"
+    bolsa_familia:
+      +materialized: table
+      +schema: "{{ 'bolsa_familia' if target.name == 'prod' else 'gerenciamento__dbt' }}"

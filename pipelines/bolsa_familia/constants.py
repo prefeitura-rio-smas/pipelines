@@ -12,14 +12,13 @@ class Settings(BaseSettings):
     # Define o ambiente de execução: 'dev' (local), 'staging' (testes no servidor), 'prod' (produção)
     MODE: Literal["dev", "staging", "prod"] = "dev"
 
-    # --- ArcGIS (Credenciais) ---
-    SIURB_URL: str
-    SIURB_USER: str
-    SIURB_PWD: str
+    # --- Bolsa Família ---
+    # Não há credenciais específicas do Bolsa Família além do GCP
 
     # --- GCP (Configurados dinamicamente baseados no MODE) ---
     GCP_PROJECT: str | None = None
     GCP_DATASET: str | None = None
+    GCP_STAGING_DATASET: str | None = None
     GCS_BUCKET: str | None = None
 
     # Credencial GCP (Service Account JSON Path ou Conteúdo JSON string)
@@ -28,7 +27,7 @@ class Settings(BaseSettings):
 
     # Configuração Pydantic
     model_config = SettingsConfigDict(
-        env_file=Path(__file__).parents[2] / ".env", # Tenta achar .env na raiz do repo
+        env_file=Path(__file__).parents[2] / ".env", # Tenta achar .env na raiz do repo pipelines
         extra="ignore",
         case_sensitive=False,
     )
@@ -47,22 +46,25 @@ class Settings(BaseSettings):
             "prod": {
                 "project": "rj-smas",
                 "bucket": "rj-smas",
-                "dataset": "arcgis_raw"
+                "dataset": "bolsa_familia",
+                "staging_dataset": "bolsa_familia_staging"
             },
+            # Em staging/dev, geralmente usamos buckets/projetos de dev se existirem,
+            # ou os mesmos de prod com prefixos diferentes. Ajuste conforme sua infra.
+            # Ajustado para rj-smas pois datasets só existem lá.
             "staging": {
-                "project": "rj-smas-dev",
-                "bucket": "rj-smas-dev",
-                "dataset": "arcgis_raw"
+                "project": "rj-smas", 
+                "bucket": "rj-smas",
+                "dataset": "bolsa_familia",
+                "staging_dataset": "bolsa_familia_staging"
             },
             "dev": {
-                "project": "rj-smas-dev",
-                "bucket": "rj-smas-dev",
-                "dataset": "arcgis_raw"
+                "project": "rj-smas",
+                "bucket": "rj-smas",
+                "dataset": "bolsa_familia",
+                "staging_dataset": "bolsa_familia_staging"
             }
         }
-
-        if mode == 'dev':
-            defaults['dev']['dataset'] = 'arcgis_raw'
 
         env_config = defaults[mode]
 
@@ -75,12 +77,14 @@ class Settings(BaseSettings):
         if not self.GCP_DATASET:
             self.GCP_DATASET = env_config["dataset"]
 
+        if not self.GCP_STAGING_DATASET:
+            self.GCP_STAGING_DATASET = env_config["staging_dataset"]
+
         # --- Lógica de Autenticação Híbrida ---
         # 1. Se recebermos o CONTEÚDO do JSON (cenário Server/CI/Docker)
         if self.GCP_CREDENTIALS and self.GCP_CREDENTIALS.strip().startswith("{"):
             # Cria um arquivo temporário com as credenciais
             # Usamos delete=False para que o arquivo persista durante a execução
-            # O SO limpará /tmp eventualmente, ou o container morrerá
             with tempfile.NamedTemporaryFile(mode='w', delete=False, suffix='.json') as f:
                 f.write(self.GCP_CREDENTIALS)
                 temp_cred_path = f.name

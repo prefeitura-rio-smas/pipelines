@@ -9,6 +9,7 @@ rj_smas_dev:
       project: rj-smas-dev
       dataset: gerenciamento__dbt
       #keyfile: "{{ env_var('DBT_KEYFILE_PATH') }}"
+      #keyfile: "{{ env_var('GOOGLE_APPLICATION_CREDENTIALS') }}"
       threads: 10
       location: US
       timeout_seconds: 300
@@ -18,6 +19,7 @@ rj_smas_dev:
       method: oauth
       project: rj-smas-dev
       dataset: gerenciamento__dbt
+      #keyfile: "{{ env_var('GOOGLE_APPLICATION_CREDENTIALS') }}"
       threads: 10
       timeout_seconds: 300
 
