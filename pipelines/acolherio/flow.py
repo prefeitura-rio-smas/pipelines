@@ -1,5 +1,6 @@
 from prefect import flow
-from tasks import run_dbt_models
+from pipelines.tasks import run_dbt_models
+
 
 @flow(name='dbt_acolherio_rma')
 def acolherio_pipeline():
