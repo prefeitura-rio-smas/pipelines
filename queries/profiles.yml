@@ -16,10 +16,9 @@ rj_smas_dev:
 
     dev:
       type: bigquery
-      method: service-account
+      method: oauth
       project: rj-smas-dev
       dataset: gerenciamento__dbt
-      keyfile: "{{ env_var('GOOGLE_APPLICATION_CREDENTIALS') }}"
       threads: 10
       timeout_seconds: 300
 

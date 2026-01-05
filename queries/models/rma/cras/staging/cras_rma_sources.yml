@@ -8,6 +8,7 @@ sources:
       - name: contas_associadas
       - name: tipo_beneficio
       - name: violacao_direito
+      - name: dev_atendimentos
   - name: cras_rma_prod
     database: rj-smas
     schema: brutos_acolherio_staging

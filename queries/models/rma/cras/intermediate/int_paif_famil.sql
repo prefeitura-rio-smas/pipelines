@@ -1,3 +1,4 @@
+-- Tabela com todos os dados das famílias inseridades em acompanhamento PAIF.
 with unidade_operador as (
     select
         a.seqlogin,

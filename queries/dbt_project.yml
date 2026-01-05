@@ -18,6 +18,9 @@ models:
       +schema: "{{ 'acolherio' if target.name == 'prod' else 'gerenciamento__dbt' }}"
       cras:
           staging:
+            +materialized: ephemeral
+            +schema: "{{ 'dashboard_arcgis' if target.name == 'prod' else 'gerenciamento__dbt' }}"
+          intermediate:
             +materialized: table
             +schema: "{{ 'dashboard_arcgis' if target.name == 'prod' else 'gerenciamento__dbt' }}"
           mart:
