@@ -1,6 +1,8 @@
 from prefect import flow
 from google.cloud.storage.blob import Blob
 
+from pipelines.tasks import run_dbt_models
+
 from pipelines.bolsa_familia.tasks import (
     get_bolsa_familia_raw_files,
     get_existing_bolsa_familia_partitions,
@@ -8,7 +10,7 @@ from pipelines.bolsa_familia.tasks import (
     create_bolsa_familia_table_if_not_exists,
     load_bolsa_familia_to_bigquery,
     upload_bolsa_familia_processed_to_gcs,
-    run_bolsa_familia_dbt_models,
+    #run_bolsa_familia_dbt_models,
     get_project_id_task
 )
 from pipelines.bolsa_familia.utils import parse_partition
@@ -85,7 +87,8 @@ def bolsa_familia_flow() -> None:
         print("No new files to process.")
 
     # Execute DBT models for Bolsa Família - always run to ensure final table is up to date
-    run_bolsa_familia_dbt_models(model_name="folha")
+    run_dbt_models(model_name="folha")
+    #run_bolsa_familia_dbt_models(model_name="folha")
 
 
 if __name__ == "__main__":

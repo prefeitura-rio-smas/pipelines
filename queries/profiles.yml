@@ -16,10 +16,12 @@ rj_smas_dev:
 
     dev:
       type: bigquery
-      method: oauth
+      method: service-account
       project: rj-smas-dev
       dataset: gerenciamento__dbt
+      keyfile: "{{ env_var('GCP_CREDENTIALS') }}"
       threads: 10
+      location: US
       timeout_seconds: 300
 
     ci:                       
