@@ -16,7 +16,7 @@ rj_smas_dev:
 
     dev:
       type: bigquery
-      method: service-account
+      method: service-account-json
       project: rj-smas-dev
       dataset: gerenciamento__dbt
       keyfile: "{{ env_var('GCP_CREDENTIALS') }}"
