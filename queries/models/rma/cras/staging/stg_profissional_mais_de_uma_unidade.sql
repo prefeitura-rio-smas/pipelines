@@ -1,3 +1,4 @@
+-- Retornar os profissionais com mais de uma unidade e a unidade mais recente onde o profissional logou.
 with contas_mais_de_uma_unidade as (
 select 
     seqlogin,

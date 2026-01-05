@@ -1,3 +1,5 @@
+-- Essa CTE retorna todos os profissionais, incluindo os que possuem mais de uma unidade associada à conta.
+-- Usuários testes/admin/suporte são retirados.
 with prof_mais_de_uma_unidade as (
     select
         seqlogin,
