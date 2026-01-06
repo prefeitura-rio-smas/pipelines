@@ -29,6 +29,9 @@ deployments:
 
   - name: abordagem-prod
     entrypoint: pipelines/arcgis/abordagem/flows.py:abordagem_flow
+    schedule:
+      cron: "0 */6 * * *"
+      timezone: "America/Sao_Paulo"
     work_pool:
       name: docker-pool
       job_variables:
@@ -107,6 +110,9 @@ deployments:
 
   - name: acolherio-prod
     entrypoint: pipelines/acolherio/flows.py:acolherio_flow
+    schedule:
+      cron: "0 1 * * *"
+      timezone: "America/Sao_Paulo"
     work_pool:
       name: docker-pool
       job_variables:
