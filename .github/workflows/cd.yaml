@@ -6,6 +6,8 @@ on:
       - main
     paths:
       - ".github/workflows/cd.yaml"
+      - ".github/workflows/build_docker.yaml"
+      - ".github/workflows/scripts/**"
       - "pipelines/**/*"
       - "pyproject.toml"
       - "Dockerfile"
