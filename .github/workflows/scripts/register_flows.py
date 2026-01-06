@@ -68,6 +68,16 @@ def register(
     full_image_name = f"ghcr.io/{github_repo.lower()}:{image_tag}"
     print(f"Target Docker Image: {full_image_name}")
 
+    # Validate Authentication (Self-hosted support)
+    api_key = os.getenv("PREFECT_API_KEY")
+    auth_string = os.getenv("PREFECT_API_AUTH_STRING")
+    
+    if not api_key and not auth_string:
+        print("\n❌ CRITICAL ERROR: Authentication missing!")
+        print("Neither 'PREFECT_API_KEY' nor 'PREFECT_API_AUTH_STRING' found.")
+        print("Please check your GitHub Secrets.")
+        exit(1)
+
     deployment_count = 0
     error_count = 0
 
@@ -99,11 +109,19 @@ def register(
             # Common Environment Variables
             env_vars = {
                 "MODE": env,
-                "PREFECT_API_URL": os.getenv("PREFECT_API_URL", "http://prefect-api:4200/api"),
+                # Use internal API URL for the worker inside the docker network (matches legacy prefect.yaml)
+                "PREFECT_API_URL": "http://prefect-api:4200/api",
+                "PREFECT_API_AUTH_STRING": auth_string or "",
                 "GCP_CREDENTIALS": os.getenv("GCP_CREDENTIALS", ""),
                 "SIURB_URL": os.getenv("SIURB_URL", ""),
                 "SIURB_USER": os.getenv("SIURB_USER", ""),
                 "SIURB_PWD": os.getenv("SIURB_PWD", ""),
+            }
+            
+            # Job Variables (including Docker Network)
+            job_vars = {
+                "env": env_vars,
+                "networks": ["prefect_prefect-stack"] # Critical for self-hosted to reach API/DB
             }
 
             # Handle Scheduling
@@ -112,15 +130,14 @@ def register(
             print(f"Deploying {flow.name} -> {deployment_name}...")
             try:
                 # Flow deploy automatically infers entrypoint from the flow object function
-                # Removed explicit entrypoint argument (Prefect 3 compatibility)
-                # Removed print_next_steps_message (Prefect 3 compatibility)
                 flow.deploy(
                     name=deployment_name,
                     work_pool_name="docker-pool",
                     image=full_image_name,
                     tags=tags,
-                    job_variables={"env": env_vars},
-                    schedules=schedules
+                    job_variables=job_vars,
+                    schedules=schedules,
+                    print_next_steps_message=False
                 )
                 print(f"✅ Successfully deployed {deployment_name}")
                 deployment_count += 1

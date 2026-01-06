@@ -39,16 +39,16 @@ jobs:
       - name: Authenticate Prefect
         env:
           PREFECT_API_URL: ${{ secrets.PREFECT_API_URL }}
-          PREFECT_API_KEY: ${{ secrets.PREFECT_API_KEY }}
+          PREFECT_API_AUTH_STRING: ${{ secrets.PREFECT_API_AUTH_STRING }}
         run: |
           uv run prefect config set PREFECT_API_URL="$PREFECT_API_URL"
-          uv run prefect config set PREFECT_API_KEY="$PREFECT_API_KEY"
+          uv run prefect config set PREFECT_API_AUTH_STRING="$PREFECT_API_AUTH_STRING"
 
       - name: Register Prefect flows
         env:
           IMAGE_TAG: ${{ github.sha }}
           PREFECT_API_URL: ${{ secrets.PREFECT_API_URL }}
-          PREFECT_API_KEY: ${{ secrets.PREFECT_API_KEY }}
+          PREFECT_API_AUTH_STRING: ${{ secrets.PREFECT_API_AUTH_STRING }}
           GCP_CREDENTIALS: ${{ secrets.GCP_CREDENTIALS }}
           SIURB_URL: ${{ secrets.SIURB_URL }}
           SIURB_USER: ${{ secrets.SIURB_USER }}
