@@ -50,8 +50,7 @@ def register(
     project_root = Path(__file__).parent.parent.parent.parent
     pipeline_dir = project_root / "pipelines"
     
-    # Add project root to sys.path to allow imports from pipelines module
-    # This fixes "ModuleNotFoundError: No module named 'constants'"
+    # Add project root to sys.path to allow absolute imports (from pipelines.xxx)
     sys.path.append(str(project_root))
     
     print(f"Searching for flows in {pipeline_dir}...")
@@ -72,8 +71,17 @@ def register(
 
     for file_path in flow_files:
         path_obj = Path(file_path)
-        # Load flows with updated sys.path context
-        flows = load_flows_from_file(path_obj)
+        
+        # FIX for relative/legacy imports: Add the flow's directory to sys.path
+        # This allows 'import constants' to work if constants.py is in the same folder
+        sys.path.insert(0, str(path_obj.parent))
+        
+        try:
+            # Load flows with updated sys.path context
+            flows = load_flows_from_file(path_obj)
+        finally:
+            # Clean up sys.path to avoid pollution between files
+            sys.path.pop(0)
         
         if not flows:
             continue
@@ -102,15 +110,15 @@ def register(
             print(f"Deploying {flow.name} -> {deployment_name}...")
             try:
                 # Flow deploy automatically infers entrypoint from the flow object function
-                # Removed explicit entrypoint argument which caused TypeError in Prefect 3
+                # Removed explicit entrypoint argument (Prefect 3 compatibility)
+                # Removed print_next_steps_message (Prefect 3 compatibility)
                 flow.deploy(
                     name=deployment_name,
                     work_pool_name="docker-pool",
                     image=full_image_name,
                     tags=tags,
                     job_variables={"env": env_vars},
-                    schedules=schedules,
-                    print_next_steps_message=False
+                    schedules=schedules
                 )
                 print(f"✅ Successfully deployed {deployment_name}")
                 deployment_count += 1
