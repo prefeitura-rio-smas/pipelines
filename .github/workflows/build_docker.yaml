@@ -4,6 +4,7 @@ on:
   push:
     branches:
       - main
+      - 'staging/**'
     paths:
       - ".github/workflows/cd.yaml"
       - "pipelines/**/*"
