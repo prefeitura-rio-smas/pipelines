@@ -83,15 +83,11 @@ def register(
         path_obj = Path(file_path)
         
         # Calculate full dotted module name (e.g. pipelines.acolherio.flows)
-        # This ensures:
-        # 1. Unique module names (avoid cache collisions)
-        # 2. Correct entrypoint calculation by Prefect (matches Docker structure)
-        # 3. Correct relative imports inside the module
+        # This ensures unique module names avoiding cache collisions
         try:
             rel_path = path_obj.relative_to(project_root)
             module_name = str(rel_path).replace(os.sep, ".").replace(".py", "")
         except ValueError:
-            # Fallback if file is somehow outside root (shouldn't happen with glob)
             module_name = f"flow_module_{path_obj.stem}"
 
         # Load flows
@@ -111,7 +107,7 @@ def register(
             # Common Environment Variables
             env_vars = {
                 "MODE": env,
-                # Use internal API URL for the worker inside the docker network (matches legacy prefect.yaml)
+                # Use internal API URL for the worker inside the docker network
                 "PREFECT_API_URL": "http://prefect-api:4200/api",
                 "PREFECT_API_AUTH_STRING": auth_string or "",
                 "GCP_CREDENTIALS": os.getenv("GCP_CREDENTIALS", ""),
@@ -123,7 +119,7 @@ def register(
             # Job Variables (including Docker Network)
             job_vars = {
                 "env": env_vars,
-                "networks": ["prefect_prefect-stack"] # Critical for self-hosted to reach API/DB
+                "networks": ["prefect_prefect-stack"] 
             }
 
             # Handle Scheduling
@@ -131,10 +127,19 @@ def register(
             
             print(f"Deploying {flow.name} -> {deployment_name}...")
             try:
-                # Flow deploy automatically infers entrypoint from the flow object function
-                # Since we loaded the module with the correct dotted path (pipelines.xxx.flows),
-                # Prefect will correctly set the entrypoint to 'pipelines/xxx/flows.py:flow_fn'
-                flow.deploy(
+                # Explicitly define entrypoint using from_source
+                # source="." implies current directory (which is /app in Docker)
+                # entrypoint="path/to/file.py:function_name"
+                entrypoint_path = f"{rel_path}:{flow.fn.__name__}"
+                
+                print(f"  Entrypoint: {entrypoint_path}")
+                
+                deploy_flow = flow.from_source(
+                    source=".",
+                    entrypoint=entrypoint_path
+                )
+                
+                deploy_flow.deploy(
                     name=deployment_name,
                     work_pool_name="docker-pool",
                     image=full_image_name,
