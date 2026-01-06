@@ -11,7 +11,9 @@ app = typer.Typer()
 def load_flows_from_file(file_path: Path):
     """Loads flow objects from a Python file."""
     try:
-        module_name = file_path.stem
+        # Create a unique module name to avoid sys.modules cache collisions
+        # Collision happened because all files are named 'flows.py'
+        module_name = f"flow_module_{file_path.parent.name}_{file_path.stem}"
         loader = SourceFileLoader(module_name, str(file_path))
         module = loader.load_module()
         
