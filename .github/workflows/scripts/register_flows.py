@@ -1,4 +1,5 @@
 import os
+import sys
 import glob
 import typer
 from pathlib import Path
@@ -49,18 +50,20 @@ def register(
     project_root = Path(__file__).parent.parent.parent.parent
     pipeline_dir = project_root / "pipelines"
     
+    # Add project root to sys.path to allow imports from pipelines module
+    # This fixes "ModuleNotFoundError: No module named 'constants'"
+    sys.path.append(str(project_root))
+    
     print(f"Searching for flows in {pipeline_dir}...")
     
     flow_files = glob.glob(str(pipeline_dir / "**" / "flows.py"), recursive=True)
     
     # Construct Image Name
-    # GitHub Actions sets GITHUB_REPOSITORY (e.g., owner/repo)
     github_repo = os.getenv("GITHUB_REPOSITORY")
     if not github_repo:
         print("Warning: GITHUB_REPOSITORY env var not set. Using default 'rj-smas/pipelines-rj-smas'")
         github_repo = "rj-smas/pipelines-rj-smas"
         
-    # Lowercase is required for docker image names
     full_image_name = f"ghcr.io/{github_repo.lower()}:{image_tag}"
     print(f"Target Docker Image: {full_image_name}")
 
@@ -69,6 +72,7 @@ def register(
 
     for file_path in flow_files:
         path_obj = Path(file_path)
+        # Load flows with updated sys.path context
         flows = load_flows_from_file(path_obj)
         
         if not flows:
@@ -76,8 +80,6 @@ def register(
 
         for flow in flows:
             # Naming convention: folder-name-env
-            # If nested like arcgis/abordagem, we might want abordagem-env or arcgis-abordagem-env
-            # Using parent folder name is safer for now to avoid huge names
             base_name = path_obj.parent.name.replace("_", "-")
             deployment_name = f"{base_name}-{env}"
             
@@ -95,18 +97,12 @@ def register(
             }
 
             # Handle Scheduling
-            # Only enable schedules in prod
             schedules = flow.schedules if env == "prod" else []
             
-            # Prefect 3.x deployment logic
             print(f"Deploying {flow.name} -> {deployment_name}...")
             try:
-                # We define entrypoint relative to project root because that's how it's copied in Dockerfile
-                # /app/pipelines/...
-                # script is running from root in CI, file_path is absolute or relative to root
-                rel_path = path_obj.relative_to(project_root)
-                entrypoint = f"{rel_path}:{flow.fn.__name__}"
-                
+                # Flow deploy automatically infers entrypoint from the flow object function
+                # Removed explicit entrypoint argument which caused TypeError in Prefect 3
                 flow.deploy(
                     name=deployment_name,
                     work_pool_name="docker-pool",
@@ -114,7 +110,6 @@ def register(
                     tags=tags,
                     job_variables={"env": env_vars},
                     schedules=schedules,
-                    entrypoint=entrypoint,
                     print_next_steps_message=False
                 )
                 print(f"✅ Successfully deployed {deployment_name}")
