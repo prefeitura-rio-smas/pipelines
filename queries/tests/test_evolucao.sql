@@ -8,7 +8,7 @@ select
     atividades_smas,
     beneficios,
     orgaos
-from {{ref('base_table_bloco2_item_c_cras')}}
+from {{ref('stg_filtro_evolucao')}}
 where atividades_smas is not null
 and beneficios is not null
 and orgaos is not null

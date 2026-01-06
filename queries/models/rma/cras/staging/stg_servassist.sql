@@ -21,8 +21,9 @@ tratar_paif as (
         seqlogincad,
         case 
             when seqservassist = 1 
-            then 'Acompanhamento Paif'
-        end as flag_acomp_paif
+                then 'Acompanhamento Paif'
+                else cast(seqservassist as string)
+        end as servassist
     from famil_acomp_paif
 
 )
