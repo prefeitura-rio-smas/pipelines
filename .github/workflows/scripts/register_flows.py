@@ -136,8 +136,7 @@ def register(
                     image=full_image_name,
                     tags=tags,
                     job_variables=job_vars,
-                    schedules=schedules,
-                    print_next_steps_message=False
+                    schedules=schedules
                 )
                 print(f"✅ Successfully deployed {deployment_name}")
                 deployment_count += 1
