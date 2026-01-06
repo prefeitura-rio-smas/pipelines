@@ -20,6 +20,7 @@ dependencies = [
     "shapely>=2.0.0",
     "prefect-dbt>=0.6.0",
     "dbt-bigquery>=1.8.0",
+    "typer>=0.9.0",
 ]
 
 [project.optional-dependencies]
