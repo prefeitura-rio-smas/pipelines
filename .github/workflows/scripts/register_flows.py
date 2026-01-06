@@ -8,12 +8,9 @@ from prefect import Flow
 
 app = typer.Typer()
 
-def load_flows_from_file(file_path: Path):
-    """Loads flow objects from a Python file."""
+def load_flows_from_file(file_path: Path, module_name: str):
+    """Loads flow objects from a Python file using a specific module name."""
     try:
-        # Create a unique module name to avoid sys.modules cache collisions
-        # Collision happened because all files are named 'flows.py'
-        module_name = f"flow_module_{file_path.parent.name}_{file_path.stem}"
         loader = SourceFileLoader(module_name, str(file_path))
         module = loader.load_module()
         
@@ -53,6 +50,7 @@ def register(
     pipeline_dir = project_root / "pipelines"
     
     # Add project root to sys.path to allow absolute imports (from pipelines.xxx)
+    # This matches the Docker container structure where /app is WORKDIR and contains pipelines/
     sys.path.append(str(project_root))
     
     print(f"Searching for flows in {pipeline_dir}...")
@@ -68,22 +66,32 @@ def register(
     full_image_name = f"ghcr.io/{github_repo.lower()}:{image_tag}"
     print(f"Target Docker Image: {full_image_name}")
 
+    # Validate Authentication (Self-hosted support)
+    api_key = os.getenv("PREFECT_API_KEY")
+    auth_string = os.getenv("PREFECT_API_AUTH_STRING")
+    
+    if not api_key and not auth_string:
+        print("\n❌ CRITICAL ERROR: Authentication missing!")
+        print("Neither 'PREFECT_API_KEY' nor 'PREFECT_API_AUTH_STRING' found.")
+        print("Please check your GitHub Secrets.")
+        exit(1)
+
     deployment_count = 0
     error_count = 0
 
     for file_path in flow_files:
         path_obj = Path(file_path)
         
-        # FIX for relative/legacy imports: Add the flow's directory to sys.path
-        # This allows 'import constants' to work if constants.py is in the same folder
-        sys.path.insert(0, str(path_obj.parent))
-        
+        # Calculate full dotted module name (e.g. pipelines.acolherio.flows)
+        # This ensures unique module names avoiding cache collisions
         try:
-            # Load flows with updated sys.path context
-            flows = load_flows_from_file(path_obj)
-        finally:
-            # Clean up sys.path to avoid pollution between files
-            sys.path.pop(0)
+            rel_path = path_obj.relative_to(project_root)
+            module_name = str(rel_path).replace(os.sep, ".").replace(".py", "")
+        except ValueError:
+            module_name = f"flow_module_{path_obj.stem}"
+
+        # Load flows
+        flows = load_flows_from_file(path_obj, module_name)
         
         if not flows:
             continue
@@ -99,11 +107,19 @@ def register(
             # Common Environment Variables
             env_vars = {
                 "MODE": env,
-                "PREFECT_API_URL": os.getenv("PREFECT_API_URL", "http://prefect-api:4200/api"),
+                # Use internal API URL for the worker inside the docker network
+                "PREFECT_API_URL": "http://prefect-api:4200/api",
+                "PREFECT_API_AUTH_STRING": auth_string or "",
                 "GCP_CREDENTIALS": os.getenv("GCP_CREDENTIALS", ""),
                 "SIURB_URL": os.getenv("SIURB_URL", ""),
                 "SIURB_USER": os.getenv("SIURB_USER", ""),
                 "SIURB_PWD": os.getenv("SIURB_PWD", ""),
+            }
+            
+            # Job Variables (including Docker Network)
+            job_vars = {
+                "env": env_vars,
+                "networks": ["prefect_prefect-stack"] 
             }
 
             # Handle Scheduling
@@ -111,16 +127,26 @@ def register(
             
             print(f"Deploying {flow.name} -> {deployment_name}...")
             try:
-                # Flow deploy automatically infers entrypoint from the flow object function
-                # Removed explicit entrypoint argument (Prefect 3 compatibility)
-                # Removed print_next_steps_message (Prefect 3 compatibility)
-                flow.deploy(
+                # Explicitly define entrypoint using from_source
+                # source="." implies current directory (which is /app in Docker)
+                # entrypoint="path/to/file.py:function_name"
+                entrypoint_path = f"{rel_path}:{flow.fn.__name__}"
+                
+                print(f"  Entrypoint: {entrypoint_path}")
+                
+                deploy_flow = flow.from_source(
+                    source=".",
+                    entrypoint=entrypoint_path
+                )
+                
+                deploy_flow.deploy(
                     name=deployment_name,
                     work_pool_name="docker-pool",
                     image=full_image_name,
                     tags=tags,
-                    job_variables={"env": env_vars},
-                    schedules=schedules
+                    job_variables=job_vars,
+                    schedules=schedules,
+                    build=False
                 )
                 print(f"✅ Successfully deployed {deployment_name}")
                 deployment_count += 1
