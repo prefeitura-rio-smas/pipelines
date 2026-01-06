@@ -32,7 +32,7 @@ jobs:
         run: uv python install 3.13
 
       - name: Install dependencies
-        run: uv sync --frozen
+        run: uv sync
 
       - name: Authenticate Prefect
         env:
@@ -45,5 +45,9 @@ jobs:
       - name: Register Prefect flows
         env:
           IMAGE_TAG: ${{ github.sha }}
+          GCP_CREDENTIALS: ${{ secrets.GCP_CREDENTIALS }}
+          SIURB_URL: ${{ secrets.SIURB_URL }}
+          SIURB_USER: ${{ secrets.SIURB_USER }}
+          SIURB_PWD: ${{ secrets.SIURB_PWD }}
         run: |
           uv run python .github/workflows/scripts/register_flows.py --env prod --image-tag $IMAGE_TAG
