@@ -220,7 +220,7 @@ filtro_email AS (
   END AS IDADE_FAIXA,
   CONCAT(a.EMAIL_CAS, ',', a.EMAIL_UNIDADE, ',', z.EMAIL) AS EMAIL
   FROM final a
-  LEFT JOIN {{ source('filtro_email', 'filtro_email_dev') }} z ON a.UNIDADE_ATENDIMENTO = z.UNIDADE_ATENDIMENTO
+  LEFT JOIN {{ source('dashboard_acolherio', 'filtro_email_dev') }} z ON a.UNIDADE_ATENDIMENTO = z.UNIDADE_ATENDIMENTO
 )
 
 SELECT * FROM filtro_email

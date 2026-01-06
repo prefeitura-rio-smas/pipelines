@@ -17,7 +17,7 @@
     repeat: 1
 
 - name: equipamentos
-  feature_id: 1ab2f9c74d8f48239a12157d5a3a87f4
+  feature_id: 134851a668ca407c8f6b4cb2fd8dfdf8
   account: siurb
   return_geometry: false
   layers:
@@ -30,24 +30,9 @@
   layers:
     smas: 0
 
-- name: limite_bairros_25
-  feature_id: adfebea0627a4818a3bdabdb2e267505
-  account: siurb
-  return_geometry: true
-  layers:
-    smas: 0
-
-- name: cartao_primeira_infancia_carioca
+- name: pipeline_primeira_infancia_carioca_raw_teste
   feature_id: ef6fe5c04520445f91be8a57c4adcd96
   account: siurb
-  return_geometry: false
-  layers:
-    smas: 0
-
-- name: controle_cas
-  feature_id: 6855307d763b49f6bfb1c5d83b069952
-  account: siurb
-  source_type: table
   return_geometry: false
   layers:
     smas: 0

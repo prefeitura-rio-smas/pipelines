@@ -1,6 +1,6 @@
 {
   "name": "pipeline-arcgis",
-  "image": "mcr.microsoft.com/devcontainers/python:3.10",
+  "image": "mcr.microsoft.com/devcontainers/python:3.13",
 
   "features": {
     "ghcr.io/devcontainers/features/common-utils:2": {}
@@ -22,7 +22,7 @@
     }
   },
 
-  "postCreateCommand": "pipx install poetry && poetry config virtualenvs.in-project true && poetry install --no-root && if [ ! -z \"$GCP_CREDENTIALS_JSON\" ]; then mkdir -p ~/.gcp && printf '%s' \"$GCP_CREDENTIALS_JSON\" > ~/.gcp/gcp-credentials.json; fi",
+  "postCreateCommand": "pipx install uv && uv venv .venv && source .venv/bin/activate && uv pip install -e . && if [ ! -z \"$GCP_CREDENTIALS_JSON\" ]; then mkdir -p ~/.gcp && printf '%s' \"$GCP_CREDENTIALS_JSON\" > ~/.gcp/gcp-credentials.json; fi",
 
   "remoteUser": "vscode"
 }

@@ -9,7 +9,10 @@ WITH contas_associadas AS (
     prof.cpfprof AS CPF,
     contas.dscemail AS EMAIL,
     prof.dsctel AS TELEFONE,
-    {{ map_coluna_perfil_acesso('contas.indnivel')}},
+    contas_us.datacesso,
+    contas_us.dsclstsetores,
+    contas_us.dsclstcbo,
+    {{ map_coluna_perfil_acesso('contas.indnivel') }},
     {{ map_coluna_status_conta('contas.indstatuser')}}
     FROM {{ source('brutos_acolherio_staging', 'gh_contas')}} contas
     LEFT JOIN {{ source('brutos_acolherio_staging', 'gh_prof')}} prof ON prof.seqlogin = contas.seqlogin

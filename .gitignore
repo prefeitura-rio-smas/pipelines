@@ -1,12 +1,71 @@
 # credenciais
 .env
 .env__pycache__/
-*.pyc
+
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+.Python
+build/
+develop-eggs/
+dist/
+downloads/
+eggs/
+.eggs/
+lib/
+lib64/
+parts/
+sdist/
+var/
+wheels/
+*.egg-info/
+.installed.cfg
+*.egg
+MANIFEST
+.pytest_cache/
+.coverage
+htmlcov/
+venv/
+.venv/
+env/
+ENV/
+.ENV
+.pydevtree
+.pytest_cache
+
+# dbt
 **/target/
 dbt_packages/
+queries/dbt_internal_packages/
 **/logs/
 
-.venv/
+# ruff
+.ruff_cache/
 
+# mypy
+.mypy_cache/
+
+# Ferramentas
 /sandbox/
-/queries/dbt_internal_packages
+uv.lock
+poetry.lock
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+
+# Logs
+logs/
+*.log
+
+# Sistemas Operacionais
+.DS_Store
+.DS_Store?
+._*
+.Spotlight-V100
+.Trashes
+ehthumbs.db
+Thumbs.db

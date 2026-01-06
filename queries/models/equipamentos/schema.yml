@@ -6,7 +6,6 @@ sources:
     schema: arcgis_raw
     tables:
       - name: cras_cas_poligonos_smas_raw
-      - name: equipamentos_smas_raw
 
 models:
   - name: poligonos_rmi

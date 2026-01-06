@@ -171,7 +171,7 @@
     WHEN {{ coluna }} = '24' THEN 'Deficiência auditiva parcial'
     WHEN {{ coluna }} = '25' THEN 'Deficiência mental ou intelectual'
     WHEN {{ coluna }} = '26' THEN 'Deficiência auditiva parcial'
-  END AS VIOLACAO_DIREITO
+  END
 {% endmacro %}
 
 -- Coluna BENEFICIO do models tipo_beneficio
