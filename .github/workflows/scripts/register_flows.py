@@ -8,12 +8,9 @@ from prefect import Flow
 
 app = typer.Typer()
 
-def load_flows_from_file(file_path: Path):
-    """Loads flow objects from a Python file."""
+def load_flows_from_file(file_path: Path, module_name: str):
+    """Loads flow objects from a Python file using a specific module name."""
     try:
-        # Create a unique module name to avoid sys.modules cache collisions
-        # Collision happened because all files are named 'flows.py'
-        module_name = f"flow_module_{file_path.parent.name}_{file_path.stem}"
         loader = SourceFileLoader(module_name, str(file_path))
         module = loader.load_module()
         
@@ -53,6 +50,7 @@ def register(
     pipeline_dir = project_root / "pipelines"
     
     # Add project root to sys.path to allow absolute imports (from pipelines.xxx)
+    # This matches the Docker container structure where /app is WORKDIR and contains pipelines/
     sys.path.append(str(project_root))
     
     print(f"Searching for flows in {pipeline_dir}...")
@@ -84,16 +82,20 @@ def register(
     for file_path in flow_files:
         path_obj = Path(file_path)
         
-        # FIX for relative/legacy imports: Add the flow's directory to sys.path
-        # This allows 'import constants' to work if constants.py is in the same folder
-        sys.path.insert(0, str(path_obj.parent))
-        
+        # Calculate full dotted module name (e.g. pipelines.acolherio.flows)
+        # This ensures:
+        # 1. Unique module names (avoid cache collisions)
+        # 2. Correct entrypoint calculation by Prefect (matches Docker structure)
+        # 3. Correct relative imports inside the module
         try:
-            # Load flows with updated sys.path context
-            flows = load_flows_from_file(path_obj)
-        finally:
-            # Clean up sys.path to avoid pollution between files
-            sys.path.pop(0)
+            rel_path = path_obj.relative_to(project_root)
+            module_name = str(rel_path).replace(os.sep, ".").replace(".py", "")
+        except ValueError:
+            # Fallback if file is somehow outside root (shouldn't happen with glob)
+            module_name = f"flow_module_{path_obj.stem}"
+
+        # Load flows
+        flows = load_flows_from_file(path_obj, module_name)
         
         if not flows:
             continue
@@ -130,6 +132,8 @@ def register(
             print(f"Deploying {flow.name} -> {deployment_name}...")
             try:
                 # Flow deploy automatically infers entrypoint from the flow object function
+                # Since we loaded the module with the correct dotted path (pipelines.xxx.flows),
+                # Prefect will correctly set the entrypoint to 'pipelines/xxx/flows.py:flow_fn'
                 flow.deploy(
                     name=deployment_name,
                     work_pool_name="docker-pool",
