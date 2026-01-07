@@ -1,3 +1,4 @@
+import os
 import prefect
 from prefect import task
 from prefect_dbt.cli.commands import DbtCoreOperation
@@ -20,10 +21,10 @@ def run_dbt_models(model_name: str = None):
         logger.info("Nenhum modelo dbt para executar.")
         return None
 
-    logger.info(f"🔄 Executando dbt model: {model_name}...")
+    logger.info(f"🔄 Executando dbt model: {model_name} com target: {dbt_target}...")
 
     dbt_run_op = DbtCoreOperation(
-        commands=[f"dbt run --select {model_name}"],
+        commands=[f"dbt run --select {model_name} --target {dbt_target}"],
         project_dir=DBT_PROJECT_DIR,
         profiles_dir=DBT_PROJECT_DIR,
     )
