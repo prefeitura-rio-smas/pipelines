@@ -45,8 +45,8 @@ class Settings(BaseSettings):
         # Defaults por ambiente
         defaults = {
             "prod": {
-                "project": "rj-smas",
-                "bucket": "rj-smas",
+                "project": "rj-smas-dev",
+                "bucket": "rj-smas-dev",
                 "dataset": "arcgis_raw"
             },
             "staging": {
