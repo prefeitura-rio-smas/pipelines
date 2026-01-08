@@ -22,8 +22,8 @@ def run_dbt_models(model_name: str = None):
         logger.info("Nenhum modelo dbt para executar.")
         return None
 
-    # O MODE governará o target do dbt (dev ou prod)
-    dbt_target = os.getenv("MODE", "dev")
+    # O MODE governará o target do dbt
+    dbt_target = os.getenv("MODE", "staging")
 
     logger.info(f"🔄 Executando dbt model: {model_name} com target: {dbt_target}...")
 
