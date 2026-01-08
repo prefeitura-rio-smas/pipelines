@@ -59,7 +59,7 @@ SELECT
    END AS repeat_sexo,
   turno_abordagem,
 
-  DATE(TIMESTAMP_MILLIS(SAFE_CAST(data_abordagem AS INT64))) AS data_abordagem,
+  DATE(data_abordagem) AS data_abordagem,
   ano_num_data_abordagem,
   dia_num_data_abordagem,
   CASE
