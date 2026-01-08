@@ -4,14 +4,13 @@ WITH contas_associadas AS (
     SELECT
     us.dscus AS unidade,
     contas.seqlogin,
-    contas.nompess AS OPERADOR,
-    cbo.dsccbo AS PROFISSIONAL,
-    prof.cpfprof AS CPF,
-    contas.dscemail AS EMAIL,
-    prof.dsctel AS TELEFONE,
+    contas.nompess AS operador,
+    cbo.dsccbo AS profissional,
+    prof.cpfprof AS cpf,
+    prof.dtnasc AS data_nascimento,
+    contas.dscemail AS email,
+    prof.dsctel AS telefone,
     contas_us.datacesso,
-    contas_us.dsclstsetores,
-    contas_us.dsclstcbo,
     {{ map_coluna_perfil_acesso('contas.indnivel') }},
     {{ map_coluna_status_conta('contas.indstatuser')}}
     FROM {{ source('brutos_acolherio_staging', 'gh_contas')}} contas
