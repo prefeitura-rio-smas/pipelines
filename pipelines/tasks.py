@@ -14,12 +14,16 @@ def run_dbt_models(model_name: str = None):
     """
     Executa os modelos do dbt usando a integração prefect-dbt.
     Se um model_name for fornecido, executa apenas esse modelo.
+    O target é inferido da variável de ambiente MODE (definida no prefect.yaml).
     """
     logger = prefect.get_run_logger()
 
     if model_name is None:
         logger.info("Nenhum modelo dbt para executar.")
         return None
+
+    # O MODE governará o target do dbt (dev ou prod)
+    dbt_target = os.getenv("MODE", "dev")
 
     logger.info(f"🔄 Executando dbt model: {model_name} com target: {dbt_target}...")
 
