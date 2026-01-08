@@ -59,7 +59,10 @@ SELECT
    END AS repeat_sexo,
   turno_abordagem,
 
-  DATE(data_abordagem) AS data_abordagem,
+  COALESCE(
+    SAFE.DATE(SAFE_CAST(CAST(data_abordagem AS STRING) AS TIMESTAMP)),
+    DATE(TIMESTAMP_MILLIS(SAFE_CAST(CAST(data_abordagem AS STRING) AS INT64)))
+  ) AS data_abordagem,
   ano_num_data_abordagem,
   dia_num_data_abordagem,
   CASE
