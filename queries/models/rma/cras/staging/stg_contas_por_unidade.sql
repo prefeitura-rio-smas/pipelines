@@ -1,8 +1,4 @@
 -- Retorna todos os profissionais e suas respectivas unidades. No caso de profissionais com mais de uma unidade, será retornado a unidade maisa recente logada, caso a coluna datacesso não seja vazia.
-
-{{ config(materialized = 'table') }}
-
-
 with contas_mais_de_uma_unidade as (
 select 
   sequs,
