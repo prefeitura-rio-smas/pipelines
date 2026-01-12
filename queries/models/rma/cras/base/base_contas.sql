@@ -3,8 +3,8 @@
 
 with informacao_contas as (
     select
-        dsclogin as login_usuario,
-        nompess as usuario,
+        dsclogin as login_operador,
+        nompess as operador,
         seqlogin
     from {{ source('cras_rma_prod', 'gh_contas')}} 
 )
