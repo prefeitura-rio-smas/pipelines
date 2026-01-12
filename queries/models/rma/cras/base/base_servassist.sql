@@ -4,7 +4,7 @@
 with famil_acomp_paif as (
     select
         seqfamil,
-        datcadastr as data_original,
+        datcadastr as data_cadastro_paif,
         seqlogincad,
         seqservassist
     from {{ source('cras_rma_prod', 'gh_famil_servassist')}}
