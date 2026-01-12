@@ -1,6 +1,7 @@
 from prefect import flow
 
-from pipelines.arcgis.tasks import load_arcgis_to_bigquery, run_dbt_models
+from pipelines.tasks import run_dbt_models
+from pipelines.arcgis.tasks import load_arcgis_to_bigquery
 
 
 @flow(name="Abordagem | Carga ArcGIS")

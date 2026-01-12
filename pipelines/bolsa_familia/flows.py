@@ -10,7 +10,6 @@ from pipelines.bolsa_familia.tasks import (
     create_bolsa_familia_table_if_not_exists,
     load_bolsa_familia_to_bigquery,
     upload_bolsa_familia_processed_to_gcs,
-    #run_bolsa_familia_dbt_models,
     get_project_id_task
 )
 from pipelines.bolsa_familia.utils import parse_partition

@@ -1,3 +1,4 @@
+import os
 import prefect
 from prefect import task
 from prefect_dbt.cli.commands import DbtCoreOperation
@@ -13,6 +14,7 @@ def run_dbt_models(model_name: str = None):
     """
     Executa os modelos do dbt usando a integração prefect-dbt.
     Se um model_name for fornecido, executa apenas esse modelo.
+    O target é inferido da variável de ambiente MODE (definida no prefect.yaml).
     """
     logger = prefect.get_run_logger()
 
@@ -20,10 +22,13 @@ def run_dbt_models(model_name: str = None):
         logger.info("Nenhum modelo dbt para executar.")
         return None
 
-    logger.info(f"🔄 Executando dbt model: {model_name}...")
+    # O MODE governará o target do dbt
+    dbt_target = os.getenv("MODE", "staging")
+
+    logger.info(f"🔄 Executando dbt model: {model_name} com target: {dbt_target}...")
 
     dbt_run_op = DbtCoreOperation(
-        commands=[f"dbt run --select {model_name}"],
+        commands=[f"dbt run --select {model_name} --target {dbt_target}"],
         project_dir=DBT_PROJECT_DIR,
         profiles_dir=DBT_PROJECT_DIR,
     )

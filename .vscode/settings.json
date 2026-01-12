@@ -1,0 +1,11 @@
+{
+    "python.defaultInterpreterPath": "/root/.pyenv/versions/3.13.4/bin/python",
+    "dbt.projectDirectories": [
+        "queries"
+    ],
+    "dbt.profilesDir": "queries",
+    "dbt.dbtPythonPathOverride": "/root/.pyenv/versions/3.13.4/bin/python",
+    "files.associations": {
+        "*.sql": "jinja-sql"
+    }
+}
