@@ -133,11 +133,11 @@ deployments:
           SIURB_PWD: "{{ $SIURB_PWD }}"
     tags: ["prod", "acolherio"]
 
-# ---------------------------------------------------------------------------
+  # ---------------------------------------------------------------------------
   # equipamento
   # ---------------------------------------------------------------------------
   - name: equipamento-staging
-    entrypoint: pipelines/equipamento/flows.py:equipamento_flow
+    entrypoint: pipelines/arcgis/equipamento/flows.py:equipamento_flow
     work_pool:
       name: docker-pool
       job_variables:
