@@ -137,7 +137,7 @@ deployments:
   # equipamento
   # ---------------------------------------------------------------------------
   - name: equipamento-staging
-    entrypoint: pipelines/acolherio/flows.py:equipamento_flow
+    entrypoint: pipelines/equipamento/flows.py:equipamento_flow
     work_pool:
       name: docker-pool
       job_variables:
@@ -153,7 +153,7 @@ deployments:
     tags: ["staging", "equipamento"]
 
   - name: equipamento-prod
-    entrypoint: pipelines/equipamento/flows.py:equiapmento_flow
+    entrypoint: pipelines/equipamento/flows.py:equipamento_flow
     schedule:
       cron: "0 1 * * *"
       timezone: "America/Sao_Paulo"
@@ -174,4 +174,3 @@ deployments:
           SIURB_USER: "{{ $SIURB_USER }}"
           SIURB_PWD: "{{ $SIURB_PWD }}"
     tags: ["prod", "equipamento"]
-    
