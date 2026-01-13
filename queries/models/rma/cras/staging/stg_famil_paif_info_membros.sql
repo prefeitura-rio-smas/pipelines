@@ -25,6 +25,18 @@ tratar_idade_membro as (
         sexo,
         racacor
     from informacao_membros
+),
+
+tratar_data_paif as (
+    select
+        seqfamil,
+        data_cadastro_paif,
+        extract(day from data_cadastro_paif) as dia_cadastro_paif,
+        extract(month from data_cadastro_paif) as mes_cadastro_paif,
+        extract(year from data_cadastro_paif) as ano_cadastro_paif,
+        seqlogincad,
+        seqservassist
+    from {{ ref('base_servassist') }}
 )
 
 select
@@ -41,9 +53,12 @@ select
     a.sexo,
     a.racacor,
     b.data_cadastro_paif,
+    b.dia_cadastro_paif,
+    b.mes_cadastro_paif,
+    b.ano_cadastro_paif,
     b.seqlogincad
     from tratar_idade_membro a
-    inner join {{ ref('base_servassist') }} b on a.seqfamil = b.seqfamil
+    inner join tratar_data_paif b on a.seqfamil = b.seqfamil
     left join {{ ref('base_violacao_direito') }} c on a.seqpac = c.seqpac
     left join {{ ref('base_beneficios') }} d on a.seqpac = d.seqpac
     left join {{ ref('base_vulnerab') }} e on a.seqfamil = e.seqfamil
