@@ -7,11 +7,9 @@ with contas_por_unidade as (
         a.login_operador,
         a.operador,
         a.seqlogin,
-        b.sequs,
-        c.unidade
+        b.sequs
     from {{ ref ('base_contas') }} a
     left join  {{ ref ('base_contas_unidades') }} b on a.seqlogin = b.seqlogin
-    inner join  {{ ref ('base_unidades') }} c on b.sequs = c.sequs
 )
 
 
