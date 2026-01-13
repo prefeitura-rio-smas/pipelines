@@ -16,11 +16,13 @@ with paif_unidade as (
         a.sexo,
         a.racacor,
         a.data_cadastro_paif,
+        a.dia_cadastro_paif,
+        a.mes_cadastro_paif,
+        a.ano_cadastro_paif,
         a.seqlogincad,
         b.login_operador,
         b.operador,
-        b.sequs,
-        b.unidade
+        b.sequs
     from {{ ref('stg_famil_paif_info_membros') }} a
     inner join {{ ref('stg_contas_por_unidades') }} b on a.seqlogincad = b.seqlogin
 )
