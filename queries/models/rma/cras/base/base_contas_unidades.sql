@@ -4,7 +4,7 @@
 
 with contas_mais_de_uma_unidade as (
 select 
-  sequs as unidade,
+  sequs,
   seqlogin,
   row_number() over (
    partition by seqlogin 
