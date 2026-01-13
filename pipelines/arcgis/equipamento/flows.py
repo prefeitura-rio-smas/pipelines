@@ -10,7 +10,7 @@ def equipamento_flow() -> None:
     Fluxo para carregar dados do ArcGIS para o BigQuery para o produto equipamento.
     """
     # Configuration for this product
-    job_name = "equiapmento"
+    job_name = "equipamento"
     feature_id = "134851a668ca407c8f6b4cb2fd8dfdf8"
     return_geometry = False
     batch_size = 20000
@@ -33,3 +33,5 @@ def equipamento_flow() -> None:
 
 if __name__ == "__main__":
     abordagem_flow()
+
+
