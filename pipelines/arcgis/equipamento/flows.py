@@ -4,7 +4,7 @@ from pipelines.tasks import run_dbt_models
 from pipelines.arcgis.tasks import load_arcgis_to_bigquery
 
 
-flow(name="equipamento" | Carga ArcGIS")
+@flow(name="equipamento | Carga ArcGIS")
 def equipamento_flow() -> None:
     """
     Fluxo para carregar dados do ArcGIS para o BigQuery para o produto equipamento.
