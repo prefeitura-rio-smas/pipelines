@@ -31,6 +31,9 @@ select
     a.seqfamil,
     a.seqpac,
     a.nome_usuario,
+    c.viol_direito,
+    d.beneficio,
+    e.seqvulnerab,
     a.data_nascimento,
     a.dia_nascimento,
     a.mes_nascimento,
@@ -41,4 +44,6 @@ select
     b.seqlogincad
     from tratar_idade_membro a
     inner join {{ ref('base_servassist') }} b on a.seqfamil = b.seqfamil
-
+    left join {{ ref('base_violacao_direito') }} c on a.seqpac = c.seqpac
+    left join {{ ref('base_beneficios') }} d on a.seqpac = d.seqpac
+    left join {{ ref('base_vulnerab') }} e on a.seqfamil = e.seqfamil
