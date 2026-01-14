@@ -29,7 +29,7 @@ def equipamento_flow() -> None:
         order_by_field=order_by_field,
     )
 
-    run_dbt_models(model_name="equipamento")
+    run_dbt_models(model_name="unidade")
 
 if __name__ == "__main__":
     equipamento_flow()
