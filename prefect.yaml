@@ -179,7 +179,7 @@ deployments:
  # ---------------------------------------------------------------------------
  # cras_cas_poligonos
  # ---------------------------------------------------------------------------
-  - name: cras_cas_poligonos
+  - name: cras_cas_poligonos-staging
     entrypoint: pipelines\arcgis\cras_cas_poligonos\flows.py:cras_cas_poligonos_flow
     work_pool:
       name: docker-pool
