@@ -5,7 +5,7 @@ from pipelines.arcgis.tasks import load_arcgis_to_bigquery
 
 
 @flow(name="cras_cas_poligonos | Carga ArcGIS")
-def equipamento_flow() -> None:
+def cras_cas_poligonos_flow() -> None:
     """
     Fluxo para carregar dados do ArcGIS para o BigQuery para o produto cras_cas_poligonos.
     """

@@ -32,6 +32,6 @@ def equipamento_flow() -> None:
     run_dbt_models(model_name="equipamento")
 
 if __name__ == "__main__":
-    abordagem_flow()
+    equipamento_flow()
 
 
