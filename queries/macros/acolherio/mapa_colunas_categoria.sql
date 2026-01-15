@@ -254,7 +254,7 @@
     WHEN {{ coluna }} = 8 THEN 'Acesso Personalizado (Acesso Cadastro)'
     WHEN {{ coluna }} = 98 THEN 'Gestor central '
     WHEN {{ coluna }} = 99 THEN 'MASTER'
-  END AS PERFIL_ACESSO
+  END AS perfil_acesso
 {% endmacro %}
 
 -- Coluna STATUS_CONTA do models contas_associadas
@@ -265,7 +265,7 @@
     WHEN {{ coluna }} = '2' THEN 'Trocar  senha'
     WHEN {{ coluna }} = '3' THEN 'Bloqueado'
     WHEN {{ coluna }} = '4' THEN 'Atualizar cadastro'
-  END AS STATUS_CONTA
+  END AS status_conta
 {% endmacro %}
 
 -- Coluna UNIDADE_ATIVA do models lista_unidades

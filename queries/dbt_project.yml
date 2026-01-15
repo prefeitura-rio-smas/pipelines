@@ -17,15 +17,15 @@ models:
     rma:
       +schema: "{{ 'acolherio' if target.name == 'prod' else 'gerenciamento__dbt' }}"
       cras:
+          raw:
+            +materialized: ephemeral
           staging:
             +materialized: ephemeral
-            +schema: "{{ 'dashboard_arcgis' if target.name == 'prod' else 'gerenciamento__dbt' }}"
           intermediate:
-            +materialized: table
-            +schema: "{{ 'dashboard_arcgis' if target.name == 'prod' else 'gerenciamento__dbt' }}"
+            +materialized: incremental
           mart:
-            +materialized: table
-            +schema: "{{ 'dashboard_arcgis' if target.name == 'prod' else 'gerenciamento__dbt' }}"
+            +materialized: incremental
+            +schema: "{{ 'dashboard_arcgis' if target.name == 'prod' else 'relatorio' }}"
     bolsa_familia:
       +materialized: table
       +schema: "{{ 'bolsa_familia' if target.name == 'prod' else 'gerenciamento__dbt' }}"

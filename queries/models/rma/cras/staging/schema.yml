@@ -1,0 +1,77 @@
+models:
+  - name: stg_beneficios
+    description: Tabela responsável por conter os dados de todos os benefícios de cada membro. Esta tabela não contém usuários testes.  
+    columns:
+      - name: nome_usuario
+        description: Nome do usuário do benefício
+        tests:
+          - not_null
+
+      - name: seqpac
+        description: Id único do usuário
+        tests:
+          - not_null
+
+      - name: beneficio
+        description: Descrição do benefício relacionado ao usuário
+        tests:
+          - not_null
+    
+  - name: stg_cidadao_pac
+    description: Tabela responsável por conter o nome, sexo e cor de cada usuário do Acolherio.
+    columns:
+      - name: seqpac
+        description: Id único do usuário
+        tests:
+          - not_null
+          - unique
+
+      - name: dscnomepac
+        description: Nome do usuário
+        tests:
+          - not_null
+
+      - name: indsexo
+        description: Sexo do usuário
+        tests:
+          - not_null
+          
+      - name: racacor
+        description: Cor do usuário
+        tests:
+          - not_null
+
+  - name: stg_contas_por_unidade
+    description: Tabela responsável por conter o nome, sexo e cor de cada usuário do Acolherio.
+    columns:
+      - name: seqlogin
+        description: Id único da conta
+        tests:
+          - not_null
+          - unique
+
+      - name: sequs
+        description: Id da unidade que o usuário pertence
+        tests:
+          - not_null
+
+      - name: datacesso
+        description: Data de acesso 
+        tests:
+          - not_null
+          
+      - name: nompess
+        description: Nome do usuário da conta
+        tests:
+          - not_null
+
+  - name: base_contas
+    columns:
+      - name: seqlogin
+      - name: operador
+      - name: login_operador
+
+  - name: base_contas_unidades
+    columns:
+      - name: seqlogin
+      - name: sequs
