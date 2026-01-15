@@ -5,7 +5,7 @@ with unidades_base as (
         sequs,
         unidade,
         data_extracao
-    from {{ ref('base_unidades') }}
+    from {{ ref('raw_unidades') }}
 ),
 
 -- Cte responsável pelos itens A1 e A2 do bloco I (RMA CRAS)
@@ -85,7 +85,7 @@ atendimentos as (
     select
         unidade,
         count(distinct(seq_atendimento)) as total_atendimentos_C1
-    from {{ ref('base_atendimentos') }}
+    from {{ ref('raw_atendimentos') }}
     group by unidade
 ),
 
