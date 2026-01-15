@@ -5,7 +5,7 @@ unit_tests:
       foram retiradas
     model: stg_contas_por_unidades
     given:
-      - input: ref('base_contas')
+      - input: ref('raw_contas')
         format: sql
         rows: |
           select *
@@ -17,7 +17,7 @@ unit_tests:
           ])
 
 
-      - input: ref('base_contas_unidades')
+      - input: ref('raw_contas_unidades')
         format: sql
         rows: |
           select
