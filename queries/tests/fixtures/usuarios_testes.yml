@@ -1,0 +1,14 @@
+unit_tests:
+  - name: retirar_usuarios_testes
+    description: "Teste para checar se todos os usuários testes foram retirados"
+    model: base_cidadao_pac
+    given:
+      - input: source('cras_rma_prod', 'gh_cidadao_pac')
+        rows:
+          - {dscnomepac: 'Victor Rodrigues'}
+          - {dscnomepac: 'Teste Victor Rodrigues'}
+          - {dscnomepac: 'TesteVictorRodrigues'}
+    
+    expect:
+      rows:
+      - {nome_usuario: 'Victor Rodrigues'}
