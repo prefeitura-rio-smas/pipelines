@@ -19,7 +19,17 @@ class Settings(BasePipelineSettings):
                 "project": "rj-smas-dev",
                 "bucket": "rj-smas-dev",
                 "dataset": "arcgis_raw"
-            }
+            },
+        
+            "staging": {
+                "project": "rj-smas-dev",
+                "bucket": "rj-smas-dev",
+                "dataset": "arcgis_raw"
+            } 
+        
+        
         }
+            
+            
 
 settings = Settings()
