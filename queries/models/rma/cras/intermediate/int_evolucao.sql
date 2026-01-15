@@ -23,4 +23,13 @@ with filtro_encaminhamentos_evolucao as (
     from {{ ref('stg_evolucao') }}
 )
 
-select * from filtro_encaminhamentos_evolucao
+select
+    aba,
+    sequs,
+    seqpac,
+    encaminhamento_atv_smas,
+    encaminhamento_beneficios,
+    encaminhamento_orgaos
+from filtro_encaminhamentos_evolucao
+where regexp_contains(encaminhamento_beneficios, r'(?i)BPC - Idoso|BPC - PCD|Cadastro/Atualização Cadúnico')
+or regexp_contains(encaminhamento_orgaos, r'(?i)CREAS')
