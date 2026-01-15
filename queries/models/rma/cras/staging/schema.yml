@@ -65,3 +65,13 @@ models:
         tests:
           - not_null
 
+  - name: base_contas
+    columns:
+      - name: seqlogin
+      - name: operador
+      - name: login_operador
+
+  - name: base_contas_unidades
+    columns:
+      - name: seqlogin
+      - name: sequs

@@ -6,7 +6,7 @@ WITH contas_associadas AS (
     contas.seqlogin,
     contas.nompess AS operador,
     cbo.dsccbo AS profissional,
-    prof.cpfprof AS cpf,
+    prof.cpfprof,
     prof.dtnasc AS data_nascimento,
     contas.dscemail AS email,
     prof.dsctel AS telefone,
@@ -21,4 +21,13 @@ WITH contas_associadas AS (
     LEFT JOIN {{ source('brutos_acolherio_staging', 'gh_cbo')}} cbo ON cbo.codcbo = ocup.codcbo
 )
 
-SELECT * FROM contas_associadas
+SELECT 
+    unidade,
+    seqlogin,
+    operador,
+    profissional,
+    cast(cpfprof as string) as cpf,
+    data_nascimento,
+    email,
+    telefone
+FROM contas_associadas
