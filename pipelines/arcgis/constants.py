@@ -27,7 +27,6 @@ class Settings(BasePipelineSettings):
                 "dataset": "arcgis_raw"
             } 
         
-        
         }
             
             
