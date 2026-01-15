@@ -1,7 +1,7 @@
 unit_tests:
   - name: retirar_usuarios_testes
     description: "Teste para checar se todos os usuários testes foram retirados"
-    model: base_cidadao_pac
+    model: raw_cidadao_pac
     given:
       - input: source('cras_rma_prod', 'gh_cidadao_pac')
         rows:
