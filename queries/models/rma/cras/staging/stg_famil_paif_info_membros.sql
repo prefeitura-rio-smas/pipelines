@@ -9,8 +9,8 @@ with informacao_membros as (
     a.data_nascimento,
     a.sexo,
     a.racacor,
-    from {{ ref('base_cidadao_pac') }} a
-    inner join {{ ref('base_familia_membros') }} b on a.seqpac = b.seqpac
+    from {{ ref('raw_cidadao_pac') }} a
+    inner join {{ ref('raw_familia_membros') }} b on a.seqpac = b.seqpac
 ),
 
 tratar_idade_membro as (
@@ -36,7 +36,7 @@ tratar_data_paif as (
         extract(year from data_cadastro_paif) as ano_cadastro_paif,
         seqlogincad,
         seqservassist
-    from {{ ref('base_servassist') }}
+    from {{ ref('raw_servassist') }}
 )
 
 select
@@ -59,6 +59,6 @@ select
     b.seqlogincad
     from tratar_idade_membro a
     inner join tratar_data_paif b on a.seqfamil = b.seqfamil
-    left join {{ ref('base_violacao_direito') }} c on a.seqpac = c.seqpac
-    left join {{ ref('base_beneficios') }} d on a.seqpac = d.seqpac
-    left join {{ ref('base_vulnerab') }} e on a.seqfamil = e.seqfamil
+    left join {{ ref('raw_violacao_direito') }} c on a.seqpac = c.seqpac
+    left join {{ ref('raw_beneficios') }} d on a.seqpac = d.seqpac
+    left join {{ ref('raw_vulnerab') }} e on a.seqfamil = e.seqfamil

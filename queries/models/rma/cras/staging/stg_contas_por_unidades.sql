@@ -8,8 +8,8 @@ with contas_por_unidade as (
         a.operador,
         a.seqlogin,
         b.sequs
-    from {{ ref ('base_contas') }} a
-    left join  {{ ref ('base_contas_unidades') }} b on a.seqlogin = b.seqlogin
+    from {{ ref ('raw_contas') }} a
+    left join  {{ ref ('raw_contas_unidades') }} b on a.seqlogin = b.seqlogin
 )
 
 

@@ -8,7 +8,7 @@ with filtro_aba as (
         sequs,
         seqpac,
         seqlogin,
-    from {{ ref('base_evolucao') }}
+    from {{ ref('raw_evolucao') }}
 ),
 
 texto_evolucao_sem_tags_html as (
