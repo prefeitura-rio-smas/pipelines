@@ -221,7 +221,7 @@ deployments:
   # pipeline_primeira_infancia_carioca_raw_teste
   # ---------------------------------------------------------------------------
   - name: pipeline_primeira_infancia_carioca_raw_teste-staging
-    entrypoint: pipelines/arcgis/pipeline_primeira_infancia_carioca_raw_teste/flows.py:pipeline_primeira_infancia_carioca_raw_teste_flow
+    entrypoint: pipelines/arcgis/pipeline_primeira_infancia_carioca_raw_teste/flows.py:pipeline_primeira_infancia_carioca_raw_teste
     work_pool:
       name: docker-pool
       job_variables:
