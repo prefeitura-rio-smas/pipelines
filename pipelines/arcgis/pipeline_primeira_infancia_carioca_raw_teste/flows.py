@@ -32,6 +32,7 @@ def pipeline_primeira_infancia_carioca_raw_teste() -> None:
     run_dbt_models(model_name="ef6fe5c04520445f91be8a57c4adcd96")
 
 if __name__ == "__main__":
-    pipeline_primeira_infancia_carioca_raw_teste_flow()
+    pipeline_primeira_infancia_carioca_raw_teste()
+
 
 
