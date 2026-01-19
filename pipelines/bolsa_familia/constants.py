@@ -1,12 +1,12 @@
-from typing import Dict, Any
+from typing import Dict, Any, ClassVar
 from pipelines.utils.settings import BasePipelineSettings
 
 class Settings(BasePipelineSettings):
     # --- Bolsa Família ---
 
     # Constantes do Pipeline
-    TABLE_ID = "folha"
-    RAW_PATH = "raw/bolsa_familia"
+    TABLE_ID: ClassVar[str] = "folha"
+    RAW_PATH: ClassVar[str] = "raw/bolsa_familia"
 
     @property
     def env_defaults(self) -> Dict[str, Dict[str, Any]]:
@@ -18,7 +18,7 @@ class Settings(BasePipelineSettings):
             },
             "staging": {
                 "project": "rj-smas-dev",
-                "bucket": "rj-smas-dev",
+                "bucket": "rj-smas",
                 "dataset": "bolsa_familia_staging",
             }
         }
