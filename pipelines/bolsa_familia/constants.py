@@ -12,13 +12,11 @@ class Settings(BasePipelineSettings):
                 "project": "rj-smas",
                 "bucket": "rj-smas",
                 "dataset": "bolsa_familia",
-                "staging_dataset": "bolsa_familia_staging"
             },
-            "dev": {
+            "staging": {
                 "project": "rj-smas",
                 "bucket": "rj-smas",
                 "dataset": "bolsa_familia",
-                "staging_dataset": "bolsa_familia_staging"
             }
         }
 
