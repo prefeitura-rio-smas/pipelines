@@ -21,11 +21,14 @@ def bolsa_familia_flow() -> None:
     """
     Fluxo para carregar dados do Bolsa Família a partir de arquivos ZIP no GCS para o BigQuery.
     """
+    import prefect
+    logger = prefect.get_run_logger()
+
     # Configuration for Bolsa Família
     job_name = "bolsa_familia"
-    dataset_id = settings.GCP_STAGING_DATASET  # Using staging dataset
-    table_id = "folha"
-    raw_prefix = "raw/bolsa_familia"
+    dataset_id = settings.GCP_DATASET
+    table_id = settings.TABLE_ID
+    raw_prefix = settings.RAW_PATH
     bucket_name = settings.GCS_BUCKET
 
     # Get project ID
@@ -33,7 +36,7 @@ def bolsa_familia_flow() -> None:
 
     # Get existing partitions to avoid reprocessing
     existing_partitions = get_existing_bolsa_familia_partitions(dataset_id, table_id)
-    print(f"Existing partitions: {existing_partitions}")
+    logger.info(f"Existing partitions: {existing_partitions}")
 
     # Get raw files to process
     raw_files = get_bolsa_familia_raw_files(raw_prefix, bucket_name)
@@ -43,7 +46,7 @@ def bolsa_familia_flow() -> None:
     for blob in raw_files:
         partition_date = parse_partition(blob)
         if partition_date in existing_partitions:
-            print(f"Skipping {blob.name} because partition {partition_date} already exists.")
+            logger.info(f"Skipping {blob.name} because partition {partition_date} already exists.")
         else:
             files_to_process.append(blob)
 
@@ -51,7 +54,7 @@ def bolsa_familia_flow() -> None:
     has_files = len(files_to_process) > 0
 
     if has_files:
-        print(f"Processing {len(files_to_process)} new files...")
+        logger.info(f"Processing {len(files_to_process)} new files...")
         
         # Process each raw file
         output_directory = f"/tmp/{job_name}_processed"
@@ -83,11 +86,10 @@ def bolsa_familia_flow() -> None:
         )
 
     else:
-        print("No new files to process.")
+        logger.info("No new files to process.")
 
     # Execute DBT models for Bolsa Família - always run to ensure final table is up to date
     run_dbt_models(model_name="folha")
-    #run_bolsa_familia_dbt_models(model_name="folha")
 
 
 if __name__ == "__main__":
