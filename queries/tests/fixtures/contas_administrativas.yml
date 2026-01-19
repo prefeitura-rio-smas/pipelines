@@ -1,0 +1,29 @@
+unit_tests:
+  - name: retirar_contas_administrativas
+    description: |
+      Teste para checar se contas com nome admin, teste e suporte
+      foram retiradas
+    model: stg_contas_por_unidades
+    given:
+      - input: ref('raw_contas')
+        format: sql
+        rows: |
+          select *
+          from unnest([
+            struct(1 as seqlogin, 'victor' as login_operador, 'victor rodrigues' as operador),
+            struct(2 as seqlogin, 'teste_victor' as login_operador, 'teste victor rodrigues' as operador),
+            struct(3 as seqlogin, 'admin_victor' as login_operador, 'admin victor rodrigues' as operador),
+            struct(4 as seqlogin, 'suporte_victor' as login_operador, 'suporte victor rodrigues' as operador)
+          ])
+
+
+      - input: ref('raw_contas_unidades')
+        format: sql
+        rows: |
+          select
+            1 as seqlogin,
+            1 as sequs
+    
+    expect:
+      rows:
+        - {operador: 'victor rodrigues', seqlogin: 1, login_operador: 'victor'}
