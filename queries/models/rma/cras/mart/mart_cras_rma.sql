@@ -89,6 +89,26 @@ atendimentos as (
     group by unidade
 ),
 
+-- Cte responsável pelos item C6 do bloco II (RMA CRAS)
+atendimentos_domiciliar as (
+    select
+        unidade,
+        seq_atendimento,
+        profissional_id,
+        count(*) as qtd_atend_domiciliar
+    from {{ ref('raw_atendimentos') }}
+    where regexp_contains(nome_atendimento, '(?i)domiciliar')
+    group by unidade, seq_atendimento, profissional_id
+),
+
+total_atendimentos_domiciliar as (
+    select 
+        unidade,
+        sum(qtd_atend_domiciliar) as total_atendimentos_domiciliar_C6
+    from atendimentos_domiciliar
+    group by unidade
+),
+
 -- Cte responsável pelos itens C2, C3, C4 e C5 do bloco II (RMA CRAS)
 evolucao as (
     select
@@ -132,7 +152,8 @@ select
     f.total_atendimentos_C1,
     g.encaminhamento_cadunico_C2_C3,
     g.encaminhamento_bpc_C4,
-    g.encaminhamento_creas_C5
+    g.encaminhamento_creas_C5,
+    h.total_atendimentos_domiciliar_C6
 from unidades_base a
 left join total_paif b on a.sequs = b.sequs
 left join bolsa_familia_e_descumprimento_condicionalidades c on a.sequs = c.sequs
@@ -140,3 +161,4 @@ left join beneficiario_bpc d on a.sequs = d.sequs
 left join trabalho_infantil_crianca_adoslecente e  on a.sequs = e.sequs
 left join atendimentos f  on a.unidade = f.unidade
 left join evolucao g  on a.sequs = g.sequs
+left join total_atendimentos_domiciliar h on a.unidade = h.unidade
