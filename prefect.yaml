@@ -153,13 +153,14 @@ deployments:
     tags: ["staging", "equipamento"]
 
   - name: equipamento-prod
-    entrypoint: pipelines/equipamento/flows.py:equipamento_flow
+    entrypoint: pipelines/arcgis/equipamento/flows.py:equipamento_flow
     schedule:
       cron: "0 1 * * *"
       timezone: "America/Sao_Paulo"
     work_pool:
       name: docker-pool
       job_variables:
+        networks: ["prefect_prefect-stack"]
         image: "{{ $PREFECT_DEPLOYMENT_IMAGE }}"
         env:
           MODE: prod
@@ -195,13 +196,14 @@ deployments:
     tags: ["staging", "cras_cas_poligonos"]
 
   - name: cras_cas_poligonos-prod
-    entrypoint: pipelines/cras_cas_poligonos/flows.py:cras_cas_poligonos_flow
+    entrypoint: pipelines/arcgis/cras_cas_poligonos/flows.py:cras_cas_poligonos_flow
     schedule:
       cron: "0 1 * * *"
       timezone: "America/Sao_Paulo"
     work_pool:
       name: docker-pool
       job_variables:
+        networks: ["prefect_prefect-stack"]
         image: "{{ $PREFECT_DEPLOYMENT_IMAGE }}"
         env:
           MODE: prod
@@ -237,13 +239,14 @@ deployments:
     tags: ["staging", "pipeline_primeira_infancia_carioca_raw_teste"]
 
   - name: pipeline_primeira_infancia_carioca_raw_teste-prod
-    entrypoint: pipelines/pipeline_primeira_infancia_carioca_raw_teste/flows.py:pipeline_primeira_infancia_carioca_raw_teste_flow
+    entrypoint: pipelines/arcgis/pipeline_primeira_infancia_carioca_raw_teste/flows.py:pipeline_primeira_infancia_carioca_raw_teste
     schedule:
       cron: "0 1 * * *"
       timezone: "America/Sao_Paulo"
     work_pool:
       name: docker-pool
       job_variables:
+        networks: ["prefect_prefect-stack"]
         image: "{{ $PREFECT_DEPLOYMENT_IMAGE }}"
         env:
           MODE: prod
