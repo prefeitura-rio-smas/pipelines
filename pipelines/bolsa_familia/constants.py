@@ -1,26 +1,27 @@
-from typing import Dict, Any, ClassVar
-from pipelines.utils.settings import BasePipelineSettings
+from typing import Dict, Any
+from pipelines.utils.settings_new import BaseSettings
 
-class Settings(BasePipelineSettings):
-    # --- Bolsa Família ---
+class Settings(BaseSettings):
+    """
+    Configurações específicas do pipeline Bolsa Família.
+    Utiliza a nova base BaseSettings para resolução de ambiente.
+    """
+    # Constantes estáticas do Pipeline
+    TABLE_ID: str = "folha"
+    RAW_PATH: str = "raw/bolsa_familia"
 
-    # Constantes do Pipeline
-    TABLE_ID: ClassVar[str] = "folha"
-    RAW_PATH: ClassVar[str] = "raw/bolsa_familia"
-
-    @property
-    def env_defaults(self) -> Dict[str, Dict[str, Any]]:
-        return {
-            "prod": {
-                "project": "rj-smas",
-                "bucket": "rj-smas",
-                "dataset": "bolsa_familia_staging",
-            },
-            "staging": {
-                "project": "rj-smas-dev",
-                "bucket": "rj-smas",
-                "dataset": "bolsa_familia_staging",
-            }
+    # Definições por ambiente
+    _env_configs: Dict[str, Dict[str, Any]] = {
+        "prod": {
+            "project": "rj-smas",
+            "bucket": "rj-smas",
+            "dataset": "bolsa_familia_staging",
+        },
+        "staging": {
+            "project": "rj-smas-dev",
+            "bucket": "rj-smas",
+            "dataset": "bolsa_familia_staging",
         }
+    }
 
 settings = Settings()
