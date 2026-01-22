@@ -31,14 +31,16 @@ bolsa_familia_e_descumprimento_condicionalidades as (
         sequs,
         count(
             distinct if(
-                beneficio = 'Bolsa Família',
+                beneficio = 'Bolsa Família'
+                and mes_cadastro_paif = extract(month from current_date()),
                 seqfamil,
                 null
             )
         ) as total_famil_paif_bf_B2,
         count(
             distinct if(
-                seqvulnerab = 1,
+                seqvulnerab = 1
+                and mes_cadastro_paif = extract(month from current_date()),
                 seqfamil,
                 null
             )
@@ -53,7 +55,8 @@ beneficiario_bpc as (
         sequs,
         count(
             distinct if (
-                beneficio = 'BPC-Benefício de Prestação Continuada',
+                beneficio = 'BPC-Benefício de Prestação Continuada'
+                and mes_cadastro_paif = extract(month from current_date())
                 seqfamil,
                 null
             )
@@ -71,7 +74,8 @@ trabalho_infantil_crianca_adoslecente as (
                 viol_direito = 'Trabalho Infantil'
                 and mes_nascimento < extract(month from current_date())
                 and date_diff(data_nascimento, current_date(), year) = 18
-                and dia_nascimento < extract(day from current_date()),
+                and dia_nascimento < extract(day from current_date())
+                and mes_cadastro_paif = extract(month from current_date()),
                 seqfamil,
                 null
             )
