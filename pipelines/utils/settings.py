@@ -13,8 +13,8 @@ class BasePipelineSettings(BaseSettings):
     Gerencia boilerplate de ambiente e autenticação GCP.
     """
     
-    # Define o ambiente de execução: "dev" ou "prod"
-    MODE: Literal["dev", "prod"] = "dev"
+    # Define o ambiente de execução: "staging" ou "prod"
+    MODE: Literal["staging", "prod"] = "staging"
 
     # Campos GCP comuns preenchidos via env_defaults ou env vars
     GCP_PROJECT: str | None = None
