@@ -3,7 +3,9 @@
 with atendimentos as (
     select
         unidade_atendimento as unidade,
-        seq_atendimento,
+        profissional_id,
+        nome_atendimento,
+        seq_atendimento
     from {{ source('cras_rma_dev', 'dev_atendimentos') }}
 )
 
