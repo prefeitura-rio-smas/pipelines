@@ -216,10 +216,10 @@ deployments:
     tags: ["prod", "cras_cas_poligonos"]
 
   # ---------------------------------------------------------------------------
-  # pipeline_primeira_infancia_carioca_raw_teste
+  # cartao_primeira_infancia_carioca
   # ---------------------------------------------------------------------------
-  - name: pipeline_primeira_infancia_carioca_raw_teste-staging
-    entrypoint: pipelines/arcgis/pipeline_primeira_infancia_carioca_raw_teste/flows.py:pipeline_primeira_infancia_carioca_raw_teste
+  - name: cartao_primeira_infancia_carioca-staging
+    entrypoint: pipelines/arcgis/cartao_primeira_infancia_carioca/flows.py:cartao_primeira_infancia_carioca
     work_pool:
       name: docker-pool
       job_variables:
@@ -232,10 +232,10 @@ deployments:
           SIURB_URL: "{{ $SIURB_URL }}"
           SIURB_USER: "{{ $SIURB_USER }}"
           SIURB_PWD: "{{ $SIURB_PWD }}"
-    tags: ["staging", "pipeline_primeira_infancia_carioca_raw_teste"]
+    tags: ["staging", "cartao_primeira_infancia_carioca"]
 
-  - name: pipeline_primeira_infancia_carioca_raw_teste-prod
-    entrypoint: pipelines/arcgis/pipeline_primeira_infancia_carioca_raw_teste/flows.py:pipeline_primeira_infancia_carioca_raw_teste
+  - name: cartao_primeira_infancia_carioca-prod
+    entrypoint: pipelines/arcgis/cartao_primeira_infancia_carioca/flows.py:cartao_primeira_infancia_carioca
     schedule:
       cron: "0 1 * * *"
       timezone: "America/Sao_Paulo"
@@ -256,4 +256,4 @@ deployments:
           SIURB_URL: "{{ $SIURB_URL }}"
           SIURB_USER: "{{ $SIURB_USER }}"
           SIURB_PWD: "{{ $SIURB_PWD }}"
-    tags: ["prod", "pipeline_primeira_infancia_carioca_raw_teste"]
+    tags: ["prod", "cartao_primeira_infancia_carioca"]
