@@ -1,63 +1,63 @@
+# -*- coding: utf-8 -*-
 import os
 import tempfile
-from pathlib import Path
-from typing import Literal, Dict, Any
+from typing import Dict, Any
+from pipelines.constants import constants as global_constants
 
-from pydantic import model_validator
-from pydantic_settings import BaseSettings, SettingsConfigDict
-
-
-class BasePipelineSettings(BaseSettings):
+class BaseSettings:
     """
-    Classe base para configurações de pipeline.
-    Gerencia boilerplate de ambiente e autenticação GCP.
+    Nova classe base para configurações de pipeline (v2).
+    
+    Substitui a lógica baseada em Pydantic por uma abordagem explícita baseada em dicionários
+    controlados pela constante global MODE.
+    
+    Também gerencia a autenticação GCP quando as credenciais são injetadas via variável de ambiente (CI/CD).
     """
     
-    # Define o ambiente de execução: "staging" ou "prod"
-    MODE: Literal["staging", "prod"] = "staging"
+    # Dicionário de configuração por ambiente. Deve ser sobrescrito na subclasse.
+    _env_configs: Dict[str, Dict[str, Any]] = {}
 
-    # Campos GCP comuns preenchidos via env_defaults ou env vars
-    GCP_PROJECT: str | None = None
-    GCP_DATASET: str | None = None
-    GCS_BUCKET: str | None = None
-    GCP_STAGING_DATASET: str | None = None
+    def __init__(self):
+        self._configure_auth()
 
-    # Credenciais GCP (Path ou JSON string)
-    GOOGLE_APPLICATION_CREDENTIALS: str | None = None
-    GCP_CREDENTIALS: str | None = None
-
-    model_config = SettingsConfigDict(
-        env_file=Path(__file__).parents[2] / ".env",
-        extra="ignore",
-        case_sensitive=False,
-    )
+    def _configure_auth(self):
+        """
+        Configura a autenticação do Google Cloud.
+        Se receber GCP_CREDENTIALS (conteúdo JSON), cria arquivo temporário para o ADC.
+        """
+        gcp_credentials = os.getenv("GCP_CREDENTIALS")
+        
+        if gcp_credentials and gcp_credentials.strip().startswith("{"):
+            # Evita criar múltiplos arquivos se já estiver configurado nesta sessão
+            if "GOOGLE_APPLICATION_CREDENTIALS" not in os.environ:
+                try:
+                    # Cria arquivo temporário com as credenciais
+                    # O delete=False é necessário para que o arquivo persista para leitura pela lib do Google
+                    with tempfile.NamedTemporaryFile(mode="w", delete=False, suffix=".json") as f:
+                        f.write(gcp_credentials)
+                        os.environ["GOOGLE_APPLICATION_CREDENTIALS"] = f.name
+                except Exception as e:
+                    print(f"Aviso: Falha ao configurar credenciais GCP a partir da variável de ambiente: {e}")
 
     @property
-    def env_defaults(self) -> Dict[str, Dict[str, Any]]:
-        """Sobrescrever na subclasse com os valores hardcoded."""
-        return {}
+    def _current_config(self) -> Dict[str, Any]:
+        """Resolve a configuração ativa baseada no MODE global."""
+        mode = global_constants().MODE
+        # Tenta pegar pelo MODE exato, senão fallback para staging, senão vazio
+        return self._env_configs.get(mode, self._env_configs.get("staging", {}))
 
-    @model_validator(mode="after")
-    def _configure_infrastructure(self):
-        mode = self.MODE
-        defaults = self.env_defaults.get(mode, {})
+    @property
+    def GCP_PROJECT(self) -> str:
+        return self._current_config.get("project")
 
-        # 1. Aplica defaults se o campo não estiver setado via ENV
-        if not self.GCP_PROJECT:
-            self.GCP_PROJECT = defaults.get("project")
-        if not self.GCS_BUCKET:
-            self.GCS_BUCKET = defaults.get("bucket")
-        if not self.GCP_DATASET:
-            self.GCP_DATASET = defaults.get("dataset")
-        if not self.GCP_STAGING_DATASET:
-            self.GCP_STAGING_DATASET = defaults.get("staging_dataset")
+    @property
+    def GCS_BUCKET(self) -> str:
+        return self._current_config.get("bucket")
 
-        # 2. Autenticação GCP
-        if self.GCP_CREDENTIALS and self.GCP_CREDENTIALS.strip().startswith("{"):
-            with tempfile.NamedTemporaryFile(mode="w", delete=False, suffix=".json") as f:
-                f.write(self.GCP_CREDENTIALS)
-                os.environ["GOOGLE_APPLICATION_CREDENTIALS"] = f.name
-        elif self.GOOGLE_APPLICATION_CREDENTIALS:
-            os.environ["GOOGLE_APPLICATION_CREDENTIALS"] = self.GOOGLE_APPLICATION_CREDENTIALS
-        
-        return self
+    @property
+    def GCP_DATASET(self) -> str:
+        return self._current_config.get("dataset")
+
+    @property
+    def TABLE_ID(self) -> str | None:
+        return self._current_config.get("table_id")

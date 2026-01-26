@@ -1,10 +1,9 @@
 from typing import Dict, Any
-from pipelines.utils.settings_new import BaseSettings
+from pipelines.utils.settings import BaseSettings
 
 class Settings(BaseSettings):
     """
     Configurações específicas do pipeline Bolsa Família.
-    Utiliza a nova base BaseSettings para resolução de ambiente.
     """
     # Constantes estáticas do Pipeline
     TABLE_ID: str = "folha"
