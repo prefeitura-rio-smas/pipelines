@@ -21,4 +21,8 @@ sources:
       - name: gh_familias_membros
       - name: gh_famil_vulnerab
       - name: gh_evoluadm
-
+  - name: cras_rma_relatorio
+    database: rj-smas-dev 
+    schema: relatorio
+    tables:
+      - name: violacao_direito
