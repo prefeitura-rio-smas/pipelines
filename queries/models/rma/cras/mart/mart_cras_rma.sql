@@ -94,6 +94,7 @@ atendimentos as (
         unidade,
         count(distinct(seq_atendimento)) as total_atendimentos_C1
     from {{ ref('raw_atendimentos') }}
+    where not regexp_contains(nome_atendimento, '(?i)recepção')
     group by unidade
 ),
 
