@@ -24,4 +24,4 @@ select
     inst_usuario,
     'Sim' as flag_familia_menor_idade_serv_acolhimento
 from inst_list_tratado
-where inst_usuario = 1
+where inst_usuario = 1 -- Id do Abrigo para criança/adolescente 
