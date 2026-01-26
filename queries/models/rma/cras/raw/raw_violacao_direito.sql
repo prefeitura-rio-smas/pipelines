@@ -6,7 +6,7 @@ select
     nome_usuario as usuario,
     seqpac,
     viol_direito
-from {{ source('dashboard_acolherio', 'violacao_direito')}}
+from {{ source('cras_rma_relatorio', 'violacao_direito')}}
 where not regexp_contains(nome_usuario, r'(?i)teste')
 )
 
