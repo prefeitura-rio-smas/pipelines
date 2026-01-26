@@ -21,6 +21,7 @@ sources:
       - name: gh_familias_membros
       - name: gh_famil_vulnerab
       - name: gh_evoluadm
+      - name: gh_pacientes_sm
   - name: cras_rma_relatorio
     database: rj-smas-dev 
     schema: relatorio
