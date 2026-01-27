@@ -1,0 +1,50 @@
+models:
+  - name: stg_famil_paefi_info_membros_creas
+    description: "Modelo que possui dados relacionados a membros que estão no PAEFI"
+    columns:
+      - name: seqfamil
+        description: "Id da família que está em acompanhamento PAEFI"
+        data_tests:
+          - not_null
+      - name: seqpac
+        description: "Id do usuário que está em acompanhamento PAEFI"
+        data_tests:
+          - not_null
+      - name: nome_usuario
+        description: "Nome do usuário"
+      - name: viol_direito
+        description: "Descrição da violação de direito de cada usuário"
+      - name: beneficio
+        description: "Descrição do benefício de cada usuário"
+      - name: data_nascimento
+        description: "Data de nascimento original do usuário"
+      - name: dia_nascimento
+        description: "Dia de nascimento do usuário"
+      - name: mes_nascimento
+        description: "Número do mês de nascimento do usuário"
+      - name: idade
+        description: "Idade do usuário"
+      - name: sexo 
+        description: "Descrição do sexo do usuário"
+      - name: racacor
+        description: "Descrição da cor do usuário"
+      - name: data_cadastro_paefi
+        description: "Data de cadastro do PAEFI"
+        data_tests:
+          - not_null
+      - name: dia_cadastro_paefi
+        description: "Dia de cadastro do PAEFI"
+        data_tests:
+          - not_null
+      - name: mes_cadastro_paefi
+        description: "Descrição do mês de cadastro do PAEFI"
+        data_tests:
+          - not_null
+      - name: ano_cadastro_paefi
+        description: "Ano de cadastro do PAEFI"
+        data_tests:
+          - not_null
+      - name: seqlogincad
+        description: "Id de login de quem cadastrou a família ao PAEFI no sistema"
+        data_tests:
+          - not_null

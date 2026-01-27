@@ -9,6 +9,7 @@ with paif_unidade as (
         a.viol_direito,
         a.beneficio,
         a.seqvulnerab,
+        c.flag_familia_menor_idade_serv_acolhimento,
         a.data_nascimento,
         a.dia_nascimento,
         a.mes_nascimento,
@@ -25,6 +26,7 @@ with paif_unidade as (
         b.sequs
     from {{ ref('stg_famil_paif_info_membros') }} a
     inner join {{ ref('stg_contas_por_unidades') }} b on a.seqlogincad = b.seqlogin
+    left join {{ ref('stg_pacientes_sm') }} c on a.seqpac = c.seqpac
 )
 
 select * from paif_unidade
