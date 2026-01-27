@@ -31,4 +31,8 @@ models:
         description: "Sexo do usuário"
       - name: genero
         description: "Gênero do usuário"
+      - name: prontuario
+        description: "Número de prontuário do usuário"
+      - name: data_cadastro
+        description: "Data de cadastro do usuário no sistema"
 
