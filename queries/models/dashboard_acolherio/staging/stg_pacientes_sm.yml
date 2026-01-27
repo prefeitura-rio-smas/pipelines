@@ -1,0 +1,33 @@
+models:
+  - name: stg_pacientes_sm
+    description: "Modelo retorna dados relacionados a cada usuário cadastrado no sistema Acolherio"
+    columns:
+      - name: seqpac
+        description: "Id único do usuário"
+        data_tests:
+          - unique
+          - not_null
+      - name: flag_trabalho
+        description: "Flag para indicar se o usuário trabalha ou não"
+      - name: profissao
+        description: "Descrição da profissão do usuário"
+      - name: flag_frequencia_escola
+        description: "Flag para indicar se o usuário frequenta escola"
+      - name: serie_escola
+        description: "Série do usuário que frequenta escola"
+      - name: indescolari
+        description: "Escolaridade do usuário"
+      - name: flag_recebe_beneficio
+        description: "Flag para indicar se o usuário recebe benefício"
+      - name: tipo_beneficio
+        description: "Tipo do benefício que o usuário recebe"
+      - name: flag_curatela
+        description: "Flag para indicar se o usuário é curatelado"
+      - name: tipo_curatela 
+        description: "Tipo de curatela"
+      - name: flag_situacao_rua
+        description: "Flag para indicar se o usuário é morador de rua"
+      - name: flag_deficiencia
+        description: "Flag para indicar se o usuário possui deficiência"
+      - name: tipo_deficiencia
+        description: "Tipo da deficiência do usuário"
