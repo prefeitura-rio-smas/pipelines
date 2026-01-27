@@ -1,5 +1,5 @@
 models:
-  - name: stg_pacientes_sm
+  - name: stg_pacientes_sm_acolherio
     description: "Modelo retorna dados relacionados a cada usuário cadastrado no sistema Acolherio"
     columns:
       - name: seqpac
