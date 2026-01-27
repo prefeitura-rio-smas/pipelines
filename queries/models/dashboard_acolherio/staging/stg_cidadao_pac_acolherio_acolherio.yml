@@ -1,0 +1,34 @@
+models:
+  - name: stg_cidadao_pac_acolherio
+    description: "Modelo retorna dados relacionados a cada usuário cadastrado no sistema Acolherio"
+    columns:
+      - name: seqpac
+        description: "Id único do usuário"
+        data_tests:
+          - unique 
+          - not_null
+      - name: nome_usuario
+        description: "Nome do usuário"
+      - name: nome_social
+        description: "Nome social do usuário"
+      - name: filiacao_mae
+        description: "Nome da mãe"
+      - name: data_nascimento
+        description: "Data de nascimento do usuário"
+      - name: nacionalidade
+        description: "Nacionalidade do usuário"
+      - name: condicao_estrangeira
+        description: "Condição estrangeira do usuário, caso seja imigrante"
+      - name: pais_origem
+        description: "País de origem do usuário"
+      - name: raca
+        description: "Raça/cor do usuário"
+      - name: cpf 
+        description: "cpf do usuário"
+        data_tests:
+        #  - unique (apagado, pois explodirá no join das outras camadas, mas os dados duplicados serão retirados no filtro na próxima camada)
+      - name: sexo 
+        description: "Sexo do usuário"
+      - name: genero
+        description: "Gênero do usuário"
+
