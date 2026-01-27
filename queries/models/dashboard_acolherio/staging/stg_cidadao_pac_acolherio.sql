@@ -14,10 +14,13 @@ with dados_cidadao_pac as (
         nacional as nacionalidade,
         condestr as condicao_estrangeira,
         paisorigem as pais_origem,
+        dscbairroender as bairro,
         racacor as raca, 
         numcpfpac as cpf,
         indsexo as sexo,
-        indgenero as genero
+        indgenero as genero,
+        nuprontpapel as prontuario,
+        datcadast as data_cadastro
     from  {{ source('source_dashboard_acolherio', 'gh_cidadao_pac') }}
 )
 
