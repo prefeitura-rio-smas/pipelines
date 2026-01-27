@@ -28,4 +28,5 @@ models:
             +schema: "{{ 'dashboard_arcgis' if target.name == 'prod' else 'relatorio' }}"
     bolsa_familia:
       +materialized: table
+      +database: "{{ 'rj-smas' if target.name == 'prod' else target.project }}"
       +schema: "{{ 'bolsa_familia' if target.name == 'prod' else 'gerenciamento__dbt' }}"
