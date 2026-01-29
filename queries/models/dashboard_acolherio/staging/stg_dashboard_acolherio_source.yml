@@ -11,3 +11,9 @@ sources:
         description: "Tabela que possui registros relacionados aos dados do usuário"
       - name: gh_pac_ciclos
         description: "Tabela que possui registros relacinados ao acolhimentos de cada usuário"
+      - name: gh_familias_membros
+        description: "Tabela que possui dados relacionados aos membros de cada família"
+      - name: gh_origens
+        description: "Tabela normalizada da origem da demanda"
+      - name: gh_contas
+        description: "Contas dos operadores do sistema acolherio"
