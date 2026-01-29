@@ -14,6 +14,7 @@ with dados_pac as (
         indmotivacol as motivo_acolhimento,
         indvioldir as violacao_direito,
         valpontos as pontuacao,
+        indgraudepend as grau_dependencia,
         indorientsex as orientacao_sexual,
         indtipovinc  as vinculo_trabalhista
     from  {{ source('source_dashboard_acolherio', 'gh_pac_dados') }}
