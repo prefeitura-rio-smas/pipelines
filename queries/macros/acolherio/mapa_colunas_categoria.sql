@@ -21,15 +21,15 @@
   END AS COND_ESTRANGEIRO
 {% endmacro %}
 
--- Coluna ETNIA do models relatorio_geral
-{% macro map_coluna_etnia (coluna) %}
+-- Coluna RAÇA/COR do models relatorio_geral
+{% macro map_coluna_raca (coluna) %}
   CASE
     WHEN {{ coluna }} = '01' THEN 'Branca'
     WHEN {{ coluna }} = '02' THEN 'Preta'
     WHEN {{ coluna }} = '03' THEN 'Parda'
     WHEN {{ coluna }} = '04' THEN 'Amarelo'
     WHEN {{ coluna }} = '05' THEN 'Indígena'
-  END AS ETNIA
+  END 
 {% endmacro %}
 
 -- Coluna GENERO do models relatorio_geral
@@ -44,7 +44,7 @@
     WHEN {{ coluna }} = '98' THEN 'Outro'
     WHEN {{ coluna }} = '01' THEN 'Mulher transgênero'
     WHEN {{ coluna }} = '99' THEN 'Sem Informação' 
-  END AS GENERO
+  END
 {% endmacro %}
 
 -- Coluna FILIACAO do models relatorio_geral
@@ -58,28 +58,46 @@
   END AS FILIACAO
 {% endmacro %}
 
+-- Coluna serie_escola do models relatorio_geral
+{% macro map_coluna_serie_escola (coluna) %}
+  CASE
+    WHEN {{ coluna }} = '1' THEN 'Educação Infantil'
+    WHEN {{ coluna }} = '2' THEN 'Fundamental I - 1° Ano'
+    WHEN {{ coluna }} = '3' THEN 'Fundamental I - 2° Ano'
+    WHEN {{ coluna }} = '5' THEN 'Fundamental I - 3° Ano'
+    WHEN {{ coluna }} = '6' THEN 'Fundamental I - 4° Ano'
+    WHEN {{ coluna }} = '7' THEN 'Fundamental I - 5° Ano'
+    WHEN {{ coluna }} = '8' THEN 'Fundamental II - 6° Ano'
+    WHEN {{ coluna }} = '9' THEN 'Fundamental II - 7° Ano'
+    WHEN {{ coluna }} = '10' THEN 'Fundamental II - 8° Ano'
+    WHEN {{ coluna }} = '11' THEN 'Fundamental II - 9° Ano'
+    WHEN {{ coluna }} = '12' THEN 'Ensino Médio - 1° Ano'
+    WHEN {{ coluna }} = '13' THEN 'Ensino Médio - 2° Ano'
+    WHEN {{ coluna }} = '14' THEN 'Ensino Médio - 3° Ano'
+    WHEN {{ coluna }} = '15' THEN 'Ensino Superior'
+    WHEN {{ coluna }} = '16' THEN 'PEJA I e II'
+    WHEN {{ coluna }} = '17' THEN 'PEJA III e IV'
+    WHEN {{ coluna }} = '18' THEN 'PEJA V'
+  END 
+{% endmacro %}
+
 -- Coluna ESCOLARIDADE do models relatorio_geral
 {% macro map_coluna_escolaridade (coluna) %}
   CASE
-    WHEN {{ coluna }} = '1' THEN 'Infantil - G1'
-    WHEN {{ coluna }} = '2' THEN 'Infantil - G2'
-    WHEN {{ coluna }} = '3' THEN 'Infantil - G3'
-    WHEN {{ coluna }} = '4' THEN 'Infantil - G4'
-    WHEN {{ coluna }} = '5' THEN 'Infantil - G5'
-    WHEN {{ coluna }} = '6' THEN 'Fundamental I - 1º Ano'
-    WHEN {{ coluna }} = '7' THEN 'Fundamental I - 2º Ano'
-    WHEN {{ coluna }} = '8' THEN 'Fundamental I - 3º Ano'
-    WHEN {{ coluna }} = '9' THEN 'Fundamental I - 4º Ano'
-    WHEN {{ coluna }} = '10' THEN 'Fundamental I - 5º Ano'
-    WHEN {{ coluna }} = '11' THEN 'Fundamental II - 6º Ano'
-    WHEN {{ coluna }} = '12' THEN 'Fundamental II - 7º Ano'
-    WHEN {{ coluna }} = '13' THEN 'Fundamental II - 8º Ano'
-    WHEN {{ coluna }} = '14' THEN 'Fundamental II - 9º Ano'
-    WHEN {{ coluna }} = '15' THEN 'Ensino Médio - 1º Ano'
-    WHEN {{ coluna }} = '16' THEN 'Ensino Médio - 2º Ano'
-    WHEN {{ coluna }} = '17' THEN 'Ensino Médio - 3º Ano'
-    WHEN {{ coluna }} = '18' THEN 'Ensino Superior'
-  END AS ESCOLARIDADE
+    WHEN {{ coluna }} = '01' THEN 'Não Alfabetizado'
+    WHEN {{ coluna }} = '02' THEN 'Alfabetizado'
+    WHEN {{ coluna }} = '03' THEN 'Nível fundamental incompleto'
+    WHEN {{ coluna }} = '04' THEN 'Nível fundamental completo'
+    WHEN {{ coluna }} = '05' THEN 'Nível médio incompleto'
+    WHEN {{ coluna }} = '06' THEN 'Nível médio completo'
+    WHEN {{ coluna }} = '07' THEN 'Superior incompleto'
+    WHEN {{ coluna }} = '08' THEN 'Superior completo'
+    WHEN {{ coluna }} = '12' THEN 'Nunca estudou'
+    WHEN {{ coluna }} = '13' THEN 'Nível fundamental incompleto (cursando)'
+    WHEN {{ coluna }} = '14' THEN 'Nível médio incompleto (cursando)'
+    WHEN {{ coluna }} = '15' THEN 'Superior incompleto (cursando)'
+    WHEN {{ coluna }} = '16' THEN 'Não sabe/Não informou'
+  END 
 {% endmacro %}
 
 -- Coluna TIPO_CURATELA do models relatorio_geral
@@ -104,7 +122,7 @@
   CASE 
       WHEN {{ coluna }} = '5' THEN 'S'
       ELSE 'N'  
-  END AS SITUACAO_DE_RUA
+  END 
 {% endmacro %}
 
 -- Coluna SAUDE_MENTAL do models relatorio_geral
@@ -113,7 +131,7 @@
       WHEN {{ coluna }} = 'A' THEN 'Pessoa com aparente agravo de saúde mental'
       WHEN {{ coluna }} = 'D' THEN 'Pessoa com diagnóstico (laudo médico) de doença mental'
       ELSE {{ coluna }}  
-  END AS SAUDE_MENTAL
+  END 
 {% endmacro %}
 
 -- Coluna MOTIV_ACOLHIMENTO do models relatorio_geral
@@ -127,7 +145,7 @@
     WHEN {{ coluna }} = '6' THEN 'Perdido da família'
     WHEN {{ coluna }} = '7' THEN 'Violência Sexual'
     WHEN {{ coluna }} = '8' THEN 'Violência Psicológica'
-  END AS MOTIV_ACOLHIMENTO
+  END 
 {% endmacro %}
 
 -- Coluna TIPO_DEFICIENCIA do models tipo_deficiencia_unnest
@@ -275,4 +293,35 @@
     WHEN {{ coluna }} = 'S' THEN 'N'
     ELSE 'S'
   END AS UNIDADE_ATIVA
+{% endmacro %}
+
+-- Coluna vinculo_trabalhista do model dashboard_acolherio/intermediate/int_dados_usuarios
+{% macro map_coluna_vinculo_trabalhista (coluna) %}
+  CASE
+    WHEN {{ coluna }} = '1' THEN 'Formal'
+    WHEN {{ coluna }} = '2' THEN 'Informal'
+    WHEN {{ coluna }} = '3' THEN 'Não sabe / Não lembra'
+    WHEN {{ coluna }} = '4' THEN 'Não quis dizer'
+  END 
+{% endmacro %}
+
+
+-- Macro para a coluna indgraudepend do model dashboard_acolherio/intermediate/int_dados_usuarios
+{% macro map_grau_dependencia (coluna) %}
+  CASE
+    WHEN {{ coluna }} = '1' THEN '1-Idoso independente'
+    WHEN {{ coluna }} = '2' THEN '2-Idoso com dependencia em ate 3 atividades'
+    WHEN {{ coluna }} = '3' THEN '3-Idoso com dependencia em todas as atividades'
+  END 
+{% endmacro %}
+
+-- Coluna estcivil do models dashboard_acolherio/intermediate/int_dados_usuarios
+{% macro map_coluna_estado_civil (coluna) %}
+  CASE
+    WHEN {{ coluna }} = '1' THEN 'Solteiro'
+    WHEN {{ coluna }} = '2' THEN 'Casado'
+    WHEN {{ coluna }} = '3' THEN 'Viúvo'
+    WHEN {{ coluna }} = '4' THEN 'Separado Judicialmente'
+    WHEN {{ coluna }} = '5' THEN 'União consensual'
+  END 
 {% endmacro %}
