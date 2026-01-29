@@ -1,0 +1,27 @@
+models:
+  - name: stg_membros_familia_acolherio
+    description: "Modelo retorna dados relacionados de cada membro de cada família"
+    columns:
+      - name: seqpac
+        description: "Id único do usuário"
+        data_tests:
+          - unique
+          - not_null
+      - name: seqfamil
+        description: "Id da família de cada membro"
+        data_tests:
+          - not_null
+      - name: seqmembro
+        description: "Id de cada membro da família"
+        data_tests:
+          - not_null
+      - name: seqfamilnova
+        description: "Id da família nova caso o membro tenha saída de alguma família"
+      - name: seqmotivsaida
+        description: "Id do motivo da saída"
+      - name: data_entrada_membro_familia
+        description: "Data de entrada do membro na família"
+      - name: data_saida_membro_familia
+        description: "Data de saída do membro da família"
+      - name: parentesco_responsavel_familia
+        description: "Parentesco do membro em relação ao responsável familiar da família"
