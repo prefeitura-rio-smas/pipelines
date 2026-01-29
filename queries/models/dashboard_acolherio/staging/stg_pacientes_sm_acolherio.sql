@@ -7,6 +7,7 @@
 with dados_pacientes_sm as (
     select
         seqpacsm as seqpac,
+        codorigem,
         indtrab as flag_trabalho,
         nmprofi as profissao,
         indfreqescol as flag_frequencia_escola,
