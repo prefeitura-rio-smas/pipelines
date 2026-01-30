@@ -4,7 +4,7 @@
     WHEN {{ coluna }} = '1' THEN 'Brasileira'
     WHEN {{ coluna }} = '2' THEN 'Brasileiro'
     WHEN {{ coluna }} = '3' THEN 'Estrangeira'
-  END AS NACIONALIDADE
+  END 
 {% endmacro %}
 
 -- Coluna COND_ESTRANGEIRO do models relatorio_geral
@@ -18,7 +18,7 @@
     WHEN {{ coluna }} = '6' THEN 'Refugiado (Em solicitação)'
     WHEN {{ coluna }} = '7' THEN 'Refugiado Legalizado'
     WHEN {{ coluna }} = '8' THEN 'Turista'
-  END AS COND_ESTRANGEIRO
+  END 
 {% endmacro %}
 
 -- Coluna RAÇA/COR do models relatorio_geral
