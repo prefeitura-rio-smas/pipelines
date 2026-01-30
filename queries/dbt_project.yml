@@ -13,7 +13,7 @@ models:
       +schema: "{{ 'equipamentos' if target.name == 'prod' else 'gerenciamento__dbt' }}"
     dashboard_acolherio:
       +materialized: table
-      +schema: "{{ 'acolherio' if target.name == 'prod' else 'dashboard_acolherio' }}"
+      +schema: "{{ 'acolherio' if target.name == 'prod' else 'relatorio' }}"
     rma:
       +schema: "{{ 'acolherio' if target.name == 'prod' else 'gerenciamento__dbt' }}"
       cras:
@@ -29,3 +29,6 @@ models:
     bolsa_familia:
       +materialized: table
       +schema: "{{ 'bolsa_familia' if target.name == 'prod' else 'gerenciamento__dbt' }}"
+seeds:
+  queries:
+    +delimiter: ","
