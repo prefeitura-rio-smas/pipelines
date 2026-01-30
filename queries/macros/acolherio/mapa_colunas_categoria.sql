@@ -228,7 +228,7 @@
     WHEN {{ coluna }} = '4' THEN 'Heterossexual'
     WHEN {{ coluna }} = '5' THEN 'Pansexual'
     WHEN {{ coluna }} = '6' THEN 'Não informado'
-  END AS ORIENTACAO_SEXUAL
+  END 
 {% endmacro %}
 
 -- Coluna MOTIVO_DESLIGAMENTO do models acolhimentos
