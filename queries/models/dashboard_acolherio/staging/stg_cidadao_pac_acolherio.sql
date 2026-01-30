@@ -7,9 +7,11 @@
 with dados_cidadao_pac as (
     select
         seqpac,
+        seqlogin as seqlogincad,
         dscnomepac as nome_usuario,
         dscnomsoci as nome_social,
         dscnmmae as filiacao_mae,
+        {{ map_coluna_estado_civil('estcivil') }} as estado_civil,
         datnascim as data_nascimento,
         nacional as nacionalidade,
         condestr as condicao_estrangeira,
@@ -20,7 +22,7 @@ with dados_cidadao_pac as (
         indsexo as sexo,
         indgenero as genero,
         nuprontpapel as prontuario,
-        datcadast as data_cadastro
+        datcadast as data_cadastro_usuario
     from  {{ source('source_dashboard_acolherio', 'gh_cidadao_pac') }}
 )
 
