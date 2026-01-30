@@ -15,8 +15,8 @@ def controle_cas() -> None:
     return_geometry = False
     batch_size = 20000
     order_by_field = "objectid"
-    layer_name = "repeat"
-    layer_idx = 1
+    layer_name = ""
+    layer_idx = 0
 
 
     load_arcgis_to_bigquery(
