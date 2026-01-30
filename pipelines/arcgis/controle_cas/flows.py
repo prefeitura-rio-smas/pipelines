@@ -14,7 +14,7 @@ def controle_cas() -> None:
     feature_id = "6855307d763b49f6bfb1c5d83b069952"
     return_geometry = False
     batch_size = 20000
-    order_by_field = "objectid"
+    #order_by_field = "objectid"
     layer_name = ""
     layer_idx = 0
 
@@ -28,8 +28,6 @@ def controle_cas() -> None:
         batch_size=batch_size,
         order_by_field=order_by_field,
     )
-
-    run_dbt_models(model_name="controle_cas")
 
 if __name__ == "__main__":
     controle_cas()
