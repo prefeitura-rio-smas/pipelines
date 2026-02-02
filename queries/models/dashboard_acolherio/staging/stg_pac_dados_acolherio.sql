@@ -2,8 +2,6 @@
 -- Contém usuários testes
 -- Não contém usuários repetidos
 
-{{ config(materialized='table')}}
-
 with dados_pac as (
     select
         seqpac,
@@ -16,6 +14,7 @@ with dados_pac as (
         valpontos as pontuacao,
         indgraudepend as grau_dependencia,
         indorientsex as orientacao_sexual,
+        valrendaativ as renda_ativa,
         indtipovinc  as vinculo_trabalhista
     from  {{ source('source_dashboard_acolherio', 'gh_pac_dados') }}
 )
