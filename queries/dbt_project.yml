@@ -12,7 +12,14 @@ models:
       +materialized: table
       +schema: "{{ 'equipamentos' if target.name == 'prod' else 'gerenciamento__dbt' }}"
     dashboard_acolherio:
-      +materialized: table
+      raw:
+        +materialized: ephemeral
+      staging:
+        +materialized: ephemeral
+      intermediate:
+        +materialized: ephemeral
+      mart:
+        +materialized: table
       +schema: "{{ 'acolherio' if target.name == 'prod' else 'relatorio' }}"
     rma:
       +schema: "{{ 'acolherio' if target.name == 'prod' else 'gerenciamento__dbt' }}"
@@ -32,3 +39,5 @@ models:
 seeds:
   queries:
     +delimiter: ","
+
+
