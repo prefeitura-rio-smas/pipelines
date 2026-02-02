@@ -2,9 +2,6 @@
 -- Não contém dados testes
 -- Existem cpf duplicados
 
-{{ config(materialized='table')}}
-
-
 with filtro_no_teste as (
     select
         cd_pac.seqpac,

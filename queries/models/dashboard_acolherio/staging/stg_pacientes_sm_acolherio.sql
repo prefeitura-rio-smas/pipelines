@@ -2,8 +2,6 @@
 -- Contém usuários testes
 -- Não contém usuários repetidos
 
-{{ config(materialized='table')}}
-
 with dados_pacientes_sm as (
     select
         seqpacsm as seqpac,
