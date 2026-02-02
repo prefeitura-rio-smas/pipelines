@@ -17,7 +17,7 @@ def controle_cas() -> None:
     #order_by_field = "objectid"
     layer_name = ""
     layer_idx = 0
-
+    #TODO: Abstrair o tipo de dado do arcgis. Colocar como parametro pra função load_arcgis_to_bigquery ex: type = "layer"
 
     load_arcgis_to_bigquery(
         job_name=job_name,
@@ -27,6 +27,7 @@ def controle_cas() -> None:
         return_geometry=return_geometry,
         batch_size=batch_size,
         order_by_field=order_by_field,
+        type=type
     )
 
 if __name__ == "__main__":
