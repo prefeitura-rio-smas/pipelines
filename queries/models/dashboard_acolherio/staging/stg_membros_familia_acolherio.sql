@@ -2,8 +2,6 @@
 -- Contém usuários testes
 -- Não contém usuários repetidos
 
-{{ config(materialized='table')}}
-
 with familia_membros as (
     select
         seqpac,
