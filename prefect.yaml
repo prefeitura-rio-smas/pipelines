@@ -66,9 +66,6 @@ deployments:
           PREFECT_API_URL: http://prefect-api:4200/api
           MODE: staging
           PREFECT_API_AUTH_STRING: "{{ $PREFECT_API_AUTH_STRING }}"
-          PREFECT_API_KEY: "{{ $PREFECT_API_AUTH_STRING }}"
-          PREFECT_DEBUG_MODE: "1"
-          PREFECT_LOGGING_LEVEL: "DEBUG"
           GCP_CREDENTIALS: "{{ $GCP_CREDENTIALS }}"
           SIURB_URL: "{{ $SIURB_URL }}"
           SIURB_USER: "{{ $SIURB_USER }}"
