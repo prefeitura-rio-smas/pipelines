@@ -137,7 +137,6 @@ jobs:
           SIURB_URL: ${{ secrets.SIURB_URL }}
           SIURB_USER: ${{ secrets.SIURB_USER }}
           SIURB_PWD: ${{ secrets.SIURB_PWD }}
-          PREFECT_API_AUTH_STRING: ${{ secrets.PREFECT_API_AUTH_STRING }}
         run: |
           prefect deploy --name "*-staging"
 
