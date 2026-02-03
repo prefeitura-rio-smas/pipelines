@@ -9,12 +9,12 @@ from pipelines.bolsa_familia.tasks import (
 from pipelines.tasks import run_dbt_models
 
 @flow(name="Bolsa Família | Carga de Arquivos ZIP")
-def bolsa_familia_flow(
-    dataset_id: str = settings.GCP_DATASET,
-    table_id: str = settings.TABLE_ID,
-    raw_path: str = settings.RAW_PATH,
-    bucket_name: str = settings.GCS_BUCKET,
-) -> None:
+def bolsa_familia_flow() -> None:
+    
+    dataset_id = settings.GCP_DATASET
+    table_id = settings.TABLE_ID
+    raw_path = settings.RAW_PATH
+    bucket_name = settings.GCS_BUCKET
     
     files_to_process = identify_pending_files(
         bucket_name=bucket_name,
