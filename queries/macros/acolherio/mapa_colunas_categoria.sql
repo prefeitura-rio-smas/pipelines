@@ -325,3 +325,43 @@
     WHEN {{ coluna }} = '5' THEN 'União consensual'
   END 
 {% endmacro %}
+
+-- Coluna flag_trabalho do model stg_pacientes_sm_acolherio
+{% macro map_flag_trabalho (coluna) %}
+  case
+    when {{ coluna }} = 'S' then 'Sim'
+    else "Não"
+  end 
+{% endmacro %}
+
+-- Coluna flag_frequencia_escola do model stg_pacientes_sm_acolherio
+{% macro map_flag_frequencia_escola (coluna) %}
+  case
+    when {{ coluna }} = 'S' then 'Sim'
+    else "Não"
+  end 
+{% endmacro %}
+
+-- Coluna flag_deficiencia do model stg_pacientes_sm_acolherio
+{% macro map_flag_deficiencia (coluna) %}
+  case
+    when {{ coluna }} = 'S' then 'Sim'
+    else "Não"
+  end 
+{% endmacro %}
+
+-- Coluna flag_curatela do model stg_pacientes_sm_acolherio
+{% macro map_flag_curatela (coluna) %}
+  case
+    when {{ coluna }} = 'S' then 'Sim'
+    else "Não"
+  end 
+{% endmacro %}
+
+-- Coluna flag_situacao_rua do model stg_pacientes_sm_acolherio
+{% macro map_flag_situacao_rua (coluna) %}
+  case
+    when {{ coluna }} = 'S' then 'Sim'
+    else "Não"
+  end 
+{% endmacro %}
