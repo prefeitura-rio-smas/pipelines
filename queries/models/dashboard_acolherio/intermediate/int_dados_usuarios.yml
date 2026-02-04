@@ -1,0 +1,115 @@
+models:
+  - name: int_dados_usuarios
+    description: "Model responsável por agrupar todos os dados do usuário em apenas uma tabela"
+    columns:
+      - name: seqpac
+        description: "Id único do usuário"
+        data_tests:
+          - unique 
+          - not_null
+      - name: prontuario
+        description: "Número do prontuário do usuário"
+      - name: pais_origem_descricao
+        description: "Descrição do país de origem do usuário"
+      - name: nacionalidade
+        description: "Nacionalidade do usuário"
+      - name: condicao_estrangeira
+        description: "Condição estrangeira do usuário (Caso ele seja imigrante)"
+      - name: nome_usuario
+        description: "Nome do usuário"
+      - name: nome_social
+        description: "Nome social do usuário"
+      - name: data_nascimento
+        description: "Data de nascimento do usuário"
+      - name: bairro
+        description: "Bairro onde reside o usuário"
+      - name: cpf 
+        description: "Cpf do usuário"
+      - name: sexo 
+        description: "Sexo do usuário"
+      - name: orientacao_sexual
+        description: "Orientação sexual do usuário"
+      - name: genero
+        description: "Gênero do usuário"
+      - name: raca
+        description: "Raça/cor do usuário"
+      - name: estado_civil
+        description: "Estado cívil do usuário"
+      - name: filiacao_mae
+        description: "Nome da mãe do usuário"
+      - name: flag_trabalho
+        description: "Flag que indica se o usuário trabalha ou não"
+        data_tests:
+          - accepted_values:
+              values: ["S", "N"]
+      - name: vinculo_trabalhista
+        description: "Tipo de vínculo trabalhista do usuário"
+      - name: profissao
+        description: "Descrição da profissão do usuário"
+      - name: flag_atvd_gera_renda
+        description: "Flag que indica se o usuário exerce alguma atividade que gera renda"
+        data_tests:
+          - accepted_values:  
+              values: ["Sim", "Não"]
+      - name: flag_frequencia_escola
+        description: "Flag que indica se o usuário frequenta escola"
+        data_tests:
+          - accepted_values:
+              values: ["Sim", "Não"]
+      - name: serie_escola
+        description: "Serie da escola que o usuário está frequentando"
+      - name: escolaridade
+        description: "Nível de escolaridade do usuário"
+      - name: flag_recebe_beneficio
+        description: "Flag que indica se o usuário recebe benefício"
+      - name: tipo_beneficio
+        description: "Coluna que contém os benefícios do usuário (Esta coluna está com código do benefício)"
+      - name: flag_deficiencia
+        description: "Flag que indica se o usuário possui deficiência"
+        data_tests:
+          - accepted_values:
+              values: ["Sim", "Não"]
+      - name: tipo_deficiencia
+        description: "Coluna que contém o tipo de deficiência do usuário (Esta coluna está com código da deficiência)"
+      - name: saude_mental_comprometida
+        description: "Coluna que indica se o usuário possui saúde mental comprometida"
+      - name: violacao_direito
+        description: "Essa coluna está misturada. Pode conter uma string dizendo que não possui violação de direito, mas também pode conter os códigos das violações de direito"
+      - name: flag_curatela
+        description: "Flag para indicar se o usuário possui curatela"
+        data_tests:
+          - accepted_values:
+            
+              values: ["Sim", "Não"]
+      - name: tipo_curatela
+        description: "Coluna indica o tipo de curatela"
+      - name: numero_processo_decisao_apoiada
+        description: "Numero do processo da decisão apoiada"
+      - name: nome_apoiador
+        description: "Nome do apoiador da decisão apoiada"
+      - name: flag_situacao_rua
+        description: "Flag que indica se o usuário está em situação de rua"
+        data_tests:
+          - accepted_values:
+              values: ["Sim", "Não"]
+      - name: flag_cadunico
+        description: "Flag que indica se o usuário possui CadÚnico"
+        data_tests:
+          - accepted_values:
+              values: ["Sim", "Não"]
+      - name: grau_dependencia
+        description: "Coluna que indica o grau de dependência do usuário"
+      - name: pontuacao
+        description: "Coluna que indica quantos pontos o usuário possui no sistema"
+      - name: motivo_acolhimento
+        description: "Coluna que inidica o motivo do acolhimento para aquele usuário"
+      - name: codorigem
+        description: "Código de origem do usuário"
+      - name: seqlogincad
+        description: "Id do operador que cadastrou o usuário"
+        data_tests:
+          - not_null
+      - name: data_cadastro_usuario
+        description: "Data em que o operador fez o cadastro do usuário"
+        data_tests:
+          - not_null
