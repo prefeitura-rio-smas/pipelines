@@ -80,6 +80,10 @@ tratar_saude_mental_orientacao_sexual_vinculo_trabalhista as (
         flag_cadunico,
         numero_processo_decisao_apoiada,
         nome_apoiador,
+        case
+            when renda_ativa != 0 then "Sim"
+            else "Não"
+        end as flag_atvd_gera_renda,
         {{ map_coluna_saude_mental('saude_mental_comprometida') }}as saude_mental_comprometida,
         {{ map_coluna_tipo_motiv_acolhimento('motivo_acolhimento') }} as motivo_acolhimento,
         violacao_direito,
@@ -91,9 +95,48 @@ tratar_saude_mental_orientacao_sexual_vinculo_trabalhista as (
 )
 
 select
-    *
-from tratar_raca_e_genero_cidadao_pac_final c
-inner join tratar_escolaridade_serie_paciente_sm e
-    using (seqpac)
-inner join tratar_saude_mental_orientacao_sexual_vinculo_trabalhista s
-    using (seqpac)
+    a.seqpac,
+    a.prontuario,
+    a.pais_origem_descricao,
+    a.nacionalidade,
+    a.condicao_estrangeira,
+    a.nome_usuario,
+    a.nome_social,
+    a.data_nascimento,
+    a.bairro,
+    a.cpf,
+    a.sexo,
+    c.orientacao_sexual,
+    a.genero,
+    a.raca,
+    a.estado_civil,
+    a.filiacao_mae,
+    b.flag_trabalho,
+    c.vinculo_trabalhista,
+    b.profissao,
+    c.flag_atvd_gera_renda,
+    b.flag_frequencia_escola,
+    b.serie_escola,
+    b.escolaridade,
+    b.flag_recebe_beneficio,
+    b.tipo_beneficio,
+    b.flag_deficiencia,
+    b.tipo_deficiencia,
+    c.saude_mental_comprometida,
+    c.violacao_direito,
+    b.flag_curatela,
+    b.tipo_curatela,
+    c.numero_processo_decisao_apoiada,
+    c.nome_apoiador,
+    b.flag_situacao_rua,
+    c.flag_cadunico,
+    c.grau_dependencia,
+    c.pontuacao,
+    c.motivo_acolhimento,
+    b.codorigem,
+    a.seqlogincad,
+    a.data_cadastro_usuario
+from tratar_raca_e_genero_cidadao_pac_final a
+inner join tratar_escolaridade_serie_paciente_sm b on a.seqpac = b.seqpac
+inner join tratar_saude_mental_orientacao_sexual_vinculo_trabalhista c on a.seqpac = c.seqpac
+
