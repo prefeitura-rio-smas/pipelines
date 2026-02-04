@@ -3,7 +3,6 @@ version: 2
 sources:
   - name: bolsa_familia_staging
     description: "Dados brutos do Bolsa Família carregados via pipeline Python"
-    database: "rj-smas"
     schema: "bolsa_familia_staging"
     tables:
       - name: folha
