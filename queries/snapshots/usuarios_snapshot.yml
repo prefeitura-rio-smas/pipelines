@@ -1,0 +1,7 @@
+snapshots:
+  - name: snapshot_usuarios
+    relation: ref('int_dados_usuarios')
+    config:
+      strategy: check
+      unique_key: seqpac
+      check_cols: all
