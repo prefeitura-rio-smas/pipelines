@@ -58,17 +58,17 @@ tratar_escolaridade_serie_paciente_sm as(
     select 
         seqpac,
         codorigem,
-        flag_trabalho,
+        {{ map_flag_trabalho('flag_trabalho') }} as flag_trabalho,
         profissao,
-        flag_frequencia_escola,
+        {{ map_flag_frequencia_escola('flag_frequencia_escola') }} as flag_frequencia_escola,
         {{ map_coluna_serie_escola('serie_escola') }} as serie_escola,
         {{ map_coluna_escolaridade('escolaridade') }} as escolaridade,
         flag_recebe_beneficio,
         tipo_beneficio,
         tipo_curatela,
-        flag_curatela,
+        {{ map_flag_curatela('flag_curatela') }} as flag_curatela,
         {{ map_coluna_situacao_de_rua('flag_situacao_rua') }} as flag_situacao_rua,
-        flag_deficiencia,
+        {{ map_flag_deficiencia('flag_deficiencia') }} as flag_deficiencia,
         tipo_deficiencia
     from  {{ ref ('stg_pacientes_sm_acolherio') }}
 ),
@@ -88,7 +88,7 @@ tratar_saude_mental_orientacao_sexual_vinculo_trabalhista as (
         {{ map_coluna_tipo_motiv_acolhimento('motivo_acolhimento') }} as motivo_acolhimento,
         violacao_direito,
         pontuacao,
-        {{ map_grau_dependencia('grau_dependencia') }} grau_dependencia,
+        {{ map_grau_dependencia('grau_dependencia') }} as grau_dependencia,
         {{map_coluna_orientacao_sexual('orientacao_sexual')}} as orientacao_sexual,
         {{ map_coluna_vinculo_trabalhista('vinculo_trabalhista') }} as vinculo_trabalhista
     from {{ ref('stg_pac_dados_acolherio') }}
