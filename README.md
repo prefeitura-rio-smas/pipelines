@@ -71,4 +71,4 @@ Nossas pipelines são definidas na pasta `pipelines/`. Para rodar ou testar, ver
 *   **Extensão não carrega**: Dê um **Reload Window** no VS Code.
 
 ---
-*Equipe de Dados - RJ SMAS*
+*Equipe de Dados - RJ SMAS* 
