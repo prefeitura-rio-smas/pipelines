@@ -92,8 +92,9 @@ tratar_saude_mental_orientacao_sexual_vinculo_trabalhista as (
         {{map_coluna_orientacao_sexual('orientacao_sexual')}} as orientacao_sexual,
         {{ map_coluna_vinculo_trabalhista('vinculo_trabalhista') }} as vinculo_trabalhista
     from {{ ref('stg_pac_dados_acolherio') }}
-)
+),
 
+final as (
 select
     a.seqpac,
     a.prontuario,
@@ -139,4 +140,7 @@ select
 from tratar_raca_e_genero_cidadao_pac_final a
 inner join tratar_escolaridade_serie_paciente_sm b on a.seqpac = b.seqpac
 inner join tratar_saude_mental_orientacao_sexual_vinculo_trabalhista c on a.seqpac = c.seqpac
+)
 
+select * from final
+where not regexp_contains(nome_usuario, '(?i)teste')
