@@ -11,7 +11,7 @@ WITH usuario_cadastrado AS (
   {{ map_coluna_cond_estrangeiro('pac.condestr') }},
   pac.paisorigem AS PAIS_ORIGEM,
   pac.dscbairroender AS BAIRRO,
-  {{ map_coluna_etnia('pac.racacor') }},
+  {{ map_coluna_raca('pac.racacor') }},
   pac.numcpfpac AS CPF,
   pac.indsexo AS SEXO,
   {{ map_coluna_genero('pac.indgenero') }},
