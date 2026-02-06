@@ -11,8 +11,8 @@ WITH contas_associadas AS (
     contas.dscemail AS email,
     prof.dsctel AS telefone,
     contas_us.datacesso,
-    {{ map_coluna_perfil_acesso('contas.indnivel') }},
-    {{ map_coluna_status_conta('contas.indstatuser')}}
+    {{ map_coluna_perfil_acesso('contas.indnivel') }} as nivel,
+    {{ map_coluna_status_conta('contas.indstatuser')}} as status_conta
     FROM {{ source('brutos_acolherio_staging', 'gh_contas')}} contas
     LEFT JOIN {{ source('brutos_acolherio_staging', 'gh_prof')}} prof ON prof.seqlogin = contas.seqlogin
     LEFT JOIN {{ source('brutos_acolherio_staging', 'gh_contas_us')}} contas_us ON contas_us.seqlogin = prof.seqlogin
@@ -25,6 +25,8 @@ SELECT
     unidade,
     seqlogin,
     operador,
+    nivel,
+    status_conta,
     profissional,
     cast(cpfprof as string) as cpf,
     data_nascimento,
