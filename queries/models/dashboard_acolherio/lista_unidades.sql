@@ -4,6 +4,7 @@ WITH contas_associadas AS (
     SELECT
     us.sequs,
     {{ map_coluna_unidade_ativa('us.indinativo') }},
+    us.apus as CAS,
     us.esfera AS ESFERA,
     us.dscus AS UNIDADE,
     us_config.numleitos AS VAGAS_TOTAIS,
