@@ -6,12 +6,11 @@ model-paths: ["models"]
 models:
   queries:
     dashboard_arcgis:
-      +database: rj-smas-dev
       +materialized: table
       +schema: "{{ 'dashboard_arcgis' if target.name == 'prod' else 'gerenciamento__dbt' }}"
     equipamentos:
       +materialized: table
-      +schema: "{{ 'equipamentos' if target.name == 'prod' else 'gerenciamento__dbt' }}"
+      +schema: "{{ 'equipamento' if target.name == 'prod' else 'gerenciamento__dbt' }}"
     dashboard_acolherio:
       +materialized: table
       +schema: "{{ 'acolherio' if target.name == 'prod' else 'dashboard_acolherio' }}"
@@ -29,5 +28,7 @@ models:
             +schema: "{{ 'dashboard_arcgis' if target.name == 'prod' else 'relatorio' }}"
     bolsa_familia:
       +materialized: table
-      +database: "{{ 'rj-smas' if target.name == 'prod' else target.project }}"
       +schema: "{{ 'bolsa_familia' if target.name == 'prod' else 'gerenciamento__dbt' }}"
+    pic:
+      +materialized: table
+      +schema: "{{ 'pic' if target.name == 'prod' else 'gerenciamento__dbt' }}"

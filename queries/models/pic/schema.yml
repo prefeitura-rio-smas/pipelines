@@ -1,0 +1,19 @@
+version: 2
+
+sources:
+  - name: arcgis_raw
+    database: rj-smas-dev
+    schema: arcgis_raw
+    tables:
+      - name: controle_cas_raw
+      - name: primeira_infancia_carioca_raw
+
+models:
+  - name: controle_cas
+    description: "Tabela de Controle CAS limpa e deduplicada."
+  - name: primeira_infancia_carioca
+    description: "Tabela do Survey Primeira Infância Carioca filtrada."
+  - name: delta_feedback_pic
+    description: "Deltas calculados para atualizar o ArcGIS da Primeira Infância."
+  - name: delta_feedback_controle
+    description: "Deltas calculados para atualizar o ArcGIS do Controle CAS."

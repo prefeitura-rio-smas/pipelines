@@ -11,7 +11,7 @@ def abordagem_flow() -> None:
     """
     # Configuration for this product
     job_name = "abordagem"
-    feature_id = "6832ff4ca54c4608b169682ae3a5b088"
+    item_id = "6832ff4ca54c4608b169682ae3a5b088"
     return_geometry = False
     batch_size = 20000
     order_by_field = "objectid"
@@ -21,7 +21,7 @@ def abordagem_flow() -> None:
     load_arcgis_to_bigquery(
         job_name=job_name,
         layer_name=layer_name,
-        feature_id=feature_id,
+        item_id=item_id,
         layer_idx=layer_idx,
         return_geometry=return_geometry,
         batch_size=batch_size,

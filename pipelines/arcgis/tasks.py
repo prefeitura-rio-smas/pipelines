@@ -8,27 +8,19 @@ import prefect
 from prefect import task
 from prefect_dbt.cli.commands import DbtCoreOperation
 
-from .utils import add_timestamp, bq_client, dataset_ref
+from .utils import add_timestamp, bq_client, dataset_ref, resolve_arcgis_url
 
 
 @task
-def get_feature_layer_metadata(
-    feature_id: str,
-    layer_idx: int,
-):
-    """
-    Obtém metadados da camada ArcGIS como número total de registros.
-    """
+def get_layer_metadata(service_url: str):
     logger = prefect.get_run_logger()
-    logger.info(f"Obtendo metadados para feature_id: {feature_id}, layer: {layer_idx}")
+    logger.info(f"Obtendo metadados para: {service_url}")
 
     import requests
+    from .utils import _get_arcgis_token
 
-    from .utils import _get_arcgis_token, get_layer_service_url
-
-    service_url = get_layer_service_url(feature_id)
     token = _get_arcgis_token()
-    url = f"{service_url}/{layer_idx}/query"
+    url = f"{service_url}/query"
 
     params = {
         "where": "1=1",
@@ -60,9 +52,6 @@ def save_batch_to_staging(
     batch_index: int,
     bq_schema: list,
 ):
-    """
-    Salva localmente e carrega um batch para a tabela staging no BigQuery, forçando colunas de origem para STRING.
-    """
     logger = prefect.get_run_logger()
 
     if batch_data.empty and batch_index > 0:
@@ -74,8 +63,6 @@ def save_batch_to_staging(
     if not batch_data.empty:
         add_timestamp(batch_data)
 
-    # Força todas as colunas de origem a serem STRING, exceto as que criamos.
-    # Isso está alinhado com a estratégia ELT para evitar erros de tipo de dados na carga.
     source_columns = [field.name for field in bq_schema if field.field_type == 'STRING']
     for col_name in source_columns:
         if col_name in batch_data.columns:
@@ -118,9 +105,6 @@ def atomic_replace_raw_table(
     final_table: str,
     staging_table: str,
 ):
-    """
-    Faz substituição atômica da tabela final com dados da staging.
-    """
     logger = prefect.get_run_logger()
     logger.info(f"Substituindo tabela final '{final_table}' com dados da staging '{staging_table}'")
     client = bq_client()
@@ -133,19 +117,16 @@ def atomic_replace_raw_table(
 
 
 @task
-def get_layer_info(feature_id: str, layer_idx: int) -> dict:
-    """Gets the schema and CRS of an ArcGIS layer."""
+def get_layer_info(service_url: str) -> dict:
     logger = prefect.get_run_logger()
-    logger.info(f"Obtendo schema e CRS para feature_id: {feature_id}, layer: {layer_idx}")
+    logger.info(f"Obtendo schema e CRS para: {service_url}")
     import requests
+    from .utils import _get_arcgis_token
 
-    from .utils import _get_arcgis_token, get_layer_service_url
-    service_url = get_layer_service_url(feature_id)
     token = _get_arcgis_token()
-    url = f"{service_url}/{layer_idx}"
     params = {"f": "json", "token": token}
     try:
-        response = requests.get(url, params=params, timeout=30)
+        response = requests.get(service_url, params=params, timeout=30)
         response.raise_for_status()
         data = response.json()
         return {
@@ -157,14 +138,12 @@ def get_layer_info(feature_id: str, layer_idx: int) -> dict:
         raise ValueError(f"Erro ao obter schema e CRS: {e}")
 
 def arcgis_to_bq_schema(arcgis_fields: list, return_geometry: bool) -> list:
-    """Converts an ArcGIS fields list to a BigQuery schema list, treating ALL source fields as STRING."""
     bq_schema = []
     if not arcgis_fields:
         return bq_schema
     for field in arcgis_fields:
         bq_schema.append(bigquery.SchemaField(field['name'], "STRING"))
 
-    # Also add columns that might be added during processing
     bq_schema.append(bigquery.SchemaField("timestamp_captura", "TIMESTAMP"))
     if return_geometry:
         bq_schema.append(bigquery.SchemaField("longitude", "FLOAT64"))
@@ -177,28 +156,27 @@ def arcgis_to_bq_schema(arcgis_fields: list, return_geometry: bool) -> list:
 def load_arcgis_to_bigquery(
     *,
     job_name: str,
-    layer_name: str,
-    #TODO: type: str,
-    #feature_id: str,
-    #layer_idx: int,
-    return_geometry: bool,
+    item_id: str,
+    layer_name: str = None,
+    layer_idx: int = None,
+    return_geometry: bool = False,
     batch_size: int = 20000,
     order_by_field: str = None,
     where_clause: str = "1=1"
 ):
-    """
-    Extracts data from an ArcGIS layer and loads it into BigQuery.
-    """
     logger = prefect.get_run_logger()
-    logger.info(f"↳ Processando {job_name}/{layer_name} (layer {layer_idx})…")
+    
+    base_url = resolve_arcgis_url(item_id, layer_idx)
+    logger.info(f"↳ Processando {job_name} via {base_url}…")
 
     timestamp = datetime.now(UTC).strftime('%Y%m%d%H%M%S')
-    final_table = f"{job_name}_{layer_name}_raw"
+    
+    table_suffix = f"_{layer_name}" if layer_name else ""
+    final_table = f"{job_name}{table_suffix}_raw"
     staging_table = f"{final_table}_staging_{timestamp}"
-    logger.info(f"Tabela final: {final_table}, Tabela de Staging: {staging_table}")
-
-    layer_info = get_layer_info(feature_id=feature_id, layer_idx=layer_idx)
-    total_records = get_feature_layer_metadata(feature_id=feature_id, layer_idx=layer_idx)
+    
+    layer_info = get_layer_info(service_url=base_url)
+    total_records = get_layer_metadata(service_url=base_url)
     bq_schema = arcgis_to_bq_schema(layer_info["fields"], return_geometry)
     source_crs_wkid = layer_info.get("crs", {}).get("wkid")
 
@@ -210,25 +188,18 @@ def load_arcgis_to_bigquery(
         client.delete_table(table_id, not_found_ok=True)
         table = bigquery.Table(table_id, schema=bq_schema)
         client.create_table(table)
-        logger.info(f"Tabela `{final_table}` criada vazia com o schema correto.")
         return
-
-    logger.info("Iniciando extração sequencial por batches...")
 
     offset = 0
     total_rows_loaded = 0
     batch_index = 0
 
     while offset < total_records:
-        logger.info(f"Extraindo batch {batch_index}: offset={offset}, batch_size={batch_size}")
-
         import requests
+        from .utils import _get_arcgis_token
 
-        from .utils import _get_arcgis_token, get_layer_service_url
-
-        service_url = get_layer_service_url(feature_id)
         token = _get_arcgis_token()
-        url = f"{service_url}/{layer_idx}/query"
+        url = f"{base_url}/query"
 
         params = {
             "where": where_clause, "outFields": "*", "returnGeometry": str(return_geometry).lower(),
@@ -250,12 +221,9 @@ def load_arcgis_to_bigquery(
         num_features_received = len(features)
         logger.info(f"Batch {batch_index} extraído: {num_features_received} registros recebidos.")
 
-        if num_features_received == 0 and offset < total_records:
-             # If we expected records but got none, something is wrong, but we can try to continue
-             logger.warning(f"Recebido 0 registros no offset {offset} mas total de registros é {total_records}. Interrompendo.")
-             break
         if num_features_received == 0:
-            logger.info("Recebido 0 registros. Fim da extração.")
+            if offset < total_records:
+                logger.error(f"Erro: Recebido 0 features para um offset {offset} menor que o total {total_records}. Resposta: {data}")
             break
 
         import geopandas as gpd
@@ -284,10 +252,8 @@ def load_arcgis_to_bigquery(
                     rep_point = first_geom.representative_point()
                     x, y = rep_point.x, rep_point.y
                     if (abs(y) > 90 or abs(x) > 180) and source_crs_wkid:
-                        logger.info(f"Reprojetando de EPSG:{source_crs_wkid} para EPSG:4326...")
                         gdf.set_crs(epsg=source_crs_wkid, inplace=True, allow_override=True)
                         gdf = gdf.to_crs("EPSG:4326")
-                        logger.info("Reprojeção concluída.")
                     rep_points = gdf.geometry.representative_point()
                     gdf["longitude"] = rep_points.x
                     gdf["latitude"] = rep_points.y
@@ -303,9 +269,7 @@ def load_arcgis_to_bigquery(
 
     if total_rows_loaded > 0:
         atomic_replace_raw_table(final_table=final_table, staging_table=staging_table)
-        logger.info(f"   • Tabela `{final_table}` atualizada com sucesso ({total_rows_loaded:,} linhas).")
     else:
-        logger.info("   • Nada a carregar - total_rows = 0. Limpando tabela final se existir.")
         from .utils import bq_client, dataset_ref
         client = bq_client()
         table_id = f"{dataset_ref()}.{final_table}"

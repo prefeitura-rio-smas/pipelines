@@ -51,6 +51,40 @@ def _get_arcgis_url() -> str:
     return settings.SIURB_URL
 
 @lru_cache(maxsize=10)
+def resolve_arcgis_url(item_id: str, layer_idx: int = None) -> str:
+    import prefect
+    logger = prefect.get_run_logger()
+
+    base_url = _get_arcgis_url()
+    token = _get_arcgis_token()
+
+    item_url = f"{base_url}/sharing/rest/content/items/{item_id}"
+    params = {"f": "json", "token": token}
+
+    try:
+        response = requests.get(item_url, params=params, timeout=30)
+        response.raise_for_status()
+        data = response.json()
+        
+        service_url = data.get("url")
+        item_type = data.get("type")
+        
+        logger.info(f"Item ID: {item_id} | Type: {item_type} | Base URL: {service_url}")
+
+        if not service_url:
+            raise ValueError(f"URL não encontrada para o item: {item_id}")
+
+        # Fallback: Se for Feature Service e não passarem index, tentamos o 0
+        if item_type == "Feature Service":
+            idx = layer_idx if layer_idx is not None else 0
+            return f"{service_url.rstrip('/')}/{idx}"
+        
+        return service_url.rstrip('/')
+    except requests.exceptions.RequestException as e:
+        logger.error(f"Erro ao resolver URL do ArcGIS: {e}")
+        raise ValueError(f"Erro ao resolver URL do ArcGIS: {e}")
+
+@lru_cache(maxsize=10)
 def get_layer_service_url(feature_id: str) -> str:
     """Gets the service URL for a given feature item."""
     import prefect

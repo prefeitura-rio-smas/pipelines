@@ -13,8 +13,8 @@ class Settings(BaseSettings):
 
     _env_configs: Dict[str, Dict[str, Any]] = {
         "prod": {
-            "project": "rj-smas-dev",
-            "bucket": "rj-smas-dev",
+            "project": "rj-smas",
+            "bucket": "rj-smas",
             "dataset": "arcgis_raw"
         },
         "staging": {
