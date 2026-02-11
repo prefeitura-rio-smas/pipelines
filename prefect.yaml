@@ -233,7 +233,7 @@ deployments:
   - name: primeira_infancia_carioca-prod
     entrypoint: pipelines/arcgis/primeira_infancia_carioca/flows.py:primeira_infancia_carioca_flow
     schedule:
-      cron: "0 1 * * *"
+      cron: "0 * * * *"
       timezone: "America/Sao_Paulo"
     work_pool:
       name: docker-pool
