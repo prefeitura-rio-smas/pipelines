@@ -3,45 +3,59 @@ from pipelines.arcgis.tasks import load_arcgis_to_bigquery
 from pipelines.tasks import run_dbt_models
 from pipelines.arcgis.primeira_infancia_carioca.tasks import apply_arcgis_feedback
 
-@flow(name="Primeira Infância Carioca | Carga Unificada")
-def primeira_infancia_carioca_flow() -> None:
-    """
-    Fluxo unificado para o projeto Primeira Infância Carioca.
-    Orquestra extração, tratamento dbt e feedback para o ArcGIS.
-    """
-    
-    # 1. Extração RAW: Controle CAS (Tabela de Ratificação)
-    load_arcgis_to_bigquery(
+# --- Subflows (Etapas Isoladas) ---
+
+@flow(name="Extração | Controle CAS")
+def flow_extract_controle_cas():
+    """Baixa dados do Controle CAS (Original)."""
+    return load_arcgis_to_bigquery(
         job_name="controle_cas",
         item_id="6855307d763b49f6bfb1c5d83b069952",
     )
 
-    # 2. Extração RAW: Primeira Infância Carioca (Survey Principal)
-    load_arcgis_to_bigquery(
+@flow(name="Extração | Primeira Infância")
+def flow_extract_primeira_infancia():
+    """Baixa dados da Primeira Infância (Original)."""
+    return load_arcgis_to_bigquery(
         job_name="primeira_infancia_carioca",
         item_id="ef6fe5c04520445f91be8a57c4adcd96",
         layer_idx=0
     )
 
-    # 3. Transformação: Executa modelos dbt da pasta 'pic'
-    # Isso inclui as tabelas enriquecidas e os deltas de feedback
-    run_dbt_models(model_name="pic")
+@flow(name="Transformação | dbt (PIC)")
+def flow_transform_dbt():
+    """Executa os modelos dbt do projeto PIC."""
+    return run_dbt_models(model_name="pic")
 
-    # 4. Feedback: Envia deltas do BQ de volta para o ArcGIS
+@flow(name="Feedback | Write-back ArcGIS")
+def flow_feedback_arcgis():
+    """Envia atualizações de volta para os itens originais do ArcGIS."""
     
     # 4.1 Update para Primeira Infância (Survey)
-    apply_arcgis_feedback(
+    feedback_pic = apply_arcgis_feedback(
         item_id="ef6fe5c04520445f91be8a57c4adcd96",
         delta_table="delta_feedback_pic",
         layer_idx=0
     )
 
     # 4.2 Update para Controle CAS (Table)
-    apply_arcgis_feedback(
+    feedback_controle = apply_arcgis_feedback(
         item_id="6855307d763b49f6bfb1c5d83b069952",
         delta_table="delta_feedback_controle",
-        # layer_idx=0  # Para Table, o resolver cuida se precisa de index ou não
     )
+    return {"pic_updated": feedback_pic, "controle_updated": feedback_controle}
+
+# --- Flow Maestro ---
+
+@flow(name="Primeira Infância Carioca | Maestro")
+def primeira_infancia_carioca_flow() -> None:
+    """
+    Fluxo Maestro para o projeto Primeira Infância Carioca.
+    """
+    flow_extract_controle_cas()
+    flow_extract_primeira_infancia()
+    flow_transform_dbt()
+    flow_feedback_arcgis()
 
 if __name__ == "__main__":
     primeira_infancia_carioca_flow()

@@ -1,6 +1,25 @@
 -- queries/models/pic/delta_feedback_pic.sql
--- Registros que precisam ser atualizados no ArcGIS da Primeira Infância
+-- Registros que precisam ter a 'verificacao' atualizada no ArcGIS da Primeira Infancia
+
+WITH 
+calculado AS (
+    SELECT 
+        objectid,
+        verificacao
+    FROM {{ ref('primeira_infancia_carioca') }}
+),
+
+atual AS (
+    SELECT 
+        objectid,
+        verificacao
+    FROM {{ source('arcgis_raw', 'primeira_infancia_carioca_raw') }}
+)
+
 SELECT 
-    *
-FROM {{ ref('primeira_infancia_carioca') }}
-LIMIT 0 -- Preencher com a lógica de JOIN e filtro de diferença
+    calculado.objectid,
+    calculado.verificacao
+FROM calculado
+JOIN atual ON calculado.objectid = atual.objectid
+WHERE 
+    COALESCE(calculado.verificacao, '') != COALESCE(atual.verificacao, '')

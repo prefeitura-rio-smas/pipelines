@@ -35,10 +35,14 @@ def apply_arcgis_feedback(
     for row in rows:
         attributes = {}
         for col, value in row.items():
+            clean_value = value
+            if str(value).strip().lower() in ["none", "nan", "null", ""]:
+                clean_value = None
+            
             if col.lower() == "objectid":
                 attributes["objectid"] = int(value)
             else:
-                attributes[col] = value
+                attributes[col] = clean_value
         updates.append({"attributes": attributes})
 
     batch_size = 100

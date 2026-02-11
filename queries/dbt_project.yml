@@ -31,4 +31,4 @@ models:
       +schema: "{{ 'bolsa_familia' if target.name == 'prod' else 'gerenciamento__dbt' }}"
     pic:
       +materialized: table
-      +schema: "{{ 'pic' if target.name == 'prod' else 'gerenciamento__dbt' }}"
+      +schema: pic
