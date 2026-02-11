@@ -64,7 +64,7 @@ SELECT
   cc.data_entrega_prevista_2,
   cc.cpf_resp_verific,
   cc.obs,
-  pi.data_entrega AS data_entrega_text,
+  FORMAT_TIMESTAMP('%d/%m/%Y', TIMESTAMP_MILLIS(CAST(pi.data_entrega AS INT64))) AS data_entrega_text,
   cc.cras_3,
   pi.responsavel_retirada AS resp_retirada,
   cc.telefone_formatado,
