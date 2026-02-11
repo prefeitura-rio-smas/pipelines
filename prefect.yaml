@@ -117,7 +117,6 @@ deployments:
         networks: ["prefect_prefect-stack"]
         image: "{{ $PREFECT_DEPLOYMENT_IMAGE }}"
         env:
-          PREFECT_API_URL: http://prefect-api:4200/api
           MODE: prod
           GCP_CREDENTIALS: "{{ $GCP_CREDENTIALS }}"
           SIURB_URL: "{{ $SIURB_URL }}"
@@ -212,10 +211,10 @@ deployments:
     tags: ["prod", "cras_cas_poligonos"]
 
   # ---------------------------------------------------------------------------
-  # pipeline_primeira_infancia_carioca_raw_teste
+  # primeira_infancia_carioca
   # ---------------------------------------------------------------------------
-  - name: pipeline_primeira_infancia_carioca_raw_teste-staging
-    entrypoint: pipelines/arcgis/pipeline_primeira_infancia_carioca_raw_teste/flows.py:pipeline_primeira_infancia_carioca_raw_teste
+  - name: primeira_infancia_carioca-staging
+    entrypoint: pipelines/arcgis/primeira_infancia_carioca/flows.py:primeira_infancia_carioca_flow
     work_pool:
       name: docker-pool
       job_variables:
@@ -228,12 +227,12 @@ deployments:
           SIURB_URL: "{{ $SIURB_URL }}"
           SIURB_USER: "{{ $SIURB_USER }}"
           SIURB_PWD: "{{ $SIURB_PWD }}"
-    tags: ["staging", "pipeline_primeira_infancia_carioca_raw_teste"]
+    tags: ["staging", "primeira_infancia_carioca"]
 
-  - name: pipeline_primeira_infancia_carioca_raw_teste-prod
-    entrypoint: pipelines/arcgis/pipeline_primeira_infancia_carioca_raw_teste/flows.py:pipeline_primeira_infancia_carioca_raw_teste
+  - name: primeira_infancia_carioca-prod
+    entrypoint: pipelines/arcgis/primeira_infancia_carioca/flows.py:primeira_infancia_carioca_flow
     schedule:
-      cron: "0 1 * * *"
+      cron: "0 * * * *"
       timezone: "America/Sao_Paulo"
     work_pool:
       name: docker-pool
@@ -252,4 +251,4 @@ deployments:
           SIURB_URL: "{{ $SIURB_URL }}"
           SIURB_USER: "{{ $SIURB_USER }}"
           SIURB_PWD: "{{ $SIURB_PWD }}"
-    tags: ["prod", "pipeline_primeira_infancia_carioca_raw_teste"]
+    tags: ["prod", "primeira_infancia_carioca"]
