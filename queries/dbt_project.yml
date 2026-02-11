@@ -6,6 +6,7 @@ model-paths: ["models"]
 models:
   queries:
     dashboard_arcgis:
+      +database: rj-smas-dev
       +materialized: table
       +schema: "{{ 'dashboard_arcgis' if target.name == 'prod' else 'gerenciamento__dbt' }}"
     equipamentos:
