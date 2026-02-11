@@ -1,7 +1,8 @@
 from prefect import flow
+from prefect_dbt.cli.commands import trigger_dbt_cli_command
 from pipelines.arcgis.tasks import load_arcgis_to_bigquery
-from pipelines.tasks import run_dbt_models
 from pipelines.arcgis.primeira_infancia_carioca.tasks import apply_arcgis_feedback
+import os
 
 # --- Subflows (Etapas Isoladas) ---
 
@@ -24,8 +25,13 @@ def flow_extract_primeira_infancia():
 
 @flow(name="Transformação | dbt (PIC)")
 def flow_transform_dbt():
-    """Executa os modelos dbt do projeto PIC."""
-    return run_dbt_models(model_name="pic")
+    """Executa os modelos dbt do projeto PIC usando a integração nativa."""
+    dbt_target = os.getenv("MODE", "staging")
+    return trigger_dbt_cli_command(
+        command=f"dbt run --select pic --target {dbt_target}",
+        project_dir="queries",
+        profiles_dir="queries"
+    )
 
 @flow(name="Feedback | Write-back ArcGIS")
 def flow_feedback_arcgis():
