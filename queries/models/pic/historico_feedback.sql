@@ -49,8 +49,3 @@ SELECT
     FARM_FINGERPRINT(TO_JSON_STRING(u)) as unique_id,
     u.* 
 FROM unificado u
-
-{% if is_incremental() %}
-  -- this filter will only be applied on an incremental run
-  WHERE timestamp_execucao > (SELECT MAX(timestamp_execucao) FROM {{ this }})
-{% endif %}
