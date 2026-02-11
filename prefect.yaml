@@ -117,7 +117,6 @@ deployments:
         networks: ["prefect_prefect-stack"]
         image: "{{ $PREFECT_DEPLOYMENT_IMAGE }}"
         env:
-          PREFECT_API_URL: http://prefect-api:4200/api
           MODE: prod
           GCP_CREDENTIALS: "{{ $GCP_CREDENTIALS }}"
           SIURB_URL: "{{ $SIURB_URL }}"
