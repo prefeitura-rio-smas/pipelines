@@ -6,7 +6,7 @@ from prefect_dbt.cli.commands import DbtCoreOperation
 from pathlib import Path
 
 
-DBT_PROJECT_DIR = Path(__file__).parent.parent / "./queries"
+DBT_PROJECT_DIR = (Path(__file__).parent.parent / "queries").resolve()
 
 
 @task
