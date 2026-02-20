@@ -1,6 +1,7 @@
+import os
 from prefect import flow
+from prefect_dbt.cli.commands import trigger_dbt_cli_command
 
-from pipelines.tasks import run_dbt_models
 from pipelines.arcgis.tasks import load_arcgis_to_bigquery
 
 
@@ -23,7 +24,12 @@ def equipamento_flow() -> None:
         return_geometry=return_geometry,
     )
 
-    run_dbt_models(model_name="unidade")
+    dbt_target = os.getenv("MODE", "staging")
+    trigger_dbt_cli_command(
+        command=f"dbt run --select unidade --target {dbt_target}",
+        project_dir="queries",
+        profiles_dir="queries",
+    )
 
 if __name__ == "__main__":
     equipamento_flow()

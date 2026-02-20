@@ -1,6 +1,7 @@
+import os
 from prefect import flow
+from prefect_dbt.cli.commands import trigger_dbt_cli_command
 
-from pipelines.tasks import run_dbt_models
 from pipelines.arcgis.tasks import load_arcgis_to_bigquery
 
 
@@ -28,7 +29,12 @@ def abordagem_flow() -> None:
         order_by_field=order_by_field,
     )
 
-    run_dbt_models(model_name="abordagem")
+    dbt_target = os.getenv("MODE", "staging")
+    trigger_dbt_cli_command(
+        command=f"dbt run --select abordagem --target {dbt_target}",
+        project_dir="queries",
+        profiles_dir="queries",
+    )
 
 if __name__ == "__main__":
     abordagem_flow()

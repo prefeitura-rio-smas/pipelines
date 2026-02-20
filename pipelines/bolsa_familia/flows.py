@@ -1,4 +1,6 @@
+import os
 from prefect import flow
+from prefect_dbt.cli.commands import trigger_dbt_cli_command
 
 from pipelines.bolsa_familia.constants import settings
 from pipelines.bolsa_familia.tasks import (
@@ -6,7 +8,6 @@ from pipelines.bolsa_familia.tasks import (
     process_and_upload_files,
     load_to_bigquery,
 )
-from pipelines.tasks import run_dbt_models
 
 @flow(name="Bolsa Família | Carga de Arquivos ZIP")
 def bolsa_familia_flow() -> None:
@@ -38,7 +39,12 @@ def bolsa_familia_flow() -> None:
         source_path=staging_path,
     )
 
-    run_dbt_models(model_name="folha")
+    dbt_target = os.getenv("MODE", "staging")
+    trigger_dbt_cli_command(
+        command=f"dbt run --select folha --target {dbt_target}",
+        project_dir="queries",
+        profiles_dir="queries",
+    )
 
 if __name__ == "__main__":
     bolsa_familia_flow()
