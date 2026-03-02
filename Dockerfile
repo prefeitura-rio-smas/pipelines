@@ -5,7 +5,7 @@ FROM python:3.13-slim
 ENV UV_VERSION=0.2.25
 RUN pip install --no-cache-dir "uv==$UV_VERSION"
 
-WORKDIR /app
+WORKDIR /app/queries
 
 # Copia manifests e instala dependências com uv
 COPY pyproject.toml /app/
