@@ -3,6 +3,15 @@ from prefect import flow
 from prefect_dbt.cli.commands import trigger_dbt_cli_command
 from pipelines.acolherio.constants import settings
 
+import os
+from pathlib import Path
+from prefect import get_run_logger
+
+logger = get_run_logger()
+
+logger.info(f"CWD: {os.getcwd()}")
+logger.info(f"FILES: {[p.name for p in Path('.').iterdir()]}")
+
 
 @flow(name="dbt_acolherio_rma")
 def acolherio_flow() -> None:
