@@ -4,7 +4,7 @@ prefect-version: 3.0.0
 # 3. Pull (Define o diretório de trabalho no container)
 pull:
   - prefect.deployments.steps.set_working_directory:
-      directory: /app
+      directory: /app/queries
 
 # 4. Definições dos Deployments
 deployments:
