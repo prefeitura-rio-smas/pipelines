@@ -5,10 +5,10 @@ FROM python:3.13-slim
 ENV UV_VERSION=0.2.25
 RUN pip install --no-cache-dir "uv==$UV_VERSION"
 
-WORKDIR /app/queries
+WORKDIR /app/
 
 # Copia manifests e instala dependências com uv
-COPY pyproject.toml /app/
+COPY pyproject.toml .
 RUN uv pip compile pyproject.toml -o requirements.txt && \
     uv pip install --system --no-cache -r requirements.txt
 
@@ -16,7 +16,8 @@ RUN uv pip compile pyproject.toml -o requirements.txt && \
 COPY . /app
 COPY queries/profiles.yml /app/queries/profiles.yml
 
+RUN ls -R /app
+
 # Configura variável de ambiente do DBT
 ENV DBT_PROFILES_DIR=/app/queries
 
-# Não define ENTRYPOINT, permitindo que o Prefect (ou docker run) controle o comando
