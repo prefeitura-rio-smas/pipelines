@@ -34,7 +34,9 @@ jobs:
         run: uv sync --all-extras --dev
       
       - name: Install dbt packages
-        run: dbt deps
+        run:
+          source .venv/bin/activate
+          dbt deps
 
       - name: Lint with Ruff
         continue-on-error: true
