@@ -33,8 +33,7 @@ def cras_cas_poligonos_flow() -> None:
     dbt_target = os.getenv("MODE", "staging")
     trigger_dbt_cli_command(
         command=f"dbt run --select cras_cas_poligonos --target {dbt_target}",
-        project_dir="queries",
-        profiles_dir="queries",
+        profiles_dir="."
     )
 
 if __name__ == "__main__":

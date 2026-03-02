@@ -1,6 +1,4 @@
 rj_smas_dev:
-  # alvo-padrão para quem for rodar local: DEV
-  target: dev
   outputs:
 
     prod:         

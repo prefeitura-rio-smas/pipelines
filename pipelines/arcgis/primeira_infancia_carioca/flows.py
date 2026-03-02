@@ -29,8 +29,7 @@ def flow_transform_dbt():
     dbt_target = os.getenv("MODE", "staging")
     return trigger_dbt_cli_command(
         command=f"dbt run --select pic --target {dbt_target}",
-        project_dir="queries",
-        profiles_dir="queries"
+        profiles_dir="."
     )
 
 @flow(name="Feedback | Write-back ArcGIS")
