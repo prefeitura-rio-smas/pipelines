@@ -21,3 +21,4 @@ RUN ls -R /app
 # Configura variável de ambiente do DBT
 ENV DBT_PROFILES_DIR=/app/queries
 
+WORKDIR /app/queries/
