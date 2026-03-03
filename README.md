@@ -12,14 +12,29 @@ Se você ainda não tem o `uv`, instale-o com um destes comandos no seu terminal
 *   **Windows (PowerShell):** `powershell -c "irm https://astral.sh/uv/install.ps1 | iex"`
 *   **Linux/macOS:** `curl -LsSf https://astral.sh/uv/install.sh | sh`
 
-### Passo B: Sincronizar o Ambiente
+### Passo B: Instalar o Google Cloud SDK (Sem Admin)
+Se você está no Windows e não tem acesso administrador, execute estes comandos no seu terminal (**PowerShell**) para uma instalação rápida e isolada na sua pasta de usuário:
+
+```powershell
+# 1. Baixar o instalador (ZIP)
+curl.exe -L "https://dl.google.com/dl/cloudsdk/channels/rapid/google-cloud-sdk-windows-x86_64-bundled-python.zip" -o "$env:USERPROFILE\gcloud.zip"
+
+# 2. Extrair os arquivos na sua pasta de usuário
+Expand-Archive -Path "$env:USERPROFILE\gcloud.zip" -DestinationPath "$env:USERPROFILE" -Force
+
+# 3. Rodar o instalador (Aceite 'Y' para todas as perguntas, especialmente para o PATH)
+& "$env:USERPROFILE\google-cloud-sdk\install.bat"
+```
+**Importante:** Após o término, **feche e abra o VS Code** para que os novos comandos sejam reconhecidos pelo Windows.
+
+### Passo C: Sincronizar o Ambiente
 Na pasta raiz do projeto, execute:
 ```bash
 uv sync
 ```
 Este comando criará uma pasta `.venv/` com o Python 3.13 e todas as bibliotecas (dbt, etc.) configuradas automaticamente.
 
-### Passo C: Configurar o Editor (VS Code ou outro)
+### Passo D: Configurar o Editor (VS Code ou outro)
 1. Abra a pasta do projeto no seu editor de preferência.
 2. Certifique-se de que o editor está usando o interpretador Python localizado na pasta **`.venv/`** que o `uv` criou. No VS Code, isso geralmente acontece automaticamente, mas você pode forçar pressionando `Ctrl + Shift + P` -> `Python: Select Interpreter`.
 
@@ -33,8 +48,9 @@ Diferente do ambiente de produção (que usa robôs), aqui no desenvolvimento vo
 Execute este comando e siga as instruções (abrir link no navegador e logar):
 
 ```bash
-gcloud auth application-default login
+gcloud auth application-default login --project rj-smas-dev
 ```
+*(O parâmetro `--project` evita erros de cota e permissão durante o uso do dbt).*
 
 ### Testando a Conexão
 Para ter certeza que o dbt está configurado corretamente, rode:
