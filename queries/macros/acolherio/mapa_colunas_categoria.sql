@@ -276,3 +276,33 @@
     ELSE 'S'
   END AS UNIDADE_ATIVA
 {% endmacro %}
+
+-- Coluna indeixo do model lista_unidades (flag_adulto)
+{% macro map_coluna_indeixo_adulto (coluna) %}
+  max(
+    case
+      when lower({{ coluna }}) = 'a' then 'Sim'
+      else 'Não'
+    end
+  )
+{% endmacro %}
+
+-- Coluna indeixo do model lista_unidades (flag_familia)
+{% macro map_coluna_indeixo_familia (coluna) %}
+  max(
+    case
+      when lower({{ coluna }}) = 'f' then 'Sim'
+      else 'Não'
+    end
+  )
+{% endmacro %}
+
+-- Coluna indeixo do model lista_unidades (flag_idoso)
+{% macro map_coluna_indeixo_idoso (coluna) %}
+  max(
+    case
+      when lower({{ coluna }}) = 'i' then 'Sim'
+      else 'Não'
+    end
+  )
+{% endmacro %}
