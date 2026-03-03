@@ -2,26 +2,43 @@
 
 Bem-vindo! Este guia vai te ajudar a configurar seu ambiente de desenvolvimento para rodar as pipelines e modelos dbt do projeto **rj-smas**.
 
-## 🛠️ 1. Configuração do Ambiente (Crucial)
+## 🛠️ 1. Configuração do Ambiente (Modo Simples com `uv`)
 
-Estamos usando **Python 3.13**, que é muito recente e exige alguns ajustes manuais para funcionar. Siga os passos abaixo exatamente na ordem.
+Para garantir que todos usem as mesmas versões de Python e dbt sem conflitos, usamos o **[uv](https://docs.astral.sh/uv/)**. 
 
-### Passo A: Instalar Dependências Específicas
-No terminal do seu VS Code, execute:
+### Passo A: Instalar o `uv`
+Se você ainda não tem o `uv`, execute este comando no seu terminal (**PowerShell**):
 
-```bash
-# 1. Instala o setuptools (corrige erro de 'distutils' no Python 3.13)
-pip install setuptools
-
-# 2. Instala versões específicas do dbt para garantir compatibilidade
-pip install --force-reinstall dbt-core==1.7.16 dbt-bigquery==1.7.8
+```powershell
+powershell -ExecutionPolicy Bypass -c "irm https://astral.sh/uv/install.ps1 | iex"
 ```
+*(O parâmetro `-ExecutionPolicy Bypass` garante que a instalação funcione mesmo em máquinas Windows com políticas restritivas).*
 
-### Passo B: Configurar o VS Code
-Verifique se a extensão **Power User for dbt** está instalada. 
-As configurações necessárias já estão no arquivo `.vscode/settings.json`, apontando para a pasta `/queries`.
+### Passo B: Instalar o Google Cloud SDK (Sem Admin)
+Se você está no Windows e não tem acesso administrador, execute estes comandos no seu terminal (**PowerShell**) para uma instalação rápida e isolada na sua pasta de usuário:
 
-> **Dica:** Se a extensão parecer "perdida", pressione `Ctrl + Shift + P` e escolha **"Developer: Reload Window"**.
+```powershell
+# 1. Baixar o instalador (ZIP)
+curl.exe -L "https://dl.google.com/dl/cloudsdk/channels/rapid/google-cloud-sdk-windows-x86_64-bundled-python.zip" -o "$env:USERPROFILE\gcloud.zip"
+
+# 2. Extrair os arquivos na sua pasta de usuário
+Expand-Archive -Path "$env:USERPROFILE\gcloud.zip" -DestinationPath "$env:USERPROFILE" -Force
+
+# 3. Rodar o instalador (Aceite 'Y' para todas as perguntas, especialmente para o PATH)
+& "$env:USERPROFILE\google-cloud-sdk\install.bat"
+```
+**Importante:** Após o término, **feche e abra o VS Code** para que os novos comandos sejam reconhecidos pelo Windows.
+
+### Passo C: Sincronizar o Ambiente
+Na pasta raiz do projeto, execute:
+```bash
+uv sync
+```
+Este comando criará uma pasta `.venv/` com o Python 3.13 e todas as bibliotecas (dbt, etc.) configuradas automaticamente.
+
+### Passo D: Configurar o Editor (VS Code ou outro)
+1. Abra a pasta do projeto no seu editor de preferência.
+2. Certifique-se de que o editor está usando o interpretador Python localizado na pasta **`.venv/`** que o `uv` criou. No VS Code, isso geralmente acontece automaticamente, mas você pode forçar pressionando `Ctrl + Shift + P` -> `Python: Select Interpreter`.
 
 ---
 
@@ -30,18 +47,15 @@ As configurações necessárias já estão no arquivo `.vscode/settings.json`, a
 Diferente do ambiente de produção (que usa robôs), aqui no desenvolvimento você usará sua **conta pessoal do Google** (OAuth).
 
 ### Passo Único: Login no Terminal
-Execute este comando e siga as instruções (copiar link, logar no navegador, colar código):
+Execute este comando e siga as instruções (abrir link no navegador e logar):
 
 ```bash
-# Se estiver rodando localmente na sua máquina:
-gcloud auth application-default login
-
-# Se estiver rodando no VS Code Server (sem navegador):
-gcloud auth application-default login --no-browser
+gcloud auth application-default login --project rj-smas-dev
 ```
+*(O parâmetro `--project` evita erros de cota e permissão durante o uso do dbt).*
 
 ### Testando a Conexão
-Para ter certeza que funcionou, rode:
+Para ter certeza que o dbt está configurado corretamente, rode:
 ```bash
 dbt debug --project-dir queries --profiles-dir queries
 ```
@@ -52,23 +66,22 @@ Se aparecer **"All checks passed!"**, você está pronto! 🚀
 ## ⚡ 3. Como Desenvolver (Dia a Dia)
 
 ### Rodando Modelos dbt
-Graças à extensão **Power User for dbt**, você não precisa ficar digitando comandos o tempo todo.
-
-1. Abra qualquer arquivo `.sql` na pasta `queries/models/`.
-2. Pressione **`Ctrl + Enter`** (ou `Cmd + Enter`).
-3. O resultado da query aparecerá na aba lateral **Query Results**.
+Você pode rodar os modelos dbt manualmente pelo terminal:
+```bash
+# Exemplo: rodar todos os modelos da pasta pic
+dbt run --select pic --project-dir queries --profiles-dir queries
+```
 
 ### Rodando Pipelines (Prefect)
-Nossas pipelines são definidas na pasta `pipelines/`. Para rodar ou testar, verifique a documentação específica de cada fluxo ou use o dashboard do Prefect se disponível.
+Nossas pipelines são definidas na pasta `pipelines/`. Para rodar ou testar localmente, certifique-se de que seu ambiente virtual (`.venv`) está ativado.
 
 ---
 
 ## ⚠️ 4. Solução de Problemas Comuns
 
-*   **Erro `No module named 'distutils'`**: Você esqueceu de rodar `pip install setuptools`.
-*   **Erro `dbt.adapters.factory`**: Sua versão do dbt está errada. Rode o comando de `pip install --force-reinstall` listado acima.
-*   **Erro de Autenticação**: Seu token pode ter expirado. Rode o `gcloud auth ...` novamente.
-*   **Extensão não carrega**: Dê um **Reload Window** no VS Code.
+*   **Erro de Autenticação**: Seu token pode ter expirado. Rode o `gcloud auth application-default login` novamente.
+*   **Erro 'dbt command not found'**: Certifique-se de que o ambiente virtual está ativado no seu terminal ou use `uv run dbt ...`.
 
 ---
 *Equipe de Dados - RJ SMAS* 
+ 
