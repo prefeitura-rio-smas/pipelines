@@ -1,0 +1,44 @@
+models:
+  - name: int_atendimentos
+    description: "Model responsável por agrupar todos os atendimentos do acolherio"
+    columns:
+      - name: sequs
+        description: "Id único da unidade responsável pelo atendimento"
+        data_tests:
+          - not_null
+      - name: seqatend_modulo
+        description: "Id único do atendimento. Contém o módulo para identificar em qual módulo aquele atendimento foi feito"
+        data_tests:
+          - unique
+          - not_null
+      - name: seqatend
+        description: "Id original do atendimento no acolherio."
+      - name: seqpac
+        description: "Id único do usuário"
+        data_tests:
+          - not_null
+      - name: seqfamil
+        description: "Id da família"
+      - name: seqprof
+        description: "Id do profissional"
+        data_tests:
+          - not_null
+      - name: seqlogincad
+        description: "Id Login da pessoa que cadastrou"
+        data_tests:
+          - not_null
+      - name: modulo
+        description: "Letra que contém a inicial do módulo onde foi criado o atendimento"
+      - name: seqprof_atendimento_compartilhadoo
+        description: "Id dos profissionais, caso o atendimento tenha sido compartilhado"
+      - name: local_atendimento 
+        description: "Local do atendimento"
+      - name: data_atendimento 
+        description: "Data do atendimento"
+      - name: hora_atendimento
+        description: "Hora do atendimento"
+      - name: data_saida_atendimento
+        description: "Data de saída do atendimento"
+      - name: hora_saida_atendimento
+        description: "Hora de saída do atendimento"
+     
