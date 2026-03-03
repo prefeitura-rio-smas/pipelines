@@ -1,6 +1,6 @@
 -- Tabela que contém todos os atendimentos do acolherio. Sem testes.
 
-
+{{ config(materialized = 'table') }}
 -- Retirar os usuários que estão repetidos e com famílias diferentes
 -- por conta do erro de unificação de relatório do acolherio.
 -- O erro altera a família do usuário mas ele ainda permanece na família antiga.
