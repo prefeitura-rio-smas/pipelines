@@ -1,11 +1,18 @@
 {
-    "python.defaultInterpreterPath": "/root/.pyenv/versions/3.13.4/bin/python",
+    "python.defaultInterpreterPath": "${workspaceFolder}/.venv/bin/python",
     "dbt.projectDirectories": [
         "queries"
     ],
     "dbt.profilesDir": "queries",
-    "dbt.dbtPythonPathOverride": "/root/.pyenv/versions/3.13.4/bin/python",
+    "dbt.dbtPythonPathOverride": "${workspaceFolder}/.venv/bin/python",
+    "terminal.integrated.env.windows": {
+        "DBT_PROFILES_DIR": "${workspaceFolder}/queries"
+    },
+    "terminal.integrated.env.linux": {
+        "DBT_PROFILES_DIR": "${workspaceFolder}/queries"
+    },
     "files.associations": {
         "*.sql": "jinja-sql"
-    }
+    },
+    "python.terminal.activateEnvInSelectedTerminal": true
 }
