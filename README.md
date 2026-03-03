@@ -7,10 +7,12 @@ Bem-vindo! Este guia vai te ajudar a configurar seu ambiente de desenvolvimento 
 Para garantir que todos usem as mesmas versões de Python e dbt sem conflitos, usamos o **[uv](https://docs.astral.sh/uv/)**. 
 
 ### Passo A: Instalar o `uv`
-Se você ainda não tem o `uv`, instale-o com um destes comandos no seu terminal:
+Se você ainda não tem o `uv`, execute este comando no seu terminal (**PowerShell**):
 
-*   **Windows (PowerShell):** `powershell -c "irm https://astral.sh/uv/install.ps1 | iex"`
-*   **Linux/macOS:** `curl -LsSf https://astral.sh/uv/install.sh | sh`
+```powershell
+powershell -ExecutionPolicy Bypass -c "irm https://astral.sh/uv/install.ps1 | iex"
+```
+*(O parâmetro `-ExecutionPolicy Bypass` garante que a instalação funcione mesmo em máquinas Windows com políticas restritivas).*
 
 ### Passo B: Instalar o Google Cloud SDK (Sem Admin)
 Se você está no Windows e não tem acesso administrador, execute estes comandos no seu terminal (**PowerShell**) para uma instalação rápida e isolada na sua pasta de usuário:
