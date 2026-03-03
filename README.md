@@ -2,26 +2,28 @@
 
 Bem-vindo! Este guia vai te ajudar a configurar seu ambiente de desenvolvimento para rodar as pipelines e modelos dbt do projeto **rj-smas**.
 
-## 🛠️ 1. Configuração do Ambiente (Crucial)
+## 🛠️ 1. Configuração do Ambiente (Modo Simples com `uv`)
 
-Estamos usando **Python 3.13**, que é muito recente e exige alguns ajustes manuais para funcionar. Siga os passos abaixo exatamente na ordem.
+Para garantir que todos usem as mesmas versões de Python e dbt sem conflitos, usamos o **[uv](https://docs.astral.sh/uv/)**. 
 
-### Passo A: Instalar Dependências Específicas
-No terminal do seu VS Code, execute:
+### Passo A: Instalar o `uv`
+Se você ainda não tem o `uv`, instale-o com um destes comandos no seu terminal:
 
+*   **Windows (PowerShell):** `powershell -c "irm https://astral.sh/uv/install.ps1 | iex"`
+*   **Linux/macOS:** `curl -LsSf https://astral.sh/uv/install.sh | sh`
+
+### Passo B: Sincronizar o Ambiente
+Na pasta raiz do projeto, execute:
 ```bash
-# 1. Instala o setuptools (corrige erro de 'distutils' no Python 3.13)
-pip install setuptools
-
-# 2. Instala versões específicas do dbt para garantir compatibilidade
-pip install --force-reinstall dbt-core==1.7.16 dbt-bigquery==1.7.8
+uv sync
 ```
+Este comando criará uma pasta `.venv/` com o Python 3.13 e todas as bibliotecas (dbt, etc.) configuradas automaticamente.
 
-### Passo B: Configurar o VS Code
-Verifique se a extensão **Power User for dbt** está instalada. 
-As configurações necessárias já estão no arquivo `.vscode/settings.json`, apontando para a pasta `/queries`.
-
-> **Dica:** Se a extensão parecer "perdida", pressione `Ctrl + Shift + P` e escolha **"Developer: Reload Window"**.
+### Passo C: Configurar o VS Code
+1. Abra a pasta do projeto no VS Code.
+2. Pressione **`Ctrl + Shift + P`** e selecione **"Python: Select Interpreter"**.
+3. Escolha a opção que aponte para o caminho **`.venv/Scripts/python.exe`** (ou similar).
+4. Verifique se a extensão **Power User for dbt** está instalada. As configurações necessárias já estão automáticas no arquivo `.vscode/settings.json`.
 
 ---
 
