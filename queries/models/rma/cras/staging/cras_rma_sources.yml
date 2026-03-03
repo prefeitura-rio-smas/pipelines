@@ -22,8 +22,12 @@ sources:
       - name: gh_famil_vulnerab
       - name: gh_evoluadm
       - name: gh_pacientes_sm
+      - name: gh_us_smas
+      - name: gh_us_config
+      - name: gh_pac_ciclos
   - name: cras_rma_relatorio
     database: rj-smas-dev 
     schema: relatorio
     tables:
       - name: violacao_direito
+  
