@@ -1,5 +1,8 @@
 -- Tabela para tratar as colunas em que precisa de macro. 
 
+{{ config(materialized = 'table') }}
+
+
 with tratar_raca_e_genero_cidadao_pac as (
     select
         seqpac,
@@ -143,4 +146,4 @@ inner join tratar_saude_mental_orientacao_sexual_vinculo_trabalhista c on a.seqp
 )
 
 select * from final
-where not regexp_contains(nome_usuario, '(?i)teste')
+--where not regexp_contains(nome_usuario, '(?i)teste')
