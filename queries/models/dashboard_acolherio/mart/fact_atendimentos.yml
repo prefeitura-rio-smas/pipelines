@@ -1,0 +1,23 @@
+models:
+  - name: fact_atendimentos
+    description: "Model responsável ter todos os atendimentos do acolherio. É a tabela principal (FACT) de atendimentos com o grão de 1 atendimento por linha"
+    columns:
+      - name: seqatend_modulo
+        description: "Chave primária da tabela fato com o id natural do atendimento + seu módulo"
+        data_tests:
+          - not_null
+          - relationships:
+              arguments:
+                to: ref('int_atendimentos')
+                field: seqatend_modulo
+      - name: seqpac_sk
+        description: "Chave estrangeira do usuário. Se refere a dimensão usuários"
+        data_tests:
+          - not_null
+      - name: seqprof_sk
+        description: "Chave estrangeira do profissional. Se refere a dimensão profissionais."
+      - name: sequs_sk
+        description: "Chave estrangeira do usuário. Se refere a dimensão unidades"
+        data_tests:
+          - not_null
+    
