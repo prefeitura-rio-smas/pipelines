@@ -17,3 +17,4 @@ sources:
         description: "Tabela normalizada da origem da demanda"
       - name: gh_contas
         description: "Contas dos operadores do sistema acolherio"
+      - name: gh_us
