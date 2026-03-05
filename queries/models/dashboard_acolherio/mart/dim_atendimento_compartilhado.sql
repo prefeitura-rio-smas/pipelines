@@ -3,7 +3,11 @@
 -- Captura todos os atendimentos que são compartilhados.
 with atendimentos_compartilhados as (
     select
+        sequs,
+        seqatend,
         seqatend_modulo,
+        concat(seqprof, ',', seqprof_atendimento_compartilhado) as total_prof_atendimento,
+        seqprof,
         seqprof_atendimento_compartilhado
     from `rj-smas-dev.relatorio.int_atendimentos` atend 
     where seqprof_atendimento_compartilhado != ''
@@ -12,14 +16,21 @@ with atendimentos_compartilhados as (
 -- Explode os profissionais
 explodir_profissional as (
 select
+    seqatend,
+    sequs,
     seqatend_modulo,
-    cast(seqprof_compartilhado as int64) as seqprof_compartilhado_tratado,
+    seqprof,
+    total_prof_atendimento,
+    cast(teste as int64) as seqprof_compartilhado_tratado,
 from atendimentos_compartilhados,
-unnest(split(seqprof_atendimento_compartilhado, ',')) as seqprof_compartilhado
+unnest(split(total_prof_atendimento, ',')) as teste
 )
 
 select
+    a.seqatend,
+    a.sequs,
     a.seqprof_compartilhado_tratado,
+    a.total_prof_atendimento,
     a.seqatend_modulo,
     b.seqprof_sk
 from explodir_profissional a 
