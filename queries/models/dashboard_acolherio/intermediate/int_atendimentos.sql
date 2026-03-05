@@ -78,3 +78,8 @@ total_atendimentos as (
 )
 
 select * from total_atendimentos
+where seqatend_modulo not in (
+    select 
+        seqatend_modulo
+    from {{ ref('dim_atendimento_compartilhado') }}
+)
