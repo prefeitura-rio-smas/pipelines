@@ -2,7 +2,6 @@ version: 2
 
 sources:
   - name: arcgis_raw
-    database: rj-smas-dev
     schema: arcgis_raw
     tables:
       - name: abordagem_repeat_raw
