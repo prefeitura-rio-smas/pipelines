@@ -77,9 +77,10 @@ total_atendimentos as (
     from atendimentos_modulo_usuario
 )
 
-select * from total_atendimentos
-where seqatend_modulo not in (
-    select 
-        seqatend_modulo
-    from {{ ref('dim_atendimento_compartilhado') }}
-)
+select
+ *,
+ case
+    when trim(seqprof_atendimento_compartilhado) != '' and seqprof_atendimento_compartilhado is not null then "Sim"
+    else "Não"
+end as flag_atendimento_compartilhado
+from total_atendimentos
