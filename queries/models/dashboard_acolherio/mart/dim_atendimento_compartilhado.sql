@@ -9,8 +9,8 @@ with atendimentos_compartilhados as (
         concat(seqprof, ',', seqprof_atendimento_compartilhado) as total_prof_atendimento,
         seqprof,
         seqprof_atendimento_compartilhado
-    from `rj-smas-dev.relatorio.int_atendimentos` atend 
-    where seqprof_atendimento_compartilhado != ''
+    from {{ ref('int_atendimentos') }} atend 
+    where flag_atendimento_compartilhado = 'Sim'
 ),
 
 -- Explode os profissionais
@@ -34,4 +34,4 @@ select
     a.seqatend_modulo,
     b.seqprof_sk
 from explodir_profissional a 
-left join `rj-smas-dev.relatorio.dim_profissionais`b on a.seqprof_compartilhado_tratado = b.seqprof
+left join {{ ref('dim_profissionais') }} b on a.seqprof_compartilhado_tratado = b.seqprof
