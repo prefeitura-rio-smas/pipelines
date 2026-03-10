@@ -70,7 +70,7 @@ tratar_escolaridade_serie_paciente_sm as(
         tipo_beneficio,
         tipo_curatela,
         {{ map_flag_curatela('flag_curatela') }} as flag_curatela,
-        {{ map_coluna_situacao_de_rua('flag_situacao_rua') }} as flag_situacao_rua,
+        flag_situacao_rua,
         {{ map_flag_deficiencia('flag_deficiencia') }} as flag_deficiencia,
         tipo_deficiencia
     from  {{ ref ('stg_pacientes_sm_acolherio') }}
