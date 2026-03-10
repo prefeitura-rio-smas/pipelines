@@ -15,7 +15,7 @@ with dados_pacientes_sm as (
         indqualbenef as tipo_beneficio,
         indcuratela as flag_curatela, 
         indtipcuratela as tipo_curatela,
-        {{ map_flag_situacao_rua(indmoradiindmoradi) }} as flag_situacao_rua,
+        {{ map_flag_situacao_rua('indmoradi') }} as flag_situacao_rua,
         indpresdefi as flag_deficiencia,
         indtpdefi as tipo_deficiencia
     from  {{ source('source_dashboard_acolherio', 'gh_pacientes_sm') }}
