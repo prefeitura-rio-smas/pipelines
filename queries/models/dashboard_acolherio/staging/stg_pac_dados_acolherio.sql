@@ -5,7 +5,7 @@
 with dados_pac as (
     select
         seqpac,
-        indcadunico as flag_cadunico,
+        {{ map_flag_cadunico('indcadunico') }} as flag_cadunico,
         dsctomdecproces as numero_processo_decisao_apoiada,
         dsctomdecnome as nome_apoiador,
         indsmentcompr as saude_mental_comprometida,
