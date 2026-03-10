@@ -330,7 +330,7 @@
 {% macro map_flag_trabalho (coluna) %}
   case
     when {{ coluna }} = 'S' then 'Sim'
-    else "Não"
+    else 'Não'
   end 
 {% endmacro %}
 
@@ -338,7 +338,7 @@
 {% macro map_flag_frequencia_escola (coluna) %}
   case
     when {{ coluna }} = 'S' then 'Sim'
-    else "Não"
+    else 'Não'
   end 
 {% endmacro %}
 
@@ -346,7 +346,7 @@
 {% macro map_flag_deficiencia (coluna) %}
   case
     when {{ coluna }} = 'S' then 'Sim'
-    else "Não"
+    else 'Não'
   end 
 {% endmacro %}
 
@@ -354,15 +354,15 @@
 {% macro map_flag_curatela (coluna) %}
   case
     when {{ coluna }} = 'S' then 'Sim'
-    else "Não"
+    else 'Não'
   end 
 {% endmacro %}
 
 -- Coluna flag_situacao_rua do model stg_pacientes_sm_acolherio
 {% macro map_flag_situacao_rua (coluna) %}
   case
-    when {{ coluna }} = 'S' then 'Sim'
-    else "Não"
+    when {{ coluna }} = '5' then 'Sim'
+    else 'Não'
   end 
 {% endmacro %}
 
@@ -371,6 +371,6 @@
 {% macro map_flag_cadunico (coluna) %}
   case
     when {{ coluna }} = 'S' then 'Sim'
-    else "Não"
+    else 'Não'
   end 
 {% endmacro %}
