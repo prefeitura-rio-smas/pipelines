@@ -365,3 +365,12 @@
     else "Não"
   end 
 {% endmacro %}
+
+
+-- Coluna flag_cadunico do model stg_pac_dados_acolherio
+{% macro map_flag_cadunico (coluna) %}
+  case
+    when {{ coluna }} = 'S' then 'Sim'
+    else "Não"
+  end 
+{% endmacro %}
