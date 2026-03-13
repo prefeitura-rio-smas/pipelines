@@ -12,7 +12,21 @@ def equipamento_flow() -> None:
     """
     # Configuration for this product
     job_name = "equipamento"
-    item_id = "134851a668ca407c8f6b4cb2fd8dfdf8"
+    item_id = "1ab2f9c74d8f48239a12157d5a3a87f4
+
+Classificação
+
+Estrelas: 1
+
+Estrelas: 2
+
+Estrelas: 3
+
+Estrelas: 4
+
+Estrelas: 5
+
+"
     return_geometry = False
     layer_idx = 0
 
