@@ -6,6 +6,7 @@ with dados_cidadao_pac as (
     select
         seqpac,
         seqlogin as seqlogincad,
+        sigufnasc as naturalidade,
         dscnomepac as nome_usuario,
         dscnomsoci as nome_social,
         dscnmmae as filiacao_mae,
