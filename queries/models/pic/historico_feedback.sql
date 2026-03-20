@@ -6,7 +6,7 @@
 WITH 
 delta_pic AS (
     SELECT 
-        delta.objectid as objectid_origem,
+        CAST(delta.objectid AS STRING) as objectid_origem,
         'entrega_pic' as produto,
         'verificacao' as coluna,
         raw.verificacao as valor_antigo,
@@ -16,20 +16,21 @@ delta_pic AS (
 ),
 
 delta_controle_unpivot AS (
-    SELECT 
-        objectid_origem,
+    SELECT
+        CAST(objectid_origem AS STRING) as objectid_origem,
         'controle_cas' as produto,
         item.coluna,
         item.valor_antigo,
         item.valor_novo
     FROM (
-        SELECT 
-            delta.objectid as objectid_origem,
+        SELECT
+            CAST(delta.objectid AS STRING) as objectid_origem,
             [
-                STRUCT('cartao_entregue' as coluna, raw.cartao_entregue as valor_antigo, delta.cartao_entregue as valor_novo),
-                STRUCT('local_entrega' as coluna, raw.local_entrega as valor_antigo, delta.local_entrega as valor_novo),
-                STRUCT('data_entrega_text' as coluna, raw.data_entrega_text as valor_antigo, delta.data_entrega_text as valor_novo),
-                STRUCT('resp_retirada' as coluna, raw.resp_retirada as valor_antigo, delta.resp_retirada as valor_novo)
+                STRUCT('cartao_entregue' as coluna, CAST(raw.cartao_entregue AS STRING) as valor_antigo, CAST(delta.cartao_entregue AS STRING) as valor_novo),
+                STRUCT('local_entrega' as coluna, CAST(raw.local_entrega AS STRING) as valor_antigo, CAST(delta.local_entrega AS STRING) as valor_novo),
+                STRUCT('data_entrega_text' as coluna, CAST(raw.data_entrega_text AS STRING) as valor_antigo, CAST(delta.data_entrega_text AS STRING) as valor_novo),
+                STRUCT('resp_retirada' as coluna, CAST(raw.resp_retirada AS STRING) as valor_antigo, CAST(delta.resp_retirada AS STRING) as valor_novo),
+                STRUCT('data_particao_retirada' as coluna, CAST(NULL AS STRING) as valor_antigo, CAST(delta.data_particao_retirada AS STRING) as valor_novo)
             ] as updates
         FROM {{ ref('delta_feedback_controle') }} delta
         JOIN {{ source('arcgis_raw', 'controle_cas_raw') }} raw ON delta.objectid = raw.objectid
