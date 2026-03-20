@@ -1,37 +1,66 @@
 WITH controle_cas_base AS (
 
-    SELECT 
-      * EXCEPT(cartao_entregue, data_entrega_text, local_entrega, resp_retirada),
+    SELECT
+      * EXCEPT(data_entrega_text, local_entrega, resp_retirada, cartao_entregue),
       NULLIF(data_entrega_text, 'None') as data_entrega_text,
       NULLIF(local_entrega, 'None') as local_entrega,
       NULLIF(resp_retirada, 'None') as resp_retirada,
       CASE
         WHEN NULLIF(data_entrega_text, 'None') IS NOT NULL THEN 'CARTAO ENTREGUE'
-      END AS cartao_entregue 
+      END AS cartao_entregue
     FROM {{ source('arcgis_raw', 'controle_cas_raw') }}
 
 ),
 
-primeira_infancia AS (
-
-    SELECT 
-      * EXCEPT(cod_atend, local_entrega_cartao, data_entrega, responsavel_retirada, arquivar_registro),
+-- Dados temporais: limitados à respectiva partição
+primeira_infancia_temporal AS (
+    SELECT
+      cpf,
+      data_particao,
       objectid as cod_atend,
       NULLIF(data_entrega, 'None') as data_entrega,
       NULLIF(responsavel_retirada, 'None') as responsavel_retirada,
       NULLIF(arquivar_registro, 'None') as arquivar_registro,
-      case
-        when NULLIF(local_entrega_cras, 'None') IS NULL OR local_entrega_cras = "" then local_entrega_outros  
-        else local_entrega_cras 
-      end as local_entrega_cartao
+      CASE
+        WHEN NULLIF(local_entrega_cras, 'None') IS NULL OR local_entrega_cras = '' THEN local_entrega_outros
+        ELSE local_entrega_cras
+      END AS local_entrega_cartao
     FROM {{ source('arcgis_raw', 'primeira_infancia_carioca_raw') }}
-    where NULLIF(arquivar_registro, 'None') is null
-    qualify row_number () over (partition by cpf order by last_edited_date desc) = 1
-
-
+    WHERE NULLIF(arquivar_registro, 'None') IS NULL
+    QUALIFY ROW_NUMBER() OVER (PARTITION BY cpf, data_particao ORDER BY last_edited_date DESC) = 1
 ),
 
-cc as (
+-- Dados atemporais: primeira entrega válida (propaga para partições futuras, não para passadas)
+primeira_infancia_atemporal AS (
+    SELECT
+      cpf,
+      MIN(CASE WHEN NULLIF(data_entrega, 'None') IS NOT NULL THEN data_particao END) AS data_particao_retirada,
+      ARRAY_AGG(
+        STRUCT(
+          pi_t.data_entrega,
+          pi_t.responsavel_retirada,
+          pi_t.local_entrega_cartao
+        )
+        ORDER BY data_particao
+        LIMIT 1
+      )[OFFSET(0)].*
+    FROM (
+      SELECT
+        cpf,
+        data_particao,
+        NULLIF(data_entrega, 'None') as data_entrega,
+        NULLIF(responsavel_retirada, 'None') as responsavel_retirada,
+        CASE
+          WHEN NULLIF(local_entrega_cras, 'None') IS NULL OR local_entrega_cras = '' THEN local_entrega_outros
+          ELSE local_entrega_cras
+        END AS local_entrega_cartao
+      FROM {{ source('arcgis_raw', 'primeira_infancia_carioca_raw') }}
+      WHERE NULLIF(arquivar_registro, 'None') IS NULL
+    ) pi_t
+    GROUP BY cpf
+),
+
+cc AS (
 SELECT
   cc.objectid,
   cc.cpf,
@@ -50,29 +79,48 @@ SELECT
   cc.local_entrega_previsto,
   cc.data_entrega_prevista,
   cc.data_entrega,
-  pi.local_entrega_cartao AS local_entrega,
+  -- Propaga local_entrega apenas se entrega foi em partição <= atual
+  CASE 
+    WHEN pi_a.data_particao_retirada <= cc.data_particao 
+    THEN pi_a.local_entrega_cartao 
+  END AS local_entrega,
   cc.envelope,
   cc.num_cartao_vr,
   cc.nome_cartao_vr,
-  cc.cartao_entregue,
+  -- Propaga cartao_entregue apenas se entrega foi em partição <= atual
+  CASE 
+    WHEN pi_a.data_particao_retirada <= cc.data_particao 
+    THEN 'CARTAO ENTREGUE' 
+  END AS cartao_entregue,
   cc.doc_verificada,
   cc.resp_verificacao,
-  cc.created_user,
-  cc.created_date,
-  cc.last_edited_user,
-  cc.last_edited_date,
+  --cc.created_user,
+  --cc.created_date,
+  --cc.last_edited_user,
+  --cc.last_edited_date,
   cc.data_entrega_prevista_2,
   cc.cpf_resp_verific,
   cc.obs,
-  FORMAT_TIMESTAMP('%d/%m/%Y', TIMESTAMP_MILLIS(CAST(pi.data_entrega AS INT64))) AS data_entrega_text,
+  -- Propaga data_entrega_text apenas se entrega foi em partição <= atual
+  CASE 
+    WHEN pi_a.data_particao_retirada <= cc.data_particao 
+    THEN FORMAT_TIMESTAMP('%d/%m/%Y', TIMESTAMP_MILLIS(CAST(pi_a.data_entrega AS INT64)))
+  END AS data_entrega_text,
   cc.cras_3,
-  pi.responsavel_retirada AS resp_retirada,
+  -- Propaga resp_retirada apenas se entrega foi em partição <= atual
+  CASE 
+    WHEN pi_a.data_particao_retirada <= cc.data_particao 
+    THEN pi_a.responsavel_retirada 
+  END AS resp_retirada,
   cc.telefone_formatado,
-  cc.categoria_justificativa
+  cc.categoria_justificativa,
+  pi_a.data_particao_retirada
 
 FROM controle_cas_base cc
-LEFT JOIN primeira_infancia pi
-  ON cc.cpf = pi.cpf
+LEFT JOIN primeira_infancia_temporal pi_t
+  ON cc.cpf = pi_t.cpf AND cc.data_particao = pi_t.data_particao
+LEFT JOIN primeira_infancia_atemporal pi_a
+  ON cc.cpf = pi_a.cpf
 )
 
-select * from cc
+SELECT * FROM cc
