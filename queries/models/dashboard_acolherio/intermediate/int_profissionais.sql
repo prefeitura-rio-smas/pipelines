@@ -1,4 +1,3 @@
-
 with profissionais_sem_teste as (
     select 
         {{ dbt_utils.generate_surrogate_key(['seqprof']) }} as seqprof_sk,
@@ -9,7 +8,7 @@ with profissionais_sem_teste as (
         crmbloq,
         matricula,
         uf_conselho,
-        nome_profissional,
+        {{ profissional_atendimentos_bug_fix('nome_profissional') }} as nome_profissional,
         nome_social_profissional,
         flag_uso_nome_social,
         codigo_csns,
