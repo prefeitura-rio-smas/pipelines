@@ -8,7 +8,7 @@ with fato_atendimentos as (
         prof.seqprof_sk,
         unid.sequs_sk,
         tp_atend.seqtpatend_sk
-    from {{ ref('int_atendimentos') }} atend 
+    from {{ ref('int_atendimentos_no_row_number') }} atend 
     left join {{ ref('dim_usuarios') }} user on atend.seqpac = user.seqpac
     left join {{ ref('dim_profissionais') }} prof on atend.seqprof = prof.seqprof
     left join {{ ref('dim_unidades') }} unid on unid.sequs = atend.sequs

@@ -3,9 +3,8 @@
 with profissional_cbo as (
     select
         codcbo,
-        seqprof,
-        dtcadast as data_cadastro_cbo
-    from {{ source('brutos_acolherio_staging', 'gh_profocup') }}
+        dsccbo as profissional,
+    from {{ source('brutos_acolherio_staging', 'gh_cbo') }}
 )
 
 select * from profissional_cbo

@@ -41,7 +41,7 @@ models:
         description: "Flag que indica se o usuário trabalha ou não"
         data_tests:
           - accepted_values:
-              values: ["S", "N"]
+              values: ["Sim", "Não"]
       - name: vinculo_trabalhista
         description: "Tipo de vínculo trabalhista do usuário"
       - name: profissao

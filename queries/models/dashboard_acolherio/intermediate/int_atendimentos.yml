@@ -1,5 +1,5 @@
 models:
-  - name: int_atendimentos
+  - name: int_atendimentos_no_row_number
     description: "Model responsável por agrupar todos os atendimentos do acolherio"
     columns:
       - name: sequs
