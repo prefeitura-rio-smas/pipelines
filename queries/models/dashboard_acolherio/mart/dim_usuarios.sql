@@ -9,7 +9,6 @@ with dados_usuarios as (
     from {{ ref('int_dados_usuarios') }}
 ),
 
-
 -- Join para pegar o id_familia de cada usuário
 usuarios_e_id_familia as  (
     select
@@ -24,7 +23,8 @@ usuarios_e_id_familia as  (
     a.nome_social,
     a.data_nascimento,
     a.bairro,
-    a.cpf,
+    a.cpf_com_ponto,
+    a.cpf_sem_ponto,
     a.sexo,
     a.orientacao_sexual,
     a.genero,

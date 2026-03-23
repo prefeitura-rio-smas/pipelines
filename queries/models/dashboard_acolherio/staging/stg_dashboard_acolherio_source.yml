@@ -21,3 +21,6 @@ sources:
         description: "Tabela responsável por todas unidades do Acolherio"
       - name: gh_tpatendimentos
         description: "Tabela responsável pelo tipo de atendimento"
+      - name: gh_pac_info_med
+      - name: gh_cbo
+      - name: gh_profocup

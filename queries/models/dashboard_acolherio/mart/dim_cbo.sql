@@ -1,10 +1,10 @@
 
 with cbo as (
     select
-        cbo_sk,
+        seqprof_sk,
         codcbo,
-        seqprof,
-        data_cadastro_cbo
+        profissional,
+        seqprof
     from {{ ref('int_cbo') }}
 )
 
