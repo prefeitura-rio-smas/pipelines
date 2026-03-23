@@ -3,7 +3,7 @@
 with profissional_cbo as (
     select
         codcbo,
-        dsccbo as profissional,
+        dsccbo as descricao_funcao_prof,
     from {{ source('brutos_acolherio_staging', 'gh_cbo') }}
 )
 
