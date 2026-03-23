@@ -1,6 +1,4 @@
 -- Tabela que contém todos os atendimentos do acolherio. Sem testes.
-
-{{ config(materialized = 'table') }}
 -- Retirar os usuários que estão repetidos e com famílias diferentes
 -- por conta do erro de unificação de relatório do acolherio.
 -- O erro altera a família do usuário mas ele ainda permanece na família antiga.
@@ -75,8 +73,9 @@ total_atendimentos as (
     select
         *
     from atendimentos_modulo_usuario
-)
+),
 
+teste as (
 select
  *,
  case
@@ -84,3 +83,24 @@ select
     else "Não"
 end as flag_atendimento_compartilhado
 from total_atendimentos
+),
+
+retirar_duplicada as (
+SELECT
+    *,
+    row_number() over(
+        partition by
+            seqprof,
+            data_atendimento,
+            hora_atendimento,
+            seqtpatend,
+            seqpac,
+            sequs
+        order by seqatend asc
+    ) as rn_v2
+FROM teste
+)
+
+
+select * from retirar_duplicada
+where rn_v2 = 1
