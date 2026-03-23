@@ -1,8 +1,5 @@
 -- Tabela intermediária do tipo de atendimento. Feita para criar a surrogate key.
 
-{{ config(materialized = 'table') }}
-
-
 with tipo_atendimentos as (
     select
         *,
