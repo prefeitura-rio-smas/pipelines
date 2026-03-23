@@ -3,7 +3,7 @@ with cbo as (
     select
         seqprof_sk,
         codcbo,
-        profissional,
+        descricao_funcao_prof,
         seqprof
     from {{ ref('int_cbo') }}
 )
