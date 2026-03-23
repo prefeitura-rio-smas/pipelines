@@ -1,8 +1,5 @@
 -- Tabela para tratar as colunas em que precisa de macro. 
 
-{{ config(materialized = 'table') }}
-
-
 with tratar_raca_e_genero_cidadao_pac as (
     select
         seqpac,
@@ -18,7 +15,13 @@ with tratar_raca_e_genero_cidadao_pac as (
         pais_origem,
         bairro,
         {{ map_coluna_raca('raca') }} as raca,
-        lpad(nullif(cpf, 11, '0')) as cpf,
+        lpad(nullif(cpf, ''), 11, '0') as cpf_sem_ponto,
+        concat(
+            substr(lpad(nullif(cpf, ''), 11, '0'), 1, 3), '.',
+            substr(lpad(nullif(cpf, ''), 11, '0'), 4, 3), '.',
+            substr(lpad(nullif(cpf, ''), 11, '0'), 7, 3), '-',
+            substr(lpad(nullif(cpf, ''), 11, '0'), 10, 2)
+        ) as cpf_com_ponto,
         sexo,
         {{ map_coluna_genero('genero') }} as genero,
         prontuario,
@@ -50,7 +53,8 @@ tratar_raca_e_genero_cidadao_pac_final as (
         b.nome_paises as pais_origem_descricao,
         a.bairro,
         a.raca,
-        a.cpf,
+        a.cpf_sem_ponto,
+        a.cpf_com_ponto,
         a.sexo,
         a.genero,
         a.prontuario,
@@ -114,7 +118,8 @@ select
     a.nome_social,
     a.data_nascimento,
     a.bairro,
-    a.cpf,
+    a.cpf_com_ponto,
+    a.cpf_sem_ponto,
     a.sexo,
     c.flag_gestante,
     c.orientacao_sexual,
