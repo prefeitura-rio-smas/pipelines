@@ -46,6 +46,7 @@ total_atendimentos_dev_com_seqatend_original as (
         d.seqlogin as seqlogin_profissional,
         d.seqprof,
         d.nome_profissional,
+        f.descricao_funcao_prof,
         e.nome_usuario,
         e.nome_social,
         e.cpf_com_ponto,
@@ -66,8 +67,7 @@ total_atendimentos_dev_com_seqatend_original as (
         e.flag_recebe_beneficio,
         e.tipo_beneficio,
         e.flag_deficiencia,
-        e.tipo_deficiencia,
-        f.codcbo
+        e.tipo_deficiencia
     from total_atendimentos_dev a
     inner join {{ ref('int_atendimentos_no_row_number') }} b on a.seqatend_modulo = b.seqatend_modulo
     left join {{ ref('dim_unidades') }} c on a.sequs_sk = c.sequs_sk
