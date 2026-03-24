@@ -14,7 +14,7 @@ cbo as (
         {{ dbt_utils.generate_surrogate_key(['seqprof']) }} as seqprof_sk,
         codcbo,
         seqprof,
-        descricao_funcao_prof,
+        {{ profissional_cbo('descricao_funcao_prof') }} as descricao_funcao_prof,
         row_number() over (
             partition by
                 seqprof
