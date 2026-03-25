@@ -16,7 +16,7 @@ WITH controle_cas_base AS (
 primeira_infancia_temporal AS (
     SELECT
       cpf,
-      data_particao,
+      SAFE.PARSE_DATE('%d/%m/%Y', data_particao) as data_particao,
       objectid as cod_atend,
       NULLIF(data_entrega, 'None') as data_entrega,
       NULLIF(responsavel_retirada, 'None') as responsavel_retirada,
@@ -47,7 +47,7 @@ primeira_infancia_atemporal AS (
     FROM (
       SELECT
         cpf,
-        data_particao,
+        SAFE.PARSE_DATE('%d/%m/%Y', data_particao) as data_particao,
         NULLIF(data_entrega, 'None') as data_entrega,
         NULLIF(responsavel_retirada, 'None') as responsavel_retirada,
         CASE
@@ -79,17 +79,20 @@ SELECT
   cc.local_entrega_previsto,
   cc.data_entrega_prevista,
   cc.data_entrega,
-  -- Propaga local_entrega apenas se entrega foi em partição <= atual
-  CASE 
-    WHEN pi_a.data_particao_retirada <= cc.data_particao 
-    THEN pi_a.local_entrega_cartao 
-  END AS local_entrega,
+  -- Propaga local_entrega priorizando a partição atual
+  COALESCE(
+    pi_t.local_entrega_cartao,
+    CASE 
+      WHEN pi_a.data_particao_retirada <= SAFE.PARSE_DATE('%d/%m/%Y', cc.data_particao) 
+      THEN pi_a.local_entrega_cartao 
+    END
+  ) AS local_entrega,
   cc.envelope,
   cc.num_cartao_vr,
   cc.nome_cartao_vr,
-  -- Propaga cartao_entregue apenas se entrega foi em partição <= atual
+  -- Propaga cartao_entregue priorizando a partição atual
   CASE 
-    WHEN pi_a.data_particao_retirada <= cc.data_particao 
+    WHEN pi_t.data_entrega IS NOT NULL OR pi_a.data_particao_retirada <= SAFE.PARSE_DATE('%d/%m/%Y', cc.data_particao) 
     THEN 'CARTAO ENTREGUE' 
   END AS cartao_entregue,
   cc.doc_verificada,
@@ -101,24 +104,30 @@ SELECT
   cc.data_entrega_prevista_2,
   cc.cpf_resp_verific,
   cc.obs,
-  -- Propaga data_entrega_text apenas se entrega foi em partição <= atual
-  CASE 
-    WHEN pi_a.data_particao_retirada <= cc.data_particao 
-    THEN FORMAT_TIMESTAMP('%d/%m/%Y', TIMESTAMP_MILLIS(CAST(pi_a.data_entrega AS INT64)))
-  END AS data_entrega_text,
+  -- Propaga data_entrega_text priorizando a partição atual
+  COALESCE(
+    FORMAT_TIMESTAMP('%d/%m/%Y', TIMESTAMP_MILLIS(CAST(pi_t.data_entrega AS INT64))),
+    CASE 
+      WHEN pi_a.data_particao_retirada <= SAFE.PARSE_DATE('%d/%m/%Y', cc.data_particao) 
+      THEN FORMAT_TIMESTAMP('%d/%m/%Y', TIMESTAMP_MILLIS(CAST(pi_a.data_entrega AS INT64)))
+    END
+  ) AS data_entrega_text,
   cc.cras_3,
-  -- Propaga resp_retirada apenas se entrega foi em partição <= atual
-  CASE 
-    WHEN pi_a.data_particao_retirada <= cc.data_particao 
-    THEN pi_a.responsavel_retirada 
-  END AS resp_retirada,
+  -- Propaga resp_retirada priorizando a partição atual
+  COALESCE(
+    pi_t.responsavel_retirada,
+    CASE 
+      WHEN pi_a.data_particao_retirada <= SAFE.PARSE_DATE('%d/%m/%Y', cc.data_particao) 
+      THEN pi_a.responsavel_retirada 
+    END
+  ) AS resp_retirada,
   cc.telefone_formatado,
   cc.categoria_justificativa,
-  pi_a.data_particao_retirada
+  FORMAT_DATE('%d/%m/%Y', pi_a.data_particao_retirada) as data_particao_retirada
 
 FROM controle_cas_base cc
 LEFT JOIN primeira_infancia_temporal pi_t
-  ON cc.cpf = pi_t.cpf AND cc.data_particao = pi_t.data_particao
+  ON cc.cpf = pi_t.cpf AND SAFE.PARSE_DATE('%d/%m/%Y', cc.data_particao) = pi_t.data_particao
 LEFT JOIN primeira_infancia_atemporal pi_a
   ON cc.cpf = pi_a.cpf
 )
