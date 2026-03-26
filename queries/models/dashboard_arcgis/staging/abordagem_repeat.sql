@@ -366,6 +366,7 @@ SELECT
   flg_encam_delegacia,
   flg_encam_outros,
   parentrowid,
-  created_user
+  created_user,
+  resp_atendimento
 
- FROM {{ source('arcgis_raw', 'abordagem_repeat_raw') }}
+  FROM {{ source('arcgis_raw', 'abordagem_repeat_raw') }}
