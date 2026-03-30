@@ -1,7 +1,12 @@
 WITH controle_cas_base AS (
 
     SELECT
-      * EXCEPT(data_entrega_text, local_entrega, resp_retirada, cartao_entregue),
+      * EXCEPT(data_entrega_text, local_entrega, resp_retirada, cartao_entregue, data_particao),
+      -- Tratamento robusto da data da folha (ArcGIS)
+      COALESCE(
+        SAFE.PARSE_DATE('%Y-%m-%d', data_particao),
+        SAFE.PARSE_DATE('%d/%m/%Y', data_particao)
+      ) as data_particao,
       NULLIF(data_entrega_text, 'None') as data_entrega_text,
       NULLIF(local_entrega, 'None') as local_entrega,
       NULLIF(resp_retirada, 'None') as resp_retirada,
@@ -16,7 +21,11 @@ WITH controle_cas_base AS (
 primeira_infancia_temporal AS (
     SELECT
       cpf,
-      SAFE.PARSE_DATE('%d/%m/%Y', data_particao) as data_particao,
+      -- Tratamento robusto da data da folha (Survey)
+      COALESCE(
+        SAFE.PARSE_DATE('%Y-%m-%d', data_particao),
+        SAFE.PARSE_DATE('%d/%m/%Y', data_particao)
+      ) as data_particao,
       objectid as cod_atend,
       NULLIF(data_entrega, 'None') as data_entrega,
       NULLIF(responsavel_retirada, 'None') as responsavel_retirada,
@@ -47,7 +56,10 @@ primeira_infancia_atemporal AS (
     FROM (
       SELECT
         cpf,
-        SAFE.PARSE_DATE('%d/%m/%Y', data_particao) as data_particao,
+        COALESCE(
+            SAFE.PARSE_DATE('%Y-%m-%d', data_particao),
+            SAFE.PARSE_DATE('%d/%m/%Y', data_particao)
+        ) as data_particao,
         NULLIF(data_entrega, 'None') as data_entrega,
         NULLIF(responsavel_retirada, 'None') as responsavel_retirada,
         CASE
@@ -83,7 +95,7 @@ SELECT
   COALESCE(
     pi_t.local_entrega_cartao,
     CASE 
-      WHEN pi_a.data_particao_retirada <= SAFE.PARSE_DATE('%d/%m/%Y', cc.data_particao) 
+      WHEN pi_a.data_particao_retirada <= cc.data_particao 
       THEN pi_a.local_entrega_cartao 
     END
   ) AS local_entrega,
@@ -92,7 +104,7 @@ SELECT
   cc.nome_cartao_vr,
   -- Propaga cartao_entregue priorizando a partição atual
   CASE 
-    WHEN pi_t.data_entrega IS NOT NULL OR pi_a.data_particao_retirada <= SAFE.PARSE_DATE('%d/%m/%Y', cc.data_particao) 
+    WHEN pi_t.data_entrega IS NOT NULL OR pi_a.data_particao_retirada <= cc.data_particao 
     THEN 'CARTAO ENTREGUE' 
   END AS cartao_entregue,
   cc.doc_verificada,
@@ -108,7 +120,7 @@ SELECT
   COALESCE(
     FORMAT_TIMESTAMP('%d/%m/%Y', TIMESTAMP_MILLIS(CAST(pi_t.data_entrega AS INT64))),
     CASE 
-      WHEN pi_a.data_particao_retirada <= SAFE.PARSE_DATE('%d/%m/%Y', cc.data_particao) 
+      WHEN pi_a.data_particao_retirada <= cc.data_particao 
       THEN FORMAT_TIMESTAMP('%d/%m/%Y', TIMESTAMP_MILLIS(CAST(pi_a.data_entrega AS INT64)))
     END
   ) AS data_entrega_text,
@@ -117,17 +129,19 @@ SELECT
   COALESCE(
     pi_t.responsavel_retirada,
     CASE 
-      WHEN pi_a.data_particao_retirada <= SAFE.PARSE_DATE('%d/%m/%Y', cc.data_particao) 
+      WHEN pi_a.data_particao_retirada <= cc.data_particao 
       THEN pi_a.responsavel_retirada 
     END
   ) AS resp_retirada,
   cc.telefone_formatado,
   cc.categoria_justificativa,
-  FORMAT_DATE('%d/%m/%Y', pi_a.data_particao_retirada) as data_particao_retirada
+  -- Saída final padronizada como ISO String para o ArcGIS
+  CAST(pi_a.data_particao_retirada AS STRING) as data_particao_retirada,
+  CAST(cc.data_particao AS STRING) as data_particao
 
 FROM controle_cas_base cc
 LEFT JOIN primeira_infancia_temporal pi_t
-  ON cc.cpf = pi_t.cpf AND SAFE.PARSE_DATE('%d/%m/%Y', cc.data_particao) = pi_t.data_particao
+  ON cc.cpf = pi_t.cpf AND cc.data_particao = pi_t.data_particao
 LEFT JOIN primeira_infancia_atemporal pi_a
   ON cc.cpf = pi_a.cpf
 )
