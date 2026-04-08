@@ -11,7 +11,7 @@ select
     seqpac,
     data_atendimento,
     hora_atendimento
-from {{ ref('int_atendimentos_no_row_number') }}
+from {{ ref('int_atendimentos') }}
 where flag_atendimento_compartilhado = 'Sim'
 ),
 

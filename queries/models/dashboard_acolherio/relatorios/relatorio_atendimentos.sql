@@ -69,7 +69,7 @@ total_atendimentos_dev_com_seqatend_original as (
         e.flag_deficiencia,
         e.tipo_deficiencia
     from total_atendimentos_dev a
-    inner join {{ ref('int_atendimentos_no_row_number') }} b on a.seqatend_modulo = b.seqatend_modulo
+    inner join {{ ref('int_atendimentos') }} b on a.seqatend_modulo = b.seqatend_modulo
     left join {{ ref('dim_unidades') }} c on a.sequs_sk = c.sequs_sk
     left join {{ ref('dim_profissionais') }} d on a.seqprof_sk = d.seqprof_sk
     left join {{ ref('dim_usuarios') }} e on a.seqpac_sk = e.seqpac_sk
