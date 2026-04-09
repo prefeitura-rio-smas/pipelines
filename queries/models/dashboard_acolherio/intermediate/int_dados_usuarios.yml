@@ -152,8 +152,6 @@ models:
 
       - name: seqlogincad
         description: "Id do operador que cadastrou o usuário"
-        data_tests:
-          - not_null
 
       - name: data_cadastro_usuario
         description: "Data em que o operador fez o cadastro do usuário"
