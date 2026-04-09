@@ -14,6 +14,8 @@ with fato_atendimentos as (
     left join {{ ref('dim_unidades') }} unid on unid.sequs = atend.sequs
     left join {{ ref('dim_tipo_atendimento') }} tp_atend on atend.seqtpatend = tp_atend.seqtpatend
     where atend.flag_atendimento_compartilhado = 'Não'
+    and atend.rn_v2 = 1
+
 )
 
 select * from fato_atendimentos

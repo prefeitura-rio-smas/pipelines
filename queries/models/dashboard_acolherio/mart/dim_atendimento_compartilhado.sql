@@ -13,6 +13,7 @@ select
     hora_atendimento
 from {{ ref('int_atendimentos') }}
 where flag_atendimento_compartilhado = 'Sim'
+and rn_v2 = 1
 ),
 
 explodir_profissional as (
@@ -29,21 +30,6 @@ from normalizar_seqprof,
 unnest(split(total_prof_atendimento, ',')) as explodir_seqprof
 ),
 
-retirar_duplicada as (
-select
-    *,
-    row_number() over(
-        partition by
-            seqprof_compartilhado_tratado,
-            data_atendimento,
-            hora_atendimento,
-            seqtpatend,
-            seqpac,
-            sequs
-        order by seqatend asc
-    ) as rn_v2
-from explodir_profissional
-),
 
 
 
@@ -57,12 +43,11 @@ atendimentos_compartilhados as (
         prof.seqprof_sk,
         unid.sequs_sk,
         tipo_atend.seqtpatend_sk
-    from retirar_duplicada a 
+    from explodir_profissional a 
     left join {{ ref('dim_tipo_atendimento') }} tipo_atend on tipo_atend.seqtpatend = a.seqtpatend
     left join {{ ref('dim_profissionais') }} prof on prof.seqprof = a.seqprof_compartilhado_tratado
     left join {{ ref('dim_unidades') }} unid on unid.sequs = a.sequs
     left join {{ ref('dim_usuarios') }} user on user.seqpac = a.seqpac
-    where a.rn_v2 = 1
 )
 
 select * from atendimentos_compartilhados
