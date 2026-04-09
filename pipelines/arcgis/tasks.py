@@ -1,23 +1,22 @@
-# pipeline/tasks.py
 from datetime import UTC, datetime
 from pathlib import Path
+import time
 
 from google.cloud import bigquery
+import geopandas as gpd
 import pandas as pd
 import prefect
 from prefect import task
-from prefect_dbt.cli.commands import DbtCoreOperation
+import requests
+from shapely.geometry import LineString, Point, Polygon
 
-from .utils import add_timestamp, bq_client, dataset_ref, resolve_arcgis_url
+from .utils import _get_arcgis_token, add_timestamp, bq_client, dataset_ref, resolve_arcgis_url
 
 
 @task
 def get_layer_metadata(service_url: str):
     logger = prefect.get_run_logger()
     logger.info(f"Obtendo metadados para: {service_url}")
-
-    import requests
-    from .utils import _get_arcgis_token
 
     token = _get_arcgis_token()
     url = f"{service_url}/query"
@@ -74,7 +73,6 @@ def save_batch_to_staging(
 
     logger.info(f"Batch {batch_index} salvo localmente: {tmp_path}")
 
-    from .utils import bq_client, dataset_ref
     client = bq_client()
 
     write_disposition = "WRITE_APPEND"
@@ -120,8 +118,6 @@ def atomic_replace_raw_table(
 def get_layer_info(service_url: str) -> dict:
     logger = prefect.get_run_logger()
     logger.info(f"Obtendo schema e CRS para: {service_url}")
-    import requests
-    from .utils import _get_arcgis_token
 
     token = _get_arcgis_token()
     params = {"f": "json", "token": token}
@@ -136,6 +132,7 @@ def get_layer_info(service_url: str) -> dict:
     except requests.exceptions.RequestException as e:
         logger.error(f"Erro ao obter schema e CRS: {e}")
         raise ValueError(f"Erro ao obter schema e CRS: {e}")
+
 
 def arcgis_to_bq_schema(arcgis_fields: list, return_geometry: bool) -> list:
     bq_schema = []
@@ -182,7 +179,6 @@ def load_arcgis_to_bigquery(
 
     if total_records == 0:
         logger.info("Nenhum registro encontrado. Criando ou limpando a tabela final.")
-        from .utils import bq_client, dataset_ref
         client = bq_client()
         table_id = f"{dataset_ref()}.{final_table}"
         client.delete_table(table_id, not_found_ok=True)
@@ -194,86 +190,89 @@ def load_arcgis_to_bigquery(
     total_rows_loaded = 0
     batch_index = 0
 
-    while offset < total_records:
-        import requests
-        from .utils import _get_arcgis_token
+    try:
+        while offset < total_records:
+            token = _get_arcgis_token()
+            url = f"{base_url}/query"
 
-        token = _get_arcgis_token()
-        url = f"{base_url}/query"
+            params = {
+                "where": where_clause, "outFields": "*", "returnGeometry": str(return_geometry).lower(),
+                "f": "json", "resultOffset": offset, "resultRecordCount": batch_size,
+                "token": token,
+            }
+            if order_by_field:
+                params["orderByFields"] = order_by_field
 
-        params = {
-            "where": where_clause, "outFields": "*", "returnGeometry": str(return_geometry).lower(),
-            "f": "json", "resultOffset": offset, "resultRecordCount": batch_size,
-            "token": token,
-        }
-        if order_by_field:
-            params["orderByFields"] = order_by_field
+            max_retries = 3
+            for attempt in range(max_retries):
+                try:
+                    response = requests.post(url, data=params, timeout=120)
+                    response.raise_for_status()
+                    data = response.json()
+                    break
+                except (requests.exceptions.RequestException, requests.exceptions.ConnectionError) as e:
+                    if attempt < max_retries - 1:
+                        logger.warning(f"Tentativa {attempt + 1} falhou no batch {batch_index}. Reentando em 5s... Erro: {e}")
+                        time.sleep(5)
+                    else:
+                        logger.error(f"Erro fatal após {max_retries} tentativas no batch {batch_index}: {e}")
+                        raise ValueError(f"Erro no batch {batch_index}: {e}")
 
-        try:
-            response = requests.post(url, data=params, timeout=120)
-            response.raise_for_status()
-            data = response.json()
-        except requests.exceptions.RequestException as e:
-            logger.error(f"Erro ao conectar com o servidor no batch {batch_index}: {e}")
-            raise ValueError(f"Erro no batch {batch_index}: {e}")
+            features = data.get("features", [])
+            num_features_received = len(features)
+            logger.info(f"Batch {batch_index} extraído: {num_features_received} registros recebidos.")
 
-        features = data.get("features", [])
-        num_features_received = len(features)
-        logger.info(f"Batch {batch_index} extraído: {num_features_received} registros recebidos.")
+            if num_features_received == 0:
+                if offset < total_records:
+                    logger.error(f"Erro: Recebido 0 features para um offset {offset} menor que o total {total_records}. Resposta: {data}")
+                break
 
-        if num_features_received == 0:
-            if offset < total_records:
-                logger.error(f"Erro: Recebido 0 features para um offset {offset} menor que o total {total_records}. Resposta: {data}")
-            break
+            processed_data = []
+            for feature in features:
+                attributes = feature.get("attributes", {})
+                if return_geometry:
+                    geometry_data = feature.get("geometry", {})
+                    geom = None
+                    if "rings" in geometry_data: geom = Polygon(geometry_data["rings"][0], geometry_data["rings"][1:])
+                    elif "x" in geometry_data and "y" in geometry_data: geom = Point(geometry_data.get("x"), geometry_data.get("y"))
+                    elif "paths" in geometry_data: geom = LineString(geometry_data["paths"][0])
+                    if geom: attributes["geometry"] = geom
+                processed_data.append(attributes)
 
-        import geopandas as gpd
-        from shapely.geometry import LineString, Point, Polygon
+            batch_df = pd.DataFrame(processed_data)
 
-        processed_data = []
-        for feature in features:
-            attributes = feature.get("attributes", {})
-            if return_geometry:
-                geometry_data = feature.get("geometry", {})
-                geom = None
-                if "rings" in geometry_data: geom = Polygon(geometry_data["rings"][0], geometry_data["rings"][1:])
-                elif "x" in geometry_data and "y" in geometry_data: geom = Point(geometry_data.get("x"), geometry_data.get("y"))
-                elif "paths" in geometry_data: geom = LineString(geometry_data["paths"][0])
-                if geom: attributes["geometry"] = geom
-            processed_data.append(attributes)
+            if return_geometry and "geometry" in batch_df.columns:
+                gdf = gpd.GeoDataFrame(batch_df, geometry='geometry')
+                gdf.geometry = gdf.geometry.buffer(0)
+                if not gdf.empty:
+                    first_geom = gdf.geometry.dropna().iloc[0] if not gdf.geometry.dropna().empty else None
+                    if first_geom:
+                        rep_point = first_geom.representative_point()
+                        x, y = rep_point.x, rep_point.y
+                        if (abs(y) > 90 or abs(x) > 180) and source_crs_wkid:
+                            gdf.set_crs(epsg=source_crs_wkid, inplace=True, allow_override=True)
+                            gdf = gdf.to_crs("EPSG:4326")
+                        rep_points = gdf.geometry.representative_point()
+                        gdf["longitude"] = rep_points.x
+                        gdf["latitude"] = rep_points.y
+                batch_df = gdf
 
-        batch_df = pd.DataFrame(processed_data)
+            rows_loaded = save_batch_to_staging.fn(batch_data=batch_df, staging_table=staging_table, batch_index=batch_index, bq_schema=bq_schema)
+            total_rows_loaded += rows_loaded
+            offset += num_features_received
+            batch_index += 1
 
-        if return_geometry and "geometry" in batch_df.columns:
-            gdf = gpd.GeoDataFrame(batch_df, geometry='geometry')
-            gdf.geometry = gdf.geometry.buffer(0)
-            if not gdf.empty:
-                first_geom = gdf.geometry.dropna().iloc[0] if not gdf.geometry.dropna().empty else None
-                if first_geom:
-                    rep_point = first_geom.representative_point()
-                    x, y = rep_point.x, rep_point.y
-                    if (abs(y) > 90 or abs(x) > 180) and source_crs_wkid:
-                        gdf.set_crs(epsg=source_crs_wkid, inplace=True, allow_override=True)
-                        gdf = gdf.to_crs("EPSG:4326")
-                    rep_points = gdf.geometry.representative_point()
-                    gdf["longitude"] = rep_points.x
-                    gdf["latitude"] = rep_points.y
-            batch_df = gdf
+            if not data.get("exceededTransferLimit", False):
+                break
 
-        rows_loaded = save_batch_to_staging.fn(batch_data=batch_df, staging_table=staging_table, batch_index=batch_index, bq_schema=bq_schema)
-        total_rows_loaded += rows_loaded
-        offset += num_features_received
-        batch_index += 1
-
-        if not data.get("exceededTransferLimit", False):
-            break
-
-    if total_rows_loaded > 0:
-        atomic_replace_raw_table(final_table=final_table, staging_table=staging_table)
-    else:
-        from .utils import bq_client, dataset_ref
+        if total_rows_loaded > 0:
+            atomic_replace_raw_table(final_table=final_table, staging_table=staging_table)
+        else:
+            client = bq_client()
+            table_id = f"{dataset_ref()}.{final_table}"
+            client.delete_table(table_id, not_found_ok=True)
+            table = bigquery.Table(table_id, schema=bq_schema)
+            client.create_table(table)
+    finally:
         client = bq_client()
-        table_id = f"{dataset_ref()}.{final_table}"
-        client.delete_table(table_id, not_found_ok=True)
-        table = bigquery.Table(table_id, schema=bq_schema)
-        client.create_table(table)
         client.delete_table(f"{dataset_ref()}.{staging_table}", not_found_ok=True)
