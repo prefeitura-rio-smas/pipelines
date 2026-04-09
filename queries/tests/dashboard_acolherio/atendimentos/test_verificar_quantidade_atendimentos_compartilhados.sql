@@ -1,37 +1,48 @@
--- Teste para verificar se a quantidade de atendimentos no filtro final está correta.
-
 {{ config(store_failures = true) }}
 
-with atendimentos_compartilhados as (
+with base as (
     select
-        concat(seqprof, ',', seqprof_atendimento_compartilhado) as prof_atendimentos_compartilhados,
+        seqatend_modulo,
+        seqatend,
+        seqtpatend,
+        sequs,
+        seqpac,
+        data_atendimento,
+        hora_atendimento,
+        concat(seqprof, ',', seqprof_atendimento_compartilhado) as total_prof_atendimento
     from {{ ref('int_atendimentos') }}
-    where flag_atendimento_compartilhado = "Sim"
+    where flag_atendimento_compartilhado = 'Sim'
+      and rn_v2 = 1
 ),
 
-atendimentos_compartilhados_todos_profissionais as (
+explodir_profissional as (
     select
-        prof_atendimentos_compartilhados,
-        ARRAY_LENGTH(SPLIT(prof_atendimentos_compartilhados, ',')) AS total_profissionais_compartilhado
-    from atendimentos_compartilhados
+        seqatend_modulo,
+        seqatend,
+        seqtpatend,
+        sequs,
+        seqpac,
+        data_atendimento,
+        hora_atendimento,
+        cast(trim(prof) as int64) as seqprof_compartilhado_tratado
+    from base,
+    unnest(split(total_prof_atendimento, ',')) as prof
 ),
 
--- Cte retorna o total de atendimentos compartilhados
--- Exemplo: Atendimento 1 com 2 profissionais. Ela retornará os dois atendimentos.
-total_atendimentos_compartilhados_int as (
+
+total_int as (
     select
-        sum(total_profissionais_compartilhado) as total_compartilhados_int
-    from atendimentos_compartilhados_todos_profissionais
+        count(*) as total_compartilhados_int
+    from explodir_profissional
 ),
 
--- Cte verifica a quantidade de atendimentos compartilhados no filtro final.
-total_atendimentos_compartilhados_mart as(
+total_mart as (
     select
         count(*) as total_compartilhados_mart
     from {{ ref('dim_atendimento_compartilhado') }}
 )
 
-select * 
-from total_atendimentos_compartilhados_int int_compartilhados
-cross join total_atendimentos_compartilhados_mart mart_compartilhados
-where int_compartilhados.total_compartilhados_int != mart_compartilhados.total_compartilhados_mart
+select *
+from total_int
+cross join total_mart
+where total_compartilhados_int != total_compartilhados_mart

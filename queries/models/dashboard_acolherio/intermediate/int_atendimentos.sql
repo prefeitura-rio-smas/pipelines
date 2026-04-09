@@ -2,7 +2,6 @@
 -- Retirar os usuários que estão repetidos e com famílias diferentes
 -- por conta do erro de unificação de relatório do acolherio.
 -- O erro altera a família do usuário mas ele ainda permanece na família antiga.
-
 -- Id criado para pegar apenas 1 membro e retirar usuários repetidos.
 with criar_id_usuario_repetidos_membros_familia as (
     select 
@@ -96,11 +95,16 @@ SELECT
             seqtpatend,
             seqpac,
             sequs
-        order by seqatend asc
+        order by seqpac asc
     ) as rn_v2
 FROM teste
 )
 
 
-select * from retirar_duplicada
-where rn_v2 = 1
+select 
+*,
+case
+    when rn_v2 != 1 then "Atendimento Duplicado"
+    else "Não Duplicado"
+end as flag_atendimento_duplicado
+from retirar_duplicada
