@@ -24,6 +24,7 @@ with filtro_encaminhamentos_evolucao as (
 )
 
 select
+    current_datetime() as data_extracao,
     aba,
     sequs,
     seqpac,

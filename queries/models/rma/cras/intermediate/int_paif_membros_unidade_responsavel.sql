@@ -29,4 +29,7 @@ with paif_unidade as (
     left join {{ ref('stg_pacientes_sm') }} c on a.seqpac = c.seqpac
 )
 
-select * from paif_unidade
+select 
+    current_datetime() as data_extracao    
+    * 
+from paif_unidade
