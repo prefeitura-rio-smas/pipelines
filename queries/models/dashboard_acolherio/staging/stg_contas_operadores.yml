@@ -1,0 +1,19 @@
+models:
+  - name: stg_contas_operadores
+    description: "Modelo retorna dados relacionados a cada conta de operador cadastrada no sistema Acolherio"
+    columns:
+      - name: seqlogin
+        description: "Id único do operador"
+        data_tests:
+          - unique 
+          - not_null
+      - name: operador
+        description: "Nome do operador da conta"
+        data_tests:
+          - not_null
+      - name: login_operador
+        description: "Login da conta do operador"
+        data_tests:
+          - unique 
+          - not_null
+ 

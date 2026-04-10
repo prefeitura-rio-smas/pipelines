@@ -4,7 +4,7 @@
     WHEN {{ coluna }} = '1' THEN 'Brasileira'
     WHEN {{ coluna }} = '2' THEN 'Brasileiro'
     WHEN {{ coluna }} = '3' THEN 'Estrangeira'
-  END AS NACIONALIDADE
+  END 
 {% endmacro %}
 
 -- Coluna COND_ESTRANGEIRO do models relatorio_geral
@@ -18,18 +18,18 @@
     WHEN {{ coluna }} = '6' THEN 'Refugiado (Em solicitação)'
     WHEN {{ coluna }} = '7' THEN 'Refugiado Legalizado'
     WHEN {{ coluna }} = '8' THEN 'Turista'
-  END AS COND_ESTRANGEIRO
+  END 
 {% endmacro %}
 
--- Coluna ETNIA do models relatorio_geral
-{% macro map_coluna_etnia (coluna) %}
+-- Coluna RAÇA/COR do models relatorio_geral
+{% macro map_coluna_raca (coluna) %}
   CASE
     WHEN {{ coluna }} = '01' THEN 'Branca'
     WHEN {{ coluna }} = '02' THEN 'Preta'
     WHEN {{ coluna }} = '03' THEN 'Parda'
     WHEN {{ coluna }} = '04' THEN 'Amarelo'
     WHEN {{ coluna }} = '05' THEN 'Indígena'
-  END AS ETNIA
+  END 
 {% endmacro %}
 
 -- Coluna GENERO do models relatorio_geral
@@ -44,7 +44,7 @@
     WHEN {{ coluna }} = '98' THEN 'Outro'
     WHEN {{ coluna }} = '01' THEN 'Mulher transgênero'
     WHEN {{ coluna }} = '99' THEN 'Sem Informação' 
-  END AS GENERO
+  END
 {% endmacro %}
 
 -- Coluna FILIACAO do models relatorio_geral
@@ -58,28 +58,46 @@
   END AS FILIACAO
 {% endmacro %}
 
+-- Coluna serie_escola do models relatorio_geral
+{% macro map_coluna_serie_escola (coluna) %}
+  CASE
+    WHEN {{ coluna }} = '1' THEN 'Educação Infantil'
+    WHEN {{ coluna }} = '2' THEN 'Fundamental I - 1° Ano'
+    WHEN {{ coluna }} = '3' THEN 'Fundamental I - 2° Ano'
+    WHEN {{ coluna }} = '5' THEN 'Fundamental I - 3° Ano'
+    WHEN {{ coluna }} = '6' THEN 'Fundamental I - 4° Ano'
+    WHEN {{ coluna }} = '7' THEN 'Fundamental I - 5° Ano'
+    WHEN {{ coluna }} = '8' THEN 'Fundamental II - 6° Ano'
+    WHEN {{ coluna }} = '9' THEN 'Fundamental II - 7° Ano'
+    WHEN {{ coluna }} = '10' THEN 'Fundamental II - 8° Ano'
+    WHEN {{ coluna }} = '11' THEN 'Fundamental II - 9° Ano'
+    WHEN {{ coluna }} = '12' THEN 'Ensino Médio - 1° Ano'
+    WHEN {{ coluna }} = '13' THEN 'Ensino Médio - 2° Ano'
+    WHEN {{ coluna }} = '14' THEN 'Ensino Médio - 3° Ano'
+    WHEN {{ coluna }} = '15' THEN 'Ensino Superior'
+    WHEN {{ coluna }} = '16' THEN 'PEJA I e II'
+    WHEN {{ coluna }} = '17' THEN 'PEJA III e IV'
+    WHEN {{ coluna }} = '18' THEN 'PEJA V'
+  END 
+{% endmacro %}
+
 -- Coluna ESCOLARIDADE do models relatorio_geral
 {% macro map_coluna_escolaridade (coluna) %}
   CASE
-    WHEN {{ coluna }} = '1' THEN 'Infantil - G1'
-    WHEN {{ coluna }} = '2' THEN 'Infantil - G2'
-    WHEN {{ coluna }} = '3' THEN 'Infantil - G3'
-    WHEN {{ coluna }} = '4' THEN 'Infantil - G4'
-    WHEN {{ coluna }} = '5' THEN 'Infantil - G5'
-    WHEN {{ coluna }} = '6' THEN 'Fundamental I - 1º Ano'
-    WHEN {{ coluna }} = '7' THEN 'Fundamental I - 2º Ano'
-    WHEN {{ coluna }} = '8' THEN 'Fundamental I - 3º Ano'
-    WHEN {{ coluna }} = '9' THEN 'Fundamental I - 4º Ano'
-    WHEN {{ coluna }} = '10' THEN 'Fundamental I - 5º Ano'
-    WHEN {{ coluna }} = '11' THEN 'Fundamental II - 6º Ano'
-    WHEN {{ coluna }} = '12' THEN 'Fundamental II - 7º Ano'
-    WHEN {{ coluna }} = '13' THEN 'Fundamental II - 8º Ano'
-    WHEN {{ coluna }} = '14' THEN 'Fundamental II - 9º Ano'
-    WHEN {{ coluna }} = '15' THEN 'Ensino Médio - 1º Ano'
-    WHEN {{ coluna }} = '16' THEN 'Ensino Médio - 2º Ano'
-    WHEN {{ coluna }} = '17' THEN 'Ensino Médio - 3º Ano'
-    WHEN {{ coluna }} = '18' THEN 'Ensino Superior'
-  END AS ESCOLARIDADE
+    WHEN {{ coluna }} = '01' THEN 'Não Alfabetizado'
+    WHEN {{ coluna }} = '02' THEN 'Alfabetizado'
+    WHEN {{ coluna }} = '03' THEN 'Nível fundamental incompleto'
+    WHEN {{ coluna }} = '04' THEN 'Nível fundamental completo'
+    WHEN {{ coluna }} = '05' THEN 'Nível médio incompleto'
+    WHEN {{ coluna }} = '06' THEN 'Nível médio completo'
+    WHEN {{ coluna }} = '07' THEN 'Superior incompleto'
+    WHEN {{ coluna }} = '08' THEN 'Superior completo'
+    WHEN {{ coluna }} = '12' THEN 'Nunca estudou'
+    WHEN {{ coluna }} = '13' THEN 'Nível fundamental incompleto (cursando)'
+    WHEN {{ coluna }} = '14' THEN 'Nível médio incompleto (cursando)'
+    WHEN {{ coluna }} = '15' THEN 'Superior incompleto (cursando)'
+    WHEN {{ coluna }} = '16' THEN 'Não sabe/Não informou'
+  END 
 {% endmacro %}
 
 -- Coluna TIPO_CURATELA do models relatorio_geral
@@ -104,7 +122,7 @@
   CASE 
       WHEN {{ coluna }} = '5' THEN 'S'
       ELSE 'N'  
-  END AS SITUACAO_DE_RUA
+  END 
 {% endmacro %}
 
 -- Coluna SAUDE_MENTAL do models relatorio_geral
@@ -113,7 +131,7 @@
       WHEN {{ coluna }} = 'A' THEN 'Pessoa com aparente agravo de saúde mental'
       WHEN {{ coluna }} = 'D' THEN 'Pessoa com diagnóstico (laudo médico) de doença mental'
       ELSE {{ coluna }}  
-  END AS SAUDE_MENTAL
+  END 
 {% endmacro %}
 
 -- Coluna MOTIV_ACOLHIMENTO do models relatorio_geral
@@ -127,7 +145,7 @@
     WHEN {{ coluna }} = '6' THEN 'Perdido da família'
     WHEN {{ coluna }} = '7' THEN 'Violência Sexual'
     WHEN {{ coluna }} = '8' THEN 'Violência Psicológica'
-  END AS MOTIV_ACOLHIMENTO
+  END 
 {% endmacro %}
 
 -- Coluna TIPO_DEFICIENCIA do models tipo_deficiencia_unnest
@@ -210,7 +228,7 @@
     WHEN {{ coluna }} = '4' THEN 'Heterossexual'
     WHEN {{ coluna }} = '5' THEN 'Pansexual'
     WHEN {{ coluna }} = '6' THEN 'Não informado'
-  END AS ORIENTACAO_SEXUAL
+  END 
 {% endmacro %}
 
 -- Coluna MOTIVO_DESLIGAMENTO do models acolhimentos
@@ -305,4 +323,140 @@
       else 'Não'
     end
   )
+{% endmacro %}
+-- Coluna vinculo_trabalhista do model dashboard_acolherio/intermediate/int_dados_usuarios
+{% macro map_coluna_vinculo_trabalhista (coluna) %}
+  CASE
+    WHEN {{ coluna }} = '1' THEN 'Formal'
+    WHEN {{ coluna }} = '2' THEN 'Informal'
+    WHEN {{ coluna }} = '3' THEN 'Não sabe / Não lembra'
+    WHEN {{ coluna }} = '4' THEN 'Não quis dizer'
+  END 
+{% endmacro %}
+
+
+-- Macro para a coluna indgraudepend do model dashboard_acolherio/intermediate/int_dados_usuarios
+{% macro map_grau_dependencia (coluna) %}
+  CASE
+    WHEN {{ coluna }} = '1' THEN '1-Idoso independente'
+    WHEN {{ coluna }} = '2' THEN '2-Idoso com dependencia em ate 3 atividades'
+    WHEN {{ coluna }} = '3' THEN '3-Idoso com dependencia em todas as atividades'
+  END 
+{% endmacro %}
+
+-- Coluna estcivil do models dashboard_acolherio/intermediate/int_dados_usuarios
+{% macro map_coluna_estado_civil (coluna) %}
+  CASE
+    WHEN {{ coluna }} = '1' THEN 'Solteiro'
+    WHEN {{ coluna }} = '2' THEN 'Casado'
+    WHEN {{ coluna }} = '3' THEN 'Viúvo'
+    WHEN {{ coluna }} = '4' THEN 'Separado Judicialmente'
+    WHEN {{ coluna }} = '5' THEN 'União consensual'
+  END 
+{% endmacro %}
+
+-- Coluna flag_trabalho do model stg_pacientes_sm_acolherio
+{% macro map_flag_trabalho (coluna) %}
+  case
+    when {{ coluna }} = 'S' then 'Sim'
+    else 'Não'
+  end 
+{% endmacro %}
+
+-- Coluna flag_frequencia_escola do model stg_pacientes_sm_acolherio
+{% macro map_flag_frequencia_escola (coluna) %}
+  case
+    when {{ coluna }} = 'S' then 'Sim'
+    else 'Não'
+  end 
+{% endmacro %}
+
+-- Coluna flag_deficiencia do model stg_pacientes_sm_acolherio
+{% macro map_flag_deficiencia (coluna) %}
+  case
+    when {{ coluna }} = 'S' then 'Sim'
+    else 'Não'
+  end 
+{% endmacro %}
+
+-- Coluna flag_curatela do model stg_pacientes_sm_acolherio
+{% macro map_flag_curatela (coluna) %}
+  case
+    when {{ coluna }} = 'S' then 'Sim'
+    else 'Não'
+  end 
+{% endmacro %}
+
+-- Coluna flag_situacao_rua do model stg_pacientes_sm_acolherio
+{% macro map_flag_situacao_rua (coluna) %}
+  case
+    when {{ coluna }} = '5' then 'Sim'
+    else 'Não'
+  end 
+{% endmacro %}
+
+
+-- Coluna flag_cadunico do model stg_pac_dados_acolherio
+{% macro map_flag_cadunico (coluna) %}
+  case
+    when {{ coluna }} = 'S' then 'Sim'
+    else 'Não'
+  end 
+{% endmacro %}
+
+-- Coluna int_unidades
+{% macro map_tipo_unidade (coluna) %}
+  case
+    when lower({{ coluna }}) like 'albergue%' then 'ALBERGUE'
+    when lower({{ coluna }}) like 'craf%' then 'CENTRAL DE RECEPÇÃO'
+    when lower({{ coluna }}) like 'cras%' then 'CRAS'
+    when lower({{ coluna }}) like 'creas%' then 'CREAS'
+    when lower({{ coluna }}) like 'cri%' then 'CENTRAL DE RECEPÇÃO'
+    when lower({{ coluna }}) like 'república%' then 'REPÚBLICA'  
+    when lower({{ coluna }}) like 'urs%' then 'URS' 
+    else 'UNIDADE CONVENIADA'
+  end 
+{% endmacro %}
+
+
+{% macro email_cas (coluna) %}
+  case
+    when lower({{ coluna }}) = '10' then 'cas10@prefeitura.rio'
+    when lower({{ coluna }}) = '09' then 'cas9@prefeitura.rio'
+    when lower({{ coluna }}) = '08' then 'cas8@prefeitura.rio'
+    when lower({{ coluna }}) = '07' then 'cas7@prefeitura.rio'
+    when lower({{ coluna }}) = '06' then 'cas6@prefeitura.rio'
+    when lower({{ coluna }}) = '05' then 'cas5@prefeitura.rio'  
+    when lower({{ coluna }}) = '04' then 'cas4@prefeitura.rio'
+    when lower({{ coluna }}) = '03' then 'cas3@prefeitura.rio'
+    when lower({{ coluna }}) = '02' then 'cas2@prefeitura.rio'
+    when lower({{ coluna }}) = '01' then 'cas1@prefeitura.rio'
+  end 
+{% endmacro %}
+
+{% macro profissional_atendimentos_bug_fix (coluna) %}
+  case
+    when trim(lower({{ coluna }})) in (
+      'atendimento recepção',
+      'atendimento busca ativa',
+      'atendimento entrevistador social'
+    )
+    then 'Não informado'
+    else nome_profissional
+  end 
+{% endmacro %}
+
+-- Macro retirada da query no bigquery.
+{% macro profissional_cbo(dsccbo_col) %}
+case
+    when lower({{ dsccbo_col }}) like 'articulador comunitário%' then 'ARTICULADOR COMUNITÁRIO'
+    when lower({{ dsccbo_col }}) like 'assistente administrativo%' then 'ASSISTENTE ADMINISTRATIVO'
+    when lower({{ dsccbo_col }}) like 'assistente social%' then 'ASSISTENTE SOCIAL'
+    when lower({{ dsccbo_col }}) like 'educador social%' then 'EDUCADOR SOCIAL'
+    when lower({{ dsccbo_col }}) like 'entrevistador social%' then 'ENTREVISTADOR SOCIAL'
+    when lower({{ dsccbo_col }}) like 'pedagogo%' then 'PEDAGOGO'
+    when lower({{ dsccbo_col }}) like 'psicólogo%' then 'PSICÓLOGO'
+    when lower({{ dsccbo_col }}) like 'recepcionista%' then 'RECEPCIONISTA'
+    else upper({{ dsccbo_col }})
+end
 {% endmacro %}

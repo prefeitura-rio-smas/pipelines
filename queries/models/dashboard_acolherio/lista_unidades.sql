@@ -6,6 +6,7 @@ WITH contas_associadas AS (
     us.apus as cas,
     us.emailprof AS EMAIL_UNIDADE,
     {{ map_coluna_unidade_ativa('us.indinativo') }},
+    us.apus as CAS,
     us.esfera AS ESFERA,
     us.dscus AS UNIDADE,
     us_config.numleitos AS VAGAS_TOTAIS,

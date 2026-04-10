@@ -1,0 +1,26 @@
+sources:
+  - name: source_dashboard_acolherio
+    database: rj-smas
+    schema: brutos_acolherio_staging
+    tables:
+      - name: gh_pacientes_sm
+        description: "Tabela que possui registros relacionados aos dados do usuário"
+      - name: gh_cidadao_pac
+        description: "Tabela que possui registros relacionados aos dados do usuário"
+      - name: gh_pac_dados
+        description: "Tabela que possui registros relacionados aos dados do usuário"
+      - name: gh_pac_ciclos
+        description: "Tabela que possui registros relacinados ao acolhimentos de cada usuário"
+      - name: gh_familias_membros
+        description: "Tabela que possui dados relacionados aos membros de cada família"
+      - name: gh_origens
+        description: "Tabela normalizada da origem da demanda"
+      - name: gh_contas
+        description: "Contas dos operadores do sistema acolherio"
+      - name: gh_us
+        description: "Tabela responsável por todas unidades do Acolherio"
+      - name: gh_tpatendimentos
+        description: "Tabela responsável pelo tipo de atendimento"
+      - name: gh_pac_info_med
+      - name: gh_cbo
+      - name: gh_profocup
