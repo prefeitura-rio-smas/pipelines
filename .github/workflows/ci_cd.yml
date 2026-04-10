@@ -58,6 +58,10 @@ jobs:
       - name: Install dependencies (incluindo dbt)
         run: uv sync
 
+      - name: DBT Deps
+        run: |
+          uv run dbt deps --project-dir queries --profiles-dir queries
+
       - name: DBT Parse
         run: |
           uv run dbt parse --project-dir queries --profiles-dir queries --target ci
