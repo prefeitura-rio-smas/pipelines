@@ -1,0 +1,29 @@
+models:
+  - name: stg_pac_dados_acolherio
+    description: "Modelo retorna dados relacionados a cada usuário cadastrado no sistema Acolherio"
+    columns:
+      - name: seqpac
+        description: "Id único do usuário"
+        data_tests:
+          - unique 
+          - not_null
+      - name: indcadunico
+        description: "Flag para indicar se o usuário possui Cadúnico"
+      - name: numero_processo_decisao_apoiada
+        description: "Numero do processo de tomada de decisão"
+      - name: nome_apoiador
+        description: "Nome do apoiador do processo de tomada de decisão"
+      - name: saude_mental_comprometida
+        description: "Tipo de saúde mental comprometida"
+      - name: motivo_acolhimento
+        description: "Motivo do acolhimento"
+      - name: violacao_direito
+        description: "Violação de direito que o usuário possui"
+      - name: pontuacao
+        description: "Pontuação do usuário"
+      - name: orientacao_sexual
+        description: "Orientação sexual do usuário"
+      - name: vinculo_trabalhista 
+        description: "Tipo de vínculo trabalhista do usuário"
+
+
