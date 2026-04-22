@@ -1,0 +1,4 @@
+version: 2
+models:
+  - name: raw_familias_projetos_sociais
+    description: "Vínculo entre famílias e programas/projetos sociais."

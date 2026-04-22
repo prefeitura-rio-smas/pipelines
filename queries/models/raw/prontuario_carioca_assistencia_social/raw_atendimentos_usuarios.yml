@@ -1,0 +1,9 @@
+version: 2
+models:
+  - name: raw_atendimentos_usuarios
+    description: "Atendimentos do módulo usuário."
+    columns:
+      - name: id_atendimento_modulo
+        tests:
+          - unique
+          - not_null

@@ -1,0 +1,48 @@
+version: 2
+
+sources:
+  - name: brutos_acolherio_staging
+    description: "Dataset contendo os dados brutos sincronizados via Airbyte do sistema Prontuário Carioca (Acolherio)."
+    database: rj-smas
+    schema: brutos_acolherio_staging
+    tables:
+      - name: gh_familias
+        description: "Cadastro base das famílias."
+      - name: gh_pac_ciclos
+        description: "Ciclos de acolhimento institucional dos usuários."
+      - name: gh_famil_projsociais
+        description: "Projetos sociais vinculados às famílias."
+      - name: gh_famil_servassist
+        description: "Serviços assistenciais prestados às famílias."
+      - name: gh_us
+        description: "Unidades de saúde e assistência."
+      - name: gh_prof
+        description: "Cadastro de profissionais."
+      - name: gh_profocup
+        description: "Vínculo entre profissionais e CBOs."
+      - name: gh_cbo
+        description: "Classificação Brasileira de Ocupações."
+      - name: gh_atend_familia
+        description: "Atendimentos do módulo Família."
+      - name: gh_atendimentos
+        description: "Atendimentos do módulo Usuário."
+      - name: gh_cidadao_pac
+        description: "Dados cadastrais principais do Cidadão/Paciente."
+      - name: gh_pac_dados
+        description: "Dados complementares do Paciente."
+      - name: gh_familias_membros
+        description: "Composição familiar e vínculos."
+      - name: gh_tpatendimentos
+        description: "Tipos de atendimento configurados."
+      - name: gh_contas
+        description: "Contas de operadores do sistema."
+      - name: gh_pacientes_sm
+        description: "Dados do módulo de Saúde Mental."
+      - name: gh_evoluadm
+        description: "Evoluções administrativas."
+      - name: gh_evolupac
+        description: "Evoluções dos usuários."
+      - name: gh_evolufamil
+        description: "Evoluções das famílias."
+      - name: gh_famil_vulnerab
+        description: "Registros de vulnerabilidades das famílias."

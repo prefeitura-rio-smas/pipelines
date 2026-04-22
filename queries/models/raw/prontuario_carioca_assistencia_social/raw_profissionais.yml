@@ -1,0 +1,10 @@
+version: 2
+models:
+  - name: raw_profissionais
+    description: "Cadastro de profissionais do sistema."
+    columns:
+      - name: id_profissional
+        description: "ID original do profissional (seqprof)."
+        tests:
+          - not_null
+          - unique

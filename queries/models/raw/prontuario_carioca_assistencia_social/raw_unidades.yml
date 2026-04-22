@@ -1,0 +1,11 @@
+version: 2
+models:
+  - name: raw_unidades
+    description: "Dados brutos de unidades do Prontuário Carioca."
+    columns:
+      - name: id_unidade
+        description: "ID original da unidade (sequs)."
+        tests:
+          - not_null
+      - name: nome_unidade
+        description: "Nome descritivo da unidade."

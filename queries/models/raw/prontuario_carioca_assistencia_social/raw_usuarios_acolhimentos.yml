@@ -1,0 +1,4 @@
+version: 2
+models:
+  - name: raw_usuarios_acolhimentos
+    description: "Registros de ciclos de acolhimento institucional (entrada e saída)."

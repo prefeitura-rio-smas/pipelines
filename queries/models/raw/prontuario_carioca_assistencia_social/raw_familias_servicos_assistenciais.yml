@@ -1,0 +1,4 @@
+version: 2
+models:
+  - name: raw_familias_servicos_assistenciais
+    description: "Vínculo entre famílias e serviços da rede assistencial."

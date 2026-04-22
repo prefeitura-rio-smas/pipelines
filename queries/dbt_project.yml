@@ -5,38 +5,62 @@ model-paths: ["models"]
 
 models:
   queries:
-    dashboard_arcgis:
-      +database: rj-smas-dev
-      +materialized: table
-      +schema: "{{ 'dashboard_arcgis' if target.name == 'prod' else 'gerenciamento__dbt' }}"
-    equipamentos:
-      +materialized: table
-      +schema: "{{ 'equipamento' if target.name == 'prod' else 'gerenciamento__dbt' }}"
-    dashboard_acolherio:
-      raw:
-        +materialized: ephemeral
-      staging:
-        +materialized: ephemeral
-      intermediate:
-        +materialized: ephemeral
-      mart:
+    # --- Nova Arquitetura Medallion ---
+    raw:
+      +materialized: view
+      +schema: "{{ 'raw' if target.name == 'prod' else 'gerenciamento__dbt' }}"
+    
+    intermediate:
+      +materialized: ephemeral
+      core:
         +materialized: table
-      +schema: "{{ 'acolherio' if target.name == 'prod' else 'relatorio' }}"
-    rma:
-      +schema: "{{ 'acolherio' if target.name == 'prod' else 'gerenciamento__dbt' }}"
-      cras:
-          raw:
-            +materialized: ephemeral
-          staging:
-            +materialized: ephemeral
-          intermediate:
-            +materialized: incremental
-          mart:
-            +materialized: incremental
-            +schema: "{{ 'dashboard_arcgis' if target.name == 'prod' else 'relatorio' }}"
-    bolsa_familia:
+        +schema: "{{ 'core' if target.name == 'prod' else 'gerenciamento__dbt' }}"
+    
+    marts:
       +materialized: table
-      +schema: "{{ 'bolsa_familia' if target.name == 'prod' else 'gerenciamento__dbt' }}"
-    pic:
-      +materialized: table
-      +schema: pic
+      +schema: "{{ 'marts' if target.name == 'prod' else 'relatorio' }}"
+
+    # --- Arquitetura Antiga (Legacy) ---
+    old_architecture:
+      +enabled: false  # Desativado para evitar conflitos, mas mantendo config para consulta
+      
+      dashboard_arcgis:
+        +database: rj-smas-dev
+        +materialized: table
+        +schema: "{{ 'dashboard_arcgis' if target.name == 'prod' else 'gerenciamento__dbt' }}"
+      
+      equipamentos:
+        +materialized: table
+        +schema: "{{ 'equipamento' if target.name == 'prod' else 'gerenciamento__dbt' }}"
+      
+      dashboard_acolherio:
+        raw:
+          +materialized: ephemeral
+        staging:
+          +materialized: ephemeral
+        intermediate:
+          +materialized: ephemeral
+        mart:
+          +materialized: table
+        +schema: "{{ 'acolherio' if target.name == 'prod' else 'relatorio' }}"
+      
+      rma:
+        +schema: "{{ 'acolherio' if target.name == 'prod' else 'gerenciamento__dbt' }}"
+        cras:
+            raw:
+              +materialized: ephemeral
+            staging:
+              +materialized: ephemeral
+            intermediate:
+              +materialized: incremental
+            mart:
+              +materialized: incremental
+              +schema: "{{ 'dashboard_arcgis' if target.name == 'prod' else 'relatorio' }}"
+      
+      bolsa_familia:
+        +materialized: table
+        +schema: "{{ 'bolsa_familia' if target.name == 'prod' else 'gerenciamento__dbt' }}"
+      
+      pic:
+        +materialized: table
+        +schema: pic

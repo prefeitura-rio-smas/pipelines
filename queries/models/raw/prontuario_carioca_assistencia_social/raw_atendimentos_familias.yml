@@ -1,0 +1,9 @@
+version: 2
+models:
+  - name: raw_atendimentos_familias
+    description: "Atendimentos do módulo família."
+    columns:
+      - name: id_atendimento_modulo
+        tests:
+          - unique
+          - not_null
