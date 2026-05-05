@@ -121,6 +121,8 @@ jobs:
       # Build e Push usando actions nativas (para evitar problemas de auth/timeout)
       - name: Set up Docker Buildx
         uses: docker/setup-buildx-action@v3
+      - name: Set up QEMU
+        uses: docker/setup-qemu-action@v3
 
       - name: Build and Push Docker Image
         uses: docker/build-push-action@v5
@@ -128,6 +130,7 @@ jobs:
           context: .
           file: Dockerfile
           push: true
+          platforms: linux/amd64,linux/arm64
           tags: ${{ env.IMAGE_REPO }}:${{ env.TAG }}
           cache-from: type=gha
           cache-to: type=gha,mode=max
