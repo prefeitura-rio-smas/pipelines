@@ -17,7 +17,7 @@ from pipelines.bolsa_familia.utils import parse_partition
 from pipelines.bolsa_familia.constants import settings
 
 
-@task
+@task(cache_policy=None)
 def identify_pending_files(
     bucket_name: str,
     raw_prefix: str,
@@ -70,7 +70,7 @@ def identify_pending_files(
     return files_to_process
 
 
-@task
+@task(cache_policy=None)
 def process_and_upload_files(
     files: List[Blob],
     bucket_name: str,
