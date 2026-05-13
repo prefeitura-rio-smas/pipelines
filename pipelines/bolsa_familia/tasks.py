@@ -36,9 +36,11 @@ def identify_pending_files(
     blobs = list(bucket.list_blobs(prefix=raw_prefix))
     zip_blobs = [blob for blob in blobs if blob.name.lower().endswith(".zip")]
     
-    # 2. Listar partições existentes no BigQuery
+    # 2. Listar partições existentes no BigQuery (na tabela FINAL de Mart)
     client_bq = bigquery.Client(project=settings.GCP_PROJECT)
-    table_ref = f"{settings.GCP_PROJECT}.{dataset_id}.{table_id}"
+    # Fonte da verdade para idempotência: Tabela Final
+    mart_dataset = "bolsa_familia" if "dev" not in settings.GCP_PROJECT else "gerenciamento__dbt"
+    table_ref = f"{settings.GCP_PROJECT}.{mart_dataset}.{table_id}"
     
     existing_partitions = []
     try:
@@ -48,9 +50,9 @@ def identify_pending_files(
         query = f"SELECT DISTINCT data_particao FROM `{table_ref}`"
         df = client_bq.query(query).result().to_dataframe()
         existing_partitions = df['data_particao'].astype(str).tolist()
-        logger.info(f"Found {len(existing_partitions)} existing partitions in {table_ref}")
+        logger.info(f"Found {len(existing_partitions)} existing partitions in FINAL table {table_ref}")
     except Exception:
-        logger.info(f"Table {table_ref} not found or empty. Assuming all files are new.")
+        logger.info(f"Final table {table_ref} not found or empty. Assuming all files are new.")
 
     # 3. Filtrar (Diff)
     files_to_process = []
@@ -200,51 +202,68 @@ def load_to_bigquery(
 ) -> None:
     """
     Carrega dados do GCS para o BigQuery.
-    CRÍTICO: Lê apenas da pasta source_path (Run ID específico), evitando duplicatas.
+    CRÍTICO: Usa WRITE_TRUNCATE na partição específica para garantir idempotência.
     """
     logger = prefect.get_run_logger()
     client = bigquery.Client(project=settings.GCP_PROJECT)
-    table_ref = f"{settings.GCP_PROJECT}.{dataset_id}.{table_id}"
     
-    # Create Table if not exists
-    try:
-        client.get_table(table_ref)
-    except Exception:
-        logger.info(f"Table {table_ref} not found. Creating...")
-        schema = [
-            bigquery.SchemaField("linha_bruta", "STRING"),
-            bigquery.SchemaField("timestamp_captura", "TIMESTAMP"),
-            bigquery.SchemaField("data_particao", "DATE"),
-        ]
-        table = bigquery.Table(table_ref, schema=schema)
-        table.time_partitioning = bigquery.TimePartitioning(
-            type_=bigquery.TimePartitioningType.DAY,
-            field="data_particao"
-        )
-        client.create_table(table)
-        logger.info(f"Created table {table_ref}")
-
-    # Load Job
-    # Lê APENAS os arquivos gerados nesta execução
-    gcs_uri = f"gs://{bucket_name}/{source_path}/*.csv"
+    # Extrair a data da partição a partir do source_path (staging/bolsa_familia/env/run_id/ano=.../mes=.../data=...)
+    # O source_path termina na pasta do run_id. Os arquivos dentro têm a estrutura de pastas Hive.
+    # Vamos listar os arquivos para descobrir as partições que precisam ser carregadas.
+    storage_client = storage.Client(project=settings.GCP_PROJECT)
+    bucket = storage_client.bucket(bucket_name)
+    blobs = list(bucket.list_blobs(prefix=source_path))
     
-    logger.info(f"Loading data from {gcs_uri} ...")
+    # Mapear arquivos para suas partições para fazer loads individuais por partição (necessário para TRUNCATE de partição)
+    partitions_found = {}
+    for blob in blobs:
+        if blob.name.endswith(".csv") and "data_particao=" in blob.name:
+            part = blob.name.split("data_particao=")[1].split("/")[0]
+            if part not in partitions_found:
+                partitions_found[part] = []
+            partitions_found[part].append(blob.name)
 
-    job_config = bigquery.LoadJobConfig(
-        source_format=bigquery.SourceFormat.CSV,
-        skip_leading_rows=1,
-        write_disposition="WRITE_APPEND", # Append seguro pois a fonte é única e nova
-        schema_update_options=[bigquery.SchemaUpdateOption.ALLOW_FIELD_ADDITION],
-        autodetect=True 
-    )
-
-    try:
-        load_job = client.load_table_from_uri(gcs_uri, table_ref, job_config=job_config)
-        load_job.result()
+    for partition_date, files in partitions_found.items():
+        # Formato da tabela com partição para TRUNCATE: dataset.tabela$YYYYMMDD
+        partition_suffix = partition_date.replace("-", "")
+        table_ref = f"{settings.GCP_PROJECT}.{dataset_id}.{table_id}${partition_suffix}"
         
-        destination_table = client.get_table(table_ref)
-        logger.info(f"Loaded {load_job.output_rows} rows. Table now has {destination_table.num_rows} rows.")
+        # Create Main Table if not exists (sem o sufixo $)
+        main_table_ref = f"{settings.GCP_PROJECT}.{dataset_id}.{table_id}"
+        try:
+            client.get_table(main_table_ref)
+        except Exception:
+            logger.info(f"Main table {main_table_ref} not found. Creating...")
+            schema = [
+                bigquery.SchemaField("linha_bruta", "STRING"),
+                bigquery.SchemaField("timestamp_captura", "TIMESTAMP"),
+                bigquery.SchemaField("data_particao", "DATE"),
+            ]
+            table = bigquery.Table(main_table_ref, schema=schema)
+            table.time_partitioning = bigquery.TimePartitioning(
+                type_=bigquery.TimePartitioningType.DAY,
+                field="data_particao"
+            )
+            client.create_table(table)
 
-    except Exception as e:
-        logger.error(f"BigQuery Load Failed: {e}")
-        raise
+        # Load Job para a PARTIÇÃO específica
+        # Como o bucket.list_blobs já filtrou por source_path (Run ID), estamos seguros
+        gcs_uris = [f"gs://{bucket_name}/{f}" for f in files]
+        
+        logger.info(f"Loading {len(gcs_uris)} files into partition {partition_date} ({table_ref}) ...")
+
+        job_config = bigquery.LoadJobConfig(
+            source_format=bigquery.SourceFormat.CSV,
+            skip_leading_rows=1,
+            write_disposition="WRITE_TRUNCATE", # Idempotência: Limpa a partição antes de inserir
+            schema_update_options=[bigquery.SchemaUpdateOption.ALLOW_FIELD_ADDITION],
+            autodetect=True 
+        )
+
+        try:
+            load_job = client.load_table_from_uris(gcs_uris, table_ref, job_config=job_config)
+            load_job.result()
+            logger.info(f"Loaded {load_job.output_rows} rows into partition {partition_date}.")
+        except Exception as e:
+            logger.error(f"BigQuery Load Failed for partition {partition_date}: {e}")
+            raise

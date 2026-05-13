@@ -41,7 +41,7 @@ def bolsa_familia_flow() -> None:
 
     dbt_target = os.getenv("MODE", "staging")
     trigger_dbt_cli_command(
-        command=f"dbt run --select folha --target {dbt_target}",
+        command=f"dbt build --select int_bolsa_familia_parsed+ --target {dbt_target}",
         project_dir="queries",
         profiles_dir="queries",
     )
