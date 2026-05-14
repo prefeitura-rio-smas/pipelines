@@ -261,7 +261,7 @@ def load_to_bigquery(
         )
 
         try:
-            load_job = client.load_table_from_uris(gcs_uris, table_ref, job_config=job_config)
+            load_job = client.load_table_from_uri(gcs_uris, table_ref, job_config=job_config)
             load_job.result()
             logger.info(f"Loaded {load_job.output_rows} rows into partition {partition_date}.")
         except Exception as e:
