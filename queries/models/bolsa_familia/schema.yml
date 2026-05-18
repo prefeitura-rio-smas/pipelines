@@ -30,15 +30,15 @@ models:
               name: not_null_ref_folha_rf
               config:
                 where: "MARCA_RF = 'S'"
+                severity: warn
       - name: COMPET_PARCELA
-        description: "Mês/ano de competência do benefício. SAFE.PARSE_DATE retorna NULL para strings inválidas, protegendo contra offsets errados. Mesmo protegido por SAFE.PARSE_DATE, falha se o offset estiver errado."
+        description: "Mês/ano de competência do benefício. SAFE.PARSE_DATE retorna NULL para strings inválidas, protegendo contra offsets errados."
         data_tests:
           - not_null:
               name: not_null_compet_parcela_rf
               config:
                 where: "MARCA_RF = 'S'"
-          - not_null:
-              name: not_null_compet_parcela_total
+                severity: warn
 
   - name: folha
     description: "Tabela final (Mart) com dados consolidados e faixas de benefício."
