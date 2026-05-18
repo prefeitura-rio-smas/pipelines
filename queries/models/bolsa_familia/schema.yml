@@ -44,7 +44,7 @@ models:
     description: "Tabela final (Mart) com dados consolidados e faixas de benefício."
     data_tests:
       - dbt_utils.unique_combination_of_columns:
-          combination_of_columns: [COD_FAMILIAR, COMPET_PARCELA]
+          combination_of_columns: [COD_FAMILIAR, COMPET_PARCELA, data_particao]
           config:
             where: "MARCA_RF = 'S'"
-          description: "Garante que cada família (RF) tenha apenas um registro de VLRTOTAL por mês de competência."
+          description: "Garante que cada família (RF) tenha apenas um registro por competência por partição. data_particao é necessária porque o mesmo benefício aparece em múltiplas extrações mensais."
