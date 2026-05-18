@@ -7,3 +7,44 @@ sources:
     tables:
       - name: folha
         description: "Tabela contendo a linha bruta do arquivo, timestamp e partição"
+
+models:
+  - name: int_bolsa_familia_parsed
+    description: "Camada intermediária que faz o parsing da linha bruta para colunas estruturadas, resiliente a mudanças de layout (34/35 colunas)."
+    columns:
+      - name: qtd_colunas_brutas
+        description: "Quantidade de colunas detectadas no split da linha bruta."
+        data_tests:
+          - accepted_values:
+              arguments:
+                values: [34, 35]
+                quote: false
+      - name: COD_FAMILIAR
+        description: "Código de identificação familiar único."
+        data_tests:
+          - not_null
+      - name: REF_FOLHA
+        description: "Data de referência da folha. SAFE.PARSE_DATE retorna NULL para strings inválidas, protegendo contra offsets errados."
+        data_tests:
+          - not_null:
+              name: not_null_ref_folha_rf
+              config:
+                where: "MARCA_RF = 'S'"
+                severity: warn
+      - name: COMPET_PARCELA
+        description: "Mês/ano de competência do benefício. SAFE.PARSE_DATE retorna NULL para strings inválidas, protegendo contra offsets errados."
+        data_tests:
+          - not_null:
+              name: not_null_compet_parcela_rf
+              config:
+                where: "MARCA_RF = 'S'"
+                severity: warn
+
+  - name: folha
+    description: "Tabela final (Mart) com dados consolidados e faixas de benefício."
+    data_tests:
+      - dbt_utils.unique_combination_of_columns:
+          combination_of_columns: [COD_FAMILIAR, COMPET_PARCELA, data_particao]
+          config:
+            where: "MARCA_RF = 'S'"
+          description: "Garante que cada família (RF) tenha apenas um registro por competência por partição. data_particao é necessária porque o mesmo benefício aparece em múltiplas extrações mensais."
