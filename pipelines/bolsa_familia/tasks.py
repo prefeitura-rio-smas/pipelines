@@ -29,14 +29,18 @@ def identify_pending_files(
     evitar reprocessamento desnecessário.
     """
     logger = prefect.get_run_logger()
+    logger.info(
+        f"identify_pending_files | Scanning gs://{bucket_name}/{raw_prefix}"
+    )
 
     client_storage = storage.Client(project=settings.GCP_PROJECT)
     bucket = client_storage.bucket(bucket_name)
     blobs = list(bucket.list_blobs(prefix=raw_prefix))
     zip_blobs = [blob for blob in blobs if blob.name.lower().endswith(".zip")]
+    logger.info(f"identify_pending_files | Found {len(zip_blobs)} ZIP file(s) in GCS")
 
     if not zip_blobs:
-        logger.info("No ZIP files found in GCS.")
+        logger.info("identify_pending_files | No ZIP files found — nothing to process")
         return []
 
     existing_partitions = set()
@@ -50,9 +54,15 @@ def identify_pending_files(
         ).result().to_dataframe()
         staging_partitions = set(staging_df['data_particao'].astype(str).tolist())
         existing_partitions.update(staging_partitions)
-        logger.info(f"Found {len(staging_partitions)} partitions in staging {staging_ref}")
+        logger.info(
+            f"identify_pending_files | "
+            f"{len(staging_partitions)} partition(s) in staging: "
+            f"{sorted(staging_partitions)[:5]}{'...' if len(staging_partitions) > 5 else ''}"
+        )
     except Exception:
-        logger.info(f"Staging table {staging_ref} not found or empty.")
+        logger.info(
+            f"identify_pending_files | Staging table {staging_ref} not found or empty"
+        )
 
     mart_dataset = "bolsa_familia" if "dev" not in settings.GCP_PROJECT else "gerenciamento__dbt"
     mart_ref = f"{settings.GCP_PROJECT}.{mart_dataset}.{table_id}"
@@ -63,22 +73,46 @@ def identify_pending_files(
         ).result().to_dataframe()
         mart_partitions = set(mart_df['data_particao'].astype(str).tolist())
         existing_partitions.update(mart_partitions)
-        logger.info(f"Found {len(mart_partitions)} partitions in mart {mart_ref}")
+        logger.info(
+            f"identify_pending_files | "
+            f"{len(mart_partitions)} partition(s) in mart: "
+            f"{sorted(mart_partitions)[:5]}{'...' if len(mart_partitions) > 5 else ''}"
+        )
     except Exception:
-        logger.info(f"Mart table {mart_ref} not found or empty.")
+        logger.info(
+            f"identify_pending_files | Mart table {mart_ref} not found or empty"
+        )
+
+    logger.info(
+        f"identify_pending_files | "
+        f"{len(existing_partitions)} total existing partition(s): "
+        f"{sorted(existing_partitions)[:5]}{'...' if len(existing_partitions) > 5 else ''}"
+    )
 
     files_to_process = []
+    skipped = []
     for blob in zip_blobs:
         try:
             partition_date = parse_partition(blob)
             if partition_date not in existing_partitions:
                 files_to_process.append(blob)
+                logger.info(
+                    f"identify_pending_files | + {blob.name} → partition {partition_date} (new)"
+                )
             else:
-                logger.debug(f"Skipping {blob.name} (partition {partition_date} exists)")
+                skipped.append(blob.name)
         except ValueError as e:
-            logger.warning(f"Skipping {blob.name}: {e}")
+            logger.warning(f"identify_pending_files | Skipping {blob.name}: {e}")
 
-    logger.info(f"Found {len(files_to_process)} new files to process.")
+    if skipped:
+        logger.info(
+            f"identify_pending_files | Skipped {len(skipped)} file(s) "
+            f"with existing partitions: {skipped[:5]}{'...' if len(skipped) > 5 else ''}"
+        )
+
+    logger.info(
+        f"identify_pending_files | Result: {len(files_to_process)} file(s) to process"
+    )
     return files_to_process
 
 
@@ -101,11 +135,17 @@ def check_staging_gap(dataset_id: str, table_id: str) -> bool:
         ).result().to_dataframe()
         staging_partitions = set(staging_df['data_particao'].astype(str).tolist())
     except Exception:
-        logger.info("Staging table not found or empty. No gap to fill.")
+        logger.info("check_staging_gap | Staging table not found or empty — no gap to fill")
         return False
 
     if not staging_partitions:
+        logger.info("check_staging_gap | Staging table is empty — no gap to fill")
         return False
+
+    logger.info(
+        f"check_staging_gap | Staging has {len(staging_partitions)} partition(s): "
+        f"{sorted(staging_partitions)}"
+    )
 
     mart_dataset = "bolsa_familia" if "dev" not in settings.GCP_PROJECT else "gerenciamento__dbt"
     mart_ref = f"{settings.GCP_PROJECT}.{mart_dataset}.{table_id}"
@@ -116,15 +156,22 @@ def check_staging_gap(dataset_id: str, table_id: str) -> bool:
             f"SELECT DISTINCT data_particao FROM `{mart_ref}`"
         ).result().to_dataframe()
         mart_partitions = set(mart_df['data_particao'].astype(str).tolist())
+        logger.info(
+            f"check_staging_gap | Mart has {len(mart_partitions)} partition(s): "
+            f"{sorted(mart_partitions)}"
+        )
     except Exception:
-        pass
+        logger.info("check_staging_gap | Mart table not found or empty")
 
     gap = staging_partitions - mart_partitions
     if gap:
-        logger.info(f"Found {len(gap)} partitions in staging but not in mart: {sorted(gap)}")
+        logger.warning(
+            f"check_staging_gap | GAP DETECTED: {len(gap)} partition(s) in staging "
+            f"but not in mart: {sorted(gap)} — will retry dbt"
+        )
         return True
 
-    logger.info("No staging gap found. All staging partitions are in mart.")
+    logger.info("check_staging_gap | No gap — all staging partitions are in mart")
     return False
 
 
@@ -146,20 +193,33 @@ def process_and_upload_files(
     env_name = "prod" if "dev" not in settings.GCP_PROJECT else "dev"
     destination_prefix = f"staging/bolsa_familia/{env_name}/{run_id}"
 
+    logger.info(
+        f"process_and_upload_files | Starting | "
+        f"{len(files)} file(s) | run_id={run_id} | env={env_name}"
+    )
+
     if base_work_dir.exists():
         shutil.rmtree(base_work_dir)
     base_work_dir.mkdir(parents=True)
 
     try:
-        logger.info(f"Processing {len(files)} files locally...")
+        total_rows = 0
+        total_csv = 0
         for blob in files:
-            _process_single_zip(blob, output_directory)
+            rows, csvs = _process_single_zip(blob, output_directory)
+            total_rows += rows
+            total_csvs = total_csv + csvs
+            total_csv = total_csvs
+        total_csv = total_csv
 
         client = storage.Client(project=settings.GCP_PROJECT)
         bucket = client.bucket(bucket_name)
 
         files_to_upload = list(output_directory.rglob("*.csv"))
-        logger.info(f"Uploading {len(files_to_upload)} CSV files to gs://{bucket_name}/{destination_prefix}")
+        logger.info(
+            f"process_and_upload_files | Uploading {len(files_to_upload)} CSV file(s) "
+            f"({total_rows} total rows) → gs://{bucket_name}/{destination_prefix}"
+        )
 
         for file_path in files_to_upload:
             relative_path = file_path.relative_to(output_directory)
@@ -167,7 +227,11 @@ def process_and_upload_files(
             blob = bucket.blob(blob_name)
             blob.upload_from_filename(str(file_path))
 
-        logger.info(f"Upload complete. Staging path: {destination_prefix}")
+        logger.info(
+            f"process_and_upload_files | Upload complete | "
+            f"{len(files_to_upload)} file(s) | {total_rows} rows | "
+            f"path=gs://{bucket_name}/{destination_prefix}"
+        )
         return destination_prefix
 
     finally:
@@ -178,13 +242,22 @@ def process_and_upload_files(
 def _process_single_zip(blob: Blob, output_root: Path):
     """
     Faz o download e processamento de um arquivo ZIP individual.
+    Retorna (total_rows, total_csvs).
     """
     logger = prefect.get_run_logger()
     temp_extract_dir = output_root / "temp_extract" / str(uuid4())
     temp_extract_dir.mkdir(parents=True, exist_ok=True)
 
+    total_rows = 0
+    total_csvs = 0
+
     try:
         local_zip = temp_extract_dir / blob.name.split("/")[-1]
+        zip_size_mb = blob.size / (1024 * 1024) if blob.size else 0
+        logger.info(
+            f"_process_single_zip | Downloading {blob.name} "
+            f"({zip_size_mb:.1f} MB)"
+        )
         blob.download_to_filename(str(local_zip))
 
         with ZipFile(local_zip, "r") as zip_ref:
@@ -192,6 +265,7 @@ def _process_single_zip(blob: Blob, output_root: Path):
 
         partition = parse_partition(blob)
         year, month, _ = partition.split("-")
+        logger.info(f"_process_single_zip | Parsing partition={partition} from {blob.name}")
 
         for extracted_file in temp_extract_dir.glob("*"):
             if extracted_file != local_zip and extracted_file.is_file():
@@ -223,12 +297,24 @@ def _process_single_zip(blob: Blob, output_root: Path):
 
                         df.to_csv(final_file, index=False, encoding='utf-8')
 
+                        total_rows += len(df)
+                        total_csvs += 1
+                        logger.info(
+                            f"_process_single_zip | {extracted_file.name} → "
+                            f"{len(df)} rows | partition={partition}"
+                        )
+
                     except Exception as e:
-                        logger.error(f"Failed to process {extracted_file.name}: {e}")
+                        logger.error(
+                            f"_process_single_zip | Failed to process "
+                            f"{extracted_file.name}: {e}"
+                        )
 
     finally:
         if temp_extract_dir.exists():
             shutil.rmtree(temp_extract_dir)
+
+    return total_rows, total_csvs
 
 
 @task(cache_policy=None)
@@ -249,10 +335,10 @@ def load_to_wap(
 
     try:
         client.get_table(wap_ref)
-        logger.info(f"Truncating WAP table {wap_ref}")
+        logger.info(f"load_to_wap | Truncating WAP table {wap_ref}")
         client.query(f"TRUNCATE TABLE `{wap_ref}`").result()
     except Exception:
-        logger.info(f"WAP table {wap_ref} not found. Creating...")
+        logger.info(f"load_to_wap | WAP table {wap_ref} not found — creating")
         schema = [
             bigquery.SchemaField("linha_bruta", "STRING"),
             bigquery.SchemaField("timestamp_captura", "TIMESTAMP"),
@@ -278,16 +364,27 @@ def load_to_wap(
             partitions_found[part].append(blob.name)
 
     if not partitions_found:
-        logger.warning("No partitions found in GCS staging path.")
+        logger.warning(
+            f"load_to_wap | No partitions found in gs://{bucket_name}/{source_path}"
+        )
         return []
 
+    logger.info(
+        f"load_to_wap | Found {len(partitions_found)} partition(s): "
+        f"{sorted(partitions_found.keys())}"
+    )
+
+    total_rows = 0
     for partition_date, files in partitions_found.items():
         partition_suffix = partition_date.replace("-", "")
         table_ref = f"{settings.GCP_PROJECT}.{dataset_id}.{wap_table_id}${partition_suffix}"
 
         gcs_uris = [f"gs://{bucket_name}/{f}" for f in files]
 
-        logger.info(f"Loading {len(gcs_uris)} files into WAP partition {partition_date}...")
+        logger.info(
+            f"load_to_wap | Loading partition {partition_date} | "
+            f"{len(gcs_uris)} file(s) → {wap_ref}${partition_suffix}"
+        )
 
         job_config = bigquery.LoadJobConfig(
             source_format=bigquery.SourceFormat.CSV,
@@ -300,11 +397,22 @@ def load_to_wap(
         try:
             load_job = client.load_table_from_uri(gcs_uris, table_ref, job_config=job_config)
             load_job.result()
-            logger.info(f"Loaded {load_job.output_rows} rows into WAP partition {partition_date}.")
+            rows = load_job.output_rows
+            total_rows += rows
+            logger.info(
+                f"load_to_wap | Partition {partition_date} loaded | "
+                f"{rows} row(s) | total={total_rows}"
+            )
         except Exception as e:
-            logger.error(f"BigQuery Load Failed for WAP partition {partition_date}: {e}")
+            logger.error(
+                f"load_to_wap | FAILED loading partition {partition_date}: {e}"
+            )
             raise
 
+    logger.info(
+        f"load_to_wap | Complete | {len(partitions_found)} partition(s) | "
+        f"{total_rows} total row(s)"
+    )
     return list(partitions_found.keys())
 
 
@@ -323,8 +431,13 @@ def audit_wap(
     client = bigquery.Client(project=settings.GCP_PROJECT)
     wap_ref = f"{settings.GCP_PROJECT}.{dataset_id}.{wap_table_id}"
 
+    logger.info(
+        f"audit_wap | Starting audit for {len(partitions)} partition(s): "
+        f"{sorted(partitions)}"
+    )
+
     for partition in partitions:
-        logger.info(f"Auditing WAP partition {partition}...")
+        logger.info(f"audit_wap | Checking partition {partition}...")
 
         count_query = f"""
         SELECT COUNT(*) as row_count
@@ -336,7 +449,6 @@ def audit_wap(
 
         if row_count == 0:
             raise ValueError(f"Audit FAILED: partition {partition} has 0 rows in WAP table")
-        logger.info(f"Partition {partition}: {row_count} rows - OK")
 
         null_query = f"""
         SELECT
@@ -361,7 +473,14 @@ def audit_wap(
                 f"rows with NULL data_particao"
             )
 
-        logger.info(f"Partition {partition}: audit PASSED")
+        logger.info(
+            f"audit_wap | Partition {partition} PASSED | "
+            f"{row_count} row(s) | null_linha=0 | null_particao=0"
+        )
+
+    logger.info(
+        f"audit_wap | All {len(partitions)} partition(s) PASSED"
+    )
 
 
 @task(cache_policy=None)
@@ -382,10 +501,15 @@ def promote_wap(
     staging_ref = f"{settings.GCP_PROJECT}.{dataset_id}.{table_id}"
     wap_ref = f"{settings.GCP_PROJECT}.{dataset_id}.{wap_table_id}"
 
+    logger.info(
+        f"promote_wap | Starting | {len(partitions)} partition(s): "
+        f"{sorted(partitions)} | WAP={wap_ref} → staging={staging_ref}"
+    )
+
     try:
         client.get_table(staging_ref)
     except Exception:
-        logger.info(f"Staging table {staging_ref} not found. Creating...")
+        logger.info(f"promote_wap | Staging table {staging_ref} not found — creating")
         schema = [
             bigquery.SchemaField("linha_bruta", "STRING"),
             bigquery.SchemaField("timestamp_captura", "TIMESTAMP"),
@@ -399,14 +523,17 @@ def promote_wap(
         client.create_table(table)
 
     for partition in partitions:
-        logger.info(f"Promoting partition {partition} from WAP to staging...")
+        logger.info(f"promote_wap | Promoting partition {partition}...")
 
         delete_query = f"""
         DELETE FROM `{staging_ref}`
         WHERE data_particao = '{partition}'
         """
         client.query(delete_query).result()
-        logger.info(f"Deleted existing data for partition {partition} from staging.")
+        logger.info(
+            f"promote_wap | Deleted existing rows for partition {partition} "
+            f"from staging"
+        )
 
         insert_query = f"""
         INSERT INTO `{staging_ref}`
@@ -414,7 +541,14 @@ def promote_wap(
         WHERE data_particao = '{partition}'
         """
         client.query(insert_query).result()
-        logger.info(f"Inserted data for partition {partition} from WAP to staging.")
+        logger.info(
+            f"promote_wap | Inserted WAP data for partition {partition} "
+            f"into staging"
+        )
+
+    logger.info(
+        f"promote_wap | Complete | {len(partitions)} partition(s) promoted"
+    )
 
 
 @task(cache_policy=None)
@@ -435,18 +569,24 @@ def cleanup_staging(
 
     try:
         client.query(f"TRUNCATE TABLE `{wap_ref}`").result()
-        logger.info(f"Truncated WAP table {wap_ref}")
+        logger.info(f"cleanup_staging | Truncated WAP table {wap_ref}")
     except Exception as e:
-        logger.warning(f"Failed to truncate WAP table {wap_ref}: {e}")
+        logger.warning(f"cleanup_staging | Failed to truncate WAP table {wap_ref}: {e}")
 
     try:
         storage_client = storage.Client(project=settings.GCP_PROJECT)
         bucket = storage_client.bucket(bucket_name)
         blobs = list(bucket.list_blobs(prefix=staging_path))
 
+        total_bytes = sum(b.size for b in blobs if b.size) if blobs else 0
+        total_mb = total_bytes / (1024 * 1024)
+
         for blob in blobs:
             blob.delete()
 
-        logger.info(f"Deleted {len(blobs)} files from gs://{bucket_name}/{staging_path}")
+        logger.info(
+            f"cleanup_staging | Deleted {len(blobs)} file(s) "
+            f"({total_mb:.1f} MB) from gs://{bucket_name}/{staging_path}"
+        )
     except Exception as e:
-        logger.warning(f"Failed to cleanup GCS staging files: {e}")
+        logger.warning(f"cleanup_staging | Failed to cleanup GCS staging files: {e}")

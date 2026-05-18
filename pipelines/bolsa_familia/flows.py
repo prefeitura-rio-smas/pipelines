@@ -16,20 +16,27 @@ from pipelines.bolsa_familia.tasks import (
 
 @flow(name="Bolsa Família | WAC - Carga de Arquivos ZIP")
 def bolsa_familia_flow() -> None:
+    logger = __import__("prefect").get_run_logger()
+
     dataset_id = settings.GCP_DATASET
     table_id = settings.TABLE_ID
     wap_table_id = settings.WAP_TABLE_ID
     raw_path = settings.RAW_PATH
     bucket_name = settings.GCS_BUCKET
+    dbt_target = os.getenv("MODE", "staging")
 
-    # Cenário D: dados no staging mas dbt ainda não processou
+    logger.info(
+        "Bolsa Família WAC pipeline starting | "
+        f"project={settings.GCP_PROJECT} dataset={dataset_id} "
+        f"table={table_id} wap={wap_table_id} bucket={bucket_name} "
+        f"raw_path={raw_path} mode={dbt_target}"
+    )
+
     has_gap = check_staging_gap(
         dataset_id=dataset_id,
         table_id=table_id,
     )
 
-    # Identificar arquivos novos no GCS cujas partições
-    # ainda não estão no staging nem no mart
     files_to_process = identify_pending_files(
         bucket_name=bucket_name,
         raw_prefix=raw_path,
@@ -38,7 +45,11 @@ def bolsa_familia_flow() -> None:
     )
 
     if files_to_process:
-        # Pipeline WAC completa para dados novos
+        logger.info(
+            f"New data detected — running full WAC pipeline for "
+            f"{len(files_to_process)} file(s)"
+        )
+
         staging_path = process_and_upload_files(
             files=files_to_process,
             bucket_name=bucket_name,
@@ -70,18 +81,25 @@ def bolsa_familia_flow() -> None:
             bucket_name=bucket_name,
             staging_path=staging_path,
         )
-
-    if not files_to_process and not has_gap:
-        # Nada a processar e nenhum gap no staging
+    elif has_gap:
+        logger.info(
+            "No new files, but staging gap detected — "
+            "skipping WAC and running dbt only"
+        )
+    else:
+        logger.info("Nothing to process and no staging gap — exiting")
         return
 
-    # Rodar dbt (após WAC ou para resolver gap do staging)
-    dbt_target = os.getenv("MODE", "staging")
+    logger.info(
+        f"Running dbt build | target={dbt_target} "
+        f"select=int_bolsa_familia_parsed+"
+    )
     trigger_dbt_cli_command(
         command=f"dbt build --select int_bolsa_familia_parsed+ --target {dbt_target}",
         project_dir="queries",
         profiles_dir="queries",
     )
+    logger.info("Bolsa Família WAC pipeline completed successfully")
 
 
 if __name__ == "__main__":
