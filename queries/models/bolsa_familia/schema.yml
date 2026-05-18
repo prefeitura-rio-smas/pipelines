@@ -22,7 +22,7 @@ models:
         description: "Código de identificação familiar único."
         data_tests:
           - not_null
-- name: REF_FOLHA
+  - name: REF_FOLHA
         description: "Data de referência da folha. SAFE.PARSE_DATE retorna NULL para strings inválidas, protegendo contra offsets errados."
         data_tests:
           - not_null:
