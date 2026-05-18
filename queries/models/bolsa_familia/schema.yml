@@ -10,15 +10,24 @@ sources:
 
 models:
   - name: int_bolsa_familia_parsed
-    description: "Camada intermediária que faz o parsing da linha bruta para colunas estruturadas."
+    description: "Camada intermediária que faz o parsing da linha bruta para colunas estruturadas, resiliente a mudanças de layout (34/35 colunas)."
     columns:
       - name: qtd_colunas_brutas
         description: "Quantidade de colunas detectadas no split da linha bruta."
         data_tests:
           - accepted_values:
-              values: [34]
+              values: [34, 35]
               quote: false
       - name: COD_FAMILIAR
+        description: "Código de identificação familiar único."
+        data_tests:
+          - not_null
+      - name: REF_FOLHA
+        description: "Data de referência da folha de pagamento. Falha se o parsing de layout atribuir offset incorreto, pois SAFE.PARSE_DATE retorna NULL para strings inválidas."
+        data_tests:
+          - not_null
+      - name: COMPET_PARCELA
+        description: "Mês/ano de competência do benefício. Mesmo protegido por SAFE.PARSE_DATE, falha se o offset estiver errado."
         data_tests:
           - not_null
 
@@ -29,4 +38,4 @@ models:
           combination_of_columns: [COD_FAMILIAR, COMPET_PARCELA]
           config:
             where: "MARCA_RF = 'S'"
-          description: "Audit de Contexto: Garante que cada família (RF) tenha apenas um registro de VLRTOTAL por mês de competência."
+          description: "Garante que cada família (RF) tenha apenas um registro de VLRTOTAL por mês de competência."
