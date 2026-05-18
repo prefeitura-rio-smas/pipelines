@@ -22,21 +22,18 @@ models:
         description: "Código de identificação familiar único."
         data_tests:
           - not_null
-  - name: REF_FOLHA
+      - name: REF_FOLHA
         description: "Data de referência da folha. SAFE.PARSE_DATE retorna NULL para strings inválidas, protegendo contra offsets errados."
         data_tests:
           - not_null:
               config:
                 where: "MARCA_RF = 'S'"
       - name: COMPET_PARCELA
-        description: "Mês/ano de competência do benefício. SAFE.PARSE_DATE retorna NULL para strings inválidas, protegendo contra offsets errados."
+        description: "Mês/ano de competência do benefício. SAFE.PARSE_DATE retorna NULL para strings inválidas, protegendo contra offsets errados. Mesmo protegido por SAFE.PARSE_DATE, falha se o offset estiver errado."
         data_tests:
           - not_null:
               config:
                 where: "MARCA_RF = 'S'"
-      - name: COMPET_PARCELA
-        description: "Mês/ano de competência do benefício. Mesmo protegido por SAFE.PARSE_DATE, falha se o offset estiver errado."
-        data_tests:
           - not_null
 
   - name: folha
