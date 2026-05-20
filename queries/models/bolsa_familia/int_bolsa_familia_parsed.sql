@@ -32,45 +32,49 @@ parsed AS (
         qtd_cols AS qtd_colunas_brutas,
 
         -- Lógica Dinâmica de Mapeamento:
-        -- Se o layout for de 35 colunas (2026+), o Governo inseriu uma coluna extra no início (offset 0).
-        -- Portanto, deslocamos todos os offsets em +1 para layouts de 35 colunas.
-        CASE 
-            WHEN qtd_cols = 35 THEN TRIM(colunas[SAFE_OFFSET(1)])
-            ELSE TRIM(colunas[SAFE_OFFSET(0)]) 
-        END AS PROG,
+        -- Layout de 34 colunas (2025 e anteriores): mapeamento direto.
+        -- Layout de 35 colunas (2026+): o Governo inseriu uma coluna extra
+        -- ENTRE TRABALHO_INF (col 24) e RENDA_PER_CAPITA (col 25 no 34-col).
+        -- Portanto, colunas 0-24 têm o mesmo offset nos dois layouts;
+        -- colunas 25+ (RENDA_PER_CAPITA em diante) ganham +1 no layout 35-col.
         
-        SAFE.PARSE_DATE('%Y%m%d', CONCAT(TRIM(colunas[SAFE_OFFSET(CASE WHEN qtd_cols = 35 THEN 2 ELSE 1 END)]), '01')) AS REF_FOLHA,
-        TRIM(colunas[SAFE_OFFSET(CASE WHEN qtd_cols = 35 THEN 3 ELSE 2 END)]) AS UF,
-        TRIM(colunas[SAFE_OFFSET(CASE WHEN qtd_cols = 35 THEN 4 ELSE 3 END)]) AS IBGE,
-        TRIM(colunas[SAFE_OFFSET(CASE WHEN qtd_cols = 35 THEN 5 ELSE 4 END)]) AS COD_FAMILIAR,
+        -- Colunas 0-24: mesmos offsets para 34 e 35 colunas
+        TRIM(colunas[SAFE_OFFSET(0)]) AS PROG,
+        
+        SAFE.PARSE_DATE('%Y%m%d', CONCAT(TRIM(colunas[SAFE_OFFSET(1)]), '01')) AS REF_FOLHA,
+        TRIM(colunas[SAFE_OFFSET(2)]) AS UF,
+        TRIM(colunas[SAFE_OFFSET(3)]) AS IBGE,
+        TRIM(colunas[SAFE_OFFSET(4)]) AS COD_FAMILIAR,
         
         -- Colunas de identificação do beneficiário
-        TRIM(colunas[SAFE_OFFSET(CASE WHEN qtd_cols = 35 THEN 6 ELSE 5 END)]) AS CPF,
-        TRIM(colunas[SAFE_OFFSET(CASE WHEN qtd_cols = 35 THEN 7 ELSE 6 END)]) AS NIS,
-        TRIM(colunas[SAFE_OFFSET(CASE WHEN qtd_cols = 35 THEN 8 ELSE 7 END)]) AS NOME,
+        TRIM(colunas[SAFE_OFFSET(5)]) AS CPF,
+        TRIM(colunas[SAFE_OFFSET(6)]) AS NIS,
+        TRIM(colunas[SAFE_OFFSET(7)]) AS NOME,
 
         -- Colunas sobre o pagamento e benefício
-        TRIM(colunas[SAFE_OFFSET(CASE WHEN qtd_cols = 35 THEN 9 ELSE 8 END)]) AS TIPO_PGTO_PREVISTO,
-        TRIM(colunas[SAFE_OFFSET(CASE WHEN qtd_cols = 35 THEN 10 ELSE 9 END)]) AS PACTO,
-        SAFE.PARSE_DATE('%Y%m%d', CONCAT(TRIM(colunas[SAFE_OFFSET(CASE WHEN qtd_cols = 35 THEN 11 ELSE 10 END)]), '01')) AS COMPET_PARCELA,
-        TRIM(colunas[SAFE_OFFSET(CASE WHEN qtd_cols = 35 THEN 12 ELSE 11 END)]) AS TP_BENEF,
-        SAFE_CAST(REPLACE(TRIM(colunas[SAFE_OFFSET(CASE WHEN qtd_cols = 35 THEN 13 ELSE 12 END)]), ',', '.') AS NUMERIC) AS VLRBENEF,
-        SAFE_CAST(REPLACE(TRIM(colunas[SAFE_OFFSET(CASE WHEN qtd_cols = 35 THEN 14 ELSE 13 END)]), ',', '.') AS NUMERIC) AS VLRTOTAL,
+        TRIM(colunas[SAFE_OFFSET(8)]) AS TIPO_PGTO_PREVISTO,
+        TRIM(colunas[SAFE_OFFSET(9)]) AS PACTO,
+        SAFE.PARSE_DATE('%Y%m%d', CONCAT(TRIM(colunas[SAFE_OFFSET(10)]), '01')) AS COMPET_PARCELA,
+        TRIM(colunas[SAFE_OFFSET(11)]) AS TP_BENEF,
+        SAFE_CAST(REPLACE(TRIM(colunas[SAFE_OFFSET(12)]), ',', '.') AS NUMERIC) AS VLRBENEF,
+        SAFE_CAST(REPLACE(TRIM(colunas[SAFE_OFFSET(13)]), ',', '.') AS NUMERIC) AS VLRTOTAL,
         
         -- Colunas de situação e vigência
-        TRIM(colunas[SAFE_OFFSET(CASE WHEN qtd_cols = 35 THEN 15 ELSE 14 END)]) AS SITBENEFICIO,
-        TRIM(colunas[SAFE_OFFSET(CASE WHEN qtd_cols = 35 THEN 16 ELSE 15 END)]) AS SITBENEFICIARIO,
-        TRIM(colunas[SAFE_OFFSET(CASE WHEN qtd_cols = 35 THEN 17 ELSE 16 END)]) AS SITFAM,
-        SAFE.PARSE_DATE('%Y%m%d', TRIM(colunas[SAFE_OFFSET(CASE WHEN qtd_cols = 35 THEN 18 ELSE 17 END)])) AS INICIO_VIG_BENEF,
-        SAFE.PARSE_DATE('%Y%m%d', TRIM(colunas[SAFE_OFFSET(CASE WHEN qtd_cols = 35 THEN 19 ELSE 18 END)])) AS FIM_VIG_BENEF,
+        TRIM(colunas[SAFE_OFFSET(14)]) AS SITBENEFICIO,
+        TRIM(colunas[SAFE_OFFSET(15)]) AS SITBENEFICIARIO,
+        TRIM(colunas[SAFE_OFFSET(16)]) AS SITFAM,
+        SAFE.PARSE_DATE('%Y%m%d', TRIM(colunas[SAFE_OFFSET(17)])) AS INICIO_VIG_BENEF,
+        SAFE.PARSE_DATE('%Y%m%d', TRIM(colunas[SAFE_OFFSET(18)])) AS FIM_VIG_BENEF,
         
         -- Marcadores sociais e de renda
-        TRIM(colunas[SAFE_OFFSET(CASE WHEN qtd_cols = 35 THEN 20 ELSE 19 END)]) AS MARCA_RF,
-        TRIM(colunas[SAFE_OFFSET(CASE WHEN qtd_cols = 35 THEN 21 ELSE 20 END)]) AS QUILOMBOLA,
-        TRIM(colunas[SAFE_OFFSET(CASE WHEN qtd_cols = 35 THEN 22 ELSE 21 END)]) AS TRAB_ESCRV,
-        TRIM(colunas[SAFE_OFFSET(CASE WHEN qtd_cols = 35 THEN 23 ELSE 22 END)]) AS INDIGENA,
-        TRIM(colunas[SAFE_OFFSET(CASE WHEN qtd_cols = 35 THEN 24 ELSE 23 END)]) AS CATADOR_RECIC,
-        TRIM(colunas[SAFE_OFFSET(CASE WHEN qtd_cols = 35 THEN 25 ELSE 24 END)]) AS TRABALHO_INF,
+        TRIM(colunas[SAFE_OFFSET(19)]) AS MARCA_RF,
+        TRIM(colunas[SAFE_OFFSET(20)]) AS QUILOMBOLA,
+        TRIM(colunas[SAFE_OFFSET(21)]) AS TRAB_ESCRV,
+        TRIM(colunas[SAFE_OFFSET(22)]) AS INDIGENA,
+        TRIM(colunas[SAFE_OFFSET(23)]) AS CATADOR_RECIC,
+        TRIM(colunas[SAFE_OFFSET(24)]) AS TRABALHO_INF,
+        
+        -- Colunas 25+: offset +1 para layout de 35 colunas
         SAFE_CAST(REPLACE(TRIM(colunas[SAFE_OFFSET(CASE WHEN qtd_cols = 35 THEN 26 ELSE 25 END)]), ',', '.') AS NUMERIC) AS RENDA_PER_CAPITA,
         SAFE_CAST(REPLACE(TRIM(colunas[SAFE_OFFSET(CASE WHEN qtd_cols = 35 THEN 27 ELSE 26 END)]), ',', '.') AS NUMERIC) AS RENDA_COM_PBF,
         SAFE_CAST(TRIM(colunas[SAFE_OFFSET(CASE WHEN qtd_cols = 35 THEN 28 ELSE 27 END)]) AS INTEGER) AS QTD_PESSOAS,
