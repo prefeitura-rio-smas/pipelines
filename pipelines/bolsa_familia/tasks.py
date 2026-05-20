@@ -57,7 +57,7 @@ def identify_pending_files(
         logger.info(
             f"identify_pending_files | "
             f"{len(staging_partitions)} partition(s) in staging: "
-            f"{sorted(staging_partitions)[:5]}{'...' if len(staging_partitions) > 5 else ''}"
+            f"{sorted(staging_partitions)}"
         )
     except Exception:
         logger.info(
@@ -76,7 +76,7 @@ def identify_pending_files(
         logger.info(
             f"identify_pending_files | "
             f"{len(mart_partitions)} partition(s) in mart: "
-            f"{sorted(mart_partitions)[:5]}{'...' if len(mart_partitions) > 5 else ''}"
+            f"{sorted(mart_partitions)}"
         )
     except Exception:
         logger.info(
@@ -86,7 +86,7 @@ def identify_pending_files(
     logger.info(
         f"identify_pending_files | "
         f"{len(existing_partitions)} total existing partition(s): "
-        f"{sorted(existing_partitions)[:5]}{'...' if len(existing_partitions) > 5 else ''}"
+        f"{sorted(existing_partitions)}"
     )
 
     files_to_process = []
@@ -107,7 +107,7 @@ def identify_pending_files(
     if skipped:
         logger.info(
             f"identify_pending_files | Skipped {len(skipped)} file(s) "
-            f"with existing partitions: {skipped[:5]}{'...' if len(skipped) > 5 else ''}"
+            f"with existing partitions: {skipped}"
         )
 
     logger.info(
@@ -291,6 +291,16 @@ def _process_single_zip(blob: Blob, output_root: Path):
                             encoding='utf-8',
                             on_bad_lines='skip'
                         )
+
+                        # Log e filtra linhas vazias
+                        empty_rows = df['linha_bruta'].str.strip() == ''
+                        empty_count = int(empty_rows.sum())
+                        if empty_count > 0:
+                            logger.warning(
+                                f"_process_single_zip | {empty_count} empty row(s) found in "
+                                f"{extracted_file.name} (partition={partition}) — filtering out"
+                            )
+                        df = df[~empty_rows]
 
                         df['timestamp_captura'] = datetime.now(tz=UTC)
                         df['data_particao'] = partition
