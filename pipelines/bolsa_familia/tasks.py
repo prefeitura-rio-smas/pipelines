@@ -204,13 +204,11 @@ def process_and_upload_files(
 
     try:
         total_rows = 0
-        total_csv = 0
+        total_csvs = 0
         for blob in files:
-            rows, csvs = _process_single_zip(blob, output_directory)
+            rows, csv_count = _process_single_zip(blob, output_directory)
             total_rows += rows
-            total_csvs = total_csv + csvs
-            total_csv = total_csvs
-        total_csv = total_csv
+            total_csvs += csv_count
 
         client = storage.Client(project=settings.GCP_PROJECT)
         bucket = client.bucket(bucket_name)
@@ -306,6 +304,16 @@ def _process_single_zip(blob: Blob, output_root: Path):
                         df['data_particao'] = partition
 
                         df.to_csv(final_file, index=False, encoding='utf-8')
+                        with open(final_file, 'rb+') as f:
+                            f.seek(0, 2)
+                            while f.tell() > 0:
+                                f.seek(f.tell() - 1, 0)
+                                ch = f.read(1)
+                                if ch in (b'\n', b'\r'):
+                                    f.seek(f.tell() - 1)
+                                    f.truncate()
+                                else:
+                                    break
 
                         total_rows += len(df)
                         total_csvs += 1
@@ -400,8 +408,11 @@ def load_to_wap(
             source_format=bigquery.SourceFormat.CSV,
             skip_leading_rows=1,
             write_disposition="WRITE_TRUNCATE",
-            schema_update_options=[bigquery.SchemaUpdateOption.ALLOW_FIELD_ADDITION],
-            autodetect=True
+            schema=[
+                bigquery.SchemaField("linha_bruta", "STRING"),
+                bigquery.SchemaField("timestamp_captura", "TIMESTAMP"),
+                bigquery.SchemaField("data_particao", "DATE"),
+            ],
         )
 
         try:
