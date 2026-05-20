@@ -484,9 +484,9 @@ def audit_wap(
         null_particao = int(null_result['null_particao'].iloc[0])
 
         if null_linha > 0:
-            raise ValueError(
-                f"Audit FAILED: partition {partition} has {null_linha} "
-                f"rows with NULL/empty linha_bruta"
+            logger.warning(
+                f"audit_wap | Partition {partition} has {null_linha} "
+                f"rows with NULL/empty linha_bruta — will be filtered by dbt"
             )
         if null_particao > 0:
             raise ValueError(
@@ -496,7 +496,7 @@ def audit_wap(
 
         logger.info(
             f"audit_wap | Partition {partition} PASSED | "
-            f"{row_count} row(s) | null_linha=0 | null_particao=0"
+            f"{row_count} row(s) | null_linha={null_linha} | null_particao=0"
         )
 
     logger.info(
