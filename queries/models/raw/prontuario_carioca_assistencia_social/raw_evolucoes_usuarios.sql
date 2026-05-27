@@ -1,12 +1,12 @@
--- Camada Raw: Evoluções do módulo Paciente
+-- Camada Raw: Evoluções do módulo Usuário
 with source as (
     select
-        seqpac as id_paciente,
+        seqpac as id_usuario,
         sequs as id_unidade,
-        seqlogin as id_login,
-        dtevol as data_evolucao,
-        dscevol as descricao_evolucao,
-        indtpevol as tipo_evolucao
+        seqprof as id_profissional,
+        dtevopac as data_evolucao,
+        dscevopac as descricao_evolucao,
+        indtpevopac as tipo_evolucao
     from {{ source('brutos_acolherio_staging', 'gh_evolupac') }}
 )
 select * from source
