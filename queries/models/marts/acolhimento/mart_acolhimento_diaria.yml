@@ -1,0 +1,26 @@
+version: 2
+models:
+  - name: mart_acolhimento_diaria
+    description: |
+      Ocupação diária dos acolhimentos institucionais.
+      Grão: 1 linha por ciclo × data (explosão temporal via GENERATE_DATE_ARRAY).
+      Permite calcular headcount por dia, taxa de ocupação, e cruzamento com capacidade das unidades.
+    columns:
+      - name: id_acolhimento_sk
+        description: "Surrogate key do acolhimento (FK para fct_acolhimentos)."
+      - name: data_referencia
+        description: "Data de referência (cada dia do período de acolhimento)."
+      - name: ano
+        description: "Ano extraído da data_referencia."
+      - name: nome_usuario
+        description: "Nome do usuário acolhido."
+      - name: cpf
+        description: "CPF do usuário."
+      - name: flag_cpf
+        description: "Sim se o CPF está preenchido, Não caso contrário."
+      - name: nome_unidade
+        description: "Nome da unidade de acolhimento."
+      - name: total_vagas
+        description: "Total de vagas da unidade (com fallback auto-gestão)."
+      - name: vagas_disponiveis
+        description: "Vagas disponíveis = total_vagas - bloqueios."

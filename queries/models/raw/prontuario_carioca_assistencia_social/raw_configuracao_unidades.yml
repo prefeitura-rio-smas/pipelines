@@ -1,0 +1,16 @@
+version: 2
+models:
+  - name: raw_configuracao_unidades
+    description: "Configuração de leitos e bloqueios das unidades (gh_us_config)."
+    columns:
+      - name: id_unidade
+        description: "Identificador da unidade (sequs)."
+        tests: [unique, not_null]
+      - name: total_leitos
+        description: "Total de leitos cadastrados na unidade."
+      - name: leitos_bloqueados_infra
+        description: "Leitos bloqueados por problemas de infraestrutura."
+      - name: leitos_bloqueados_judiciais
+        description: "Leitos bloqueados por decisão judicial."
+      - name: flag_administra_leitos
+        description: "Indica se a unidade administra seus próprios leitos (S/N). Quando S, a capacidade real está em gh_us_smas."

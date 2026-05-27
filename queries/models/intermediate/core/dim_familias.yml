@@ -1,0 +1,6 @@
+version: 2
+models:
+  - name: dim_familias
+    columns:
+      - name: id_familia_sk
+        tests: [unique, not_null]

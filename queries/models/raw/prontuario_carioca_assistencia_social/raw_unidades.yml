@@ -7,5 +7,8 @@ models:
         description: "ID original da unidade (sequs)."
         tests:
           - not_null
+          - unique
       - name: nome_unidade
         description: "Nome descritivo da unidade."
+      - name: id_tipo_unidade
+        description: "Identificador do tipo de unidade (seqtipous), FK para raw_tipos_unidade."

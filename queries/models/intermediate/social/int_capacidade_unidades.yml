@@ -1,0 +1,15 @@
+version: 2
+models:
+  - name: int_capacidade_unidades
+    description: |
+      Capacidade operacional unificada das unidades de acolhimento.
+      Unifica gh_us_config (leitos/bloqueios) com gh_us_smas (vagas por gênero).
+      Unidades com flag_administra_leitos = 'S' usam gh_us_smas como fonte de vagas.
+    columns:
+      - name: id_unidade
+        description: "Identificador da unidade."
+        tests: [unique, not_null]
+      - name: total_vagas
+        description: "Total de vagas (considerando fallback para auto-gestão de leitos)."
+      - name: vagas_disponiveis
+        description: "Vagas disponíveis = total_vagas - bloqueios_infra - bloqueios_judiciais."

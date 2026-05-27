@@ -1,0 +1,12 @@
+version: 2
+
+sources:
+  - name: subpse_acolhimento
+    description: "Dataset externo com dados de SMS (Google Sheets) para apuração da meta de acolhimento."
+    database: rj-smas-dev
+    schema: subpse_acolhimento
+    tables:
+      - name: consolidado_sms_acolhimento
+        description: "Base externa (Google Sheets) com dados de acolhimento da SMS (Saúde)."
+      - name: consolidado_sms_acolhimento_2026
+        description: "Base externa (Google Sheets) com dados de acolhimento da SMS - 2026."

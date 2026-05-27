@@ -1,0 +1,6 @@
+version: 2
+models:
+  - name: fct_evolucoes
+    columns:
+      - name: id_evolucao_sk
+        tests: [unique, not_null]

@@ -1,0 +1,19 @@
+version: 2
+
+models:
+  - name: encaminhamentos_unidade
+    description: "Contagem de encaminhamentos para CRAS e CREAS por unidade (RMA)."
+    columns:
+      - name: id_unidade_sk
+        description: "Surrogate key da unidade."
+        tests:
+          - not_null
+          - unique
+      - name: nome_unidade
+        description: "Nome descritivo da unidade no banco de dados."
+      - name: nome_canonico
+        description: "Nome canônico da unidade conforme lista RMA."
+      - name: encaminhamento_cras
+        description: "Total de usuários distintos com encaminhamento para CRAS."
+      - name: encaminhamento_creas
+        description: "Total de usuários distintos com encaminhamento para CREAS."

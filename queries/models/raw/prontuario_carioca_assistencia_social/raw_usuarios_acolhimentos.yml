@@ -1,4 +1,32 @@
 version: 2
 models:
   - name: raw_usuarios_acolhimentos
-    description: "Registros de ciclos de acolhimento institucional (entrada e saída)."
+    description: "Registros de ciclos de acolhimento institucional (entrada e saída). Fonte: gh_pac_ciclos."
+    columns:
+      - name: id_ciclo
+        description: "Identificador único do ciclo de acolhimento (seqciclo)."
+        tests: [unique, not_null]
+      - name: id_usuario
+        description: "Identificador do usuário acolhido (seqpac)."
+      - name: id_unidade
+        description: "Identificador da unidade de acolhimento (sequs)."
+      - name: data_entrada
+        description: "Data de entrada no acolhimento."
+      - name: hora_entrada
+        description: "Hora de entrada no acolhimento."
+      - name: data_saida
+        description: "Data de saída/desligamento do acolhimento."
+      - name: hora_saida
+        description: "Hora de saída/desligamento do acolhimento."
+      - name: id_unidade_saida
+        description: "Identificador da unidade para onde foi transferido (quando aplicável)."
+      - name: id_usuario_origem
+        description: "Identificador do usuário original (para casos de reagrupamento/unificação)."
+      - name: id_login_entrada
+        description: "Identificador do operador que realizou o cadastro de entrada."
+      - name: id_login_saida
+        description: "Identificador do operador que realizou o cadastro de saída."
+      - name: indicador_ciclo
+        description: "Indicador do ciclo. C = ciclo atual (em acolhimento), E = encerrado."
+      - name: motivo_saida
+        description: "Código do motivo de saída/desligamento."

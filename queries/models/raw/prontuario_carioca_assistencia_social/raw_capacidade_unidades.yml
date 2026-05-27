@@ -1,0 +1,22 @@
+version: 2
+models:
+  - name: raw_capacidade_unidades
+    description: "Capacidade operacional das unidades SMAS (gh_us_smas). Vagas por gênero, público-alvo e abrangência."
+    columns:
+      - name: id_unidade
+        description: "Identificador da unidade (sequs)."
+        tests: [unique, not_null]
+      - name: tipo_publico
+        description: "Público-alvo da unidade. A=Adulto, F=Família, I=Idoso. Pode conter combinações (ex: I,A,F)."
+      - name: flag_acessibilidade
+        description: "Indicador de acessibilidade (S/N)."
+      - name: vagas_homens
+        description: "Vagas disponíveis para o público masculino."
+      - name: vagas_mulheres
+        description: "Vagas disponíveis para o público feminino."
+      - name: vagas_neutras
+        description: "Vagas neutras (sem distinção de gênero)."
+      - name: grau_dependencia
+        description: "Grau de dependência atendido (ex: 1, 2, 3 para idoso)."
+      - name: abrangencia
+        description: "Abrangência do atendimento (H=municipal, M=regional)."

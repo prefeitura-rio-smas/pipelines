@@ -1,0 +1,6 @@
+version: 2
+models:
+  - name: dim_usuarios
+    columns:
+      - name: id_usuario_sk
+        tests: [unique, not_null]

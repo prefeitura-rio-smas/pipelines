@@ -1,0 +1,16 @@
+version: 2
+models:
+  - name: dim_unidades
+    columns:
+      - name: id_unidade_sk
+        tests: [unique, not_null]
+      - name: id_unidade
+        tests: [unique, not_null]
+      - name: nome_tipo
+        description: "Nome do tipo de unidade (ex: Albergue, CRAS, URS)."
+      - name: classe
+        description: "Classe da unidade (E1=Acolhimento, E2=Média Complexidade, etc.)."
+      - name: total_vagas
+        description: "Total de vagas (considerando fallback auto-gestão)."
+      - name: vagas_disponiveis
+        description: "Vagas disponíveis = total_vagas - bloqueios."

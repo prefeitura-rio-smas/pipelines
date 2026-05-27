@@ -7,7 +7,8 @@ with source as (
         dscus as nome_unidade,
         apus as cas,
         siguf as uf,
-        esfera
+        esfera,
+        seqtipous as id_tipo_unidade
     from {{ source('brutos_acolherio_staging', 'gh_us') }}
 )
 

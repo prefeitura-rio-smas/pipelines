@@ -1,0 +1,26 @@
+version: 2
+models:
+  - name: fct_acolhimentos
+    description: "Fato de acolhimentos institucionais. Grão: 1 linha por ciclo de acolhimento. Contém surrogate keys para usuário, unidade de entrada e unidade de saída."
+    columns:
+      - name: id_acolhimento_sk
+        description: "Surrogate key do acolhimento."
+        tests: [unique, not_null]
+      - name: id_usuario_sk
+        description: "Surrogate key do usuário acolhido."
+      - name: id_unidade_sk
+        description: "Surrogate key da unidade de acolhimento."
+      - name: id_ciclo
+        description: "ID original do ciclo de acolhimento (seqciclo)."
+      - name: data_entrada
+        description: "Data de entrada no acolhimento."
+      - name: data_saida
+        description: "Data de saída do acolhimento."
+      - name: dias_acolhimento
+        description: "Duração do acolhimento em dias (data_saida - data_entrada)."
+      - name: flag_em_acolhimento
+        description: "1 se ainda está acolhido (data_saida is null), 0 caso contrário."
+      - name: indicador_ciclo
+        description: "C = ciclo atual, E = encerrado."
+      - name: motivo_saida
+        description: "Código do motivo de saída."

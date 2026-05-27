@@ -1,0 +1,6 @@
+version: 2
+models:
+  - name: fct_atendimentos
+    columns:
+      - name: id_atendimento_sk
+        tests: [unique, not_null]

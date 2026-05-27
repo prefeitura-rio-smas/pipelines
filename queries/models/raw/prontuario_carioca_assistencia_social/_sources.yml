@@ -46,3 +46,9 @@ sources:
         description: "Evoluções das famílias."
       - name: gh_famil_vulnerab
         description: "Registros de vulnerabilidades das famílias."
+      - name: gh_us_tipo
+        description: "Tipos de unidade (classificação E1, E2, EA, EG)."
+      - name: gh_us_config
+        description: "Configuração de leitos, bloqueios e gestão de vagas das unidades."
+      - name: gh_us_smas
+        description: "Capacidade operacional SMAS: vagas por gênero, público-alvo e abrangência."

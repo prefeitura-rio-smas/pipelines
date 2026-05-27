@@ -1,0 +1,6 @@
+version: 2
+models:
+  - name: dim_profissionais
+    columns:
+      - name: id_profissional_sk
+        tests: [unique, not_null]
