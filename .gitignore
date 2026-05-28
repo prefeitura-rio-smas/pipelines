@@ -69,3 +69,4 @@ logs/
 .Trashes
 ehthumbs.db
 Thumbs.db
+queries/models/aux/
