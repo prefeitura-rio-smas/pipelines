@@ -300,15 +300,6 @@ def _process_single_zip(blob: Blob, output_root: Path):
                             )
                         df = df[~empty_rows]
 
-                        header_mask = df['linha_bruta'].str.split(';').str[0].str.match(r'^\d+$')
-                        header_count = int((~header_mask).sum())
-                        if header_count > 0:
-                            logger.warning(
-                                f"_process_single_zip | {header_count} non-data row(s) (header/footer) "
-                                f"found in {extracted_file.name} (partition={partition}) — filtering out"
-                                )
-                        df = df[header_mask]
-
                         df['timestamp_captura'] = datetime.now(tz=UTC)
                         df['data_particao'] = partition
 
