@@ -1,4 +1,4 @@
-{{ config(materialized = 'ephemeral') }}
+{{ config(materialized = 'table') }}
 
 -- ==========================================================
 -- Dedup via grafo recursivo com 6 regras de matching exato
