@@ -281,5 +281,21 @@ models:
         description: ""
       - name: created_user
         description: ""
+      - name: key_cpf
+        description: "CPF normalizado (somente digitos) para dedup"
+      - name: key_nome_usuario
+        description: "Nome do usuario normalizado (sem acentos, stop-words) para dedup"
+      - name: key_nome_mae
+        description: "Nome da mae normalizado (sem acentos, stop-words) para dedup"
+      - name: key_nome_pai
+        description: "Nome do pai normalizado (sem acentos, stop-words) para dedup"
 
-
+  - name: abordagem_repeat_dedup
+    description: "Dedup via grafo recursivo com 6 regras de matching exato"
+    columns:
+      - name: globalid
+        description: ""
+      - name: cluster_id
+        description: "ID consolidado do cluster (recursive graph)"
+      - name: is_duplicado
+        description: "TRUE se o registro pertence a um cluster com 2+ registros"
