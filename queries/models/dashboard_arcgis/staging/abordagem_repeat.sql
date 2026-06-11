@@ -149,6 +149,7 @@ SELECT
   flag_desemprego_dos_pais,
   flag_transtorno_psiquiatrico,
   flag_uso_drogas_ilicitas,
+  qual_substancia_psicoativa,
   flag_trabalho_infantil,
   flag_exploracao_sexual,
   flag_egresso_sistema_prisional,

@@ -91,6 +91,8 @@ models:
         description: ""
       - name: flag_uso_drogas_ilicitas
         description: ""
+      - name: qual_substancia_psicoativa
+        description: "Substancias psicoativas utilizadas (lista separada por virgula)"
       - name: flag_trabalho_infantil
         description: ""
       - name: flag_exploracao_sexual
