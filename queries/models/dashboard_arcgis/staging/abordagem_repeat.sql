@@ -149,6 +149,7 @@ SELECT
   flag_desemprego_dos_pais,
   flag_transtorno_psiquiatrico,
   flag_uso_drogas_ilicitas,
+  qual_substancia_psicoativa,
   flag_trabalho_infantil,
   flag_exploracao_sexual,
   flag_egresso_sistema_prisional,
@@ -367,6 +368,44 @@ SELECT
   flg_encam_outros,
   parentrowid,
   created_user,
-  resp_atendimento
+  resp_atendimento,
+
+  REGEXP_REPLACE(COALESCE(repeat_cpf, ''), r'\D', '') as key_cpf,
+  UPPER(REGEXP_REPLACE(
+    ARRAY_TO_STRING(
+      ARRAY(
+        SELECT w FROM UNNEST(SPLIT(
+          REGEXP_REPLACE(
+            REGEXP_REPLACE(NORMALIZE(COALESCE(repeat_nome_usuario, ''), NFD), r'\p{M}', ''), 
+            r'[^a-zA-Z0-9]', ' ')
+          , ' ')
+        ) w 
+        WHERE UPPER(w) NOT IN ('DE','DA','DO','DAS','DOS','E','A','O','OS','AS')
+      ), '')
+    , r'[^A-Z0-9]', '')) as key_nome_usuario,
+  UPPER(REGEXP_REPLACE(
+    ARRAY_TO_STRING(
+      ARRAY(
+        SELECT w FROM UNNEST(SPLIT(
+          REGEXP_REPLACE(
+            REGEXP_REPLACE(NORMALIZE(COALESCE(repeat_nome_mae, ''), NFD), r'\p{M}', ''), 
+            r'[^a-zA-Z0-9]', ' ')
+          , ' ')
+        ) w 
+        WHERE UPPER(w) NOT IN ('DE','DA','DO','DAS','DOS','E','A','O','OS','AS')
+      ), '')
+    , r'[^A-Z0-9]', '')) as key_nome_mae,
+  UPPER(REGEXP_REPLACE(
+    ARRAY_TO_STRING(
+      ARRAY(
+        SELECT w FROM UNNEST(SPLIT(
+          REGEXP_REPLACE(
+            REGEXP_REPLACE(NORMALIZE(COALESCE(repeat_nome_pai, ''), NFD), r'\p{M}', ''), 
+            r'[^a-zA-Z0-9]', ' ')
+          , ' ')
+        ) w 
+        WHERE UPPER(w) NOT IN ('DE','DA','DO','DAS','DOS','E','A','O','OS','AS')
+      ), '')
+    , r'[^A-Z0-9]', '')) as key_nome_pai
 
   FROM {{ source('arcgis_raw', 'abordagem_repeat_raw') }}
