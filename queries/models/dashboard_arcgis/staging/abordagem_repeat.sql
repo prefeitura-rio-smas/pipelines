@@ -24,11 +24,14 @@ SELECT
    END AS repeat_unidade_calculo_tratada,
   repeat_unidade_cas,
   repeat_nome_usuario,
+  repeat_nome_social,
   repeat_cpf,
 
   SAFE.PARSE_DATE('%d/%m/%Y', repeat_data_nascimento) AS repeat_data_nascimento,
   repeat_data_nascimento_iso,
   repeat_grupo_familiar,
+  crianca_adoles_com_responsavel,
+  grau_parentesco,
 
   repeat_idade,
   repeat_faixa_etaria,
@@ -72,6 +75,7 @@ SELECT
 
   ano_mes_data_abordagem,
   bairro_abord,
+  complemento_abord,
 
   CONCAT(y, ', ', x) AS coordenadas,
 
