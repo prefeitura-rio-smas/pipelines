@@ -25,7 +25,13 @@ models:
         description: ""
       - name: repeat_grupo_familiar
         description: ""
+      - name: crianca_adoles_com_responsavel
+        description: ""
+      - name: grau_parentesco
+        description: ""
       - name: repeat_nome_usuario
+        description: ""
+      - name: repeat_nome_social
         description: ""
       - name: repeat_data_nascimento
         description: ""
@@ -56,6 +62,8 @@ models:
       - name: ano_mes_data_abordagem
         description: ""
       - name: bairro_abord
+        description: ""
+      - name: complemento_abord
         description: ""
       - name: coordenadas
         description: ""
