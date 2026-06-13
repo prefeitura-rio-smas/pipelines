@@ -3,7 +3,8 @@ SELECT
   e.cas,
   e.e_mail,
   c.cluster_id,
-  c.is_duplicado  
+  c.is_duplicado,
+  f.objectid AS ficha_objectid
 FROM 
   {{ ref('abordagem_repeat') }} as r
 LEFT JOIN 
@@ -14,3 +15,7 @@ LEFT JOIN
   {{ ref('abordagem_repeat_dedup') }} as c
 ON
   r.globalid = c.globalid
+LEFT JOIN 
+  {{ ref('abordagem_ficha') }} as f
+ON
+  r.parentrowid = CAST(f.objectid AS STRING)

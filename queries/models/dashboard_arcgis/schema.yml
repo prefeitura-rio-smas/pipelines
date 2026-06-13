@@ -4,6 +4,7 @@ sources:
   - name: arcgis_raw
     schema: arcgis_raw
     tables:
+      - name: abordagem_raw
       - name: abordagem_repeat_raw
       - name: gestao_vagas_repeat_raw
 
