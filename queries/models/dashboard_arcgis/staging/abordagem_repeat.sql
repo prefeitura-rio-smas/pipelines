@@ -137,7 +137,7 @@ SELECT
    WHEN tempo_permanencia = 'de_6_a_10_anos' THEN 'De 6 a 10 anos'
    WHEN tempo_permanencia = 'de_3_a_6_meses' THEN 'De 3 a 6 meses'
    WHEN tempo_permanencia = 'mais_de_10_anos' THEN 'Mais de 10 anos'
-   WHEN tempo_permanencia = 'de_7_a_30_dias' THEN 'De 7 a 30 anos'
+    WHEN tempo_permanencia = 'de_7_a_30_dias' THEN 'De 7 a 30 dias'
    WHEN tempo_permanencia = 'de_3_a_7_dias' THEN 'De 3 a 7 dias'
    WHEN tempo_permanencia = 'ns_nr' THEN 'NS/NR'
    ELSE tempo_permanencia
