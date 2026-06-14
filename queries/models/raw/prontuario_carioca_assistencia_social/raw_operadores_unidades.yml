@@ -1,0 +1,13 @@
+version: 2
+models:
+  - name: raw_operadores_unidades
+    description: "Vínculo entre contas de operadores e unidades."
+    columns:
+      - name: id_login
+        description: "ID da conta do operador (FK para raw_operadores)."
+        tests:
+          - not_null
+      - name: id_unidade
+        description: "ID da unidade (FK para raw_unidades)."
+        tests:
+          - not_null

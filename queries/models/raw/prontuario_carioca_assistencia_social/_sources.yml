@@ -36,6 +36,8 @@ sources:
         description: "Tipos de atendimento configurados."
       - name: gh_contas
         description: "Contas de operadores do sistema."
+      - name: gh_contas_us
+        description: "Vínculo entre contas de operadores e unidades (seqlogin → sequs)."
       - name: gh_pacientes_sm
         description: "Dados do módulo de Saúde Mental."
       - name: gh_evoluadm
