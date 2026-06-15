@@ -8,7 +8,7 @@ import pandas as pd
 import prefect
 from prefect import task
 import requests
-from shapely.geometry import LineString, Point, Polygon
+from shapely.geometry import LineString, MultiPoint, Point, Polygon
 
 from .utils import _get_arcgis_token, add_timestamp, bq_client, dataset_ref, resolve_arcgis_url
 
@@ -149,6 +149,15 @@ def arcgis_to_bq_schema(arcgis_fields: list, return_geometry: bool) -> list:
     return bq_schema
 
 
+def safe_buffer(geom):
+    """buffer(0) para corrigir geometrias invalidas (Polygon), sem corromper Point."""
+    if geom is None:
+        return None
+    if isinstance(geom, (Point, MultiPoint)):
+        return geom
+    return geom.buffer(0)
+
+
 @task
 def load_arcgis_to_bigquery(
     *,
@@ -243,9 +252,7 @@ def load_arcgis_to_bigquery(
 
             if return_geometry and "geometry" in batch_df.columns:
                 gdf = gpd.GeoDataFrame(batch_df, geometry='geometry')
-                gdf.geometry = gdf.geometry.apply(
-                    lambda g: g if isinstance(g, Point) else g.buffer(0)
-                )
+                gdf.geometry = gdf.geometry.apply(safe_buffer)
                 if not gdf.empty:
                     first_geom = gdf.geometry.dropna().iloc[0] if not gdf.geometry.dropna().empty else None
                     if first_geom:
