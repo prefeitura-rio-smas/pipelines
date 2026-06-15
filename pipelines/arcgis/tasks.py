@@ -231,7 +231,7 @@ def load_arcgis_to_bigquery(
             for feature in features:
                 attributes = feature.get("attributes", {})
                 if return_geometry:
-                    geometry_data = feature.get("geometry", {})
+                    geometry_data = feature.get("geometry") or {}
                     geom = None
                     if "rings" in geometry_data: geom = Polygon(geometry_data["rings"][0], geometry_data["rings"][1:])
                     elif "x" in geometry_data and "y" in geometry_data: geom = Point(geometry_data.get("x"), geometry_data.get("y"))
