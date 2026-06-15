@@ -76,8 +76,12 @@ SELECT
   ano_mes_data_abordagem,
   bairro_abord,
   complemento_abord,
+  endereco_abord,
 
   CONCAT(y, ', ', x) AS coordenadas,
+  latitude,
+  longitude,
+  geometry,
 
   CASE
    WHEN note_creas = 'CREAS Janete Clair' THEN 'Creas Janete Clair'
