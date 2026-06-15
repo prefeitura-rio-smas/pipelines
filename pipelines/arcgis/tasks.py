@@ -243,7 +243,9 @@ def load_arcgis_to_bigquery(
 
             if return_geometry and "geometry" in batch_df.columns:
                 gdf = gpd.GeoDataFrame(batch_df, geometry='geometry')
-                gdf.geometry = gdf.geometry.buffer(0)
+                gdf.geometry = gdf.geometry.apply(
+                    lambda g: g if isinstance(g, Point) else g.buffer(0)
+                )
                 if not gdf.empty:
                     first_geom = gdf.geometry.dropna().iloc[0] if not gdf.geometry.dropna().empty else None
                     if first_geom:
