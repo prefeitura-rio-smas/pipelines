@@ -13,7 +13,7 @@ def abordagem_flow() -> None:
     # Configuration for this product
     job_name = "abordagem"
     item_id = "6832ff4ca54c4608b169682ae3a5b088"
-    return_geometry = False
+    return_geometry = True
     batch_size = 20000
     order_by_field = "objectid"
 
