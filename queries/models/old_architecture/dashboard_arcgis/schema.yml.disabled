@@ -66,8 +66,16 @@ models:
         description: ""
       - name: complemento_abord
         description: ""
+      - name: endereco_abord
+        description: "Endereco descritivo da abordagem"
       - name: coordenadas
         description: ""
+      - name: latitude
+        description: "Latitude extraida do SHAPE ArcGIS"
+      - name: longitude
+        description: "Longitude extraida do SHAPE ArcGIS"
+      - name: geometry
+        description: "Geometria nativa (GEOGRAPHY) do ArcGIS"
       - name: note_creas_tratada
         description: ""
       - name: resp_abordagem
