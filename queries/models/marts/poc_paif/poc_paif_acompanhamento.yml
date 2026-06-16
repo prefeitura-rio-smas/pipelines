@@ -1,0 +1,42 @@
+version: 2
+
+models:
+  - name: poc_paif_acompanhamento
+    description: >
+      PoC para o indicador "acompanhado pelo PAIF". Consolida dados de duas origens:
+      (1) evoluções do módulo PLAN_ACOMP_FAM (codabapac=7) no prontuário familiar, e
+      (2) vínculo de serviço assistencial PAIF (id_servico_assistencial=1).
+      Granularidade: 1 linha por pessoa (id_paciente).
+    columns:
+      - name: id_paciente
+        description: "Identificador único da pessoa (indivíduo)."
+        tests:
+          - not_null
+      - name: id_familia
+        description: "Identificador da família."
+        tests:
+          - not_null
+      - name: id_unidade
+        description: "Identificador da unidade (CRAS/CREAS) que realizou o acompanhamento."
+      - name: nome_unidade
+        description: "Nome da unidade."
+      - name: tipo_unidade
+        description: "Tipo da unidade (26=CRAS, 13=CREAS, etc)."
+      - name: flag_paif_evolucao
+        description: "TRUE se a pessoa possui ao menos uma evolução no módulo PLAN_ACOMP_FAM (codabapac=7)."
+      - name: flag_paif_servico
+        description: "TRUE se a família está vinculada ao serviço assistencial PAIF (id_servico_assistencial=1)."
+      - name: flag_paif_origem
+        description: "Origem do indicador: 'evolucao', 'servico', ou 'ambos'."
+      - name: data_primeira_evolucao
+        description: "Data da primeira evolução PAIF registrada."
+      - name: data_ultima_evolucao
+        description: "Data da última evolução PAIF registrada."
+      - name: data_desligamento
+        description: "Data de desligamento do PAIF (quando indtpevopac='D'). NULL se ainda ativo."
+      - name: flag_desligado
+        description: "TRUE se houve evolução de desligamento (indtpevopac='D')."
+      - name: id_profissional
+        description: "Profissional responsável pela última evolução."
+      - name: total_evolucoes
+        description: "Número total de evoluções PAIF para esta pessoa."

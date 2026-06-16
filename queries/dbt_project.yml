@@ -19,6 +19,10 @@ models:
     marts:
       +materialized: table
       +schema: "{{ 'marts' if target.name == 'prod' else 'relatorio' }}"
+      
+      poc_paif:
+        +materialized: table
+        +schema: "{{ 'marts' if target.name == 'prod' else 'relatorio' }}"
 
     # --- Arquitetura Antiga (Legacy) ---
     old_architecture:
