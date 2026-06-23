@@ -62,6 +62,7 @@ models:
               +schema: "{{ 'dashboard_arcgis' if target.name == 'prod' else 'relatorio' }}"
       
       bolsa_familia:
+        +enabled: true
         +materialized: table
         +schema: "{{ 'bolsa_familia' if target.name == 'prod' else 'gerenciamento__dbt' }}"
       

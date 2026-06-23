@@ -16,25 +16,37 @@ def abordagem_flow() -> None:
     return_geometry = False
     batch_size = 20000
     order_by_field = "objectid"
-    layer_name = "repeat"
-    layer_idx = 1
 
+    # 1. Extrai ficha principal (layer 0) → abordagem_raw
     load_arcgis_to_bigquery(
         job_name=job_name,
-        layer_name=layer_name,
+        layer_name=None,
         item_id=item_id,
-        layer_idx=layer_idx,
+        layer_idx=0,
         return_geometry=return_geometry,
         batch_size=batch_size,
         order_by_field=order_by_field,
     )
 
+    # 2. Extrai repeat (layer 1) → abordagem_repeat_raw
+    load_arcgis_to_bigquery(
+        job_name=job_name,
+        layer_name="repeat",
+        item_id=item_id,
+        layer_idx=1,
+        return_geometry=return_geometry,
+        batch_size=batch_size,
+        order_by_field=order_by_field,
+    )
+
+    # 3. Executa dbt
     dbt_target = os.getenv("MODE", "staging")
     trigger_dbt_cli_command(
-        command=f"dbt run --select abordagem --target {dbt_target}",
+        command=f"dbt run --select +abordagem --target {dbt_target}",
         project_dir="queries",
         profiles_dir="queries",
     )
+
 
 if __name__ == "__main__":
     abordagem_flow()

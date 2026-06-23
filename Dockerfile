@@ -16,6 +16,9 @@ RUN uv pip compile pyproject.toml -o requirements.txt && \
 COPY . /app
 COPY queries/profiles.yml /app/queries/profiles.yml
 
+# Instala as dependências do dbt
+RUN dbt deps --project-dir queries --profiles-dir queries
+
 # Configura variável de ambiente do DBT
 ENV DBT_PROFILES_DIR=/app/queries
 

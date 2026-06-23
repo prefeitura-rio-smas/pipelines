@@ -4,6 +4,7 @@ sources:
   - name: arcgis_raw
     schema: arcgis_raw
     tables:
+      - name: abordagem_raw
       - name: abordagem_repeat_raw
       - name: gestao_vagas_repeat_raw
 
@@ -25,7 +26,13 @@ models:
         description: ""
       - name: repeat_grupo_familiar
         description: ""
+      - name: crianca_adoles_com_responsavel
+        description: ""
+      - name: grau_parentesco
+        description: ""
       - name: repeat_nome_usuario
+        description: ""
+      - name: repeat_nome_social
         description: ""
       - name: repeat_data_nascimento
         description: ""
@@ -56,6 +63,8 @@ models:
       - name: ano_mes_data_abordagem
         description: ""
       - name: bairro_abord
+        description: ""
+      - name: complemento_abord
         description: ""
       - name: coordenadas
         description: ""
@@ -91,6 +100,8 @@ models:
         description: ""
       - name: flag_uso_drogas_ilicitas
         description: ""
+      - name: qual_substancia_psicoativa
+        description: "Substancias psicoativas utilizadas (lista separada por virgula)"
       - name: flag_trabalho_infantil
         description: ""
       - name: flag_exploracao_sexual
@@ -281,5 +292,21 @@ models:
         description: ""
       - name: created_user
         description: ""
+      - name: key_cpf
+        description: "CPF normalizado (somente digitos) para dedup"
+      - name: key_nome_usuario
+        description: "Nome do usuario normalizado (sem acentos, stop-words) para dedup"
+      - name: key_nome_mae
+        description: "Nome da mae normalizado (sem acentos, stop-words) para dedup"
+      - name: key_nome_pai
+        description: "Nome do pai normalizado (sem acentos, stop-words) para dedup"
 
-
+  - name: abordagem_repeat_dedup
+    description: "Dedup via grafo recursivo com 6 regras de matching exato"
+    columns:
+      - name: globalid
+        description: ""
+      - name: cluster_id
+        description: "ID consolidado do cluster (recursive graph)"
+      - name: is_duplicado
+        description: "TRUE se o registro pertence a um cluster com 2+ registros"
