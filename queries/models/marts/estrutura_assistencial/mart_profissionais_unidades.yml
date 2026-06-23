@@ -4,45 +4,39 @@ models:
   - name: mart_profissionais_unidades
     description: |
       Mart de profissionais vinculados às unidades do sistema.
-      Grão: 1 linha por (conta × unidade × CBO).
-      Select simples sobre int_profissionais_unidades com acréscimo
-      da surrogate key id_profissional_unidade_sk.
-      Toda a lógica de negócio (joins, agregação de CBO, filtro anti-teste)
-      está na camada intermediate.
+      Segue o padrão star schema: tabela de associação (fact-less)
+      que referencia as dimensões dim_profissionais e dim_unidades
+      através da tabela raw_operadores_unidades.
+      Grão: 1 linha por (profissional × unidade).
+      CBOs aparecem agregados via dim_profissionais (STRING_AGG).
+      Inclui perfil de acesso, status da conta e unidades de atuação do operador.
     columns:
       - name: id_profissional_unidade_sk
-        description: "Surrogate key única da linha (id_login + id_unidade + cbo_codigo)."
+        description: "Surrogate key única da associação (hash de id_profissional + id_unidade)."
         tests:
           - not_null
           - unique
 
-      - name: id_login
-        description: "ID da conta do operador (seqlogin). FK para raw_operadores."
-        tests:
-          - not_null
-
-      - name: id_unidade
-        description: "ID da unidade (sequs). FK para raw_unidades."
-        tests:
-          - not_null
-
-      - name: nome_unidade
-        description: "Nome descritivo da unidade (dscus)."
-
-      - name: territorio
-        description: "CAS / território da unidade (apus)."
+      - name: id_profissional_sk
+        description: "Surrogate key do profissional (FK para dim_profissionais)."
 
       - name: id_profissional
-        description: "ID do profissional (seqprof). FK para raw_profissionais."
+        description: "ID natural do profissional (seqprof)."
+
+      - name: id_login
+        description: "ID da conta do operador (seqlogin)."
 
       - name: nome_profissional
-        description: "Nome do profissional/operador (nompess da gh_contas, fallback para nomeprof da gh_prof)."
+        description: "Nome do profissional (coalesce nome_operador → nome)."
 
       - name: cpf
         description: "CPF do profissional."
 
-      - name: email
-        description: "E-mail da conta do operador (dscemail da gh_contas)."
+      - name: email_profissional
+        description: "E-mail cadastrado no perfil do profissional."
+
+      - name: email_operador
+        description: "E-mail da conta do operador."
 
       - name: telefone
         description: "Telefone do profissional."
@@ -51,16 +45,64 @@ models:
         description: "Matrícula do profissional."
 
       - name: flag_ativo
-        description: "Indicador de profissional ativo (indativo da gh_prof). Sim/Não."
+        description: "Indicador de profissional ativo. Sim / Não."
 
-      - name: cbo_codigo
-        description: "Código da CBO (Classificação Brasileira de Ocupações)."
+      - name: login_operador
+        description: "Login de acesso ao sistema."
 
-      - name: cbo_descricao
-        description: "Descrição da CBO."
+      - name: qtde_cbos
+        description: "Quantidade de CBOs do profissional."
 
-      - name: data_cadastro
+      - name: codigos_cbo
+        description: "Códigos CBO concatenados (STRING_AGG)."
+
+      - name: descricoes_cbo
+        description: "Descrições CBO concatenadas (STRING_AGG)."
+
+      - name: flag_multi_cbo
+        description: "Indica se o profissional possui múltiplos CBOs. Sim / Não."
+
+      - name: data_cadastro_conta
         description: "Data de cadastro da conta do operador."
 
       - name: data_ultimo_acesso
         description: "Data do último acesso da conta do operador."
+
+      - name: dias_ultimo_acesso
+        description: "Número de dias desde o último acesso da conta."
+
+      - name: nivel_conta
+        description: "Código do perfil de acesso (indnivel da gh_contas). Valores: 1-99."
+
+      - name: perfil_acesso
+        description: "Descrição do perfil de acesso (ex: Profissional de Nível Médio, Gestor local, MASTER)."
+
+      - name: status_conta_codigo
+        description: "Código do status da conta (indstatuser da gh_contas). Valores: '0'-'4'."
+
+      - name: status_conta
+        description: "Descrição do status da conta (ex: Ativo, Inativo, Bloqueado, Trocar senha)."
+
+      - name: unidades_atuacao
+        description: "Lista de nomes de unidades onde o profissional atua, propagada da dim_profissionais."
+
+      - name: qtde_unidades
+        description: "Quantidade de unidades onde o profissional possui vínculo, propagada da dim_profissionais."
+
+      - name: id_unidade_sk
+        description: "Surrogate key da unidade (FK para dim_unidades)."
+
+      - name: id_unidade
+        description: "ID natural da unidade (sequs)."
+
+      - name: nome_unidade
+        description: "Nome descritivo da unidade."
+
+      - name: territorio
+        description: "CAS / território da unidade."
+
+      - name: tipo_unidade
+        description: "Tipo da unidade (ex: CRAS, CREAS, Acolhimento)."
+
+      - name: classe_unidade
+        description: "Classe da unidade (ex: Pública, Privada)."

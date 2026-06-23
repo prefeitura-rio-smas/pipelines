@@ -1,6 +1,105 @@
 version: 2
+
 models:
   - name: dim_profissionais
+    description: |
+      Dimensão de profissionais do Prontuário Carioca de Assistência Social.
+      Grão: 1 linha por profissional.
+      Inclui dados da conta do operador, CBOs agregados (com STRING_AGG),
+      perfil de acesso, status da conta e unidades de atuação.
     columns:
       - name: id_profissional_sk
-        tests: [unique, not_null]
+        description: "Surrogate key única do profissional (hash do id_profissional)."
+        tests:
+          - unique
+          - not_null
+
+      - name: id_profissional
+        description: "ID natural do profissional (seqprof da gh_prof)."
+        tests:
+          - not_null
+
+      - name: id_login
+        description: "ID da conta do operador vinculada ao profissional (seqlogin da gh_contas). FK para raw_operadores."
+
+      - name: nome
+        description: "Nome do profissional. Usa nome_operador (gh_contas) com fallback para nome (gh_prof)."
+
+      - name: cpf
+        description: "CPF do profissional (cpfprof da gh_prof)."
+
+      - name: matricula
+        description: "Matrícula do profissional (matrprof da gh_prof)."
+
+      - name: email_profissional
+        description: "E-mail cadastrado no perfil do profissional (emailprof da gh_prof)."
+
+      - name: email_operador
+        description: "E-mail da conta do operador (dscemail da gh_contas)."
+
+      - name: telefone
+        description: "Telefone do profissional (dsctel da gh_prof)."
+
+      - name: flag_ativo
+        description: "Indicador de profissional ativo (indativo da gh_prof). Valores: Sim / Não."
+
+      - name: login_operador
+        description: "Login de acesso ao sistema (dsclogin da gh_contas)."
+
+      - name: data_cadastro_conta
+        description: "Data de cadastro da conta do operador (datcadastro da gh_contas)."
+
+      - name: data_ultimo_acesso
+        description: "Data do último acesso da conta do operador (datultacess da gh_contas)."
+
+      - name: dias_ultimo_acesso
+        description: "Número de dias desde o último acesso da conta. Calculado como DATE_DIFF entre CURRENT_DATE() e data_ultimo_acesso. Valores negativos ou nulos indicam ausência de registro de acesso."
+
+      - name: qtde_cbos
+        description: "Quantidade de CBOs vinculados ao profissional. 0 se não houver CBO cadastrado."
+
+      - name: codigos_cbo
+        description: "Lista de códigos CBO concatenados com ' | ' em ordem crescente. NULL se não houver CBO."
+
+      - name: descricoes_cbo
+        description: "Lista de descrições CBO concatenadas com ' | ' na mesma ordem dos códigos. NULL se não houver CBO."
+
+      - name: flag_multi_cbo
+        description: "Indica se o profissional possui mais de um CBO. Valores: Sim / Não."
+
+      - name: nivel_conta
+        description: "Código do perfil de acesso da conta do operador (indnivel da gh_contas). Valores: 1 a 99. Mapeado via macro map_coluna_perfil_acesso."
+
+      - name: perfil_acesso
+        description: |
+          Descrição do perfil de acesso baseada no código nivel_conta.
+          Valores possíveis:
+          - Profissional de Nível Médio (1)
+          - Profissional de Nível Superior (2)
+          - Gestor local (3)
+          - Relatório (4)
+          - Gestor Local / Prof. Nível Superior (5)
+          - Assessoria (6)
+          - Acesso Personalizado (Acesso Cadastro) (8)
+          - Gestor central (98)
+          - MASTER (99)
+          - Nível {código}: para códigos não mapeados na macro
+
+      - name: status_conta_codigo
+        description: "Código do status da conta do operador (indstatuser da gh_contas). Valores: '0' a '4'. Mapeado via macro map_coluna_status_conta."
+
+      - name: status_conta
+        description: |
+          Descrição do status da conta baseada no código status_conta_codigo.
+          Valores possíveis:
+          - Inativo (0)
+          - Ativo (1)
+          - Trocar senha (2)
+          - Bloqueado (3)
+          - Atualizar cadastro (4)
+
+      - name: unidades_atuacao
+        description: "Lista de nomes de unidades onde o profissional atua, concatenados com ' | '."
+
+      - name: qtde_unidades
+        description: "Quantidade de unidades onde o profissional possui vínculo."
