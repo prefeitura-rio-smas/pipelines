@@ -96,7 +96,9 @@ final as (
             when up.flag_possui_violacao_direito = 'Sim' then true
             else false
         end as indicador_violacao_direito,
-        up.violacoes as violacao_direito,
+        array(
+            select descricao from unnest(up.violacoes)
+        ) as violacao_direito,
         coalesce(fd.possui_filiacao_completa, false) as possui_filiacao_completa,
         coalesce(fd.interesse_filiacao_completa, false) as interesse_filiacao_completa
     from participantes_pic pp
