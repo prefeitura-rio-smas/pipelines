@@ -1,0 +1,30 @@
+version: 2
+
+models:
+  - name: mart_pic_prontuario_carioca
+    description: |
+      Mart que conecta participantes do PIC (Primeira Infância Carioca)
+      com dados do Prontuário Carioca de Assistência Social.
+      Grão: 1 linha por CPF de participante PIC.
+      Contém parentesco, indicadores de violação de direito e dados de filiação
+      extraídos das evoluções de Documentação Civil (codabapac=24).
+    columns:
+      - name: cpf
+        description: "CPF do participante PIC (chave primária)."
+        tests:
+          - unique
+          - not_null
+      - name: nome
+        description: "Nome do participante PIC."
+        tests:
+          - not_null
+      - name: parentesco
+        description: "Relação de parentesco do participante no núcleo familiar atual. Fonte: gh_familias_membros.parentesco_responsavel_familia."
+      - name: indicador_violacao_direito
+        description: "Indicador booleano se há violação de direito registrada no prontuário."
+      - name: violacao_direito
+        description: "Array estruturado com código e descrição das violações de direito."
+      - name: possui_filiacao_completa
+        description: "Indicador booleano se a pessoa possui filiação completa na certidão de nascimento. Extraído de evolução Documentação Civil (codabapac=24)."
+      - name: interesse_filiacao_completa
+        description: "Indicador booleano se há interesse em regularizar filiação faltante. Extraído de evolução Documentação Civil (codabapac=24)."
