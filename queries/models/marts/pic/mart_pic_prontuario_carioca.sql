@@ -1,57 +1,69 @@
 -- Mart: Prontuário Carioca para PIC
 -- Grão: 1 linha por CPF de participante PIC
--- Conecta dados do PIC (sistema Prontuário Carioca - AcolheRio) com dados de
--- violação de direito e filiação documental.
--- Fonte: projeto social PIC (seqprojsoc=2) no gh_famil_projsociais.
+--
+-- Cadeia Medallion:
+--   dim_familias (projetos_sociais) → filtra PIC
+--   raw_membros_familia → parentesco
+--   raw_usuarios → dados pessoais
+--   dim_usuarios → violações
+--   fct_evolucoes (codigo_abrangencia=24) → filiação documental
 
-{{ config(
-    schema="pic",
-    materialized="table"
-) }}
+{{ config(schema="pic", materialized="table") }}
 
 with
 
--- Famílias marcadas como PIC (projeto social = 2) no AcolheRio
+-- Famílias PIC via dim_familias enriquecida
 familias_pic as (
-    select seqfamil
-    from {{ source('brutos_acolherio_staging', 'gh_famil_projsociais') }}
-    where seqprojsoc = 2
-      and indativo = 'S'
-      and datcancel is null
+    select
+        f.id_familia,
+        f.id_usuario_responsavel,
+        f.nome_responsavel
+    from {{ ref('dim_familias') }} f,
+    unnest(f.projetos_sociais) as p
+    where p.id_projeto_social = 2
+      and p.indicador_ativo = 'S'
+      and p.data_cancelamento is null
 ),
 
 -- Membros ativos dessas famílias (último vínculo por pessoa)
 membros_pic as (
     select
-        m.seqpac,
-        m.seqfamil,
-        m.parentesco_responsavel_familia as parentesco
-    from {{ source('brutos_acolherio_staging', 'gh_familias_membros') }} m
-    inner join familias_pic f on m.seqfamil = f.seqfamil
-    where m.datsaida is null
+        m.id_paciente,
+        m.parentesco_responsavel as parentesco,
+        f.id_usuario_responsavel,
+        f.nome_responsavel
+    from {{ ref('raw_membros_familia') }} m
+    inner join familias_pic f on m.id_familia = f.id_familia
+    where m.data_saida is null
     qualify
         row_number() over (
-            partition by m.seqpac
-            order by m.datentrada desc
+            partition by m.id_paciente
+            order by m.data_entrada desc
         ) = 1
 ),
 
 -- Dados pessoais dos participantes PIC
-participantes_pic as (
+participantes as (
     select
-        p.seqpac,
-        p.numcpfpac as cpf,
-        p.dscnomepac as nome,
-        mp.parentesco
-    from {{ source('brutos_acolherio_staging', 'gh_cidadao_pac') }} p
-    inner join membros_pic mp on p.seqpac = mp.seqpac
-    where p.numcpfpac is not null
-      and p.numcpfpac != ''
-      and upper(trim(p.dscnomepac)) not like 'TESTE%'
+        u.id_paciente as id_usuario,
+        u.cpf,
+        u.nome,
+        mp.parentesco,
+        mp.id_usuario_responsavel
+    from {{ ref('raw_usuarios') }} u
+    inner join membros_pic mp on u.id_paciente = mp.id_paciente
+    where u.cpf is not null
+      and upper(trim(u.nome)) not like 'TESTE%'
 ),
 
--- Usuários do Prontuário Carioca (dimensão já consolidada com violações)
-usuarios_prontuario as (
+-- Dados do responsável familiar (via dim_usuarios)
+responsavel as (
+    select id_usuario, cpf, nome
+    from {{ ref('dim_usuarios') }}
+),
+
+-- Violações (já consolidada em dim_usuarios)
+violacoes as (
     select
         id_usuario,
         cpf,
@@ -62,50 +74,55 @@ usuarios_prontuario as (
     where cpf is not null
 ),
 
--- Evoluções de Documentação Civil (codabapac = 24)
--- Extrai indicadores de filiação do texto HTML semi-estruturado
-filiacao_documentacao as (
+-- Filiação via fct_evolucoes (agora com codigo_abrangencia)
+filiacao_documental as (
     select
-        seqpac as id_paciente,
-        -- "Filiação completa na certidão de nascimento? ... <b> Sim</b>"
+        dim_u.id_usuario as id_paciente,
         regexp_contains(
-            dscevopac,
+            e.descricao_evolucao,
             r'Filiação completa na certidão de nascimento\?.*?<b>\s*Sim\s*</b>'
         ) as possui_filiacao_completa,
-        -- "Há interesse em tomar as medidas necessárias para inclusão da filiação faltante? ... <b> Sim</b>"
         regexp_contains(
-            dscevopac,
+            e.descricao_evolucao,
             r'Há interesse em tomar as medidas necessárias para inclusão da filiação faltante\?.*?<b>\s*Sim\s*</b>'
         ) as interesse_filiacao_completa
-    from {{ source('brutos_acolherio_staging', 'gh_evolupac') }}
-    where codabapac = 24
+    from {{ ref('fct_evolucoes') }} e
+    inner join {{ ref('dim_usuarios') }} dim_u
+        on e.id_usuario_sk = dim_u.id_usuario_sk
+    where e.codigo_abrangencia = 24
     qualify
         row_number() over (
-            partition by seqpac
-            order by dtevopac desc
+            partition by dim_u.id_usuario
+            order by e.data_evolucao desc
         ) = 1
 ),
 
--- Junção final
+-- Junção final com ordenação exata
 final as (
     select
+        struct(
+            r.cpf as cpf,
+            r.nome as nome
+        ) as responsavel_familiar,
         pp.cpf,
         pp.nome,
         pp.parentesco,
         case
-            when up.flag_possui_violacao_direito = 'Sim' then true
+            when v.flag_possui_violacao_direito = 'Sim' then true
             else false
         end as indicador_violacao_direito,
         array(
-            select descricao from unnest(up.violacoes)
+            select descricao from unnest(v.violacoes)
         ) as violacao_direito,
         coalesce(fd.possui_filiacao_completa, false) as possui_filiacao_completa,
         coalesce(fd.interesse_filiacao_completa, false) as interesse_filiacao_completa
-    from participantes_pic pp
-    left join usuarios_prontuario up
-        on pp.seqpac = up.id_usuario
-    left join filiacao_documentacao fd
-        on pp.seqpac = fd.id_paciente
+    from participantes pp
+    left join responsavel r
+        on pp.id_usuario_responsavel = r.id_usuario
+    left join violacoes v
+        on pp.id_usuario = v.id_usuario
+    left join filiacao_documental fd
+        on pp.id_usuario = fd.id_paciente
 )
 
 select * from final

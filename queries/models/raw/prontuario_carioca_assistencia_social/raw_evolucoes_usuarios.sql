@@ -6,7 +6,8 @@ with source as (
         seqprof as id_profissional,
         dtevopac as data_evolucao,
         dscevopac as descricao_evolucao,
-        indtpevopac as tipo_evolucao
+        indtpevopac as tipo_evolucao,
+        codabapac as codigo_abrangencia
     from {{ source('brutos_acolherio_staging', 'gh_evolupac') }}
 )
 select * from source
