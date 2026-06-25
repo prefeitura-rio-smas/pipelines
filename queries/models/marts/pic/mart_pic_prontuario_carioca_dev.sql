@@ -11,7 +11,7 @@
 
 {{ config(
     schema="pic",
-    alias="prontuario_carioca_dev",
+    alias="mart_prontuario_carioca_dev",
     materialized="table"
 ) }}
 
