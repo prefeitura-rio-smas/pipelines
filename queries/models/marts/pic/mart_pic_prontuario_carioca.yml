@@ -3,28 +3,24 @@ version: 2
 models:
   - name: mart_pic_prontuario_carioca
     description: |
-      Mart que conecta participantes do PIC (Primeira Infância Carioca)
-      com dados do Prontuário Carioca de Assistência Social.
-      Grão: 1 linha por CPF de participante PIC.
-      Contém parentesco, indicadores de violação de direito e dados de filiação
-      extraídos das evoluções de Documentação Civil (codabapac=24).
+      Mart Prontuário Carioca para PIC.
+      Grão: 1 linha por família identificada como PIC.
+      Duas origens de identificação: (1) projeto social PIC via dim_familias.projetos_sociais,
+      (2) evolução aba Pequenos Cariocas (codigo_abrangencia=20) via fct_evolucoes.
+      Indicadores propagam para toda a família via LOGICAL_OR entre membros ativos.
+      Famílias sem crianças 0-6 permanecem com membros = [].
     columns:
-      - name: cpf
-        description: "CPF do participante PIC (chave primária)."
-        tests:
-          - unique
-          - not_null
-      - name: nome
-        description: "Nome do participante PIC."
-        tests:
-          - not_null
-      - name: parentesco
-        description: "Relação de parentesco do participante no núcleo familiar atual. Fonte: gh_familias_membros.parentesco_responsavel_familia."
+      - name: responsavel_familiar
+        description: "Struct com CPF e nome do responsável familiar (dado por dim_familias.id_usuario_responsavel -> dim_usuarios)."
+      - name: origem_identificacao
+        description: "Array de strings identificando por quais origens a familia foi capturada: 'projeto_social' e/ou 'evolucao_aba_20'."
+      - name: membros
+        description: "Array de structs com nome, idade e CPF das criancas de 0 a 6 anos ativas na familia (data_saida IS NULL). Vazio se nao houver criancas nessa faixa."
       - name: indicador_violacao_direito
-        description: "Indicador booleano se há violação de direito registrada no prontuário."
+        description: "Booleano. True se algum membro ativo da familia possui flag_possui_violacao_direito = 'Sim'. Propagado via LOGICAL_OR."
       - name: violacao_direito
-        description: "Array estruturado com código e descrição das violações de direito."
+        description: "Array de strings com descricoes distintas de violacoes de direito de todos os membros ativos da familia."
       - name: possui_filiacao_completa
-        description: "Indicador booleano se a pessoa possui filiação completa na certidão de nascimento. Extraído de evolução Documentação Civil (codabapac=24)."
+        description: "Booleano. True se algum membro ativo da familia possui filiacao completa na certidao (ultima evolucao codigo_abrangencia=24). Propagado via LOGICAL_OR."
       - name: interesse_filiacao_completa
-        description: "Indicador booleano se há interesse em regularizar filiação faltante. Extraído de evolução Documentação Civil (codabapac=24)."
+        description: "Booleano. True se algum membro ativo tem interesse em regularizar filiacao faltante (ultima evolucao codigo_abrangencia=24). Propagado via LOGICAL_OR."
