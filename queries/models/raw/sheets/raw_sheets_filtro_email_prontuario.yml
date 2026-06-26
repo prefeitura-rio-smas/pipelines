@@ -1,0 +1,13 @@
+version: 2
+models:
+  - name: raw_sheets_filtro_email_prontuario
+    description: "Planilha de filtro de e-mails por unidade de atendimento (filtro_email_dev)."
+    columns:
+      - name: unidade_atendimento
+        description: "Nome da unidade de atendimento."
+        tests:
+          - not_null
+      - name: email
+        description: "E-mail de contato da unidade."
+        tests:
+          - not_null

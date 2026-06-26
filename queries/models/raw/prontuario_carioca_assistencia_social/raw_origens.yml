@@ -1,0 +1,18 @@
+version: 2
+models:
+  - name: raw_origens
+    description: "Origens de cadastro do sistema (gh_origens)."
+    columns:
+      - name: id_origem
+        description: "Código identificador da origem (codorigem)."
+        tests:
+          - not_null
+          - unique
+      - name: descricao_origem
+        description: "Descrição da origem no Prontuário Carioca (dscoripcsm)."
+      - name: codigo_raas
+        description: "Código RAAS correspondente (codoriraas)."
+      - name: descricao_raas
+        description: "Descrição do código RAAS (dscoriraas)."
+      - name: flag_ativo
+        description: "Indicador de registro ativo (S/N)."

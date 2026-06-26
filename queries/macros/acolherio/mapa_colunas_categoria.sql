@@ -55,7 +55,7 @@
     WHEN {{ coluna }} = '3' THEN 'Viúvo'
     WHEN {{ coluna }} = '4' THEN 'Separado Judicialmente'
     WHEN {{ coluna }} = '5' THEN 'União consensual'
-  END AS FILIACAO
+  END
 {% endmacro %}
 
 -- Coluna serie_escola do models relatorio_geral
@@ -107,14 +107,14 @@
     WHEN {{ coluna }} = '2' THEN 'Público'
     WHEN {{ coluna }} = '3' THEN 'Conhecido/amigo'
     WHEN {{ coluna }} = '4' THEN 'Conselho de contabilidade'
-  END AS TIPO_CURATELA
+  END
 {% endmacro %}
 
 -- Coluna DECISAO_APOIADA do models relatorio_geral
 {% macro map_coluna_decisao_apoiada (coluna) %}
   CASE
     WHEN {{ coluna }} IS NULL THEN 'N'
-  END AS DECISAO_APOIADA
+  END
 {% endmacro %}
 
 -- Coluna SITUACAO_DE_RUA do models relatorio_geral
@@ -157,7 +157,7 @@
     WHEN {{ coluna }} = '4' THEN 'Deficiência motora'
     WHEN {{ coluna }} = '5' THEN 'Deficiência mental ou intelectual'
     WHEN {{ coluna }} = '6' THEN 'Deficiência auditiva parcial'
-  END AS TIPO_DEFICIENCIA
+  END
 {% endmacro %}
 
 -- Coluna VIOLACAO_DIREITO do models violacao_direito
@@ -216,7 +216,7 @@
     WHEN {{ coluna }} = '27' THEN 'Idoso em família'
     WHEN {{ coluna }} = '31' THEN 'Acidente de trabalho'
     WHEN {{ coluna }} = '32' THEN 'Aposentadoria por invalidez'
-  END AS BENEFICIO
+  END
 {% endmacro %}
 
 -- Coluna ORIENTACAO_SEXUAL do models relatorio_geral
@@ -257,7 +257,7 @@
     WHEN {{ coluna }} = 'Y' THEN 'Demanda por serviço diurno'
     WHEN {{ coluna }} = 'Z' THEN 'Demanda por serviço noturno'
 
-  END AS MOTIVO_DESLIGAMENTO
+  END
 {% endmacro %}
 
 -- Coluna PERFIL_ACESSO do models contas_associadas
@@ -295,7 +295,7 @@
     WHEN {{ coluna }} = 'N' THEN 'S'
     WHEN {{ coluna }} = 'S' THEN 'N'
     ELSE 'S'
-  END AS UNIDADE_ATIVA
+  END
 {% endmacro %}
 
 -- Coluna indeixo do model lista_unidades (flag_adulto)

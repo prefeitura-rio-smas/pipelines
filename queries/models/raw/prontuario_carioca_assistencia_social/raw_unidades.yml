@@ -10,5 +10,15 @@ models:
           - unique
       - name: nome_unidade
         description: "Nome descritivo da unidade."
+      - name: cas
+        description: "Código de cadastro no CAS (apus)."
+      - name: uf
+        description: "Sigla da unidade federativa (siguf)."
+      - name: esfera
+        description: "Esfera administrativa da unidade."
       - name: id_tipo_unidade
         description: "Identificador do tipo de unidade (seqtipous), FK para raw_tipos_unidade."
+      - name: email_unidade
+        description: "E-mail de contato da unidade (emailprof)."
+      - name: flag_unidade_ativa
+        description: "Indica se a unidade está ativa (TRUE = ativa, FALSE = inativa). Derivada de indinativo: unidade inativa quando indinativo = 'S'."

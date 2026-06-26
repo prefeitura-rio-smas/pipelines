@@ -8,6 +8,8 @@ models:
         tests: [unique, not_null]
       - name: total_leitos
         description: "Total de leitos cadastrados na unidade."
+      - name: leitos_bloqueados
+        description: "Total de leitos bloqueados (numleitosbloq), incluindo infraestrutura, judicial e regulação."
       - name: leitos_bloqueados_infra
         description: "Leitos bloqueados por problemas de infraestrutura."
       - name: leitos_bloqueados_judiciais

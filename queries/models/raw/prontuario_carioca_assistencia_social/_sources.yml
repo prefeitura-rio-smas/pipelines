@@ -54,3 +54,5 @@ sources:
         description: "Configuração de leitos, bloqueios e gestão de vagas das unidades."
       - name: gh_us_smas
         description: "Capacidade operacional SMAS: vagas por gênero, público-alvo e abrangência."
+      - name: gh_origens
+        description: "Origens de cadastro dos registros do sistema."

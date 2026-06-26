@@ -8,7 +8,9 @@ with source as (
         apus as cas,
         siguf as uf,
         esfera,
-        seqtipous as id_tipo_unidade
+        seqtipous as id_tipo_unidade,
+        emailprof as email_unidade,
+        (indinativo <> 'S') as flag_unidade_ativa
     from {{ source('brutos_acolherio_staging', 'gh_us') }}
 )
 

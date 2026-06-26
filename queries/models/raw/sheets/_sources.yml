@@ -1,0 +1,10 @@
+version: 2
+
+sources:
+  - name: dashboard_acolherio
+    description: "Dataset auxiliar com planilhas de apoio do dashboard AcolheRio."
+    database: rj-smas-dev
+    schema: dashboard_acolherio
+    tables:
+      - name: filtro_email_dev
+        description: "Planilha de filtro de e-mails por unidade de atendimento."
