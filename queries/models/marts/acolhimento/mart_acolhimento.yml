@@ -1,0 +1,45 @@
+version: 2
+
+models:
+  - name: mart_acolhimento
+    description: |
+      Mart principal de acolhimentos institucionais (alta complexidade).
+      Grão: 1 linha por ciclo de acolhimento.
+      Substitui a query agendada dashboard_acolherio.alta_complexidade.
+      Contém dados cadastrais dos usuários, dados da unidade, vagas,
+      e indicadores de desligamento/reinserção.
+    columns:
+      - name: seqpac
+        description: "ID original do paciente (id_paciente)."
+        tests:
+          - not_null
+      - name: seqciclo
+        description: "ID original do ciclo de acolhimento."
+        tests:
+          - not_null
+      - name: nome_usuario
+        description: "Nome do usuário acolhido."
+      - name: cpf
+        description: "CPF do usuário."
+      - name: data_entrada
+        description: "Data de entrada no acolhimento."
+      - name: unidade
+        description: "Nome da unidade de acolhimento."
+      - name: status_acolhimento
+        description: "Status: Acolhido ou Desligado."
+      - name: motivo_desligamento
+        description: "Motivo detalhado do desligamento."
+      - name: faixa_etaria
+        description: "Faixa etária do usuário."
+      - name: vagas_totais
+        description: "Total de vagas da unidade."
+      - name: vagas_ocupadas
+        description: "Quantidade de vagas ocupadas na unidade."
+      - name: taxa_ocupacao
+        description: "Taxa de ocupação da unidade em percentual."
+      - name: tipo_unidade
+        description: "Classificação do tipo de unidade."
+      - name: eixo
+        description: "Eixo de atendimento da unidade (adulto/família/idoso)."
+      - name: email_cas
+        description: "E-mail do CAS responsável pela unidade."

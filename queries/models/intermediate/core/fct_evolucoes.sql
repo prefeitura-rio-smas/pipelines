@@ -27,7 +27,8 @@ uniao as (
         tipo_evolucao, 
         origem_modulo,
         null as id_familia,
-        null as modulo_prontuario
+        null as modulo_prontuario,
+        null as codigo_abrangencia
     from adm
     union all
     select 
@@ -39,7 +40,8 @@ uniao as (
         tipo_evolucao, 
         origem_modulo,
         id_familia,
-        modulo_prontuario
+        modulo_prontuario,
+        modulo_prontuario as codigo_abrangencia
     from fam
     union all
     select 
@@ -51,7 +53,8 @@ uniao as (
         tipo_evolucao, 
         origem_modulo,
         null as id_familia,
-        null as modulo_prontuario
+        null as modulo_prontuario,
+        codigo_abrangencia
     from usu
 ),
 
@@ -66,7 +69,8 @@ final as (
         u.tipo_evolucao,
         u.origem_modulo,
         u.id_familia,
-        u.modulo_prontuario
+        u.modulo_prontuario,
+        u.codigo_abrangencia
     from uniao u
     left join {{ ref('dim_usuarios') }} dim_u on u.id_usuario = dim_u.id_usuario
     left join {{ ref('dim_profissionais') }} dim_p on u.id_profissional = dim_p.id_profissional

@@ -1,16 +1,52 @@
 version: 2
 models:
   - name: dim_unidades
+    description: |
+      Dimensão de unidades de assistência/acolhimento.
+      Contém dados cadastrais, classificação, capacidade operacional e eixos de atendimento.
     columns:
       - name: id_unidade_sk
         tests: [unique, not_null]
       - name: id_unidade
         tests: [unique, not_null]
+      - name: nome_unidade
+        description: "Nome da unidade."
+      - name: cas
+        description: "Código do CAS (Centro de Atendimento Socioassistencial)."
+      - name: esfera
+        description: "Esfera da unidade (Estadual, Municipal, Conveniada)."
+      - name: email_unidade
+        description: "E-mail de contato da unidade."
+      - name: flag_unidade_ativa
+        description: "Indica se a unidade está ativa (Sim/Não)."
       - name: nome_tipo
         description: "Nome do tipo de unidade (ex: Albergue, CRAS, URS)."
       - name: classe
         description: "Classe da unidade (E1=Acolhimento, E2=Média Complexidade, etc.)."
+      - name: descricao_classe
+        description: "Descrição da classe da unidade."
       - name: total_vagas
         description: "Total de vagas (considerando fallback auto-gestão)."
       - name: vagas_disponiveis
         description: "Vagas disponíveis = total_vagas - bloqueios."
+      - name: vagas_bloqueadas
+        description: "Total de vagas bloqueadas (numleitosbloq)."
+      - name: vagas_homens
+      - name: vagas_mulheres
+      - name: vagas_neutras
+      - name: leitos_bloqueados_infra
+        description: "Leitos bloqueados por infraestrutura."
+      - name: leitos_bloqueados_judiciais
+        description: "Leitos bloqueados por decisão judicial."
+      - name: flag_administra_leitos
+      - name: tipo_publico
+        description: "Público-alvo da unidade (campo indeixo bruto)."
+      - name: flag_acessibilidade
+      - name: grau_dependencia
+      - name: abrangencia
+      - name: flag_eixo_adulto
+        description: "Indica se atende eixo adulto (Sim/Não)."
+      - name: flag_eixo_familia
+        description: "Indica se atende eixo família (Sim/Não)."
+      - name: flag_eixo_idoso
+        description: "Indica se atende eixo idoso (Sim/Não)."

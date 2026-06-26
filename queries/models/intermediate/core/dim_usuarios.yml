@@ -1,6 +1,88 @@
 version: 2
+
 models:
   - name: dim_usuarios
+    description: |
+      Dimensão de usuários (pacientes/cidadãos). Grão: 1 linha por pessoa.
+      Contém dados cadastrais, detalhes complementares e informações de saúde mental.
     columns:
       - name: id_usuario_sk
+        description: "Surrogate key do usuário."
         tests: [unique, not_null]
+      - name: id_usuario
+        description: "ID original do paciente (seqpac)."
+        tests: [unique, not_null]
+      - name: nome
+        description: "Nome completo do usuário."
+      - name: nome_social
+        description: "Nome social do usuário."
+      - name: filiacao_mae
+        description: "Nome da mãe do usuário."
+      - name: nacionalidade
+        description: "Nacionalidade (Brasileira, Estrangeira)."
+      - name: condicao_estrangeira
+        description: "Condição do estrangeiro (Asilado, Refugiado, etc.)."
+      - name: pais_origem
+        description: "Sigla do país de origem."
+      - name: cpf
+        description: "CPF do usuário."
+      - name: data_nascimento
+        description: "Data de nascimento."
+      - name: sexo
+        description: "Sexo (M/F)."
+      - name: raca_cor
+        description: "Raça/Cor (Branca, Preta, Parda, Amarelo, Indígena)."
+      - name: genero
+        description: "Gênero (Travesti, Homem transgênero, Mulher cisgênero, etc.)."
+      - name: bairro
+        description: "Bairro de residência."
+      - name: prontuario
+        description: "Número do prontuário físico."
+      - name: flag_cadunico
+        description: "Indica se possui Cadastro Único (Sim/Não)."
+      - name: violacao_direito_bruto
+        description: "Código(s) de violação de direito separados por vírgula."
+      - name: pontuacao
+        description: "Pontuação do usuário (valpontos)."
+      - name: nome_apoiador
+        description: "Nome do apoiador (tomada de decisão apoiada)."
+      - name: numero_processo_decisao_apoiada
+        description: "Número do processo de tomada de decisão apoiada."
+      - name: flag_decisao_apoiada
+        description: "Indicador de decisão apoiada (N quando não há processo)."
+      - name: flag_saude_mental_comprometida
+        description: "Indica se há comprometimento de saúde mental."
+      - name: motivo_acolhimento
+        description: "Motivo do acolhimento (Negligência, Abandono, etc.)."
+      - name: orientacao_sexual
+        description: "Orientação sexual (Lésbica, Gay, Heterossexual, etc.)."
+      - name: vinculo_trabalhista
+        description: "Tipo de vínculo trabalhista (Formal, Informal, etc.)."
+      - name: flag_trabalha
+        description: "Indica se trabalha (Sim/Não)."
+      - name: profissao
+        description: "Nome da profissão."
+      - name: flag_frequenta_escola
+        description: "Indica se frequenta escola (Sim/Não)."
+      - name: escolaridade_indice
+        description: "Nível de escolaridade (Não Alfabetizado, Fundamental completo, etc.)."
+      - name: flag_recebe_beneficio
+        description: "Indica se recebe benefício (Sim/Não)."
+      - name: tipo_beneficio
+        description: "Código(s) do(s) benefício(s) separados por vírgula."
+      - name: flag_curatela
+        description: "Indica se possui curatela (Sim/Não)."
+      - name: tipo_curatela
+        description: "Tipo de curatela (Família extensa, Público, etc.)."
+      - name: flag_deficiencia
+        description: "Indica se possui deficiência (Sim/Não)."
+      - name: tipo_deficiencia
+        description: "Código(s) da(s) deficiência(s) separados por vírgula."
+      - name: flag_situacao_rua
+        description: "Indica se está em situação de rua (Sim/Não)."
+      - name: codigo_origem
+        description: "Código da origem do paciente (FK para gh_origens)."
+      - name: flag_possui_violacao_direito
+        description: "Indica se possui violação de direito registrada (Sim/Não)."
+      - name: violacoes
+        description: "Array estruturado de violações de direito (código + descrição)."

@@ -3,7 +3,7 @@ models:
   - name: int_capacidade_unidades
     description: |
       Capacidade operacional unificada das unidades de acolhimento.
-      Unifica gh_us_config (leitos/bloqueios) com gh_us_smas (vagas por gênero).
+      Unifica gh_us_config (leitos/bloqueios) com gh_us_smas (vagas por gênero, eixos).
       Unidades com flag_administra_leitos = 'S' usam gh_us_smas como fonte de vagas.
     columns:
       - name: id_unidade
@@ -13,3 +13,11 @@ models:
         description: "Total de vagas (considerando fallback para auto-gestão de leitos)."
       - name: vagas_disponiveis
         description: "Vagas disponíveis = total_vagas - bloqueios_infra - bloqueios_judiciais."
+      - name: vagas_bloqueadas
+        description: "Total de vagas bloqueadas (numleitosbloq)."
+      - name: flag_eixo_adulto
+        description: "Indica se atende eixo adulto (Sim/Não)."
+      - name: flag_eixo_familia
+        description: "Indica se atende eixo família (Sim/Não)."
+      - name: flag_eixo_idoso
+        description: "Indica se atende eixo idoso (Sim/Não)."

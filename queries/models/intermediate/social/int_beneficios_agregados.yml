@@ -1,0 +1,13 @@
+version: 2
+
+models:
+  - name: int_beneficios_agregados
+    description: |
+      Benefícios dos usuários explodidos (um registro por tipo de benefício).
+      Ephemeral — materializado apenas como CTE nos modelos que o referenciam.
+    columns:
+      - name: id_usuario_sk
+        description: "Surrogate key do usuário."
+        tests: [not_null]
+      - name: beneficio_label
+        description: "Nome do benefício (ex: Bolsa Família, BPC, Aposentadoria)."
