@@ -152,7 +152,10 @@ filiacao_por_pessoa as (
 filiacao_familia as (
     select
         m.id_familia,
-        logical_or(coalesce(fp.possui_filiacao_completa, false)) as possui_filiacao_completa,
+        case
+            when logical_or(fp.possui_filiacao_completa is not null)
+            then logical_or(fp.possui_filiacao_completa)
+        end as possui_filiacao_completa,
         logical_or(coalesce(fp.interesse_filiacao_completa, false)) as interesse_filiacao_completa
     from {{ ref('raw_membros_familia') }} m
     left join filiacao_por_pessoa fp
@@ -169,7 +172,7 @@ final as (
         coalesce(mf.membros, []) as membros,
         coalesce(vi.indicador_violacao_direito, false) as indicador_violacao_direito,
         coalesce(vd.violacao_direito, []) as violacao_direito,
-        coalesce(ff.possui_filiacao_completa, false) as possui_filiacao_completa,
+        ff.possui_filiacao_completa,
         coalesce(ff.interesse_filiacao_completa, false) as interesse_filiacao_completa
     from familias_origens fo
     left join responsavel_familiar rf on fo.id_familia = rf.id_familia
