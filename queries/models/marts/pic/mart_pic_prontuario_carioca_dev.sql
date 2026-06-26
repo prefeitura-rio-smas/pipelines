@@ -115,17 +115,28 @@ violacoes_descricoes as (
 ),
 
 -- Filiação documental (última evolução codigo_abrangencia=24 por pessoa)
+-- Regras de filiação:
+--   interesse_filiacao_completa: true se a pergunta existe no HTML (independente de Sim/Não), false se não existe
+--   possui_filiacao_completa: true/false literal se a pergunta existe, NULL se não existe
 filiacao_por_pessoa as (
     select
         dim_u.id_usuario as id_paciente,
+        -- interesse: true se pergunta existe (qualquer resposta), false se não existe
         regexp_contains(
             e.descricao_evolucao,
-            r'Filiação completa na certidão de nascimento\?.*?<b>\s*Sim\s*</b>'
-        ) as possui_filiacao_completa,
-        regexp_contains(
-            e.descricao_evolucao,
-            r'Há interesse em tomar as medidas necessárias para inclusão da filiação faltante\?.*?<b>\s*Sim\s*</b>'
-        ) as interesse_filiacao_completa
+            r'Há interesse em tomar as medidas necessárias'
+        ) as interesse_filiacao_completa,
+        -- possui: NULL se pergunta não existe, true/false literal se existe
+        case
+            when regexp_contains(
+                e.descricao_evolucao,
+                r'Filiação completa na certidão'
+            )
+            then regexp_contains(
+                e.descricao_evolucao,
+                r'Filiação completa na certidão de nascimento\?.*?<b>\s*Sim\s*</b>'
+            )
+        end as possui_filiacao_completa
     from {{ ref('fct_evolucoes') }} e
     inner join {{ ref('dim_usuarios') }} dim_u
         on e.id_usuario_sk = dim_u.id_usuario_sk
