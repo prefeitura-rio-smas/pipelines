@@ -25,7 +25,7 @@ final as (
         s.servicos,
         p.projetos_sociais
     from base
-    left join usuarios u on base.id_usuario_responsavel = u.id_usuario
+    inner join usuarios u on base.id_usuario_responsavel = u.id_usuario
     left join vulnerabilidades v on base.id_familia = v.id_familia
     left join servicos s on base.id_familia = s.id_familia
     left join projetos p on base.id_familia = p.id_familia

@@ -166,6 +166,7 @@ final as (
     left join violacoes_indicador vi on fo.id_familia = vi.id_familia
     left join violacoes_descricoes vd on fo.id_familia = vd.id_familia
     left join filiacao_familia ff on fo.id_familia = ff.id_familia
+    where rf.responsavel_familiar.cpf is not null
 )
 
 select * from final
