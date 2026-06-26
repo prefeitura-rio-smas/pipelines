@@ -193,16 +193,24 @@
 {% endmacro %}
 
 -- Coluna BENEFICIO do models tipo_beneficio
+-- Fonte: rj-smas-dev.governance.dominios_acolherio WHERE dominio='indqualbenef' (43 códigos)
 {% macro map_coluna_beneficio(coluna) %}
   CASE
     WHEN {{ coluna }} = '1' THEN 'Aposentadoria'
     WHEN {{ coluna }} = '2' THEN 'Auxilio Doença'
+    WHEN {{ coluna }} = '3' THEN 'Bolsa BAR [Bolsa de apoio à ressocialização]'
+    WHEN {{ coluna }} = '4' THEN 'Bolsa de volta para casa [PVC nacional]'
     WHEN {{ coluna }} = '5' THEN 'Bolsa Família'
-    WHEN {{ coluna }} = '8' THEN 'Cartão Família Carioca (CFC)'
+    WHEN {{ coluna }} = '6' THEN 'Bolsa-Rio Tipo I'
+    WHEN {{ coluna }} = '7' THEN 'Bolsa-Rio Tipo II'
+    WHEN {{ coluna }} = '8' THEN 'Cartão Família Carioca [CFC]'
     WHEN {{ coluna }} = '9' THEN 'BPC-Benefício de Prestação Continuada'
+    WHEN {{ coluna }} = '10' THEN 'Pensão'
     WHEN {{ coluna }} = '11' THEN 'Auxilio Emergêncial'
+    WHEN {{ coluna }} = '12' THEN 'Auxilio Brasil'
     WHEN {{ coluna }} = '13' THEN 'Assalariado'
     WHEN {{ coluna }} = '14' THEN 'Agente Experiente'
+    WHEN {{ coluna }} = '15' THEN 'Aluguel Social'
     WHEN {{ coluna }} = '16' THEN 'Apoio Moradia'
     WHEN {{ coluna }} = '17' THEN 'Benefício comprometido em empréstimo'
     WHEN {{ coluna }} = '18' THEN 'Benefícios eventuais'
@@ -212,10 +220,25 @@
     WHEN {{ coluna }} = '22' THEN 'Outro tipo de Pensão'
     WHEN {{ coluna }} = '23' THEN 'Não sabe / Não lembra'
     WHEN {{ coluna }} = '24' THEN 'Não respondeu'
+    WHEN {{ coluna }} = '25' THEN 'Bolsa de inclusão produtiva [Seguir em Frente]'
     WHEN {{ coluna }} = '26' THEN 'Auxílio moradia temporário'
     WHEN {{ coluna }} = '27' THEN 'Idoso em família'
+    WHEN {{ coluna }} = '28' THEN 'Riocard especial'
+    WHEN {{ coluna }} = '29' THEN 'Riocard estudante'
+    WHEN {{ coluna }} = '30' THEN 'Riocard senior'
     WHEN {{ coluna }} = '31' THEN 'Acidente de trabalho'
     WHEN {{ coluna }} = '32' THEN 'Aposentadoria por invalidez'
+    WHEN {{ coluna }} = '33' THEN 'Trabalho informal'
+    WHEN {{ coluna }} = '34' THEN 'Bolsa ONG / OSS'
+    WHEN {{ coluna }} = '35' THEN 'Militar da Reserva'
+    WHEN {{ coluna }} = '36' THEN 'Bolsa Estudantil'
+    WHEN {{ coluna }} = '37' THEN 'Autônomo'
+    WHEN {{ coluna }} = '38' THEN 'Jovem Aprendiz'
+    WHEN {{ coluna }} = '39' THEN 'Cartão da Primeira Infância Carioca'
+    WHEN {{ coluna }} = '40' THEN 'Auxílio reclusão'
+    WHEN {{ coluna }} = '41' THEN 'Auxílio natalidade'
+    WHEN {{ coluna }} = '42' THEN 'Auxílio funeral'
+    WHEN {{ coluna }} = '43' THEN 'Seguro desemprego'
   END
 {% endmacro %}
 
