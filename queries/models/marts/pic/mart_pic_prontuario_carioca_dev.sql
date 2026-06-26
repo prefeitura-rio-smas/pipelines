@@ -73,7 +73,7 @@ membros_familia as (
         array_agg(
             struct(
                 u.nome as nome,
-                date_diff(current_date(), u.data_nascimento, year) as idade,
+                {{ calc_idade('u.data_nascimento') }} as idade,
                 u.cpf as cpf
             )
             order by u.data_nascimento, u.nome
@@ -85,7 +85,7 @@ membros_familia as (
       and u.cpf is not null
       and u.cpf != ''
       and upper(trim(u.nome)) not like 'TESTE%'
-      and date_diff(current_date(), u.data_nascimento, year) between 0 and 6
+      and {{ calc_idade('u.data_nascimento') }} between 0 and 6
     group by m.id_familia
 ),
 
