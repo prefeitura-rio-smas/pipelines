@@ -1,3 +1,8 @@
+-- Fato de acolhimentos institucionais, grão: 1 linha por id_ciclo (sem explosao temporal).
+-- A explosão diária fica em `fct_acolhimento_diaria` (que referencia esta fato).
+-- `dias_acolhimento` segue contagem inclusiva em ambos extremos (DATE_DIFF + 1),
+--   padrão AcolheRio onde cada dia = 1 ciclo.
+
 with acolhimentos as (
     select * from {{ ref('raw_usuarios_acolhimentos') }}
 ),
@@ -27,11 +32,12 @@ final as (
         a.id_login_saida,
         a.indicador_ciclo,
         a.motivo_saida,
-        date_diff(a.data_saida, a.data_entrada, day) as dias_acolhimento,
+        (date_diff(a.data_saida, a.data_entrada, day) + 1) as dias_acolhimento,
         case when a.data_saida is null then 1 else 0 end as flag_em_acolhimento
     from acolhimentos a
     left join usuarios usr on a.id_usuario = usr.id_usuario
     left join unidades un on a.id_unidade = un.id_unidade
+    where a.data_entrada <= current_date()
 )
 
 select * from final

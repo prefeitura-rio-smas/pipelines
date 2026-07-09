@@ -29,19 +29,19 @@ beneficios AS (
     GROUP BY id_usuario_sk
 ),
 
--- Contagem de acolhidos ativos por unidade
+-- Contagem de acolhidos ativos por unidade (grao: 1 linha por ciclo)
 vagas_ocupadas_por_unidade AS (
     SELECT
         id_unidade_sk,
         COUNT(*) AS vagas_ocupadas
-    FROM {{ ref('fct_acolhimentos') }}
+    FROM {{ ref('fct_acolhimento_ciclos') }}
     WHERE flag_em_acolhimento = 1
     GROUP BY id_unidade_sk
 ),
 
--- Fato de acolhimentos
+-- Fato de acolhimentos (1 linha por ciclo)
 acolhimentos AS (
-    SELECT * FROM {{ ref('fct_acolhimentos') }}
+    SELECT * FROM {{ ref('fct_acolhimento_ciclos') }}
 ),
 
 -- Dimensão de usuários

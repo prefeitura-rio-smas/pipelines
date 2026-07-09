@@ -3,24 +3,117 @@ models:
   - name: mart_acolhimento_diaria
     description: |
       Ocupação diária dos acolhimentos institucionais.
-      Grão: 1 linha por ciclo × data (explosão temporal via GENERATE_DATE_ARRAY).
+      Grão: 1 linha por ciclo × data_referência (explosão temporal via GENERATE_DATE_ARRAY).
       Permite calcular headcount por dia, taxa de ocupação, e cruzamento com capacidade das unidades.
+
+      Colunas e valores normalizados em paridade com a query legada
+      `dashboard_acolherio.alta_complexidade_dev` (transição BI).
+
+      Arquitetura (pós-refactor, sem acoplamento mart→mart):
+        raw_usuarios_acolhimentos → fct_acolhimento_ciclos → fct_acolhimento_diaria → mart_acolhimento_diaria (esta).
+      A explosão temporal e o filtro `data_referencia <= current_date()` ficam na fct_acolhimento_diaria.
+      Esta mart faz apenas JOINs cosméticos com dims e CASEs de normalização para o BI.
+
+      Pendências conhecidas (não migradas nesta iteração):
+        - `motivo_desligamento` (CASE normalizado): aguarda fonte canônica de labels.
+        - `vagas_ocupadas`, `taxa_ocupacao`: outro domínio (ocupação), migração futura.
+        - `renda_ativa`, `renda_beneficio`, `operador`, `login_operador`, `data_cadastro_usuario`,
+          `flag_gestante`, `estado_civil`, `seqfamil`, `data_cadunico`:
+          não existem em `dim_usuarios` / `dim_unidades` — aguarda decisão sobre se
+          subirão para as dims ou não migram.
     columns:
       - name: id_acolhimento_sk
-        description: "Surrogate key do acolhimento (FK para fct_acolhimentos)."
+        description: "Surrogate key do acolhimento (FK para fct_acolhimento_diaria → fct_acolhimento_ciclos)."
       - name: data_referencia
         description: "Data de referência (cada dia do período de acolhimento)."
       - name: ano
         description: "Ano extraído da data_referencia."
+      - name: mes
+        description: "Mês extraído da data_referencia."
       - name: nome_usuario
-        description: "Nome do usuário acolhido."
       - name: cpf
-        description: "CPF do usuário."
+        description: "CPF bruto (apenas dígitos)."
       - name: flag_cpf
-        description: "Sim se o CPF está preenchido, Não caso contrário."
-      - name: nome_unidade
-        description: "Nome da unidade de acolhimento."
+        description: "Sim/Não se o CPF está preenchido."
+      - name: status_cpf
+        description: "Rótulo informativo do status do CPF ('CPF informado'/'CPF não informado')."
+      - name: cpf_formatado
+        description: "CPF formatado (xxx.xxx.xxx-xx)."
+      - name: data_nascimento
+      - name: idade
+        description: "Idade calculada em anos até hoje."
+      - name: sexo
+      - name: raca_cor
+      - name: genero
+      - name: orientacao_sexual
+      - name: nacionalidade
+      - name: condicao_estrangeira
+      - name: pais_origem
+        description: "Sigla do país de origem."
+      - name: bairro
+      - name: origem_demanda
+      - name: motivo_acolhimento
+      - name: flag_recebe_beneficio
+      - name: tipo_beneficio
+      - name: flag_trabalho
+      - name: vinculo_trabalhista
+      - name: profissao
+      - name: frequenta_escola
+      - name: escolaridade
+        description: "Escolaridade com prefixo ordinal (01..10) para ordenação no BI."
+      - name: flag_cadunico
+      - name: curatela
+      - name: diagnostico_saude_mental
+      - name: saude_mental
+      - name: deficiencia
+      - name: tipo_deficiencia
+      - name: situacao_de_rua
+      - name: flag_violacao_direito
+      - name: violacoes
+        description: "Array estruturado de violações de direito (codigo + descricao)."
+      - name: data_entrada
+      - name: data_desligamento
+        description: "Alias para fct_acolhimento_diaria.data_saida."
+      - name: status_acolhimento
+        description: "'Acolhido' (sem saída) ou 'Desligado'."
+      - name: tempo_permanencia
+        description: "dias_acolhimento (DATE_DIFF +1, contagem inclusiva). Vem da fct_acolhimento_ciclos."
+      - name: flag_em_acolhimento
+        description: "1 se ainda acolhido, 0 caso contrário."
+      - name: indicador_ciclo
+        description: "C = ciclo atual, E = encerrado."
+      - name: motivo_saida
+        description: "Código bruto do motivo de saída (indmotivsaida). Normalização para descrição é pendência."
+      - name: id_unidade
+      - name: unidade
+        description: "Nome da unidade (alias para dim_unidades.nome_unidade)."
+      - name: tipo_unidade
+        description: "Tipo da unidade (Albergue, CRAS, etc) já classificado pela dim."
+      - name: classe
+      - name: esfera
+        description: "'Rede Pública' (Municipal), 'Rede Conveniada' ou outro valor bruto."
       - name: total_vagas
-        description: "Total de vagas da unidade (com fallback auto-gestão)."
-      - name: vagas_disponiveis
-        description: "Vagas disponíveis = total_vagas - bloqueios."
+      - name: vagas_livres
+        description: "Alias para vagas_disponiveis."
+      - name: vagas_bloqueadas
+      - name: vagas_homens
+      - name: vagas_mulheres
+      - name: vagas_neutras
+      - name: tipo_publico
+      - name: unidade_ativa
+        description: "Sim/Não."
+      - name: cas_original
+        description: "Código numérico do CAS (01..10)."
+      - name: cas_nome
+        description: "Rótulo 'NNª CAS'."
+      - name: email_cas
+        description: "E-mail 'casN@prefeitura.rio' derivado do código CAS."
+      - name: email_unidade
+      - name: email_planilha
+        description: "E-mail curatorial vindo de raw_sheets_filtro_email_prontuario."
+      - name: email
+        description: "Concatenação de email_cas, email_planilha e email_unidade (compat com legado)."
+      - name: eixo
+        description: "Combinação dos eixos adulto/idoso/família em um rótulo."
+      - name: faixa_etaria
+        description: "Faixa etária em 5 buckets (Bebê/Criança/Adolescente/Adulto/Idoso)."
