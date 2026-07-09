@@ -32,11 +32,8 @@ emails_planilha as (
 
 final as (
     select
-        a.id_acolhimento_sk,
-        a.id_usuario_sk,
-        a.id_unidade_sk,
-        a.id_usuario,
-        a.id_ciclo,
+        a.id_usuario    as seqpac,
+        a.id_ciclo      as seqciclo,
 
         -- ===== USUARIO =====
         usr.nome                              as nome_usuario,
@@ -78,7 +75,7 @@ final as (
         end                                   as orientacao_sexual,
         coalesce(usr.nacionalidade, 'Não Informado')   as nacionalidade,
         usr.condicao_estrangeira,
-        usr.pais_origem,
+        usr.pais_origem                       as pais_origem_descricao,
         coalesce(usr.bairro, 'Não Informado')           as bairro,
         coalesce(usr.origem_demanda, 'Não Informado')   as origem_demanda,
         usr.motivo_acolhimento,
@@ -159,14 +156,67 @@ final as (
             else 'Desligado'
         end                                   as status_acolhimento,
 
-        -- dias_acolhimento da fct já vem com +1 (correção do motor).
-        a.dias_acolhimento                    as tempo_permanencia,
         a.flag_em_acolhimento,
         a.indicador_ciclo,
         a.motivo_saida,
 
+        -- dias_acolhimento da fct já vem com +1 (correção do motor).
+        a.dias_acolhimento                    as tempo_permanencia,
+
+        case
+            when a.motivo_saida = '2' then 'Decisão da direção/equipe - Conflito com profissional da unid.'
+            when a.motivo_saida = '3' then 'Decisão da direção/equipe - Regras da instituição'
+            when a.motivo_saida = '4' then 'Voluntário - Conflito com outro acolhido'
+            when a.motivo_saida = '5' then 'Voluntário - Conflito com profissional da unid.'
+            when a.motivo_saida = '7' then 'Voluntário - Regras da instituição'
+            when a.motivo_saida = '8' then 'Voluntário - Abstinência'
+            when a.motivo_saida = 'C' then 'Decisão da direção/equipe - Conflito com outro acolhido'
+            when a.motivo_saida = 'D' then 'Voluntário - Sem motivo identificado'
+            when a.motivo_saida = 'E' then 'Acolhido'
+            when a.motivo_saida = 'F' then 'Reinserção comunitária'
+            when a.motivo_saida = 'G' then 'Reinserção em família'
+            when a.motivo_saida = 'H' then 'Afastamento de cri/adol por medida protetiva'
+            when a.motivo_saida = 'I' then 'Solicitação de vaga'
+            when a.motivo_saida = 'J' then 'Reinserção PVTN'
+            when a.motivo_saida = 'K' then 'Mudança para outro município'
+            when a.motivo_saida = 'L' then 'Transferência para clínica de apoio a saúde'
+            when a.motivo_saida = 'N' then 'Transferência para delegacia policial'
+            when a.motivo_saida = 'O' then 'Óbito'
+            when a.motivo_saida = 'T' then 'Transferência para outra unid.'
+            when a.motivo_saida = 'X' then 'Fechado pela Unificação'
+            when a.motivo_saida = 'Y' then 'Demanda por serviço diurno'
+            when a.motivo_saida = 'Z' then 'Demanda por serviço noturno'
+            when (a.motivo_saida is null or a.motivo_saida = '') and a.flag_em_acolhimento = 1
+                then 'Não desligado'
+            when (a.motivo_saida is null or a.motivo_saida = '') and a.flag_em_acolhimento = 0
+                then 'Acolhido'
+            else 'Acolhido'
+        end                                   as motivo_desligamento,
+
+        case
+            when a.motivo_saida = 'F' then 'Deslig. por reinserção comunitária'
+            when a.motivo_saida = 'G' then 'Deslig. por reinserção em família de origem ou família extensa'
+            when a.motivo_saida = 'J' then 'Reinserção através do projeto de volta a terra natal'
+            when (a.motivo_saida is null or a.motivo_saida = '') and a.flag_em_acolhimento = 1
+                then 'Null'
+            when a.flag_em_acolhimento = 0 and a.motivo_saida not in ('F', 'G', 'J')
+                then 'Outros motivos'
+            else 'Null'
+        end                                   as motivo_reinsercao,
+
+        extract(year from a.data_saida)       as ano_desligamento,
+
+        case
+            when a.data_entrada < date(extract(year from current_date()), 1, 1)
+                 and a.data_saida is null
+                then date(extract(year from current_date()), 1, 1)
+            else a.data_entrada
+        end                                   as data_auxiliar,
+
+        coalesce(a.data_saida, current_date()) as data_desligamento_auxiliar,
+
         -- ===== UNIDADE =====
-        un.id_unidade,
+        un.id_unidade                         as sequs,
         un.nome_unidade                       as unidade,
         un.nome_tipo                           as tipo_unidade,
         un.classe,
@@ -177,7 +227,7 @@ final as (
             else un.esfera
         end                                   as esfera,
 
-        un.total_vagas,
+        un.total_vagas                        as vagas_totais,
         un.vagas_disponiveis                   as vagas_livres,
         un.vagas_bloqueadas,
         un.vagas_homens,
