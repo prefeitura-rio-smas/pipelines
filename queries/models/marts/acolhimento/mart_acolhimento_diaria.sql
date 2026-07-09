@@ -1,3 +1,8 @@
+{{ config(
+    materialized = 'table',
+    schema = 'alta_complexidade'
+) }}
+
 -- Ocupação diária dos acolhimentos institucionais.
 -- Grão: 1 linha por ciclo × data_referência (explosão temporal).
 -- Apresentação estilizada para o BI Looker, em paridade com a query legada
