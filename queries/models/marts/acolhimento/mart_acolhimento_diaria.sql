@@ -218,7 +218,17 @@ final as (
         -- ===== UNIDADE =====
         un.id_unidade                         as sequs,
         un.nome_unidade                       as unidade,
-        un.nome_tipo                           as tipo_unidade,
+        case
+            when upper(un.nome_unidade) like '%ALBERGUE%'     then 'Albergue'
+            when upper(un.nome_unidade) like '%CRAF%'         then 'Central de Recepção'
+            when upper(un.nome_unidade) like '%CRAS%'         then 'CRAS'
+            when upper(un.nome_unidade) like '%CREAS%'        then 'CREAS'
+            when upper(un.nome_unidade) like '%CRI%'          then 'Central de Recepção'
+            when upper(un.nome_unidade) like '%REPÚBLICA%'    then 'República'
+            when upper(un.nome_unidade) like '%URS%'          then 'URS'
+            when un.nome_unidade is null                      then 'Não Informado'
+            else 'Unidade Conveniada'
+        end                                   as tipo_unidade,
         un.classe,
 
         case
