@@ -1,0 +1,24 @@
+version: 2
+models:
+  - name: raw_tipos_atividade
+    description: "Tipos de atividade (ex: Tô de Boa: Educação e Cultura)."
+    columns:
+      - name: id_tipo_atividade
+        description: "Identificador único do tipo de atividade."
+        tests:
+          - not_null
+          - unique
+      - name: nome_tipo_atividade
+        description: "Nome do tipo de atividade."
+      - name: indicador_inativo
+        description: "Indicador se o tipo está inativo (S/N)."
+      - name: lista_cbo
+        description: "Lista de CBOs associados ao tipo de atividade."
+      - name: codigo_procedimento
+        description: "Código do procedimento."
+      - name: descricao_lista_raps
+        description: "Descrição da lista RAPS."
+      - name: indicador_forma_faturamento
+        description: "Indicador de forma de faturamento."
+      - name: indicador_uso_pac_sem_cadastro
+        description: "Indicador de uso de PAC sem cadastro."

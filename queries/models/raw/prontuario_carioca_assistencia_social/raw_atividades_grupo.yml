@@ -1,0 +1,32 @@
+version: 2
+models:
+  - name: raw_atividades_grupo
+    description: "Atividades de grupo/oficinas do sistema AcolheRio."
+    columns:
+      - name: id_atividade
+        description: "Identificador único da atividade (seqativgrp)."
+        tests:
+          - not_null
+          - unique
+      - name: nome_atividade
+        description: "Nome da atividade/oficina."
+      - name: data_inicio
+        description: "Data de início da atividade."
+      - name: hora_inicio
+        description: "Hora de início da atividade."
+      - name: data_fim
+        description: "Data de fim da atividade."
+      - name: hora_fim
+        description: "Hora de fim da atividade."
+      - name: id_tipo_atividade
+        description: "Identificador do tipo de atividade (FK → raw_tipos_atividade)."
+      - name: id_unidade
+        description: "Identificador da unidade (FK → dim_unidades)."
+      - name: id_local
+        description: "Identificador do local da atividade."
+      - name: recorrencia
+        description: "Padrão de recorrência semanal (ex: 1-0-1-0-0-0-0 = seg/qua)."
+      - name: indicador_matricula
+        description: "Indicador se a atividade requer matrícula (S/N)."
+      - name: observacao_matricula
+        description: "Observação sobre a matrícula."

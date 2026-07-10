@@ -26,17 +26,19 @@ models:
 
     # --- Arquitetura Antiga (Legacy) ---
     old_architecture:
-      +enabled: false  # Desativado para evitar conflitos, mas mantendo config para consulta
-      
+      +enabled: false  # Default: disabled. Subgrupos com pipeline ativa sobrescrevem abaixo.
+
       dashboard_arcgis:
+        +enabled: true  # Pipeline ArcGIS Abordagem (6/6h)
         +database: rj-smas-dev
         +materialized: table
         +schema: "{{ 'dashboard_arcgis' if target.name == 'prod' else 'gerenciamento__dbt' }}"
-      
+
       equipamentos:
+        +enabled: true  # Pipeline ArcGIS Equipamento (diário)
         +materialized: table
         +schema: "{{ 'equipamento' if target.name == 'prod' else 'gerenciamento__dbt' }}"
-      
+
       dashboard_acolherio:
         raw:
           +materialized: ephemeral
@@ -47,7 +49,7 @@ models:
         mart:
           +materialized: table
         +schema: "{{ 'acolherio' if target.name == 'prod' else 'relatorio' }}"
-      
+
       rma:
         +schema: "{{ 'acolherio' if target.name == 'prod' else 'gerenciamento__dbt' }}"
         cras:
@@ -60,12 +62,13 @@ models:
             mart:
               +materialized: incremental
               +schema: "{{ 'dashboard_arcgis' if target.name == 'prod' else 'relatorio' }}"
-      
+
       bolsa_familia:
-        +enabled: true
+        +enabled: true  # Pipeline Bolsa Família (manual/event-driven)
         +materialized: table
         +schema: "{{ 'bolsa_familia' if target.name == 'prod' else 'gerenciamento__dbt' }}"
-      
+
       pic:
+        +enabled: true  # Pipeline ArcGIS PIC (1/1h)
         +materialized: table
         +schema: pic

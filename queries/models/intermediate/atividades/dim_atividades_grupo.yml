@@ -1,0 +1,71 @@
+version: 2
+
+models:
+  - name: dim_atividades_grupo
+    description: |
+      Dimensão de catálogo de atividades de grupo.
+      Grão: 1 linha por atividade de grupo.
+      Inclui dados da atividade, tipo, unidade responsável e período de vigência.
+    config:
+      materialized: table
+    columns:
+      - name: id_atividade
+        description: "Identificador único da atividade (PK natural)."
+        data_type: integer
+        tests:
+          - not_null
+          - unique
+
+      - name: nome_atividade
+        description: "Nome da atividade de grupo."
+        data_type: string
+        tests:
+          - not_null
+
+      - name: nome_tipo_atividade
+        description: "Nome do tipo de atividade (ex: Tô de Boa: Educação e Cultura)."
+        data_type: string
+
+      - name: id_tipo_atividade
+        description: "Identificador do tipo de atividade (FK para raw_tipos_atividade)."
+        data_type: integer
+
+      - name: id_unidade
+        description: "Identificador da unidade responsável pela atividade (FK para dim_unidades)."
+        data_type: integer
+
+      - name: nome_unidade
+        description: "Nome da unidade responsável pela atividade."
+        data_type: string
+
+      - name: data_inicio
+        description: "Data de início da atividade."
+        data_type: date
+
+      - name: data_fim
+        description: "Data de término da atividade."
+        data_type: date
+
+      - name: hora_inicio
+        description: "Horário de início da atividade."
+        data_type: string
+
+      - name: hora_fim
+        description: "Horário de término da atividade."
+        data_type: string
+
+      - name: recorrencia
+        description: "Descrição da recorrência/período da atividade (ex: semanal, quinzenal)."
+        data_type: string
+
+      - name: indicador_matricula
+        description: "Indica se a atividade requer matrícula."
+        data_type: string
+
+      - name: observacao_matricula
+        description: "Observações sobre a matrícula na atividade."
+        data_type: string
+
+      - name: id_local
+        description: "Identificador do local onde a atividade é realizada."
+        data_type: integer

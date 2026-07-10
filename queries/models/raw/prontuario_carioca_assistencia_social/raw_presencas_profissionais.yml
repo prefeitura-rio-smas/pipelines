@@ -1,0 +1,21 @@
+version: 2
+models:
+  - name: raw_presencas_profissionais
+    description: "Presenças de profissionais em atividades de grupo."
+    columns:
+      - name: id_atividade
+        description: "Identificador da atividade (FK → raw_atividades_grupo)."
+        tests:
+          - not_null
+      - name: id_profissional
+        description: "Identificador do profissional (FK → dim_profissionais)."
+        tests:
+          - not_null
+      - name: codigo_cbo
+        description: "Código da Classificação Brasileira de Ocupações."
+      - name: data_presenca
+        description: "Data da presença."
+        tests:
+          - not_null
+      - name: hora_presenca
+        description: "Hora da presença."

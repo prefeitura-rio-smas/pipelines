@@ -56,3 +56,11 @@ sources:
         description: "Capacidade operacional SMAS: vagas por gênero, público-alvo e abrangência."
       - name: gh_origens
         description: "Origens de cadastro dos registros do sistema."
+      - name: gh_ativgrp
+        description: "Atividades de grupo/oficinas do sistema AcolheRio."
+      - name: gh_ativ_paciente
+        description: "Presenças de usuários em atividades de grupo."
+      - name: gh_ativ_prof
+        description: "Presenças de profissionais em atividades de grupo."
+      - name: gh_tpatividades
+        description: "Tipos de atividade (ex: Tô de Boa: Educação e Cultura)."
