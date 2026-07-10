@@ -1,7 +1,7 @@
 version: 2
 
 models:
-  - name: mart_pic_prontuario_carioca
+  - name: mart_pic_prontuario_carioca_dev
     description: |
       Mart Prontuário Carioca para PIC.
       Grão: 1 linha por família identificada como PIC.
