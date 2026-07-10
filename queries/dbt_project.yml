@@ -19,7 +19,13 @@ models:
     marts:
       +materialized: table
       +schema: "{{ 'marts' if target.name == 'prod' else 'relatorio' }}"
-      
+
+      atividades:
+        +tags: ["daily"]
+
+      acolhimento:
+        +tags: ["daily"]
+
       poc_paif:
         +materialized: table
         +schema: "{{ 'marts' if target.name == 'prod' else 'relatorio' }}"
