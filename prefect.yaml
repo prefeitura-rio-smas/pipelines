@@ -223,7 +223,7 @@ deployments:
   - name: dbt-transform-staging
     entrypoint: pipelines/datalake/transform/dbt/flows.py:dbt_transform_flow
     parameters:
-      select: "tag:daily"
+      select: "+tag:daily"
     work_pool:
       name: docker-pool
       job_variables:
@@ -241,7 +241,7 @@ deployments:
   - name: dbt-transform-daily
     entrypoint: pipelines/datalake/transform/dbt/flows.py:dbt_transform_flow
     parameters:
-      select: "tag:daily"
+      select: "+tag:daily"
     schedule:
       cron: "0 10 * * *"
       timezone: "America/Sao_Paulo"
