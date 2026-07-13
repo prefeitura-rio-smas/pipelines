@@ -1,0 +1,23 @@
+version: 2
+models:
+  - name: raw_presencas_usuarios
+    description: "Presenças de usuários em atividades de grupo."
+    columns:
+      - name: id_atividade
+        description: "Identificador da atividade (FK → raw_atividades_grupo)."
+        tests:
+          - not_null
+      - name: id_usuario
+        description: "Identificador do usuário (FK → dim_usuarios)."
+        tests:
+          - not_null
+      - name: data_presenca
+        description: "Data da presença."
+        tests:
+          - not_null
+      - name: hora_presenca
+        description: "Hora da presença."
+      - name: id_unidade
+        description: "Identificador da unidade (FK → dim_unidades)."
+      - name: id_setor
+        description: "Identificador do setor."

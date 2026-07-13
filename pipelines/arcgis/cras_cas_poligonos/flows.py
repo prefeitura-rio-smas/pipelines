@@ -1,6 +1,4 @@
-import os
 from prefect import flow
-from prefect_dbt.cli.commands import trigger_dbt_cli_command
 
 from pipelines.arcgis.tasks import load_arcgis_to_bigquery
 
@@ -30,12 +28,6 @@ def cras_cas_poligonos_flow() -> None:
         order_by_field=order_by_field,
     )
 
-    dbt_target = os.getenv("MODE", "staging")
-    trigger_dbt_cli_command(
-        command=f"dbt run --select cras_cas_poligonos --target {dbt_target}",
-        project_dir="queries",
-        profiles_dir="queries",
-    )
 
 if __name__ == "__main__":
     cras_cas_poligonos_flow()

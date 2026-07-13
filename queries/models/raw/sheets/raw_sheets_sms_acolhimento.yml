@@ -1,0 +1,22 @@
+version: 2
+models:
+  - name: raw_sheets_sms_acolhimento
+    description: |
+      Acolhimentos SMS consolidados (planilhas externas da SUBPSE), usados como
+      segunda fonte da mart_meta_acolhimento (UNION com acolhimentos SMAS).
+      Fonte bruta: `rj-smas-dev.subpse_acolhimento.consolidado_sms_acolhimento_2026`.
+    columns:
+      - name: prontuario
+      - name: nome
+      - name: data_nascimento
+        description: "Data de nascimento (parse de dd/MM/yyyy)."
+      - name: cpf
+        description: "CPF em string, pode ter zeros à esquerda ou ser inválido."
+      - name: data_acolhimento
+        description: "Data do acolhimento (parse de dd/MM/yyyy)."
+      - name: unidade
+      - name: nome_mae
+      - name: mes_acolhimento
+      - name: origem
+      - name: data_arquivo
+        description: "Data do arquivo de origem (snapshot da planilha)."

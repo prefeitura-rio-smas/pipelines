@@ -1,0 +1,4 @@
+version: 2
+models:
+  - name: raw_evolucoes_administrativas
+    description: "Evoluções administrativas."

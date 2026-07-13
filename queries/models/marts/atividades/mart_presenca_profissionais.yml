@@ -1,0 +1,64 @@
+version: 2
+
+models:
+  - name: mart_presenca_profissionais
+    description: |
+      Mart de presenças de profissionais em atividades de grupo, enriquecido com dados
+      dos profissionais (CBOs) e informações da atividade.
+      Grão: 1 linha por presença de profissional em atividade.
+    config:
+      materialized: table
+      schema: relatorio
+    columns:
+      - name: id_presenca
+        description: "Surrogate key da presença."
+        data_type: string
+        tests:
+          - not_null
+          - unique
+
+      - name: id_profissional
+        description: "Identificador do profissional."
+        data_type: integer
+        tests:
+          - not_null
+
+      - name: nome_profissional
+        description: "Nome completo do profissional."
+        data_type: string
+
+      - name: codigos_cbo
+        description: "Códigos CBO do profissional (agregados, separados por ' | ')."
+        data_type: string
+
+      - name: nome_cbo
+        description: "Descrições dos CBOs do profissional (agregadas, separadas por ' | ')."
+        data_type: string
+
+      - name: id_atividade
+        description: "Identificador da atividade."
+        data_type: integer
+        tests:
+          - not_null
+
+      - name: nome_atividade
+        description: "Nome da atividade de grupo."
+        data_type: string
+
+      - name: nome_tipo_atividade
+        description: "Nome do tipo de atividade."
+        data_type: string
+
+      - name: nome_unidade
+        description: "Nome da unidade responsável pela atividade."
+        data_type: string
+
+      - name: data_presenca
+        description: "Data da presença."
+        data_type: date
+        tests:
+          - not_null
+
+      - name: hora_presenca
+        description: "Hora da presença."
+        data_type: string

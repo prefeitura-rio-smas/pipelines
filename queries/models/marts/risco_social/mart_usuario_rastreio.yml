@@ -1,0 +1,85 @@
+version: 2
+
+models:
+  - name: mart_usuario_rastreio
+    description: >
+      Mart de rastreio de usuarios por unidade (simplificado).
+      Granularidade: 1 linha por (id_paciente, id_unidade).
+      Consolida metricas de interacao (atendimentos + evolucoes) em cada unidade.
+      Foco exclusivo no detalhamento por unidade especifica.
+      Removidas flags PAIF, PAEFI e vulnerabilidades conforme solicitacao.
+      Adicionados campos de enriquecimento: nome_usuario, sexo, idade,
+      violacoes_descricao.
+    columns:
+      - name: id_paciente
+        description: "Identificador unico da pessoa (individuo)."
+        tests:
+          - not_null
+
+      - name: id_familia
+        description: >
+          Identificador da familia atual da pessoa. Obtido via raw_membros_familia,
+          priorizando o vinculo ativo (data_saida nula) mais recente.
+
+      - name: nome_usuario
+        description: "Nome completo do usuario/paciente."
+
+      - name: id_unidade
+        description: "Identificador unico da unidade de assistencia/acolhimento."
+        tests:
+          - not_null
+
+      - name: nome_unidade
+        description: "Nome da unidade de assistencia/acolhimento."
+
+      - name: tipo_unidade
+        description: "Tipo da unidade (ex: CRAS, CREAS, URS, Albergue, etc.)."
+
+      - name: flag_atendimento
+        description: >
+          TRUE se houve ao menos um atendimento registrado para esta
+          combinacao (pessoa, unidade).
+
+      - name: flag_evolucao
+        description: >
+          TRUE se houve ao menos uma evolucao registrada para esta
+          combinacao (pessoa, unidade).
+
+      - name: total_atendimentos
+        description: >
+          Numero total de atendimentos desta pessoa nesta unidade.
+          Inclui atendimentos dos modulos familia e usuario.
+
+      - name: total_evolucoes
+        description: >
+          Numero total de evolucoes desta pessoa nesta unidade.
+          Inclui evolucoes dos modulos usuario, familia e administrativo.
+
+      - name: data_primeira_interacao
+        description: >
+          Data do primeiro atendimento ou evolucao registrada para esta
+          combinacao (pessoa, unidade).
+
+      - name: data_ultima_interacao
+        description: >
+          Data do ultimo atendimento ou evolucao registrada para esta
+          combinacao (pessoa, unidade).
+
+      - name: sexo
+        description: "Sexo do usuario (M/F)."
+
+      - name: idade
+        description: "Idade calculada do usuario em anos, baseada na data de nascimento."
+
+      - name: violacoes_descricao
+        description: >
+          Array de descricoes textuais das violacoes de direito registradas
+          para o usuario. Pode ser NULL ou vazio se nao houver violacoes
+          registradas.
+
+    tests:
+      - dbt_utils.unique_combination_of_columns:
+          combination_of_columns:
+            - id_paciente
+            - id_unidade
+          name: unique_mart_usuario_rastreio_pessoa_unidade

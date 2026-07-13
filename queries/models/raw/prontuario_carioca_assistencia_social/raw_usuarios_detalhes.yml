@@ -1,0 +1,4 @@
+version: 2
+models:
+  - name: raw_usuarios_detalhes
+    description: "Detalhes dos pacientes."

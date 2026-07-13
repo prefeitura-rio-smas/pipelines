@@ -1,0 +1,16 @@
+version: 2
+models:
+  - name: raw_tipos_unidade
+    description: "Classificação dos tipos de unidade do sistema (gh_us_tipo). Ex: Albergue, CRAS, CREAS, URS, ILPI."
+    columns:
+      - name: id_tipo_unidade
+        description: "Identificador do tipo de unidade (seqtipous)."
+        tests: [unique, not_null]
+      - name: nome_tipo
+        description: "Nome descritivo do tipo (ex: Albergue – Adultos Masculino)."
+      - name: classe
+        description: "Classe da unidade. E1=Acolhimento Institucional, E2=Serviços de Média Complexidade, EA=Administrativo, EG=Gestão/CRAS/CREAS."
+      - name: descricao_classe
+        description: "Descrição detalhada da classe."
+      - name: descricao_classe_resumida
+        description: "Descrição resumida da classe."

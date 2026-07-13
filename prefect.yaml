@@ -87,42 +87,6 @@ deployments:
           SIURB_PWD: "{{ $SIURB_PWD }}"
     tags: ["prod", "bolsa-familia"]
 
-  # ---------------------------------------------------------------------------
-  # Acolherio
-  # ---------------------------------------------------------------------------
-  - name: acolherio-staging
-    entrypoint: pipelines/acolherio/flows.py:acolherio_flow
-    work_pool:
-      name: docker-pool
-      job_variables:
-        networks: ["prefect_prefect-stack"]
-        image: "{{ $PREFECT_DEPLOYMENT_IMAGE }}"
-        env:
-          PREFECT_API_URL: http://prefect-api:4200/api
-          MODE: staging
-          GCP_CREDENTIALS: "{{ $GCP_CREDENTIALS }}"
-          SIURB_URL: "{{ $SIURB_URL }}"
-          SIURB_USER: "{{ $SIURB_USER }}"
-          SIURB_PWD: "{{ $SIURB_PWD }}"
-    tags: ["staging", "acolherio"]
-
-  - name: acolherio-prod
-    entrypoint: pipelines/acolherio/flows.py:acolherio_flow
-    schedule:
-      cron: "0 1 * * *"
-      timezone: "America/Sao_Paulo"
-    work_pool:
-      name: docker-pool
-      job_variables:
-        networks: ["prefect_prefect-stack"]
-        image: "{{ $PREFECT_DEPLOYMENT_IMAGE }}"
-        env:
-          MODE: prod
-          GCP_CREDENTIALS: "{{ $GCP_CREDENTIALS }}"
-          SIURB_URL: "{{ $SIURB_URL }}"
-          SIURB_USER: "{{ $SIURB_USER }}"
-          SIURB_PWD: "{{ $SIURB_PWD }}"
-    tags: ["prod", "acolherio"]
 
   # ---------------------------------------------------------------------------
   # equipamento
@@ -252,3 +216,51 @@ deployments:
           SIURB_USER: "{{ $SIURB_USER }}"
           SIURB_PWD: "{{ $SIURB_PWD }}"
     tags: ["prod", "primeira_infancia_carioca"]
+
+  # ---------------------------------------------------------------------------
+  # Transformação — dbt genérico
+  # ---------------------------------------------------------------------------
+  - name: dbt-transform-staging
+    entrypoint: pipelines/datalake/transform/dbt/flows.py:dbt_transform_flow
+    parameters:
+      select: "+tag:daily"
+    work_pool:
+      name: docker-pool
+      job_variables:
+        networks: ["prefect_prefect-stack"]
+        image: "{{ $PREFECT_DEPLOYMENT_IMAGE }}"
+        env:
+          PREFECT_API_URL: http://prefect-api:4200/api
+          MODE: staging
+          GCP_CREDENTIALS: "{{ $GCP_CREDENTIALS }}"
+          SIURB_URL: "{{ $SIURB_URL }}"
+          SIURB_USER: "{{ $SIURB_USER }}"
+          SIURB_PWD: "{{ $SIURB_PWD }}"
+    tags: ["staging", "dbt"]
+
+  - name: dbt-transform-daily
+    entrypoint: pipelines/datalake/transform/dbt/flows.py:dbt_transform_flow
+    parameters:
+      select: "+tag:daily"
+    schedule:
+      cron: "0 10 * * *"
+      timezone: "America/Sao_Paulo"
+    work_pool:
+      name: docker-pool
+      job_variables:
+        networks: ["prefect_prefect-stack"]
+        image: "{{ $PREFECT_DEPLOYMENT_IMAGE }}"
+        env:
+          PREFECT_API_URL: http://prefect-api:4200/api
+          MODE: prod
+          PREFECT_EVENTS_ENABLED: "false"
+          PREFECT_SERVER_EVENTS_ENABLED: "false"
+          PREFECT_EVENTS_MESSAGING_ENABLED: "false"
+          PREFECT_SERVER_SERVICES_EVENT_PERSISTER_ENABLED: "false"
+          PREFECT_SERVER_SERVICES_EVENT_LOGGER_ENABLED: "false"
+          PREFECT_SERVER_EVENTS_STREAM_OUT_ENABLED: "false"
+          GCP_CREDENTIALS: "{{ $GCP_CREDENTIALS }}"
+          SIURB_URL: "{{ $SIURB_URL }}"
+          SIURB_USER: "{{ $SIURB_USER }}"
+          SIURB_PWD: "{{ $SIURB_PWD }}"
+    tags: ["prod", "dbt"]

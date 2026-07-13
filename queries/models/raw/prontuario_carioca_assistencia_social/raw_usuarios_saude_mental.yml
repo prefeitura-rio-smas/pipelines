@@ -1,0 +1,4 @@
+version: 2
+models:
+  - name: raw_usuarios_saude_mental
+    description: "Dados de saúde mental dos pacientes."

@@ -1,0 +1,46 @@
+version: 2
+
+models:
+  - name: poc_paif_acompanhamento
+    description: >
+      PoC para o indicador "acompanhado pelo PAIF". Consolida dados de duas origens:
+      (1) evoluções do módulo PLAN_ACOMP_FAM (codabapac=7) no prontuário familiar, e
+      (2) vínculo de serviço assistencial PAIF (id_servico_assistencial=1).
+      Granularidade: 1 linha por pessoa (id_paciente).
+      ATENÇÃO: o FULL OUTER JOIN pode gerar duplicatas de id_paciente quando a mesma
+      pessoa está vinculada a múltiplas famílias. Um DISTINCT ou dedup no modelo
+      resolveria — pendente de correção futura.
+    columns:
+      - name: id_paciente
+        description: "Identificador único da pessoa (indivíduo)."
+        tests:
+          - not_null
+      - name: id_familia
+        description: "Identificador único da família."
+        tests:
+          - not_null
+      - name: flag_paif_evolucao
+        description: "TRUE se a pessoa possui ao menos uma evolução no módulo PLAN_ACOMP_FAM (codabapac=7)."
+      - name: flag_paif_servico
+        description: "TRUE se a família está vinculada ao serviço assistencial PAIF (id_servico_assistencial=1)."
+      - name: flag_paif_origem
+        description: >
+          Origem do indicador: 'evolucao' (apenas evolução), 'servico' (apenas serviço),
+          ou 'ambos' (ambas as origens).
+        tests:
+          - accepted_values:
+              values: ['evolucao', 'servico', 'ambos']
+      - name: total_evolucoes
+        description: "Número total de evoluções PAIF registradas para esta pessoa. NULL se origem for apenas 'servico'."
+      - name: data_primeira_evolucao
+        description: "Data da primeira evolução PAIF registrada. NULL se origem for apenas 'servico'."
+      - name: data_ultima_evolucao
+        description: "Data da última evolução PAIF registrada. NULL se origem for apenas 'servico'."
+      - name: flag_desligado
+        description: "TRUE se houve evolução de desligamento (tipo_evolucao='D'). NULL/FALSE se ainda ativo ou sem evolução."
+      - name: data_desligamento
+        description: "Data de desligamento do PAIF (quando tipo_evolucao='D'). NULL se ainda ativo ou sem evolução."
+      - name: nome_unidade
+        description: "Nome da unidade (CRAS/CREAS) vinculada à última evolução. NULL se origem for apenas 'servico'."
+      - name: tipo_unidade
+        description: "Tipo da unidade (ex: 'CRAS', 'CREAS', 'Sem informação'). NULL se origem for apenas 'servico'."

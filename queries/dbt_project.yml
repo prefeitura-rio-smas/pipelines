@@ -5,38 +5,76 @@ model-paths: ["models"]
 
 models:
   queries:
-    dashboard_arcgis:
-      +database: rj-smas-dev
-      +materialized: table
-      +schema: "{{ 'dashboard_arcgis' if target.name == 'prod' else 'gerenciamento__dbt' }}"
-    equipamentos:
-      +materialized: table
-      +schema: "{{ 'equipamento' if target.name == 'prod' else 'gerenciamento__dbt' }}"
-    dashboard_acolherio:
-      raw:
-        +materialized: ephemeral
-      staging:
-        +materialized: ephemeral
-      intermediate:
-        +materialized: ephemeral
-      mart:
+    # --- Nova Arquitetura Medallion ---
+    raw:
+      +materialized: view
+      +schema: "{{ 'raw' if target.name == 'prod' else 'gerenciamento__dbt' }}"
+    
+    intermediate:
+      +materialized: ephemeral
+      core:
         +materialized: table
-      +schema: "{{ 'acolherio' if target.name == 'prod' else 'relatorio' }}"
-    rma:
-      +schema: "{{ 'acolherio' if target.name == 'prod' else 'gerenciamento__dbt' }}"
-      cras:
-          raw:
-            +materialized: ephemeral
-          staging:
-            +materialized: ephemeral
-          intermediate:
-            +materialized: incremental
-          mart:
-            +materialized: incremental
-            +schema: "{{ 'dashboard_arcgis' if target.name == 'prod' else 'relatorio' }}"
-    bolsa_familia:
+        +schema: "{{ 'core' if target.name == 'prod' else 'gerenciamento__dbt' }}"
+    
+    marts:
       +materialized: table
-      +schema: "{{ 'bolsa_familia' if target.name == 'prod' else 'gerenciamento__dbt' }}"
-    pic:
-      +materialized: table
-      +schema: pic
+      +schema: "{{ 'marts' if target.name == 'prod' else 'relatorio' }}"
+
+      atividades:
+        +tags: ["daily"]
+
+      acolhimento:
+        +tags: ["daily"]
+
+      poc_paif:
+        +materialized: table
+        +schema: "{{ 'marts' if target.name == 'prod' else 'relatorio' }}"
+
+    # --- Arquitetura Antiga (Legacy) ---
+    old_architecture:
+      +enabled: false  # Default: disabled. Subgrupos com pipeline ativa sobrescrevem abaixo.
+
+      dashboard_arcgis:
+        +enabled: true  # Pipeline ArcGIS Abordagem (6/6h)
+        +database: rj-smas-dev
+        +materialized: table
+        +schema: "{{ 'dashboard_arcgis' if target.name == 'prod' else 'gerenciamento__dbt' }}"
+
+      equipamentos:
+        +enabled: true  # Pipeline ArcGIS Equipamento (diário)
+        +materialized: table
+        +schema: "{{ 'equipamento' if target.name == 'prod' else 'gerenciamento__dbt' }}"
+
+      dashboard_acolherio:
+        raw:
+          +materialized: ephemeral
+        staging:
+          +materialized: ephemeral
+        intermediate:
+          +materialized: ephemeral
+        mart:
+          +materialized: table
+        +schema: "{{ 'acolherio' if target.name == 'prod' else 'relatorio' }}"
+
+      rma:
+        +schema: "{{ 'acolherio' if target.name == 'prod' else 'gerenciamento__dbt' }}"
+        cras:
+            raw:
+              +materialized: ephemeral
+            staging:
+              +materialized: ephemeral
+            intermediate:
+              +materialized: incremental
+            mart:
+              +materialized: incremental
+              +schema: "{{ 'dashboard_arcgis' if target.name == 'prod' else 'relatorio' }}"
+
+      bolsa_familia:
+        +enabled: true  # Pipeline Bolsa Família (manual/event-driven)
+        +materialized: table
+        +schema: "{{ 'bolsa_familia' if target.name == 'prod' else 'gerenciamento__dbt' }}"
+
+      pic:
+        +enabled: true  # Pipeline ArcGIS PIC (1/1h)
+        +materialized: table
+        +schema: pic

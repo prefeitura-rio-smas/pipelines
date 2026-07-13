@@ -1,0 +1,10 @@
+version: 2
+
+sources:
+  - name: pic
+    description: "Dataset do programa Primeira Infância Carioca (CRM Registry)."
+    database: rj-crm-registry-dev
+    schema: projeto_pequenos_cariocas
+    tables:
+      - name: participantes
+        description: "Participantes do programa PIC. Fonte: mart_pic_participante (alias participantes)."

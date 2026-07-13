@@ -1,0 +1,36 @@
+version: 2
+models:
+  - name: fct_acolhimento_ciclos
+    description: |
+      Fato de acolhimentos institucionais por ciclo (1 linha por id_ciclo).
+      Sem explosao temporal — para visão diaria, ver `fct_acolhimento_diaria`.
+      `dias_acolhimento` segue contagem inclusiva em ambos extremos (DATE_DIFF + 1).
+    columns:
+      - name: id_acolhimento_sk
+        description: "Surrogate key do acolhimento (id_ciclo)."
+        tests: [unique, not_null]
+      - name: id_usuario_sk
+        description: "Surrogate key do usuario acolhido."
+      - name: id_unidade_sk
+        description: "Surrogate key da unidade de acolhimento."
+      - name: id_ciclo
+        description: "ID original do ciclo (seqciclo)."
+      - name: id_usuario
+      - name: id_unidade
+      - name: data_entrada
+        description: "Data de entrada no acolhimento."
+      - name: hora_entrada
+      - name: data_saida
+        description: "Data de saida do acolhimento (null se ainda acolhido)."
+      - name: hora_saida
+      - name: id_usuario_origem
+      - name: id_login_entrada
+      - name: id_login_saida
+      - name: indicador_ciclo
+        description: "C = ciclo atual, E = encerrado."
+      - name: motivo_saida
+        description: "Codigo bruto do motivo de saida (indmotivsaida)."
+      - name: dias_acolhimento
+        description: "DATE_DIFF(data_saida, data_entrada, day) + 1. Contagem inclusiva."
+      - name: flag_em_acolhimento
+        description: "1 se ainda acolhido (data_saida is null), 0 caso contrario."

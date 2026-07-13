@@ -1,0 +1,4 @@
+version: 2
+models:
+  - name: raw_evolucoes_usuarios
+    description: "Evoluções registradas no prontuário individual do paciente."

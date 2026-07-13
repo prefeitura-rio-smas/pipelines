@@ -1,0 +1,13 @@
+version: 2
+
+models:
+  - name: int_deficiencias_agregadas
+    description: |
+      Deficiências dos usuários explodidas (um registro por tipo de deficiência).
+      Ephemeral — materializado apenas como CTE nos modelos que o referenciam.
+    columns:
+      - name: id_usuario_sk
+        description: "Surrogate key do usuário."
+        tests: [not_null]
+      - name: deficiencia_label
+        description: "Nome da deficiência (ex: Deficiência motora, Deficiência visual total)."

@@ -1,0 +1,25 @@
+version: 2
+models:
+  - name: mart_meta_acolhimento
+    description: |
+      Snapshot mensal de acolhimentos para apuração de meta.
+      Grão: 1 linha por (CPF × mês × procedência).
+      Incremental: cada execução adiciona um snapshot com data_particao = current_date().
+      Procedência SMAS (mart_acolhimento_diaria) ou SMS (Google Sheets externa).
+    columns:
+      - name: data_particao
+        description: "Data do snapshot (data do dbt run)."
+      - name: ano
+        description: "Ano de referência do acolhimento."
+        tests: [not_null]
+      - name: mes
+        description: "Mês de referência do acolhimento (1-12)."
+        tests: [not_null]
+      - name: cpf_digits
+        description: "CPF com apenas dígitos (11 caracteres para válidos)."
+      - name: cpf_status
+        description: "cpf_ok (11 dígitos), cpf_vazio (SMAS sem CPF), cpf_invalido (SMS com CPF inválido)."
+      - name: eixo
+        description: "Eixo do acolhimento: ADULTO/FAMÍLIA, IDOSO (apenas SMAS). NULL para SMS."
+      - name: origem
+        description: "Procedência do registro: SMAS (sistema) ou SMS (Google Sheets)."

@@ -1,0 +1,42 @@
+version: 2
+
+models:
+  - name: fct_presencas_profissionais
+    description: |
+      Fato de presenças de profissionais em atividades de grupo.
+      Grão: 1 linha por presença de um profissional em uma atividade em uma data/hora.
+    config:
+      materialized: table
+    columns:
+      - name: id_presenca
+        description: "Surrogate key da presença (hash de id_atividade + id_profissional + data_presenca + hora_presenca)."
+        data_type: string
+        tests:
+          - not_null
+          - unique
+
+      - name: id_atividade
+        description: "Identificador da atividade (FK para dim_atividades_grupo)."
+        data_type: integer
+        tests:
+          - not_null
+
+      - name: id_profissional
+        description: "Identificador do profissional (FK para dim_profissionais)."
+        data_type: integer
+        tests:
+          - not_null
+
+      - name: data_presenca
+        description: "Data da presença."
+        data_type: date
+        tests:
+          - not_null
+
+      - name: hora_presenca
+        description: "Hora da presença."
+        data_type: string
+
+      - name: codigo_cbo
+        description: "Código CBO do profissional no momento da presença."
+        data_type: string

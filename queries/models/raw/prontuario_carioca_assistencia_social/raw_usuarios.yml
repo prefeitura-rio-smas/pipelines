@@ -1,0 +1,12 @@
+version: 2
+models:
+  - name: raw_usuarios
+    description: "Dados cadastrais dos pacientes."
+    columns:
+      - name: id_paciente
+        description: "ID original do paciente (seqpac)."
+        tests:
+          - not_null
+          - unique
+      - name: cpf
+        description: "CPF do paciente."

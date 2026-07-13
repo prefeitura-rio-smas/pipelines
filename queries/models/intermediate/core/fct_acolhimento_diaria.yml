@@ -1,0 +1,40 @@
+version: 2
+models:
+  - name: fct_acolhimento_diaria
+    description: |
+      Fato de acolhimentos no grão (id_ciclo × data_referencia).
+      Explosão temporal via GENERATE_DATE_ARRAY sobre `fct_acolhimento_ciclos`.
+      Contém JOINs com `dim_usuarios` (cpf) e `dim_unidades` (tipo_publico),
+      que são os únicos campos downstream que a `mart_acolhimento_diaria` e a
+      `mart_meta_acolhimento` precisam além das chaves de ciclo/datas.
+
+      Filtro: `data_referencia <= current_date()` (descarta datas futuras
+      de ciclos em aberto e ciclos corrompidos com data_entrada ~0202).
+    columns:
+      - name: id_acolhimento_sk
+        description: "Surrogate key do acolhimento (FK para fct_acolhimento_ciclos)."
+        tests: [not_null]
+      - name: id_usuario_sk
+      - name: id_unidade_sk
+      - name: id_ciclo
+        description: "ID original do ciclo (seqciclo)."
+      - name: id_usuario
+      - name: id_unidade
+      - name: data_entrada
+        description: "Data de entrada no acolhimento."
+      - name: data_saida
+        description: "Data de saída do acolhimento (null se ainda acolhido)."
+      - name: data_referencia
+        description: "Data da explosão temporal (um dia por linha)."
+      - name: cpf
+        description: "CPF do usuário (vindo de dim_usuarios). Pode ser NULL ou vazio."
+      - name: tipo_publico
+        description: "Público-alvo da unidade (vindo de dim_unidades)."
+      - name: dias_acolhimento
+        description: "DATE_DIFF(data_saida, data_entrada, day) + 1 (vindo de fct_acolhimento_ciclos)."
+      - name: flag_em_acolhimento
+        description: "1 se ainda acolhido, 0 caso contrário."
+      - name: indicador_ciclo
+        description: "C = ciclo atual, E = encerrado."
+      - name: motivo_saida
+        description: "Código bruto do motivo de saída (indmotivsaida)."
