@@ -238,7 +238,7 @@ deployments:
           SIURB_PWD: "{{ $SIURB_PWD }}"
     tags: ["staging", "dbt"]
 
-  - name: dbt-transform-daily
+  - name: dbt-transform-prod
     entrypoint: pipelines/datalake/transform/dbt/flows.py:dbt_transform_flow
     parameters:
       select: "+tag:daily"
