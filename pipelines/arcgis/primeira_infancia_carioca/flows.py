@@ -28,7 +28,7 @@ def flow_transform_dbt():
     """Executa os modelos dbt do projeto PIC usando a integração nativa."""
     dbt_target = os.getenv("MODE", "staging")
     return trigger_dbt_cli_command(
-        command=f"dbt run --select pic --target {dbt_target}",
+        command=f"dbt run --select tag:controle_cas --target {dbt_target}",
         project_dir="queries",
         profiles_dir="queries"
     )

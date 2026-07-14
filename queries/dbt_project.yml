@@ -78,3 +78,9 @@ models:
         +enabled: true  # Pipeline ArcGIS PIC (1/1h)
         +materialized: table
         +schema: pic
+
+        controle_cas:
+          +tags: ["controle_cas"]
+
+        meta_ar_cpf:
+          +tags: ["meta_ar_cpf"]
