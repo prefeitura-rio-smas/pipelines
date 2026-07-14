@@ -218,6 +218,46 @@ deployments:
     tags: ["prod", "primeira_infancia_carioca"]
 
   # ---------------------------------------------------------------------------
+  # meta_ar_cpf
+  # ---------------------------------------------------------------------------
+  - name: meta-ar-cpf-staging
+    entrypoint: pipelines/arcgis/primeira_infancia_carioca/meta_ar_cpf/flows.py:meta_ar_cpf_pipeline
+    work_pool:
+      name: docker-pool
+      job_variables:
+        networks: ["prefect_prefect-stack"]
+        image: "{{ $PREFECT_DEPLOYMENT_IMAGE }}"
+        env:
+          PREFECT_API_URL: http://prefect-api:4200/api
+          MODE: staging
+          GCP_CREDENTIALS: "{{ $GCP_CREDENTIALS }}"
+          SIURB_URL: "{{ $SIURB_URL }}"
+          SIURB_USER: "{{ $SIURB_USER }}"
+          SIURB_PWD: "{{ $SIURB_PWD }}"
+    tags: ["staging", "meta-ar-cpf"]
+
+  - name: meta-ar-cpf-prod
+    entrypoint: pipelines/arcgis/primeira_infancia_carioca/meta_ar_cpf/flows.py:meta_ar_cpf_pipeline
+    work_pool:
+      name: docker-pool
+      job_variables:
+        networks: ["prefect_prefect-stack"]
+        image: "{{ $PREFECT_DEPLOYMENT_IMAGE }}"
+        env:
+          MODE: prod
+          PREFECT_EVENTS_ENABLED: "false"
+          PREFECT_SERVER_EVENTS_ENABLED: "false"
+          PREFECT_EVENTS_MESSAGING_ENABLED: "false"
+          PREFECT_SERVER_SERVICES_EVENT_PERSISTER_ENABLED: "false"
+          PREFECT_SERVER_SERVICES_EVENT_LOGGER_ENABLED: "false"
+          PREFECT_SERVER_EVENTS_STREAM_OUT_ENABLED: "false"
+          GCP_CREDENTIALS: "{{ $GCP_CREDENTIALS }}"
+          SIURB_URL: "{{ $SIURB_URL }}"
+          SIURB_USER: "{{ $SIURB_USER }}"
+          SIURB_PWD: "{{ $SIURB_PWD }}"
+    tags: ["prod", "meta-ar-cpf"]
+
+  # ---------------------------------------------------------------------------
   # Transformação — dbt genérico
   # ---------------------------------------------------------------------------
   - name: dbt-transform-staging
