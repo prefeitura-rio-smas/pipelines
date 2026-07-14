@@ -34,6 +34,24 @@ def flow_transform_meta_ar_cpf():
     )
 
 
+# --- Subflow: Write-back ---
+
+
+@flow(name="Meta AR CPF | Write-back")
+def flow_feedback_meta_ar_cpf():
+    """Envia atualizações de volta para o ArcGIS."""
+    adds = apply_arcgis_adds(item_id=ITEM_ID, layer_idx=0)
+
+    updates = apply_arcgis_feedback(
+        item_id=ITEM_ID,
+        delta_table="delta_feedback_meta_ar_cpf",
+        layer_idx=0,
+    )
+
+    sync = apply_arcgis_status_sync(item_id=ITEM_ID, layer_idx=0)
+    return {"adds": adds, "updates": updates, "sync": sync}
+
+
 # --- Flow Maestro (manual) ---
 
 
@@ -44,19 +62,11 @@ def meta_ar_cpf_pipeline():
     Execução manual / mensal. Etapas:
       1. Extract: ArcGIS → BQ (arcgis_raw.meta_ar_cpf_raw)
       2. Transform: dbt models (delta_feedback)
-      3. Adds: novos ingressos para o ArcGIS (adds + crosswalk)
-      4. Updates: colunas-fonte alteradas (delta VIEW → applyEdits updates)
-      5. Status: marca egressos (status_sinc='egresso')
+      3. Write-back: adds, updates e sync no ArcGIS
     """
     flow_extract_meta_ar_cpf()
     flow_transform_meta_ar_cpf()
-    apply_arcgis_adds(item_id=ITEM_ID, layer_idx=0)
-    apply_arcgis_feedback(
-        item_id=ITEM_ID,
-        delta_table="delta_feedback_meta_ar_cpf",
-        layer_idx=0,
-    )
-    apply_arcgis_status_sync(item_id=ITEM_ID, layer_idx=0)
+    flow_feedback_meta_ar_cpf()
 
 
 if __name__ == "__main__":

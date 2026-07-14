@@ -65,14 +65,21 @@ def resolve_arcgis_url(item_id: str, layer_idx: int = None) -> str:
         response = requests.get(item_url, params=params, timeout=30)
         response.raise_for_status()
         data = response.json()
-        
+
+        if "error" in data:
+            msg = data["error"].get("message", str(data["error"]))
+            raise ValueError(f"ArcGIS API error para item {item_id}: {msg}")
+
         service_url = data.get("url")
         item_type = data.get("type")
-        
+
         logger.info(f"Item ID: {item_id} | Type: {item_type} | Base URL: {service_url}")
 
         if not service_url:
-            raise ValueError(f"URL não encontrada para o item: {item_id}")
+            raise ValueError(
+                f"URL não encontrada para o item: {item_id}. "
+                f"Response keys: {list(data.keys())}"
+            )
 
         # Fallback: Se for Feature Service e não passarem index, tentamos o 0
         if item_type == "Feature Service":
