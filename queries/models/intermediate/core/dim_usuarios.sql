@@ -13,6 +13,13 @@ origens as (
 violacoes as (
     select * from {{ ref('int_usuarios_violacoes') }}
 ),
+projetos as (
+    select distinct m.id_paciente, fp.projetos_sociais
+    from {{ ref('raw_membros_familia') }} m
+    left join {{ ref('int_familias_projetos_sociais') }} fp
+        on m.id_familia = fp.id_familia
+    where m.data_saida is null
+),
 final as (
     select
         {{ dbt_utils.generate_surrogate_key(['base.id_paciente']) }} as id_usuario_sk,
@@ -55,12 +62,14 @@ final as (
         ori.descricao_origem as origem_demanda,
         -- Enriquecimento com Structs e Flags
         if(v.id_usuario is not null, 'Sim', 'Não') as flag_possui_violacao_direito,
-        v.violacoes
+        v.violacoes,
+        proj.projetos_sociais
     from base
     left join detalhes det on base.id_paciente = det.id_paciente
     left join saude_mental sm on base.id_paciente = sm.id_paciente
     left join origens ori on sm.codigo_origem = ori.id_origem
     left join violacoes v on base.id_paciente = v.id_usuario
+    left join projetos proj on base.id_paciente = proj.id_paciente
     where base.nome not like '%TESTE%'
 )
 
