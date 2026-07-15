@@ -103,3 +103,6 @@ models:
 
       - name: qtde_unidades
         description: "Quantidade de unidades onde o profissional possui vínculo."
+
+      - name: ids_unidade
+        description: "Array de IDs das unidades onde o profissional atua. Usado para expansão via UNNEST em marts que necessitam granularidade por (profissional × unidade)."
