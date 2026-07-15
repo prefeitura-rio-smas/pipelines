@@ -13,6 +13,17 @@ atividades as (
 ),
 filtro_email as (
     select * from {{ ref('raw_sheets_filtro_email_prontuario') }}
+),
+membros_atuais as (
+    select id_paciente, id_familia
+    from {{ ref('raw_membros_familia') }}
+    where data_saida is null
+    qualify row_number() over (partition by id_paciente order by data_entrada desc) = 1
+),
+familia_responsavel as (
+    select id_familia, upper(nome_responsavel) as nome_responsavel
+    from {{ ref('dim_familias') }}
+    where nome_responsavel is not null
 )
 select
     p.id_presenca,
@@ -23,6 +34,7 @@ select
     u.sexo,
     u.raca_cor,
     upper(u.filiacao_mae) as filiacao_mae,
+    coalesce(mr.nome_responsavel, u.filiacao_mae) as nome_responsavel,
     coalesce(nullif(upper(trim(u.bairro)), ''), 'NÃO INFORMADO') as bairro,
     u.cpf as cpf,
     case when u.cpf is not null and u.cpf != '' then 'Sim' else 'Não' end as tem_cpf,
@@ -47,3 +59,5 @@ from presencas p
 left join usuarios u on p.id_usuario = u.id_usuario
 left join atividades a on p.id_atividade = a.id_atividade
 left join filtro_email fe on a.nome_unidade = upper(fe.unidade_atendimento)
+left join membros_atuais ma on p.id_usuario = ma.id_paciente
+left join familia_responsavel mr on ma.id_familia = mr.id_familia
