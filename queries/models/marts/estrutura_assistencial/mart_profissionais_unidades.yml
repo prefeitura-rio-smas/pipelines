@@ -5,8 +5,9 @@ models:
     description: |
       Mart de profissionais vinculados às unidades do sistema.
       Segue o padrão star schema: tabela de associação (fact-less)
-      que referencia as dimensões dim_profissionais e dim_unidades
-      através da tabela raw_operadores_unidades.
+      que referencia as dimensões dim_profissionais e dim_unidades.
+      O vínculo é feito via UNNEST(ids_unidade) da dim_profissionais,
+      eliminando a dependência direta de raw_operadores_unidades.
       Grão: 1 linha por (profissional × unidade).
       CBOs aparecem agregados via dim_profissionais (STRING_AGG).
       Inclui perfil de acesso, status da conta e unidades de atuação do operador.

@@ -34,7 +34,8 @@ unidades_atuacao as (
     select
         op_unid.id_login,
         string_agg(u.nome_unidade, ' | ' order by u.nome_unidade) as unidades_atuacao,
-        count(distinct u.id_unidade) as qtde_unidades
+        count(distinct u.id_unidade) as qtde_unidades,
+        array_agg(op_unid.id_unidade order by u.nome_unidade) as ids_unidade
     from {{ ref('raw_operadores_unidades') }} op_unid
     left join {{ ref('raw_unidades') }} u on op_unid.id_unidade = u.id_unidade
     group by op_unid.id_login
@@ -81,7 +82,8 @@ final as (
 
         -- Unidades de atuação
         ua.unidades_atuacao,
-        coalesce(ua.qtde_unidades, 0) as qtde_unidades
+        coalesce(ua.qtde_unidades, 0) as qtde_unidades,
+        ua.ids_unidade
 
     from profissionais p
     left join operadores ope on p.id_login = ope.id_login

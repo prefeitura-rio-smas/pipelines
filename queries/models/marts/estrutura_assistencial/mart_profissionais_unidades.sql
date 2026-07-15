@@ -1,15 +1,15 @@
-{{ config(materialized='table') }}
+{{ config(materialized='table', tags=['daily']) }}
 
 with profissionais as (
     select * from {{ ref('dim_profissionais') }}
 ),
 
-operadores_unidades as (
-    select * from {{ ref('raw_operadores_unidades') }}
-),
-
 unidades as (
     select * from {{ ref('dim_unidades') }}
+),
+
+filtro_email as (
+    select * from {{ ref('raw_sheets_filtro_email_prontuario') }}
 ),
 
 joined as (
@@ -52,13 +52,17 @@ joined as (
         unid.nome_unidade,
         unid.cas as territorio,
         unid.nome_tipo as tipo_unidade,
-        unid.classe as classe_unidade
+        unid.classe as classe_unidade,
+
+        -- Email da unidade via planilha de filtro
+        fe.email as email_unidade
 
     from profissionais prof
-    left join operadores_unidades op_unid
-        on prof.id_login = op_unid.id_login
+    left join unnest(prof.ids_unidade) as id_unidade
     left join unidades unid
-        on op_unid.id_unidade = unid.id_unidade
+        on unid.id_unidade = id_unidade
+    left join filtro_email fe
+        on unid.nome_unidade = upper(fe.unidade_atendimento)
 )
 
 select * from joined
