@@ -75,6 +75,9 @@ def apply_arcgis_adds(item_id: str, layer_idx: int = 0):
             # Tratar nulos e valores especiais (mesmo padrão do apply_arcgis_feedback)
             if col.lower() == "objectid":
                 continue
+            # Converte date/datetime para string ISO (json.dumps não serializa date nativo)
+            if hasattr(value, 'isoformat'):
+                value = value.isoformat()
             clean = value
             if str(value).strip().lower() in ["none", "nan", "null", "", "nat", "<na>"]:
                 clean = None
