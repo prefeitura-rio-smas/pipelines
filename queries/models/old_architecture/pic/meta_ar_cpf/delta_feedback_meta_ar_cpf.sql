@@ -70,7 +70,7 @@ WHERE
     OR COALESCE(NULLIF(CAST(calculado.data_atualizacao_cadun AS STRING), 'None'), '') != COALESCE(NULLIF(atual.data_atualizacao_cadun, 'None'), '')
     OR COALESCE(NULLIF(calculado.nome_rf_cadun, 'None'), '')         != COALESCE(NULLIF(atual.nome_rf_cadun, 'None'), '')
     OR COALESCE(NULLIF(calculado.cpf_rf_cadun, 'None'), '')          != COALESCE(NULLIF(atual.cpf_rf_cadun, 'None'), '')
-    OR COALESCE(NULLIF(calculado.telefone_cadun, 'None'), '')        != COALESCE(NULLIF(atual.telefone_cadun, 'None'), '')
+    OR COALESCE(NULLIF(calculado.telefone_cadun, 'None'), '')        != COALESCE(NULLIF(REGEXP_REPLACE(atual.telefone_cadun, r'\.0$', ''), 'None'), '')
     OR COALESCE(NULLIF(calculado.bairro_cadun, 'None'), '')          != COALESCE(NULLIF(atual.bairro_cadun, 'None'), '')
     OR COALESCE(NULLIF(calculado.unidade_territorial_cadun, 'None'), '') != COALESCE(NULLIF(atual.unidade_territorial_cadun, 'None'), '')
     OR COALESCE(NULLIF(calculado.endereco_cadun, 'None'), '')        != COALESCE(NULLIF(atual.endereco_cadun, 'None'), '')
