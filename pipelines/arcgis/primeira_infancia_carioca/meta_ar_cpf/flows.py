@@ -28,7 +28,7 @@ def flow_transform_meta_ar_cpf():
     """Executa modelos dbt do meta_ar_cpf."""
     dbt_target = os.getenv("MODE", "staging")
     return trigger_dbt_cli_command(
-        command=f"dbt run --select meta_ar_cpf --target {dbt_target}",
+        command=f"dbt run --select tag:meta_ar_cpf --target {dbt_target}",
         project_dir="queries",
         profiles_dir="queries",
     )

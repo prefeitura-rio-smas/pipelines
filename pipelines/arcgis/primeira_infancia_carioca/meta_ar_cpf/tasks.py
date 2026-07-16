@@ -101,19 +101,23 @@ def apply_arcgis_adds(item_id: str, layer_idx: int = 0):
             response.raise_for_status()
             result = response.json()
             add_results = result.get("addResults", [])
-            for r_ in add_results:
+            for idx, r_ in enumerate(add_results):
                 if r_.get("success"):
                     total_added += 1
+                    batch_idx = r_.get("addParam", idx)
+                    id_membro = batch[batch_idx]["attributes"].get("id_membro_familia", "")
                     inserted.append({
                         "objectid_arcgis": int(r_["objectId"]),
-                        "id_membro_familia": batch[r_["addParam" if "addParam" in r_ else 0]]["attributes"].get(
-                            "id_membro_familia", ""
-                        ),
+                        "id_membro_familia": id_membro,
                     })
                 else:
-                    logger.warning(f"Falha ao adicionar: {r_}")
+                    logger.warning(f"Falha ao adicionar (indice {idx}): {r_}")
         except Exception as e:
-            logger.error(f"Erro no lote {i}: {e}")
+            logger.error(f"Erro no lote {i} (batch size {len(batch)}): {e}")
+            try:
+                logger.error(f"HTTP status: {response.status_code}, body: {response.text[:500]}")
+            except Exception:
+                pass
 
     # 6. Registrar objectids na crosswalk
     if inserted:
