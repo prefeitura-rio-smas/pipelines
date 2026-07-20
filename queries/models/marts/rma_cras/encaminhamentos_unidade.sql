@@ -28,7 +28,7 @@ base_unidades as (
 -- 1, 4 e 7: PAIF, PAEFI e MSE (Serviços das Famílias)
 servicos_familias as (
     select
-        f.id_unidade,
+        s.id_unidade,
         count(distinct if(s.id_servico_assistencial = 1, f.id_familia, null)) as total_paif,
         count(distinct if(s.id_servico_assistencial = 6, f.id_familia, null)) as total_paefi,
         count(distinct if(s.id_servico_assistencial in (8, 9), f.id_familia, null)) as total_mse
