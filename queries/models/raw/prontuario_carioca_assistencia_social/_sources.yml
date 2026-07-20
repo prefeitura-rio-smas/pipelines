@@ -64,3 +64,5 @@ sources:
         description: "Presenças de profissionais em atividades de grupo."
       - name: gh_tpatividades
         description: "Tipos de atividade (ex: Tô de Boa: Educação e Cultura)."
+      - name: gh_evolugrupo
+        description: "Evoluções registradas em atividades de grupo."

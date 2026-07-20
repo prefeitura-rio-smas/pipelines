@@ -4,3 +4,7 @@ models:
     columns:
       - name: id_evolucao_sk
         tests: [unique, not_null]
+      - name: id_atividade
+        description: "FK para raw_atividades_grupo (seqatigrp). Origem: módulo grupo."
+      - name: id_evolucao_grupo
+        description: "FK para raw_evolucoes_grupo (seqevogrp). Origem: módulo grupo."
