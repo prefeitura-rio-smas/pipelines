@@ -1,0 +1,32 @@
+version: 2
+models:
+  - name: raw_evolucoes_grupo
+    description: "Evoluções registradas em atividades de grupo."
+    columns:
+      - name: id_evolucao_grupo
+        description: "PK da evolução de grupo (seqevogrp)."
+        tests:
+          - unique
+          - not_null
+      - name: id_atividade
+        description: "FK para raw_atividades_grupo (seqatigrp)."
+      - name: id_profissional
+        description: "FK para raw_profissionais (seqprof)."
+      - name: data_evolucao
+        description: "Data/hora da evolução."
+        tests:
+          - not_null
+      - name: descricao_evolucao
+        description: "Descrição em HTML da evolução."
+      - name: codigo_abrangencia
+        description: "Código de abrangência da evolução (ex: 23=Tô de Boa atividades, 19=SCFV)."
+      - name: tipo_evolucao
+        description: "Tipo da evolução (D=desenvolvimento, F=fechamento)."
+      - name: data_cancelamento
+        description: "Data de cancelamento da evolução (NULL se ativa)."
+      - name: lista_pacientes
+        description: "Lista CSV de IDs de pacientes vinculados à evolução."
+      - name: cbo_profissional
+        description: "CBO do profissional no momento da evolução."
+      - name: referencia_presenca
+        description: "Referência de presença (data|hora)."
