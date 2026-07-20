@@ -66,3 +66,26 @@ models:
       - name: hora_presenca
         description: "Hora da presença."
         data_type: string
+      - name: flag_desligamento
+        description: "Indica se houve evolução de desligamento no Tô de Boa (Sim/Não)."
+        data_type: string
+
+      - name: motivo_desligamento
+        description: "Motivo do desligamento registrado em evolução Tô de Boa - Desligamento."
+        data_type: string
+
+      - name: flag_cancelamento_atividades
+        description: "Indica se houve evolução de cancelamento no Tô de Boa (Sim/Não)."
+        data_type: string
+
+      - name: motivo_cancelamento
+        description: "Motivo do cancelamento registrado em evolução Tô de Boa - Cancelamento das atividades."
+        data_type: string
+
+      - name: flag_justificativa_falta
+        description: "Indica se houve evolução de justificativa de falta no Tô de Boa (Sim/Não)."
+        data_type: string
+
+      - name: justificativa_falta
+        description: "Justificativa registrada em evolução Tô de Boa - Justificativa de Falta."
+        data_type: string
