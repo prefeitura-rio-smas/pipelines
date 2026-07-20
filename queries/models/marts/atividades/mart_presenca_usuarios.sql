@@ -54,6 +54,21 @@ to_de_boa_indicadores as (
     ) }} ie
     where ie.titulo_formulario like 'Tô de Boa -%'
     group by ie.id_evolucao_sk
+),
+
+indicadores_agregados as (
+    select
+        e.id_usuario,
+        e.id_atividade,
+        max(case when tdi.motivo_desligamento is not null then 'Sim' else 'Não' end) as flag_desligamento,
+        max(tdi.motivo_desligamento) as motivo_desligamento,
+        max(case when tdi.motivo_cancelamento is not null then 'Sim' else 'Não' end) as flag_cancelamento_atividades,
+        max(tdi.motivo_cancelamento) as motivo_cancelamento,
+        max(case when tdi.justificativa_falta is not null then 'Sim' else 'Não' end) as flag_justificativa_falta,
+        max(tdi.justificativa_falta) as justificativa_falta
+    from evolucoes e
+    left join to_de_boa_indicadores tdi on e.id_evolucao_sk = tdi.id_evolucao_sk
+    group by e.id_usuario, e.id_atividade
 )
 
 select
@@ -86,17 +101,16 @@ select
       else p.hora_presenca
     end as hora_presenca,
     fe.email as email_unidade,
-    case when tdi.motivo_desligamento is not null then 'Sim' else 'Não' end as flag_desligamento,
-    tdi.motivo_desligamento,
-    case when tdi.motivo_cancelamento is not null then 'Sim' else 'Não' end as flag_cancelamento_atividades,
-    tdi.motivo_cancelamento,
-    case when tdi.justificativa_falta is not null then 'Sim' else 'Não' end as flag_justificativa_falta,
-    tdi.justificativa_falta
+    coalesce(indicadores.flag_desligamento, 'Não') as flag_desligamento,
+    indicadores.motivo_desligamento,
+    coalesce(indicadores.flag_cancelamento_atividades, 'Não') as flag_cancelamento_atividades,
+    indicadores.motivo_cancelamento,
+    coalesce(indicadores.flag_justificativa_falta, 'Não') as flag_justificativa_falta,
+    indicadores.justificativa_falta
 from presencas p
 left join usuarios u on p.id_usuario = u.id_usuario
 left join atividades a on p.id_atividade = a.id_atividade
 left join filtro_email fe on a.nome_unidade = upper(fe.unidade_atendimento)
 left join membros_atuais ma on p.id_usuario = ma.id_paciente
 left join familia_responsavel mr on ma.id_familia = mr.id_familia
-left join evolucoes e on p.id_usuario = e.id_usuario and p.id_atividade = e.id_atividade
-left join to_de_boa_indicadores tdi on e.id_evolucao_sk = tdi.id_evolucao_sk
+left join indicadores_agregados indicadores on p.id_usuario = indicadores.id_usuario and p.id_atividade = indicadores.id_atividade
