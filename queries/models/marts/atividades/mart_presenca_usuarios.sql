@@ -5,32 +5,39 @@
 with presencas as (
     select * from {{ ref('fct_presencas_usuarios') }}
 ),
+
 usuarios as (
     select * from {{ ref('dim_usuarios') }}
 ),
+
 atividades as (
     select * from {{ ref('dim_atividades_grupo') }}
 ),
+
 filtro_email as (
     select * from {{ ref('raw_sheets_filtro_email_prontuario') }}
 ),
+
 membros_atuais as (
     select id_paciente, id_familia
     from {{ ref('raw_membros_familia') }}
     where data_saida is null
     qualify row_number() over (partition by id_paciente order by data_entrada desc) = 1
 ),
+
 familia_responsavel as (
     select id_familia, upper(nome_responsavel) as nome_responsavel
     from {{ ref('dim_familias') }}
     where nome_responsavel is not null
 ),
+
 evolucoes as (
     select e.*, u.id_usuario
     from {{ ref('fct_evolucoes') }} e
     left join usuarios u on e.id_usuario_sk = u.id_usuario_sk
     where e.origem_modulo = 'grupo'
 ),
+
 to_de_boa_indicadores as (
     select
         ie.id_evolucao_sk,
@@ -48,6 +55,7 @@ to_de_boa_indicadores as (
     where ie.titulo_formulario like 'Tô de Boa -%'
     group by ie.id_evolucao_sk
 )
+
 select
     p.id_presenca,
     p.id_usuario,
