@@ -33,7 +33,7 @@ ocupacoes as (
 unidades_atuacao as (
     select
         op_unid.id_login,
-        string_agg(u.nome_unidade, ' | ' order by u.nome_unidade) as unidades_atuacao,
+        string_agg(u.nome_unidade, ', ' order by u.nome_unidade) as unidades_atuacao,
         count(distinct u.id_unidade) as qtde_unidades,
         array_agg(op_unid.id_unidade order by u.nome_unidade) as ids_unidade
     from {{ ref('raw_operadores_unidades') }} op_unid
@@ -47,6 +47,9 @@ final as (
         p.id_profissional,
         ope.id_login,
         coalesce(ope.nome_operador, p.nome) as nome,
+        p.nome as nome_cadastral,
+        ope.nome_operador as nome_operador,
+        (p.id_login IS NULL) as flag_sem_conta,
         p.cpf,
         p.matricula,
         p.email as email_profissional,
@@ -89,7 +92,7 @@ final as (
     left join operadores ope on p.id_login = ope.id_login
     left join ocupacoes ocu on p.id_profissional = ocu.id_profissional
     left join unidades_atuacao ua on p.id_login = ua.id_login
-    where p.nome not like '%TESTE%'
+    where upper(p.nome) not like '%TESTE%'
 )
 
 select * from final

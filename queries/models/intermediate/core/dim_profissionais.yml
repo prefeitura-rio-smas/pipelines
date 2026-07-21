@@ -25,6 +25,18 @@ models:
       - name: nome
         description: "Nome do profissional. Usa nome_operador (gh_contas) com fallback para nome (gh_prof)."
 
+      - name: nome_cadastral
+        description: "Nome cadastral do profissional (fonte: gh_prof.nomeprof), sem coalesce com operador."
+        data_type: string
+
+      - name: nome_operador
+        description: "Nome da pessoa na conta de login (fonte: gh_contas.nompess). NULL se profissional não tem conta."
+        data_type: string
+
+      - name: flag_sem_conta
+        description: Indicador booleano de profissional sem conta de login (TRUE quando id_login IS NULL).
+        data_type: boolean
+
       - name: cpf
         description: "CPF do profissional (cpfprof da gh_prof)."
 
