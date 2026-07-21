@@ -20,7 +20,8 @@ joined as (
         prof.id_profissional_sk,
         prof.id_profissional,
         prof.id_login,
-        prof.nome as nome_profissional,
+        UPPER(prof.nome_cadastral) as nome_profissional,
+        UPPER(prof.nome_operador) as nome_operador,
         prof.cpf,
         prof.email_profissional,
         prof.email_operador,
@@ -41,18 +42,22 @@ joined as (
         prof.perfil_acesso,
         prof.status_conta_codigo,
         prof.status_conta,
+        prof.flag_sem_conta,
 
-        -- Unidades de atuação (da dim)
-        prof.unidades_atuacao,
+        -- Unidades de atuacao (da dim)
+        UPPER(prof.unidades_atuacao) as unidades_atuacao,
         prof.qtde_unidades,
 
         -- Unidade (da dim)
         unid.id_unidade_sk,
         unid.id_unidade,
-        unid.nome_unidade,
+        UPPER(unid.nome_unidade) as nome_unidade,
         unid.cas as territorio,
         unid.nome_tipo as tipo_unidade,
         unid.classe as classe_unidade,
+
+        -- Flag indicando se o profissional tem unidade valida na dim_unidades
+        (unid.id_unidade IS NOT NULL) as flag_unidade_valida,
 
         -- Email da unidade via planilha de filtro
         fe.email as email_unidade
@@ -66,3 +71,4 @@ joined as (
 )
 
 select * from joined
+where not flag_sem_conta

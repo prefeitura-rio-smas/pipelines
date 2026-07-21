@@ -28,7 +28,10 @@ models:
         description: "ID da conta do operador (seqlogin)."
 
       - name: nome_profissional
-        description: "Nome do profissional (coalesce nome_operador → nome)."
+        description: "Nome do profissional em UPPER, a partir do nome cadastral (gh_prof.nomeprof)."
+
+      - name: nome_operador
+        description: "Nome da pessoa na conta de login em UPPER (gh_contas.nompess). NULL se profissional não tem conta."
 
       - name: cpf
         description: "CPF do profissional."
@@ -84,8 +87,11 @@ models:
       - name: status_conta
         description: "Descrição do status da conta (ex: Ativo, Inativo, Bloqueado, Trocar senha)."
 
+      - name: flag_sem_conta
+        description: "Indicador booleano de profissional sem conta de login (TRUE quando não há conta vinculada)."
+
       - name: unidades_atuacao
-        description: "Lista de nomes de unidades onde o profissional atua, propagada da dim_profissionais."
+        description: "Lista de nomes de unidades onde o profissional atua em UPPER, propagada da dim_profissionais."
 
       - name: qtde_unidades
         description: "Quantidade de unidades onde o profissional possui vínculo, propagada da dim_profissionais."
@@ -97,7 +103,7 @@ models:
         description: "ID natural da unidade (sequs)."
 
       - name: nome_unidade
-        description: "Nome descritivo da unidade."
+        description: "Nome descritivo da unidade em UPPER."
 
       - name: territorio
         description: "CAS / território da unidade."
