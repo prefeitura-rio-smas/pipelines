@@ -52,14 +52,24 @@ def flow_feedback_meta_ar_cpf():
     return {"adds": adds, "updates": updates, "sync": sync}
 
 
-# --- Flow Maestro (manual) ---
+# --- Flows Públicos ---
 
 
-@flow(name="Meta AR CPF | Pipeline")
-def meta_ar_cpf_pipeline():
+@flow(name="Meta AR CPF | Operador Sync")
+def meta_ar_cpf_operador_sync():
     """
-    Fluxo Maestro para o Meta AR CPF.
-    Execução manual / mensal. Etapas:
+    Sincroniza dados do operador do ArcGIS para o BQ (raw).
+    Horário em prod (1x/h). Em staging: manual.
+    """
+    return flow_extract_meta_ar_cpf()
+
+
+@flow(name="Meta AR CPF | Cadúnico Sync")
+def meta_ar_cpf_cadunico_sync():
+    """
+    Atualiza dados do CadÚnico e sincroniza com ArcGIS.
+    Execução manual / mensal.
+    Etapas:
       1. Extract: ArcGIS → BQ (arcgis_raw.meta_ar_cpf_raw)
       2. Transform: dbt models (delta_feedback)
       3. Write-back: adds, updates e sync no ArcGIS
@@ -70,4 +80,7 @@ def meta_ar_cpf_pipeline():
 
 
 if __name__ == "__main__":
-    meta_ar_cpf_pipeline()
+    import sys
+    print("Use 'prefect deployment run ...' para executar os flows.")
+    print("  Meta AR CPF | Operador Sync  (extract only, horário)")
+    print("  Meta AR CPF | Cadúnico Sync  (ciclo completo, manual)")
