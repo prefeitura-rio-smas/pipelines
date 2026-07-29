@@ -107,7 +107,7 @@ final as (
         ta.dsctpatend as tipo_atendimento_descricao,
         
         u.data_atendimento,
-        u.hora_atendimento
+        u.hora_atendimento,
         u.origem_modulo,
         u.flag_cancelado,
 
@@ -115,8 +115,8 @@ final as (
     left join {{ ref('dim_usuarios') }} dim_u on u.id_usuario = dim_u.id_usuario
     left join {{ ref('dim_profissionais') }} dim_p on u.id_profissional = dim_p.id_profissional
     left join {{ ref('dim_unidades') }} dim_un on u.id_unidade = dim_un.id_unidade
-    left join {{ ref('tipos_atendimento') }} as ta on u.id_tipo_atendimento = ta.seqtpatend
-    left join {{ ref('operadores') }} as s on s.id_operador = u.seqlogincad
+    left join tipos_atendimento as ta on u.id_tipo_atendimento = ta.seqtpatend
+    left join operadores as s on s.id_operador = u.seqlogincad
     where 
         (s.nome_operador is null or s.nome_operador not like '%TESTE%')
 )
