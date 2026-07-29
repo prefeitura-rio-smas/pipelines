@@ -107,45 +107,16 @@ final as (
         ta.dsctpatend as tipo_atendimento_descricao,
         
         u.data_atendimento,
-        
-        -- Formatação de hora tratada (HH:MM)
-        format('%02d:%02d', 
-            div(safe_cast(u.hora_atendimento as int64), 100), 
-            mod(safe_cast(u.hora_atendimento as int64), 100)
-        ) as hora_atendimento,
-        
+        u.hora_atendimento
         u.origem_modulo,
         u.flag_cancelado,
-
-        -------------------------------------------------------------
-        
-        -------------------------------------------------------------
-        dim_p.nome_profissional as profissional,
-        dim_p.cbo_descricao as profissional_cbo,
-        dim_p.cbo_descricao as profissional_cbo_original,
-        
-        dim_u.idade,
-        
-        dim_un.nome_unidade as unidade_atendimento,
-        dim_un.tipo_unidade,
-        dim_un.email_unidade,
-        dim_un.email_cas,
-        
-        ta.dsctpatend as nome_atendimento_original,
-        u.data_atendimento as data_de_atendimento,
-        u.data_atendimento as data_cadastro_atendimento,
-        
-        format('%02d:%02d', 
-            div(safe_cast(u.hora_atendimento as int64), 100), 
-            mod(safe_cast(u.hora_atendimento as int64), 100)
-        ) as hora_de_atendimento
 
     from uniao_atendimentos u
     left join {{ ref('dim_usuarios') }} dim_u on u.id_usuario = dim_u.id_usuario
     left join {{ ref('dim_profissionais') }} dim_p on u.id_profissional = dim_p.id_profissional
     left join {{ ref('dim_unidades') }} dim_un on u.id_unidade = dim_un.id_unidade
-    left join tipos_atendimento ta on u.id_tipo_atendimento = ta.seqtpatend
-    left join operadores s on s.id_operador = u.seqlogincad
+    left join {{ ref('tipos_atendimento') }} as ta on u.id_tipo_atendimento = ta.seqtpatend
+    left join {{ ref('operadores') }} as s on s.id_operador = u.seqlogincad
     where 
         (s.nome_operador is null or s.nome_operador not like '%TESTE%')
 )
