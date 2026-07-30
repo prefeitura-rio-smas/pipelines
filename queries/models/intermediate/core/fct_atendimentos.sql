@@ -23,8 +23,8 @@ uniao_atendimentos_base as (
         hora_atendimento,
         'familia' as origem_modulo,
         flag_cancelado,
-        dsclstprof,
-        seqlogincad
+        id_profissional_compartilhado,
+        id_login_cadastro
     from atendimentos_familias
 
     union all
@@ -40,8 +40,8 @@ uniao_atendimentos_base as (
         hora_atendimento,
         'usuario' as origem_modulo,
         flag_cancelado,
-        dsclstprof,
-        seqlogincad
+        id_profissional_compartilhado,
+        id_login_cadastro
     from atendimentos_usuarios
 ),
 
@@ -59,7 +59,7 @@ uniao_atendimentos as (
         hora_atendimento,
         origem_modulo,
         flag_cancelado,
-        seqlogincad
+        id_login_cadastro
     from uniao_atendimentos_base
 
     union all
@@ -76,11 +76,10 @@ uniao_atendimentos as (
         hora_atendimento,
         origem_modulo,
         flag_cancelado,
-        seqlogincad
+        id_login_cadastro
     from uniao_atendimentos_base,
-    unnest(split(dsclstprof)) as prof_id
-    where prof_id is not null 
-      and trim(prof_id) != ''
+    UNNEST(SPLIT(id_profissional_compartilhado)) AS prof_id
+    WHERE prof_id != ''
 ),
 
 operadores as (
@@ -104,19 +103,19 @@ final as (
         u.id_tipo_atendimento,
         
         -- Atributos enriquecidos das RAWs existentes
-        ta.dsctpatend as tipo_atendimento_descricao,
+        ta.tipo_atendimento_descricao,
         
         u.data_atendimento,
         u.hora_atendimento,
         u.origem_modulo,
-        u.flag_cancelado,
+        u.flag_cancelado
 
     from uniao_atendimentos u
     left join {{ ref('dim_usuarios') }} dim_u on u.id_usuario = dim_u.id_usuario
     left join {{ ref('dim_profissionais') }} dim_p on u.id_profissional = dim_p.id_profissional
     left join {{ ref('dim_unidades') }} dim_un on u.id_unidade = dim_un.id_unidade
-    left join tipos_atendimento as ta on u.id_tipo_atendimento = ta.seqtpatend
-    left join operadores as s on s.id_operador = u.seqlogincad
+    left join tipos_atendimento as ta on u.id_tipo_atendimento = ta.id_tipo_atendimento
+    left join operadores as s on s.id_login = u.id_login_cadastro
     where 
         (s.nome_operador is null or s.nome_operador not like '%TESTE%')
 )
