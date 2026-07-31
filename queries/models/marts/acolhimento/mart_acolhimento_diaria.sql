@@ -90,7 +90,7 @@ final as (
         usr.flag_trabalha                     as flag_trabalho,
         usr.vinculo_trabalhista,
         usr.profissao,
-
+        usr.atvd_remunerada,
         case usr.flag_frequenta_escola
             when 'S' then 'Sim'
             when 'N' then 'Não'
