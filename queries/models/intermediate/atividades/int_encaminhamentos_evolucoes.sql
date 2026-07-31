@@ -1,3 +1,6 @@
+-- TODO: Baixa prioridade — faz parse de conteúdo de campo, não extração
+-- label/valor. O extrair_campos_html_evolucao poderia substituir o strip
+-- HTML inicial (linhas 8-17), mas a classificação SMAS/Órgãos é permanente.
 with base as (
     select
         e.id_evolucao_sk,
