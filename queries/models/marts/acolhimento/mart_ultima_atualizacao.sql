@@ -3,4 +3,4 @@
     schema = 'alta_complexidade'
 ) }}
 
-{{ get_ultima_atualizacao('raw_configuracoes_sistema') }}
+{{ extrair_ultima_atualizacao('raw_configuracoes_sistema') }}
