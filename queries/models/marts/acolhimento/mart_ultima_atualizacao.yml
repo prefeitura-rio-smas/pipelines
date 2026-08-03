@@ -1,0 +1,15 @@
+version: 2
+
+models:
+  - name: mart_ultima_atualizacao
+    description: |
+      Scorecard de controle no Looker Studio: última atualização da pipeline.
+      Usa a tabela sys_config (via raw_configuracoes_sistema) como heartbeat, pois é
+      sincronizada pelo Airbyte a cada execução da pipeline.
+
+      Arquitetura: raw_configuracoes_sistema → mart_ultima_atualizacao (esta).
+    columns:
+      - name: ultima_atualizacao
+        description: "Timestamp da última sincronização do Airbyte para a tabela sys_config."
+        tests:
+          - not_null

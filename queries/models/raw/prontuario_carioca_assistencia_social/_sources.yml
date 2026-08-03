@@ -66,3 +66,5 @@ sources:
         description: "Tipos de atividade (ex: Tô de Boa: Educação e Cultura)."
       - name: gh_evolugrupo
         description: "Evoluções registradas em atividades de grupo."
+      - name: sys_config
+        description: "Configurações globais do sistema (heartbeat de atualização da pipeline)."

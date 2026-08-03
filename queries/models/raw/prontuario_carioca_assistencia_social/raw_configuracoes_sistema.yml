@@ -1,0 +1,47 @@
+version: 2
+
+models:
+  - name: raw_configuracoes_sistema
+    description: "Tabela raw de configurações globais do sistema (sys_config), utilizada também como vetor/heartbeat de atualização da pipeline."
+    columns:
+      - name: data_extracao_origem
+        description: "Timestamp de extração da tabela pelo Airbyte."
+
+      - name: id_configuracao
+        description: "Código identificador da configuração (codcnf)."
+        tests:
+          - unique
+          - not_null
+
+      - name: tipo_configuracao
+        description: "Indicador do tipo de configuração (indtipocnf)."
+
+      - name: titulo_configuracao
+        description: "Título da configuração (dsctitcnf)."
+
+      - name: icone_configuracao
+        description: "Ícone associado à configuração (dscicocnf)."
+
+      - name: classe_configuracao
+        description: "Classe de estilo/sistema (dscclasscnf)."
+
+      - name: css_configuracao
+        description: "Estilo CSS aplicado (dsccsscnf)."
+
+      - name: target_configuracao
+        description: "Alvo/Target do parâmetro (dsctargetcnf)."
+
+      - name: role_configuracao
+        description: "Permissão/Role associada (dscrolecnf)."
+
+      - name: perfil_configuracao
+        description: "Perfil de usuário associado (dscperfcnf)."
+
+      - name: observacao
+        description: "Observações da configuração (dscobs)."
+
+      - name: flag_ativo
+        description: "Indicador se a configuração está ativa (indativo)."
+
+      - name: ordem
+        description: "Número de ordem de exibição (numorder)."
