@@ -3,8 +3,8 @@ version: 2
 sources:
   - name: prontuario_carioca_assistencia_social
     description: "Tabelas raw do Prontuário Carioca Assistência Social (Airbyte → BigQuery)."
-    database: rj-smas-dev
-    schema: prontuario_carioca_assistencia_social
+    database: rj-smas
+    schema: brutos_acolherio_staging
     tables:
       - name: gh_ativgrp
         description: "Atividades de grupo."
