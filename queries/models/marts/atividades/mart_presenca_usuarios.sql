@@ -38,6 +38,10 @@ evolucoes as (
     where e.origem_modulo = 'grupo'
 ),
 
+-- TODO: Migrar para extrair_formulario — 3 formulários Tô de Boa
+-- (Desligamento, Cancelamento, Justificativa de Falta).
+-- A agregação customizada (id_evolucao_sk → id_usuario+id_atividade)
+-- exige GROUP BY que o macro não cobre. Avaliar refactor.
 to_de_boa_indicadores as (
     select
         ie.id_evolucao_sk,

@@ -135,9 +135,9 @@ jobs:
           cache-from: type=gha
           cache-to: type=gha,mode=max
 
-      # Deploy Staging: Roda apenas se for branch de staging
+      # Deploy Staging: Roda se for branch de staging (push) ou em Pull Requests vindos de staging
       - name: Deploy Staging Flows
-        if: startsWith(github.ref, 'refs/heads/staging/')
+        if: startsWith(github.ref, 'refs/heads/staging/') || startsWith(github.head_ref, 'staging/')
         env:
           PREFECT_DEPLOYMENT_IMAGE: "${{ env.IMAGE_REPO }}:${{ env.TAG }}"
           GCP_CREDENTIALS: ${{ secrets.GCP_CREDENTIALS }}

@@ -42,6 +42,11 @@ final as (
         det.pontuacao,
         det.nome_apoiador,
         det.numero_processo_decisao_apoiada,
+        det.renda_ativa,
+        case
+            when renda_ativa != 0 then "Sim"
+            else "Não"
+        end as atvd_remunerada,
         {{ map_coluna_decisao_apoiada('det.numero_processo_decisao_apoiada') }} as flag_decisao_apoiada,
         {{ map_coluna_saude_mental('det.flag_saude_mental_comprometida') }} as flag_saude_mental_comprometida,
         {{ map_coluna_tipo_motiv_acolhimento('det.id_motivo_acolhimento') }} as motivo_acolhimento,

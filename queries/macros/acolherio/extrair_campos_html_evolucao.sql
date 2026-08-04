@@ -11,7 +11,7 @@
         {{ id_cols | join(', ') }},
         titulo_formulario,
         TRIM(REGEXP_REPLACE(
-            SPLIT(field, ': <b>')[SAFE_OFFSET(0)],
+            REGEXP_EXTRACT(field, r'^(.*?):?\s*<b>'),
             r'^.*?>', ''
         )) AS label,
         TRIM(REGEXP_EXTRACT(field, r'<b>([^<]*)</b>')) AS valor,
