@@ -26,9 +26,9 @@ models:
         description: "Surrogate key do acolhimento (FK para fct_acolhimento_diaria → fct_acolhimento_ciclos)."
       - name: data_referencia
         description: "Data de referência (cada dia do período de acolhimento)."
-      - name: ano
+      - name: ano_referencia
         description: "Ano extraído da data_referencia."
-      - name: mes
+      - name: mes_referencia
         description: "Mês extraído da data_referencia."
       - name: nome_usuario
       - name: cpf
@@ -117,3 +117,17 @@ models:
         description: "Combinação dos eixos adulto/idoso/família em um rótulo."
       - name: faixa_etaria
         description: "Faixa etária em 5 buckets (Bebê/Criança/Adolescente/Adulto/Idoso)."
+      - name: ultima_atualizacao
+        description: "Timestamp da última sincronização do Airbyte (heartbeat da pipeline via raw_configuracoes_sistema)."
+        tests:
+          - not_null
+      - name: dia_atualizacao
+        description: "Dia da última atualização da pipeline."
+      - name: mes_atualizacao
+        description: "Mês da última atualização da pipeline."
+      - name: ano_atualizacao
+        description: "Ano da última atualização da pipeline."
+      - name: hora_atualizacao
+        description: "Hora da última atualização da pipeline."
+      - name: minuto_atualizacao
+        description: "Minuto da última atualização da pipeline."

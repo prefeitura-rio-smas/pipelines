@@ -4,7 +4,7 @@
 with meta as (
     select distinct cpf_digits
     from {{ ref('mart_meta_acolhimento') }}
-    where ano = '2025'
+    where ano = '2026'
       and cpf_status = 'cpf_ok'
       and origem = 'SMAS'
 ),
@@ -12,7 +12,7 @@ with meta as (
 diaria as (
     select distinct regexp_replace(coalesce(cpf, ''), '[^0-9]', '') as cpf_digits
     from {{ ref('mart_acolhimento_diaria') }}
-    where ano = 2025
+    where ano_referencia = 2026
       and length(regexp_replace(coalesce(cpf, ''), '[^0-9]', '')) = 11
 ),
 
