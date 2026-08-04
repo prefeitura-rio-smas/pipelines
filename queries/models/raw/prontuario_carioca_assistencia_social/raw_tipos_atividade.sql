@@ -10,7 +10,7 @@ with source as (
         dsclstraps as descricao_lista_raps,
         indformafat as indicador_forma_faturamento,
         indusopacsemcad as indicador_uso_pac_sem_cadastro
-    from {{ source('brutos_acolherio_staging', 'gh_tpatividades') }}
+    from {{ source('prontuario_carioca_assistencia_social', 'gh_tpatividades') }}
 )
 
 select * from source

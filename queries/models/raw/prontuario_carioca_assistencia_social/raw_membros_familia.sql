@@ -9,6 +9,6 @@ with source as (
         datentrada as data_entrada,
         datsaida as data_saida,
         parentesco_responsavel_familia as parentesco_responsavel
-    from  {{ source('brutos_acolherio_staging', 'gh_familias_membros') }}
+    from  {{ source('prontuario_carioca_assistencia_social', 'gh_familias_membros') }}
 )
 select * from source

@@ -9,6 +9,6 @@ with source as (
         indtpevopac as tipo_evolucao,
         codabapac as modulo_prontuario,
         seqpac as id_paciente
-    from {{ source('brutos_acolherio_staging', 'gh_evolufamil') }}
+    from {{ source('prontuario_carioca_assistencia_social', 'gh_evolufamil') }}
 )
 select * from source

@@ -8,6 +8,6 @@ with source as (
         dscevopac as descricao_evolucao,
         indtpevopac as tipo_evolucao,
         codabapac as codigo_abrangencia
-    from {{ source('brutos_acolherio_staging', 'gh_evolupac') }}
+    from {{ source('prontuario_carioca_assistencia_social', 'gh_evolupac') }}
 )
 select * from source

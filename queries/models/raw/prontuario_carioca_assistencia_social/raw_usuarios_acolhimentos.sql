@@ -14,6 +14,6 @@ with source as (
         seqloginsaid as id_login_saida,
         indciclo as indicador_ciclo,
         indmotivsaida as motivo_saida
-    from {{ source('brutos_acolherio_staging', 'gh_pac_ciclos') }}
+    from {{ source('prontuario_carioca_assistencia_social', 'gh_pac_ciclos') }}
 )
 select * from source

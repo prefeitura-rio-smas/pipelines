@@ -8,7 +8,7 @@ with source as (
         horpresdia as hora_presenca,
         sequs as id_unidade,
         seqsetor as id_setor
-    from {{ source('brutos_acolherio_staging', 'gh_ativ_paciente') }}
+    from {{ source('prontuario_carioca_assistencia_social', 'gh_ativ_paciente') }}
 )
 
 select * from source

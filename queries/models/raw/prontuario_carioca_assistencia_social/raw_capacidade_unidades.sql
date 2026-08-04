@@ -9,6 +9,6 @@ with source as (
         vagas_neutras,
         indgraudepend as grau_dependencia,
         indabrangatend as abrangencia
-    from {{ source('brutos_acolherio_staging', 'gh_us_smas') }}
+    from {{ source('prontuario_carioca_assistencia_social', 'gh_us_smas') }}
 )
 select * from source

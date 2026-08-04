@@ -6,6 +6,6 @@ with source as (
         codoriraas as codigo_raas,
         dscoriraas as descricao_raas,
         indativo as flag_ativo
-    from {{ source('brutos_acolherio_staging', 'gh_origens') }}
+    from {{ source('prontuario_carioca_assistencia_social', 'gh_origens') }}
 )
 select * from source

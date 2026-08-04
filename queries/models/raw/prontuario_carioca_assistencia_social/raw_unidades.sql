@@ -11,7 +11,7 @@ with source as (
         seqtipous as id_tipo_unidade,
         emailprof as email_unidade,
         (indinativo <> 'S') as flag_unidade_ativa
-    from {{ source('brutos_acolherio_staging', 'gh_us') }}
+    from {{ source('prontuario_carioca_assistencia_social', 'gh_us') }}
 )
 
 select * from source

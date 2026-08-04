@@ -12,6 +12,6 @@ with source as (
         dsclistpac as lista_pacientes,
         codcboprof as cbo_profissional,
         dscrefpres as referencia_presenca
-    from {{ source('brutos_acolherio_staging', 'gh_evolugrupo') }}
+    from {{ source('prontuario_carioca_assistencia_social', 'gh_evolugrupo') }}
 )
 select * from source

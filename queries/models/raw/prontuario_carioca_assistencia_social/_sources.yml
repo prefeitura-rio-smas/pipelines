@@ -6,61 +6,65 @@ sources:
     database: rj-smas-dev
     schema: prontuario_carioca_assistencia_social
     tables:
-      - name: raw_usuarios
-        description: "Usuários do sistema."
-      - name: raw_usuarios_acolhimentos
-        description: "Acolhimentos dos usuários."
-      - name: raw_unidades
-        description: "Unidades de atendimento."
-      - name: raw_configuracoes_sistema
-        description: "Configurações globais do sistema (sys_config), utilizada também como vetor/heartbeat de atualização da pipeline."
-      - name: raw_configuracao_unidades
-        description: "Configurações por unidade."
-      - name: raw_tipos_unidade
-        description: "Tipos de unidade."
-      - name: raw_tipos_atividade
-        description: "Tipos de atividade."
-      - name: raw_tipos_atendimento
-        description: "Tipos de atendimento."
-      - name: raw_profissionais
-        description: "Profissionais do sistema."
-      - name: raw_profissionais_ocupacoes
-        description: "Ocupações dos profissionais."
-      - name: raw_presencas_usuarios
-        description: "Presenças dos usuários."
-      - name: raw_presencas_profissionais
-        description: "Presenças dos profissionais."
-      - name: raw_origens
-        description: "Origens de demanda."
-      - name: raw_operadores
-        description: "Operadores do sistema."
-      - name: raw_operadores_unidades
-        description: "Operadores por unidade."
-      - name: raw_membros_familia
-        description: "Membros das famílias."
-      - name: raw_familias
-        description: "Famílias cadastradas."
-      - name: raw_familias_vulnerabilidades
-        description: "Vulnerabilidades das famílias."
-      - name: raw_familias_servicos_assistenciais
-        description: "Serviços assistenciais das famílias."
-      - name: raw_familias_projetos_sociais
-        description: "Projetos sociais das famílias."
-      - name: raw_evolucoes_usuarios
-        description: "Evoluções dos usuários."
-      - name: raw_evolucoes_grupo
-        description: "Evoluções de grupo."
-      - name: raw_evolucoes_familias
-        description: "Evoluções das famílias."
-      - name: raw_evolucoes_administrativas
-        description: "Evoluções administrativas."
-      - name: raw_cbo
-        description: "Classificação Brasileira de Ocupações."
-      - name: raw_capacidade_unidades
-        description: "Capacidade das unidades."
-      - name: raw_atividades_grupo
+      - name: gh_ativgrp
         description: "Atividades de grupo."
-      - name: raw_atendimentos_usuarios
-        description: "Atendimentos dos usuários."
-      - name: raw_atendimentos_familias
-        description: "Atendimentos das famílias."
+      - name: gh_atend_familia
+        description: "Atendimentos de famílias."
+      - name: gh_atendimentos
+        description: "Atendimentos de usuários."
+      - name: gh_ativ_paciente
+        description: "Presenças de usuários em atividades."
+      - name: gh_ativ_prof
+        description: "Presenças de profissionais em atividades."
+      - name: gh_cbo
+        description: "Classificação Brasileira de Ocupações."
+      - name: gh_cidadao_pac
+        description: "Dados dos cidadãos/pacientes."
+      - name: gh_contas
+        description: "Contas de usuários do sistema."
+      - name: gh_contas_us
+        description: "Contas vinculadas a unidades."
+      - name: gh_evoluadm
+        description: "Evoluções administrativas."
+      - name: gh_evolufamil
+        description: "Evoluções de famílias."
+      - name: gh_evolugrupo
+        description: "Evoluções de grupo."
+      - name: gh_evolupac
+        description: "Evoluções de usuários."
+      - name: gh_famil_projsociais
+        description: "Projetos sociais das famílias."
+      - name: gh_famil_servassist
+        description: "Serviços assistenciais das famílias."
+      - name: gh_famil_vulnerab
+        description: "Vulnerabilidades das famílias."
+      - name: gh_familias
+        description: "Famílias cadastradas."
+      - name: gh_familias_membros
+        description: "Membros das famílias."
+      - name: gh_origens
+        description: "Origens de demanda."
+      - name: gh_pac_ciclos
+        description: "Ciclos de acolhimento dos pacientes."
+      - name: gh_pac_dados
+        description: "Dados detalhados dos pacientes."
+      - name: gh_pacientes_sm
+        description: "Pacientes com saúde mental."
+      - name: gh_prof
+        description: "Profissionais do sistema."
+      - name: gh_profocup
+        description: "Ocupações dos profissionais."
+      - name: gh_tpatendimentos
+        description: "Tipos de atendimento."
+      - name: gh_tpatividades
+        description: "Tipos de atividade."
+      - name: gh_us
+        description: "Unidades de atendimento."
+      - name: gh_us_config
+        description: "Configurações das unidades."
+      - name: gh_us_smas
+        description: "Capacidade das unidades SMAS."
+      - name: gh_us_tipo
+        description: "Tipos de unidade."
+      - name: sys_config
+        description: "Configurações globais do sistema (heartbeat da pipeline)."

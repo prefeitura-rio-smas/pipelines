@@ -19,6 +19,6 @@ with source as (
         indgenero as genero,
         nuprontpapel as prontuario_papel,
         datcadast as data_cadastro
-    from  {{ source('brutos_acolherio_staging', 'gh_cidadao_pac') }}
+    from  {{ source('prontuario_carioca_assistencia_social', 'gh_cidadao_pac') }}
 )
 select * from source

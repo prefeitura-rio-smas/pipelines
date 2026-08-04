@@ -7,6 +7,6 @@ with source as (
         dtevopac as data_evolucao,
         dscevopac as descricao_evolucao,
         indtpevopac as tipo_evolucao
-    from {{ source('brutos_acolherio_staging', 'gh_evoluadm') }}
+    from {{ source('prontuario_carioca_assistencia_social', 'gh_evoluadm') }}
 )
 select * from source
