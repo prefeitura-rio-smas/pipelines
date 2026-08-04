@@ -26,9 +26,9 @@ models:
         description: "Surrogate key do acolhimento (FK para fct_acolhimento_diaria → fct_acolhimento_ciclos)."
       - name: data_referencia
         description: "Data de referência (cada dia do período de acolhimento)."
-      - name: ano_referencia
+      - name: ano
         description: "Ano extraído da data_referencia."
-      - name: mes_referencia
+      - name: mes
         description: "Mês extraído da data_referencia."
       - name: nome_usuario
       - name: cpf
@@ -121,13 +121,3 @@ models:
         description: "Timestamp da última sincronização do Airbyte (heartbeat da pipeline via raw_configuracoes_sistema)."
         tests:
           - not_null
-      - name: dia_atualizacao
-        description: "Dia da última atualização da pipeline."
-      - name: mes_atualizacao
-        description: "Mês da última atualização da pipeline."
-      - name: ano_atualizacao
-        description: "Ano da última atualização da pipeline."
-      - name: hora_atualizacao
-        description: "Hora da última atualização da pipeline."
-      - name: minuto_atualizacao
-        description: "Minuto da última atualização da pipeline."

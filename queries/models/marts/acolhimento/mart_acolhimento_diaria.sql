@@ -30,10 +30,6 @@ emails_planilha as (
     select * from {{ ref('raw_sheets_filtro_email_prontuario') }}
 ),
 
-ultima_atualizacao_pipeline as (
-    {{ extrair_ultima_atualizacao('raw_configuracoes_sistema') }}
-),
-
 final as (
     select
         a.id_usuario    as seqpac,
@@ -299,19 +295,13 @@ final as (
     left join usuarios usr   on a.id_usuario_sk = usr.id_usuario_sk
     left join unidades un    on a.id_unidade_sk = un.id_unidade_sk
     left join emails_planilha em on lower(trim(em.unidade_atendimento)) = lower(trim(un.nome_unidade))
-    cross join ultima_atualizacao_pipeline ult_atualizacao
 )
 
 select
     *,
-    ult_atualizacao.ultima_atualizacao,
-    extract(day from ult_atualizacao.ultima_atualizacao)   as dia_atualizacao,
-    extract(month from ult_atualizacao.ultima_atualizacao) as mes_atualizacao,
-    extract(year from ult_atualizacao.ultima_atualizacao)  as ano_atualizacao,
-    extract(hour from ult_atualizacao.ultima_atualizacao)  as hora_atualizacao,
-    extract(minute from ult_atualizacao.ultima_atualizacao) as minuto_atualizacao,
-    extract(year from data_referencia)  as ano_referencia,
-    extract(month from data_referencia) as mes_referencia,
+    {{ extrair_ultima_atualizacao('raw_configuracoes_sistema') }} as ultima_atualizacao,
+    extract(year from data_referencia)  as ano,
+    extract(month from data_referencia) as mes,
 
     case
         when idade between 0 and 3    then 'De 0 a 3 anos - Bebê'

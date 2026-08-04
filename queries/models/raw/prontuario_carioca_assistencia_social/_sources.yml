@@ -1,0 +1,66 @@
+version: 2
+
+sources:
+  - name: prontuario_carioca_assistencia_social
+    description: "Tabelas raw do Prontuário Carioca Assistência Social (Airbyte → BigQuery)."
+    database: rj-smas-dev
+    schema: prontuario_carioca_assistencia_social
+    tables:
+      - name: raw_usuarios
+        description: "Usuários do sistema."
+      - name: raw_usuarios_acolhimentos
+        description: "Acolhimentos dos usuários."
+      - name: raw_unidades
+        description: "Unidades de atendimento."
+      - name: raw_configuracoes_sistema
+        description: "Configurações globais do sistema (sys_config), utilizada também como vetor/heartbeat de atualização da pipeline."
+      - name: raw_configuracao_unidades
+        description: "Configurações por unidade."
+      - name: raw_tipos_unidade
+        description: "Tipos de unidade."
+      - name: raw_tipos_atividade
+        description: "Tipos de atividade."
+      - name: raw_tipos_atendimento
+        description: "Tipos de atendimento."
+      - name: raw_profissionais
+        description: "Profissionais do sistema."
+      - name: raw_profissionais_ocupacoes
+        description: "Ocupações dos profissionais."
+      - name: raw_presencas_usuarios
+        description: "Presenças dos usuários."
+      - name: raw_presencas_profissionais
+        description: "Presenças dos profissionais."
+      - name: raw_origens
+        description: "Origens de demanda."
+      - name: raw_operadores
+        description: "Operadores do sistema."
+      - name: raw_operadores_unidades
+        description: "Operadores por unidade."
+      - name: raw_membros_familia
+        description: "Membros das famílias."
+      - name: raw_familias
+        description: "Famílias cadastradas."
+      - name: raw_familias_vulnerabilidades
+        description: "Vulnerabilidades das famílias."
+      - name: raw_familias_servicos_assistenciais
+        description: "Serviços assistenciais das famílias."
+      - name: raw_familias_projetos_sociais
+        description: "Projetos sociais das famílias."
+      - name: raw_evolucoes_usuarios
+        description: "Evoluções dos usuários."
+      - name: raw_evolucoes_grupo
+        description: "Evoluções de grupo."
+      - name: raw_evolucoes_familias
+        description: "Evoluções das famílias."
+      - name: raw_evolucoes_administrativas
+        description: "Evoluções administrativas."
+      - name: raw_cbo
+        description: "Classificação Brasileira de Ocupações."
+      - name: raw_capacidade_unidades
+        description: "Capacidade das unidades."
+      - name: raw_atividades_grupo
+        description: "Atividades de grupo."
+      - name: raw_atendimentos_usuarios
+        description: "Atendimentos dos usuários."
+      - name: raw_atendimentos_familias
+        description: "Atendimentos das famílias."
