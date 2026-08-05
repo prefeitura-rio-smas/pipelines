@@ -1,7 +1,8 @@
 """Transformação — dbt genérico (tag-driven)."""
 import os
 from prefect import flow
-from prefect_dbt.cli.commands import trigger_dbt_cli_command
+
+from pipelines.datalake.transform.dbt.tasks import create_dbt_report, execute_dbt
 from pipelines.utils.settings import BaseSettings
 
 
@@ -9,8 +10,8 @@ from pipelines.utils.settings import BaseSettings
 def dbt_transform_flow(select: str | None = None):
     BaseSettings()  # side effect: _configure_auth()
     dbt_target = os.getenv("MODE", "staging")
-    cmd = "dbt build"
+    args = ["build", "--target", dbt_target, "--project-dir", "queries", "--profiles-dir", "queries"]
     if select:
-        cmd += f" --select {select}"
-    cmd += f" --target {dbt_target}"
-    trigger_dbt_cli_command(cmd, project_dir="queries", profiles_dir="queries")
+        args += ["--select", select]
+    execution_info = execute_dbt(args)
+    create_dbt_report(execution_info, target=dbt_target, select=select)
