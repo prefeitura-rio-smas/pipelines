@@ -6,6 +6,6 @@ with source as (
         seqvulnerab as id_vulnerabilidade,
         datcadastr as data_cadastro,
         datcancel as data_cancelamento
-    from {{ source('prontuario_carioca_assistencia_social', 'gh_famil_vulnerab') }}
+    from {{ source('brutos_acolherio_staging', 'gh_famil_vulnerab') }}
 )
 select * from source

@@ -15,7 +15,7 @@ with source as (
         dscobs          as observacao,
         indativo        as flag_ativo,
         numorder        as ordem
-    from {{ source('prontuario_carioca_assistencia_social', 'sys_config') }}
+    from {{ source('brutos_acolherio_staging', 'sys_config') }}
 
 )
 

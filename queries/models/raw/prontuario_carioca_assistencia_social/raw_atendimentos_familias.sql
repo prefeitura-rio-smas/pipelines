@@ -16,7 +16,7 @@ with source as (
         horaent as hora_atendimento,
         dtsaida as data_saida,
         horasai as hora_saida,
-    from {{ source('prontuario_carioca_assistencia_social', 'gh_atend_familia') }}
+    from {{ source('brutos_acolherio_staging', 'gh_atend_familia') }}
 )
 select 
     *,

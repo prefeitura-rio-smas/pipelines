@@ -20,6 +20,6 @@ with source as (
         datultmodif as data_ultima_modificacao,
         emailprof as email,
         dsctel as telefone,
-    from {{ source('prontuario_carioca_assistencia_social', 'gh_prof') }}
+    from {{ source('brutos_acolherio_staging', 'gh_prof') }}
 )
 select * from source

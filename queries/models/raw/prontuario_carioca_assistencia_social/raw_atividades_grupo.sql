@@ -14,7 +14,7 @@ with source as (
         dscperiodativ as recorrencia,
         indmatri as indicador_matricula,
         obsmatri as observacao_matricula
-    from {{ source('prontuario_carioca_assistencia_social', 'gh_ativgrp') }}
+    from {{ source('brutos_acolherio_staging', 'gh_ativgrp') }}
 )
 
 select * from source

@@ -4,6 +4,6 @@ with source as (
     select
         seqlogin as id_login,
         sequs as id_unidade
-    from {{ source('prontuario_carioca_assistencia_social', 'gh_contas_us') }}
+    from {{ source('brutos_acolherio_staging', 'gh_contas_us') }}
 )
 select * from source

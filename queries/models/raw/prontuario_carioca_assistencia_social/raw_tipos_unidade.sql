@@ -6,6 +6,6 @@ with source as (
         indclasstu as classe,
         dscclassdetal as descricao_classe,
         dscclassresum as descricao_classe_resumida
-    from {{ source('prontuario_carioca_assistencia_social', 'gh_us_tipo') }}
+    from {{ source('brutos_acolherio_staging', 'gh_us_tipo') }}
 )
 select * from source

@@ -7,6 +7,6 @@ with source as (
         numbloqinfra as leitos_bloqueados_infra,
         numbloqjud as leitos_bloqueados_judiciais,
         indadminleitos as flag_administra_leitos
-    from {{ source('prontuario_carioca_assistencia_social', 'gh_us_config') }}
+    from {{ source('brutos_acolherio_staging', 'gh_us_config') }}
 )
 select * from source

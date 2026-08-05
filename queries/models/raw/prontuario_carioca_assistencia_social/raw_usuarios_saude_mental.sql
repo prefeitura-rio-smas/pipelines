@@ -15,6 +15,6 @@ with source as (
         {{ map_flag_situacao_rua('indmoradi') }} as flag_situacao_rua,
         indpresdefi as flag_deficiencia,
         indtpdefi as tipo_deficiencia
-    from  {{ source('prontuario_carioca_assistencia_social', 'gh_pacientes_sm') }}
+    from  {{ source('brutos_acolherio_staging', 'gh_pacientes_sm') }}
 )
 select * from source

@@ -16,6 +16,6 @@ with source as (
         valrendaativ as renda_ativa,
         valrendabenef as renda_beneficio,
         indtipovinc  as vinculo_trabalhista
-    from  {{ source('prontuario_carioca_assistencia_social', 'gh_pac_dados') }}
+    from  {{ source('brutos_acolherio_staging', 'gh_pac_dados') }}
 )
 select * from source

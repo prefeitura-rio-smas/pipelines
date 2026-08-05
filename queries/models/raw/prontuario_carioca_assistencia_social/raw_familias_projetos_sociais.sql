@@ -7,6 +7,6 @@ with source as (
         datcadastr as data_cadastro,
         datcancel as data_cancelamento,
         indativo as indicador_ativo
-    from {{ source('prontuario_carioca_assistencia_social', 'gh_famil_projsociais') }}
+    from {{ source('brutos_acolherio_staging', 'gh_famil_projsociais') }}
 )
 select * from source

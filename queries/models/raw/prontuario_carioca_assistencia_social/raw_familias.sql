@@ -5,6 +5,6 @@ with source as (
         seqpac_responsavel as id_usuario_responsavel,
         datultalteracao as data_ultima_modificacao,
         indativo as flag_ativo
-    from {{ source('prontuario_carioca_assistencia_social', 'gh_familias') }}
+    from {{ source('brutos_acolherio_staging', 'gh_familias') }}
 )
 select * from source

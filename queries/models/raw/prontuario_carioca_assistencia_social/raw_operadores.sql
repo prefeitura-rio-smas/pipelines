@@ -10,6 +10,6 @@ with source as (
         indstatuser as status_conta_codigo,
         datcadastro as data_cadastro,
         datultacess as data_ultimo_acesso
-    from {{ source('prontuario_carioca_assistencia_social', 'gh_contas') }}
+    from {{ source('brutos_acolherio_staging', 'gh_contas') }}
 )
 select * from source

@@ -5,6 +5,6 @@ with source as (
         descatend as descricao,
         codabapront as codigo_aba_prontuario,
         descatend as tipo_atendimento_descricao
-    from {{ source('prontuario_carioca_assistencia_social', 'gh_tpatendimentos') }}
+    from {{ source('brutos_acolherio_staging', 'gh_tpatendimentos') }}
 )
 select * from source
