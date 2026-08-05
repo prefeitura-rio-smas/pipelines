@@ -14,11 +14,7 @@ violacoes as (
     select * from {{ ref('int_usuarios_violacoes') }}
 ),
 projetos as (
-    select distinct m.id_paciente, fp.projetos_sociais
-    from {{ ref('raw_membros_familia') }} m
-    left join {{ ref('int_familias_projetos_sociais') }} fp
-        on m.id_familia = fp.id_familia
-    where m.data_saida is null
+    select * from {{ ref('int_usuarios_projetos_sociais') }}
 ),
 final as (
     select
@@ -74,7 +70,7 @@ final as (
     left join saude_mental sm on base.id_paciente = sm.id_paciente
     left join origens ori on sm.codigo_origem = ori.id_origem
     left join violacoes v on base.id_paciente = v.id_usuario
-    left join projetos proj on base.id_paciente = proj.id_paciente
+    left join projetos proj on base.id_paciente = proj.id_usuario
     where base.nome not like '%TESTE%'
 )
 
