@@ -1,13 +1,85 @@
 """Helpers compartilhados para execução de dbt (resumo e mensagens de erro)."""
-from dbt.cli.main import dbtRunner, dbtRunnerResult
-from dbt.contracts.results import NodeStatus
+from dbt.cli.main import dbtRunnerResult
+from dbt.contracts.results import NodeStatus, RunResult, SourceFreshnessResult
 
 STATUS_FALHA = (NodeStatus.Fail, NodeStatus.Error, NodeStatus.RuntimeErr)
 
 
-def run_dbt(args: list[str]) -> dbtRunnerResult:
-    """Executa o dbt via dbtRunner e retorna o resultado."""
-    return dbtRunner().invoke(args)
+class RunResultSummarizer:
+    """Resumo de um RunResult (modelo/teste) por status."""
+
+    def summarize(self, result):
+        if result.status == "error":
+            return self.error(result)
+        if result.status == "fail":
+            return self.fail(result)
+        if result.status == "warn":
+            return self.warn(result)
+        return None
+
+    @staticmethod
+    def error(result):
+        return f"`{result.node.name}`\n  {result.message.replace('__', '_')} \n"
+
+    @staticmethod
+    def fail(result):
+        relation = getattr(result.node, "relation_name", None)
+        if relation:
+            return (
+                f"`{result.node.name}`\n   {result.message}: "
+                f"``` select * from {relation.replace('`', '')}``` \n"
+            )
+        return f"`{result.node.name}`\n   {result.message} \n"
+
+    @staticmethod
+    def warn(result):
+        relation = getattr(result.node, "relation_name", None)
+        if relation:
+            return (
+                f"`{result.node.name}`\n   {result.message}: "
+                f"``` select * from {relation.replace('`', '')}``` \n"
+            )
+        return f"`{result.node.name}`\n   {result.message} \n"
+
+
+class FreshnessResultSummarizer:
+    """Resumo de um SourceFreshnessResult por status."""
+
+    def summarize(self, result):
+        if result.status == "error":
+            return self.error(result)
+        if result.status == "fail":
+            return self.fail(result)
+        if result.status == "warn":
+            return self.warn(result)
+        return None
+
+    @staticmethod
+    def error(result):
+        freshness = result.node.freshness
+        error_criteria = f">={freshness.error_after.count} {freshness.error_after.period}"
+        return f"{result.node.relation_name.replace('`', '')}: ({error_criteria})"
+
+    @staticmethod
+    def fail(result):
+        return f"{result.node.relation_name.replace('`', '')}"
+
+    @staticmethod
+    def warn(result):
+        freshness = result.node.freshness
+        warn_criteria = f">={freshness.warn_after.count} {freshness.warn_after.period}"
+        return f"{result.node.relation_name.replace('`', '')}: ({warn_criteria})"
+
+
+class Summarizer:
+    """Roteia o resultado para o summarizer adequado (RunResult ou Freshness)."""
+
+    def __call__(self, result):
+        if isinstance(result, RunResult):
+            return RunResultSummarizer().summarize(result)
+        if isinstance(result, SourceFreshnessResult):
+            return FreshnessResultSummarizer().summarize(result)
+        return None
 
 
 def nodes_falhados(result: dbtRunnerResult) -> list:
@@ -17,34 +89,16 @@ def nodes_falhados(result: dbtRunnerResult) -> list:
     return [r for r in result.result.results if r.status in STATUS_FALHA]
 
 
-def resumo_markdown(result: dbtRunnerResult, comando: str = "build") -> str:
-    """Markdown com contagem por status e detalhes dos nós não-sucedidos."""
-    results = (result.result.results if result.result else None) or []
-    contagem = {}
-    for r in results:
-        contagem[r.status.value] = contagem.get(r.status.value, 0) + 1
-    md = f"# dbt {comando} — Resumo do run\n\n"
-    for s in NodeStatus:
-        md += f"- {s.value}: {contagem.get(s.value, 0)}\n"
-    falhas = [r for r in results if r.status in STATUS_FALHA]
-    if falhas:
-        md += "\n## Nós não-sucedidos ❌\n\n"
-        for r in falhas:
-            node = getattr(r, "node", None)
-            nome = getattr(node, "name", None) or r.unique_id
-            md += f"**{nome}** [{r.status.value}]\n\n"
-            md += f"> {r.message or 'sem mensagem'}\n\n"
-            md += f"Path: `{getattr(node, 'original_file_path', '')}`\n\n"
-    return md
-
-
 def mensagem_falha(result: dbtRunnerResult) -> str:
-    """Mensagem de erro legível com os nós que falharam."""
+    """Mensagem de erro legível com os nós que falharam (formato do report)."""
     if result.exception:
         return f"dbt build falhou (exception): {result.exception}"
     falhas = nodes_falhados(result)
-    linhas = [
-        f"• {getattr(r.node, 'name', None) or r.unique_id} [{r.status.value}]: {r.message}"
-        for r in falhas
-    ]
+    summarizer = Summarizer()
+    linhas = []
+    for r in falhas:
+        if r.status == NodeStatus.Fail:
+            linhas.append(f"- 🛑 FAIL: {summarizer(r)}")
+        else:
+            linhas.append(f"- ❌ ERROR: {summarizer(r)}")
     return f"dbt build falhou — {len(falhas)} nó(s) com erro:\n" + "\n".join(linhas)
