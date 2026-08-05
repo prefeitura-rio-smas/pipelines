@@ -1,9 +1,8 @@
 """Transformação — dbt genérico (tag-driven)."""
 import os
 from prefect import flow
-from prefect.client.schemas.objects import State
-from prefect.states import StateType
-from prefect_dbt.cli.commands import trigger_dbt_cli_command
+from prefect.artifacts import create_markdown_artifact
+from pipelines.utils.dbt import mensagem_falha, resumo_markdown, run_dbt
 from pipelines.utils.settings import BaseSettings
 
 
@@ -11,10 +10,16 @@ from pipelines.utils.settings import BaseSettings
 def dbt_transform_flow(select: str | None = None):
     BaseSettings()  # side effect: _configure_auth()
     dbt_target = os.getenv("MODE", "staging")
-    cmd = "dbt build"
+    args = ["build", "--target", dbt_target, "--project-dir", "queries", "--profiles-dir", "queries"]
     if select:
-        cmd += f" --select {select}"
-    cmd += f" --target {dbt_target}"
-    result = trigger_dbt_cli_command(cmd, project_dir="queries", profiles_dir="queries")
-    if isinstance(result, State) and result.type == StateType.FAILED:
-        raise RuntimeError(f"dbt build falhou: {result.message}")
+        args += ["--select", select]
+    result = run_dbt(args)
+
+    create_markdown_artifact(
+        key="dbt-transform-summary",
+        description=f"Resumo do dbt build (target={dbt_target}, select={select or 'default'})",
+        markdown=resumo_markdown(result),
+    )
+
+    if not result.success:
+        raise RuntimeError(mensagem_falha(result))
