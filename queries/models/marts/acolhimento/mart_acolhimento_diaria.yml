@@ -117,3 +117,7 @@ models:
         description: "Combinação dos eixos adulto/idoso/família em um rótulo."
       - name: faixa_etaria
         description: "Faixa etária em 5 buckets (Bebê/Criança/Adolescente/Adulto/Idoso)."
+      - name: ultima_atualizacao
+        description: "Timestamp da última sincronização do Airbyte (heartbeat da pipeline via raw_configuracoes_sistema)."
+        tests:
+          - not_null

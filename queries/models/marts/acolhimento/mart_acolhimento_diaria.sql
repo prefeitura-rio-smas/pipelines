@@ -299,6 +299,7 @@ final as (
 
 select
     *,
+    {{ extrair_ultima_atualizacao('raw_configuracoes_sistema') }} as ultima_atualizacao,
     extract(year from data_referencia)  as ano,
     extract(month from data_referencia) as mes,
 
