@@ -3,6 +3,7 @@ with source as (
     select
         seqfamil as id_familia,
         seqprojsoc as id_projeto_social,
+        sequs as id_unidade,
         seqlogincad as id_login_cadastro,
         datcadastr as data_cadastro,
         datcancel as data_cancelamento,
