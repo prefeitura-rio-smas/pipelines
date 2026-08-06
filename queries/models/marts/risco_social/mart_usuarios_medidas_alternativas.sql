@@ -63,6 +63,7 @@ evolucoes_pma as (
     where e.codigo_abrangencia = 18
       and e.data_cancelamento is null
       and e.origem_modulo in ('familia', 'usuario')
+      and coalesce(du.id_usuario, e.id_paciente_familia) is not null
 ),
 
 -- Campos do formulário PMA (última evolução por pessoa)
