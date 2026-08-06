@@ -9,31 +9,22 @@ WITH
         SELECT
             cw.objectid_arcgis AS objectid,
             dev.cpf_pic, dev.cpf_cadun, dev.id_familia, dev.id_membro_familia,
-            dev.nome, dev.sexo,
-            CAST(dev.nascimento_data AS STRING) AS nascimento_data,
-            CAST(dev.idade AS STRING) AS idade,
+            dev.nome, dev.sexo, dev.nascimento_data, dev.idade,
             dev.subprefeitura, dev.regiao_administrativa, dev.bairro,
             dev.grupo, dev.grupo_detalhado, dev.status, dev.cas,
             dev.protocolo_secretaria, dev.protocolo_id, dev.protocolo_descricao,
-            dev.protocolo_status,
-            CAST(dev.protocolo_data_referencia AS STRING) AS protocolo_data_referencia,
-            dev.condicao_cadastro_cadun,
-            CAST(dev.data_atualizacao_cadun AS STRING) AS data_atualizacao_cadun,
+            dev.protocolo_status, dev.protocolo_data_referencia,
+            dev.condicao_cadastro_cadun, dev.data_atualizacao_cadun,
             dev.nome_rf_cadun, dev.cpf_rf_cadun, dev.telefone_cadun,
             dev.bairro_cadun, dev.unidade_territorial_cadun, dev.endereco_cadun,
             dev.complemento_cadun, dev.complemento_adicional_cadun,
-            dev.refencia_logradouro_cadun,
-            CAST(dev.data_particao_cadun AS STRING) AS data_particao_cadun,
-            CAST(dev.data_entrada AS STRING) AS data_entrada,
-            CAST(dev.data_saida AS STRING) AS data_saida,
-            CAST(dev.flag_ativo AS STRING) AS flag_ativo,
-            CAST(dev.flag_atual AS STRING) AS flag_atual,
-            CAST(dev.numero_entrada AS STRING) AS numero_entrada,
-            'ativo' AS status_sinc
+            dev.refencia_logradouro_cadun, dev.data_particao_cadun,
+            dev.data_entrada, dev.data_saida,
+            'ativo' AS status_monitoramento_cpf
         FROM rj-smas-dev.pic.crosswalk_meta_ar_cpf cw
         JOIN rj-smas-dev.pic.pequenos_cariocas_meta_ar_cpf_dev dev
           ON cw.id_membro_familia = dev.id_membro_familia
-        WHERE dev.flag_atual = true
+        WHERE dev.data_saida IS NULL
     ),
 
     atual AS (
@@ -70,7 +61,7 @@ WHERE
     OR COALESCE(NULLIF(CAST(calculado.data_atualizacao_cadun AS STRING), 'None'), '') != COALESCE(NULLIF(atual.data_atualizacao_cadun, 'None'), '')
     OR COALESCE(NULLIF(calculado.nome_rf_cadun, 'None'), '')         != COALESCE(NULLIF(atual.nome_rf_cadun, 'None'), '')
     OR COALESCE(NULLIF(calculado.cpf_rf_cadun, 'None'), '')          != COALESCE(NULLIF(atual.cpf_rf_cadun, 'None'), '')
-    OR COALESCE(NULLIF(calculado.telefone_cadun, 'None'), '')        != COALESCE(NULLIF(REGEXP_REPLACE(atual.telefone_cadun, r'\.0$', ''), 'None'), '')
+    OR COALESCE(NULLIF(calculado.telefone_cadun, 'None'), '')        != COALESCE(NULLIF(atual.telefone_cadun, 'None'), '')
     OR COALESCE(NULLIF(calculado.bairro_cadun, 'None'), '')          != COALESCE(NULLIF(atual.bairro_cadun, 'None'), '')
     OR COALESCE(NULLIF(calculado.unidade_territorial_cadun, 'None'), '') != COALESCE(NULLIF(atual.unidade_territorial_cadun, 'None'), '')
     OR COALESCE(NULLIF(calculado.endereco_cadun, 'None'), '')        != COALESCE(NULLIF(atual.endereco_cadun, 'None'), '')
@@ -80,7 +71,4 @@ WHERE
     OR COALESCE(NULLIF(CAST(calculado.data_particao_cadun AS STRING), 'None'), '') != COALESCE(NULLIF(atual.data_particao_cadun, 'None'), '')
     OR COALESCE(NULLIF(CAST(calculado.data_entrada AS STRING), 'None'), '') != COALESCE(NULLIF(atual.data_entrada, 'None'), '')
     OR COALESCE(NULLIF(CAST(calculado.data_saida AS STRING), 'None'), '') != COALESCE(NULLIF(atual.data_saida, 'None'), '')
-    OR COALESCE(NULLIF(CAST(calculado.flag_ativo AS STRING), 'None'), '') != COALESCE(NULLIF(atual.flag_ativo, 'None'), '')
-    OR COALESCE(NULLIF(CAST(calculado.flag_atual AS STRING), 'None'), '') != COALESCE(NULLIF(atual.flag_atual, 'None'), '')
-    OR COALESCE(NULLIF(CAST(calculado.numero_entrada AS STRING), 'None'), '') != COALESCE(NULLIF(CAST(atual.numero_entrada AS STRING), 'None'), '')
-    OR COALESCE(NULLIF(calculado.status_sinc, 'None'), '')           != COALESCE(NULLIF(atual.status_sinc, 'None'), '')
+    OR COALESCE(NULLIF(calculado.status_monitoramento_cpf, 'None'), '')   != COALESCE(NULLIF(atual.status_monitoramento_cpf, 'None'), '')
