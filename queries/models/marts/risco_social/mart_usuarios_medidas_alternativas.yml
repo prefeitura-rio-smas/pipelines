@@ -1,0 +1,119 @@
+version: 2
+
+models:
+  - name: mart_usuarios_medidas_alternativas
+    description: >
+      Mart de usuários em Penas e Medidas Alternativas (PMA).
+      Granularidade: 1 linha por pessoa (id_paciente). Base do relatório
+      'Penas e Medidas Alternativas (PMA) por CREAS' (agregação por CREAS).
+
+      Duas origens de identificação (coluna array origem_identificacao):
+      1. indicador_projeto_social: participação em projeto social PMA
+         (id_projeto_social = 23, indicador_ativo = 'S', sem data_cancelamento)
+         no prontuário do usuário (dim_usuarios.projetos_sociais — array já
+         expandido da família para os membros ativos na própria dimensão).
+      2. formulario_pma: evolução não cancelada (data_cancelamento IS NULL) com
+         codigo_abrangencia = 18 e formulário 'CREAS - Penas e Medidas Alternativas'
+         (módulos família e usuário). Campos extraídos via macro extrair_formulario
+         (última evolução por pessoa, latest_by = data_evolucao).
+
+      Vínculo ao CREAS — Cenário A (fallback para vazios, validado com o Leone):
+      id_unidade_vinculo = COALESCE(unidade_cadastro_marcacao, unidade_referencia,
+      unidade_cadastro_operador). vinculado_creas = (id_unidade_vinculo é CREAS,
+      dim_unidades id_tipo_unidade = 13). A unidade EFETIVA do vínculo é que define:
+      cada pessoa tem uma única unidade efetiva (após COALESCE) e é ela que é
+      testada contra o tipo 13.
+
+      Tratamento de unidades de teste (nome contendo 'TESTE'): exclusão por design
+      da dim_unidades (filtro de nome). Unidades de teste não são reconhecidas como
+      CREAS (vinculado_creas = FALSE) nem aparecem em nome_unidade_vinculo.
+      O COALESCE é puro — não há flags nem ifs de teste.
+    columns:
+      - name: id_paciente
+        description: 'Identificador único da pessoa (indivíduo).'
+        tests:
+          - not_null
+          - unique
+
+      - name: id_familia
+        description: >
+          Família da última evolução do formulário PMA da pessoa
+          (fct_evolucoes.id_familia, origem módulo família). Pode ser NULL se a
+          pessoa foi identificada apenas pelo indicador do projeto social 23.
+
+      - name: origem_identificacao
+        description: >
+          Array de strings com as origens que identificaram a pessoa:
+          'indicador_projeto_social' e/ou 'formulario_pma'.
+
+      - name: flag_indicador_projeto23
+        description: 'TRUE se a pessoa participa do projeto social PMA (id_projeto_social = 23) ativo e sem cancelamento.'
+
+      - name: flag_formulario_pma
+        description: 'TRUE se a pessoa possui ao menos uma evolução não cancelada com o formulário PMA (codigo_abrangencia = 18).'
+
+      - name: id_unidade_vinculo
+        description: >
+          Unidade de vínculo efetiva da pessoa (Cenário A):
+          COALESCE(unidade_cadastro_marcacao, unidade_referencia, unidade_cadastro_operador).
+          Pode ser NULL (origem_unidade_vinculo = 'sem_unidade'). Unidades de teste não
+          aparecem (excluídas por design da dim_unidades no join de nome/tipo).
+
+      - name: origem_unidade_vinculo
+        description: >
+          Origem do vínculo efetivo: 'unidade_cadastro_marcacao' (unidade que cadastrou a
+          marcação), 'unidade_referencia' (id_unidade_referencia do usuário — fallback
+          nível 1), 'unidade_cadastro_operador' (unidade do operador cadastrante via
+          dim_profissionais — fallback nível 2) ou 'sem_unidade' (nenhum vínculo).
+
+      - name: nome_unidade_vinculo
+        description: >
+          Nome da unidade de vínculo efetiva (dim_unidades). NULL se sem unidade ou se a
+          unidade é de teste (não existe na dim_unidades).
+
+      - name: vinculado_creas
+        description: >
+          TRUE se a unidade de vínculo efetiva (id_unidade_vinculo) é um CREAS
+          (dim_unidades, id_tipo_unidade = 13). FALSE para pessoas sem unidade, com
+          vínculo em unidade não-CREAS (ex: CRAS) ou em unidade de teste.
+
+      - name: id_unidade_referencia
+        description: >
+          Unidade de referência do usuário (dim_usuarios.id_unidade_referencia, sequsref).
+          Informativo (fallback nível 1 do vínculo).
+
+      - name: nome_unidade_referencia
+        description: 'Nome da unidade de referência do usuário (dim_unidades). NULL se unidade de teste ou inexistente.'
+
+      - name: id_unidade_cadastro_operador
+        description: >
+          Unidade do operador cadastrante do usuário (dim_usuarios.id_operador_cadastro ->
+          dim_profissionais.id_login, ids_unidade[0]). Informativo (fallback nível 2 do vínculo).
+
+      - name: nome_unidade_cadastro_operador
+        description: 'Nome da unidade do operador cadastrante (dim_unidades). NULL se unidade de teste ou inexistente.'
+
+      - name: data_apresentacao
+        description: 'Data em que o usuário se apresentou (campo do formulário PMA, última evolução). Date ou NULL.'
+
+      - name: data_inicio_servico
+        description: 'Data de início da prestação de serviços (campo do formulário PMA, última evolução). Date ou NULL.'
+
+      - name: local_cumprimento_pena
+        description: 'Local onde está cumprindo a pena (campo do formulário PMA, última evolução).'
+
+      - name: data_desligamento
+        description: 'Data do desligamento (campo do formulário PMA, última evolução). Date ou NULL.'
+
+      - name: motivo_desligamento
+        description: >
+          Motivo do desligamento (campo do formulário PMA, última evolução).
+          Ex: 'Término da pena', 'Óbito', 'Infrequência, Não cumprimento da PSC pactuada'.
+
+      - name: tempo_cumprimento_pena
+        description: >
+          Tempo de cumprimento da pena alternativa (campo do formulário PMA, última
+          evolução). Ex: 'Até 1 ano de PSC', 'Entre 3 e 4 anos de PSC'.
+
+      - name: data_ultima_evolucao_formulario
+        description: 'Data da última evolução do formulário PMA registrada para a pessoa.'
