@@ -31,7 +31,8 @@ grupo as (
         null as id_paciente_familia,
         e.id_evolucao_grupo,
         e.id_evolucao,
-        e.id_atividade
+        e.id_atividade,
+        cast(null as datetime) as data_cancelamento
     from {{ ref('raw_evolucoes_grupo') }} e
     left join {{ ref('raw_atividades_grupo') }} a
         on e.id_atividade = a.id_atividade
@@ -60,7 +61,8 @@ uniao as (
         null as id_paciente_familia,
         null as id_evolucao_grupo,
         id_evolucao,
-        null as id_atividade
+        null as id_atividade,
+        cast(data_cancelamento as datetime) as data_cancelamento
     from adm
     union all
     select 
@@ -77,7 +79,8 @@ uniao as (
         id_paciente as id_paciente_familia,
         null as id_evolucao_grupo,
         id_evolucao,
-        null as id_atividade
+        null as id_atividade,
+        cast(data_cancelamento as datetime) as data_cancelamento
     from fam
     union all
     select 
@@ -94,7 +97,8 @@ uniao as (
         null as id_paciente_familia,
         null as id_evolucao_grupo,
         id_evolucao,
-        null as id_atividade
+        null as id_atividade,
+        cast(data_cancelamento as datetime) as data_cancelamento
     from usu
     union all
     select 
@@ -111,7 +115,8 @@ uniao as (
         null as id_paciente_familia,
         id_evolucao_grupo,
         id_evolucao,
-        id_atividade
+        id_atividade,
+        cast(data_cancelamento as datetime) as data_cancelamento
     from grupo
 ),
 
@@ -125,6 +130,7 @@ final as (
         dim_u.id_usuario_sk,
         dim_p.id_profissional_sk,
         dim_un.id_unidade_sk,
+        u.id_unidade,
         u.data_evolucao,
         u.descricao_evolucao,
         u.tipo_evolucao,
@@ -135,7 +141,8 @@ final as (
         u.id_paciente_familia,
         u.id_atividade,
         u.id_evolucao_grupo,
-        u.id_evolucao
+        u.id_evolucao,
+        u.data_cancelamento
     from uniao u
     left join {{ ref('dim_usuarios') }} dim_u on u.id_usuario = dim_u.id_usuario
     left join {{ ref('dim_profissionais') }} dim_p on u.id_profissional = dim_p.id_profissional

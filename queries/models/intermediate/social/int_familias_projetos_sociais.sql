@@ -6,6 +6,7 @@ with projetos as (
         id_familia,
         array_agg(struct(
             id_projeto_social,
+            id_unidade,
             indicador_ativo,
             data_cadastro,
             data_cancelamento

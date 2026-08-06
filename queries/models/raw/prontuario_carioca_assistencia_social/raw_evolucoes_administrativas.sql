@@ -7,7 +7,8 @@ with source as (
         seqlogin as id_login,
         dtevopac as data_evolucao,
         dscevopac as descricao_evolucao,
-        indtpevopac as tipo_evolucao
+        indtpevopac as tipo_evolucao,
+        dtcancpac as data_cancelamento
     from {{ source('brutos_acolherio_staging', 'gh_evoluadm') }}
 )
 select * from source
