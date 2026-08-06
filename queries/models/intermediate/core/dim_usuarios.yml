@@ -86,3 +86,7 @@ models:
         description: "Indica se possui violação de direito registrada (Sim/Não)."
       - name: violacoes
         description: "Array estruturado de violações de direito (código + descrição)."
+      - name: id_unidade_referencia
+        description: "Unidade de referência do usuário (raw_usuarios.sequsref)."
+      - name: id_login_cadastro
+        description: "ID da conta que cadastrou o usuário (raw_usuarios.id_login_cadastro, seqlogin). FK para dim_profissionais.id_login."

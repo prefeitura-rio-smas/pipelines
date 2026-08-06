@@ -2,6 +2,7 @@
 with source as (
     select
         seqpac as id_paciente,
+        sequsref as id_unidade_referencia,
         seqlogin as id_login_cadastro,
         sigufnasc as uf_nascimento,
         dscnomepac as nome,
