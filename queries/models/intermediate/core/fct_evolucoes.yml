@@ -8,3 +8,7 @@ models:
         description: "FK para raw_atividades_grupo (seqatigrp). Origem: módulo grupo."
       - name: id_evolucao_grupo
         description: "FK para raw_evolucoes_grupo (seqevogrp). Origem: módulo grupo."
+      - name: id_unidade
+        description: "Unidade associada à evolução — papel único de unidade da fct (único FK para dim_unidades, espelha as fatos irmãs fct_atendimentos/fct_acolhimento_*). Na origem módulo 'grupo', a unidade vem da ATIVIDADE (raw_atividades_grupo via id_atividade), não é um 'cadastro'; nas origens adm/familia/usuario vem de sequs (unidade do cadastrador). O nome neutro id_unidade evita o viés de 'cadastro', que só se aplica parcialmente."
+      - name: data_cancelamento
+        description: "Data de cancelamento da evolução (dtcancpac/dtcancgrp). NULL para evoluções ativas; evoluções canceladas são excluídas nos marts."

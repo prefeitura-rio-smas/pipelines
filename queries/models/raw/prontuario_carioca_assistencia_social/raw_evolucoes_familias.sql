@@ -8,6 +8,7 @@ with source as (
         dtevopac as data_evolucao,
         dscevopac as descricao_evolucao,
         indtpevopac as tipo_evolucao,
+        dtcancpac as data_cancelamento,
         codabapac as modulo_prontuario,
         seqpac as id_paciente
     from {{ source('brutos_acolherio_staging', 'gh_evolufamil') }}
