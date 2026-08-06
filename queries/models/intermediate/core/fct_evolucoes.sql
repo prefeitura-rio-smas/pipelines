@@ -30,6 +30,7 @@ grupo as (
         e.codigo_abrangencia,
         null as id_paciente_familia,
         e.id_evolucao_grupo,
+        e.id_evolucao,
         e.id_atividade
     from {{ ref('raw_evolucoes_grupo') }} e
     left join {{ ref('raw_atividades_grupo') }} a
@@ -58,6 +59,7 @@ uniao as (
         null as codigo_abrangencia,
         null as id_paciente_familia,
         null as id_evolucao_grupo,
+        id_evolucao,
         null as id_atividade
     from adm
     union all
@@ -74,6 +76,7 @@ uniao as (
         modulo_prontuario as codigo_abrangencia,
         id_paciente as id_paciente_familia,
         null as id_evolucao_grupo,
+        id_evolucao,
         null as id_atividade
     from fam
     union all
@@ -90,6 +93,7 @@ uniao as (
         codigo_abrangencia,
         null as id_paciente_familia,
         null as id_evolucao_grupo,
+        id_evolucao,
         null as id_atividade
     from usu
     union all
@@ -106,6 +110,7 @@ uniao as (
         codigo_abrangencia,
         null as id_paciente_familia,
         id_evolucao_grupo,
+        id_evolucao,
         id_atividade
     from grupo
 ),
@@ -113,11 +118,9 @@ uniao as (
 final as (
     select
         {{ dbt_utils.generate_surrogate_key([
-            'u.id_usuario',
-            'u.data_evolucao',
-            'u.descricao_evolucao',
             'u.origem_modulo',
-            'u.id_evolucao_grupo'
+            'u.id_evolucao',
+            'u.id_usuario'
         ]) }} as id_evolucao_sk,
         dim_u.id_usuario_sk,
         dim_p.id_profissional_sk,
@@ -131,7 +134,8 @@ final as (
         u.codigo_abrangencia,
         u.id_paciente_familia,
         u.id_atividade,
-        u.id_evolucao_grupo
+        u.id_evolucao_grupo,
+        u.id_evolucao
     from uniao u
     left join {{ ref('dim_usuarios') }} dim_u on u.id_usuario = dim_u.id_usuario
     left join {{ ref('dim_profissionais') }} dim_p on u.id_profissional = dim_p.id_profissional

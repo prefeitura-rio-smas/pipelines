@@ -37,7 +37,8 @@ unidades_atuacao as (
         count(distinct u.id_unidade) as qtde_unidades,
         array_agg(op_unid.id_unidade order by u.nome_unidade) as ids_unidade
     from {{ ref('raw_operadores_unidades') }} op_unid
-    left join {{ ref('raw_unidades') }} u on op_unid.id_unidade = u.id_unidade
+    left join {{ ref('dim_unidades') }} u on op_unid.id_unidade = u.id_unidade
+    where u.id_unidade is not null
     group by op_unid.id_login
 ),
 

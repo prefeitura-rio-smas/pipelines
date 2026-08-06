@@ -2,6 +2,7 @@
 with source as (
     select
         seqpac as id_paciente,
+        seqevopac as id_evolucao,
         sequs as id_unidade,
         seqlogin as id_login,
         dtevopac as data_evolucao,

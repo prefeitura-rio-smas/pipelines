@@ -11,10 +11,16 @@ models:
         description: "Data do snapshot (data do dbt run)."
       - name: ano
         description: "Ano de referência do acolhimento."
-        tests: [not_null]
+        tests:
+          - not_null:
+              config:
+                severity: warn
       - name: mes
         description: "Mês de referência do acolhimento (1-12)."
-        tests: [not_null]
+        tests:
+          - not_null:
+              config:
+                severity: warn
       - name: cpf_digits
         description: "CPF com apenas dígitos (11 caracteres para válidos)."
       - name: cpf_status

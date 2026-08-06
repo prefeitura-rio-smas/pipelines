@@ -50,6 +50,7 @@ sms as (
         cast(null as string) as eixo,
         'SMS' as origem
     from {{ ref('raw_sheets_sms_acolhimento') }} s
+    where s.data_acolhimento is not null
 )
 
 select * from smas

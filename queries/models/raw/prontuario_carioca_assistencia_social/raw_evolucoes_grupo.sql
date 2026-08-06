@@ -2,6 +2,7 @@
 with source as (
     select
         seqevogrp as id_evolucao_grupo,
+        seqevogrp as id_evolucao,
         seqatigrp as id_atividade,
         seqprof as id_profissional,
         dtevogrp as data_evolucao,
