@@ -12,10 +12,9 @@ models:
       Exclusão de unidades de teste por design (precedente
       mart_usuarios_medidas_alternativas): a dim_unidades filtra unidades com
       nome contendo 'TESTE' e é a fonte de verdade de TODAS as colunas de
-      unidade. unidades_atuacao e qtde_unidades são recalculadas no próprio
-      mart sobre a dim_unidades (janela por profissional), garantindo que
-      nenhuma unidade de teste entre na lista mesmo se a dim_profissionais
-      for reconstruída sem o filtro. Não há flags nem ifs de teste.
+      unidade. unidades_atuacao e qtde_unidades vêm da dim_profissionais,
+      que exclui unidades de teste por design (via dim_unidades). Não há
+      flags nem ifs de teste.
 
       Métricas (frente 2) — GRÃO POR UNIDADE DO FATO:
       total_atendimentos e total_evolucoes contam, respectivamente,
@@ -111,10 +110,10 @@ models:
         description: "Indicador booleano de profissional sem conta de login (TRUE quando não há conta vinculada)."
 
       - name: unidades_atuacao
-        description: "Lista de nomes de unidades onde o profissional atua em UPPER. Recalculada no mart sobre a dim_unidades (unidades de teste excluídas por design)."
+        description: "Lista de nomes de unidades onde o profissional atua em UPPER. Da dim_profissionais (já exclui unidades de teste por design). NULL quando o profissional não tem unidade válida."
 
       - name: qtde_unidades
-        description: "Quantidade de unidades válidas onde o profissional possui vínculo. Recalculada no mart sobre a dim_unidades (unidades de teste excluídas por design)."
+        description: "Quantidade de unidades válidas onde o profissional possui vínculo. Da dim_profissionais. 0 quando o profissional não tem unidade válida."
 
       - name: id_unidade_sk
         description: "Surrogate key da unidade (FK para dim_unidades)."

@@ -6,13 +6,12 @@
 -- direta de raw_operadores_unidades.
 --
 -- Exclusão de unidades de teste (PRECEDENTE mart_usuarios_medidas_alternativas):
--- a dim_unidades já exclui por design unidades com nome contendo 'TESTE'
--- (WHERE nome_unidade NOT LIKE '%TESTE%'). O mart usa a dim_unidades como
--- fonte de verdade para TODAS as colunas de unidade. As colunas
--- unidades_atuacao e qtde_unidades são RECALCULADAS no próprio mart a partir
--- do array ids_unidade + dim_unidades, garantindo que nenhuma unidade de
--- teste entre na lista mesmo se a dim_profissionais for reconstruída sem o
--- filtro. Não há flags nem ifs de teste no mart.
+-- a dim_unidades exclui por design unidades com nome contendo 'TESTE'
+-- (WHERE nome_unidade NOT LIKE '%TESTE%'), e a dim_profissionais herda essa
+-- exclusão via LEFT JOIN dim_unidades + WHERE id_unidade IS NOT NULL.
+-- unidades_atuacao e qtde_unidades vêm da dim_profissionais (já limpas).
+-- A exclusão também é garantida no mart pelo join com dim_unidades no UNNEST.
+-- Não há flags nem ifs de teste no mart.
 --
 -- Métricas de atendimentos/evoluções (Frente 2):
 --   total_atendimentos: COUNT(DISTINCT id_atendimento_sk) da fct_atendimentos,
@@ -83,20 +82,6 @@ evolucoes_agregadas as (
     group by 1, 2
 ),
 
--- Frente 1: unidades de atuação recalculadas sobre a dim_unidades
--- (exclusão de unidades de teste por design — dim_unidades filtra TESTE)
-unidades_atuacao_prof as (
-    select
-        prof.id_profissional_sk,
-        string_agg(UPPER(unid.nome_unidade), ', ' order by unid.nome_unidade) as unidades_atuacao,
-        count(distinct unid.id_unidade) as qtde_unidades
-    from profissionais prof
-    left join unnest(prof.ids_unidade) as id_unidade
-    left join unidades unid
-        on unid.id_unidade = id_unidade
-    group by 1
-),
-
 joined as (
     select
         {{ dbt_utils.generate_surrogate_key(['prof.id_profissional', 'unid.id_unidade']) }} as id_profissional_unidade_sk,
@@ -129,9 +114,9 @@ joined as (
         prof.status_conta,
         prof.flag_sem_conta,
 
-        -- Unidades de atuacao: recalculadas no mart sobre a dim_unidades
-        uap.unidades_atuacao,
-        uap.qtde_unidades,
+        -- Unidades de atuacao: da dim_profissionais (já exclui unidades de teste)
+        UPPER(prof.unidades_atuacao) as unidades_atuacao,
+        prof.qtde_unidades,
 
         -- Unidade (da dim)
         unid.id_unidade_sk,
@@ -162,8 +147,6 @@ joined as (
     left join unnest(prof.ids_unidade) as id_unidade
     left join unidades unid
         on unid.id_unidade = id_unidade
-    left join unidades_atuacao_prof uap
-        on prof.id_profissional_sk = uap.id_profissional_sk
     left join filtro_email fe
         on unid.nome_unidade = upper(fe.unidade_atendimento)
     left join atendimentos_agregados atd
