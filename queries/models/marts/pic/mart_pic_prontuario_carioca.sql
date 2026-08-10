@@ -114,73 +114,51 @@ violacoes_descricoes as (
     group by m.id_familia
 ),
 
--- Filiação documental (última evolução codigo_abrangencia=24 por pessoa)
--- Regras de filiação:
---   interesse_filiacao_completa: true se a pergunta existe no HTML (independente de Sim/Não), false se não existe
---   possui_filiacao_completa: true/false literal se a pergunta existe, NULL se não existe
-filiacao_por_pessoa as (
-    select
-        dim_u.id_usuario as id_paciente,
-        -- interesse: true se pergunta existe (qualquer resposta), false se não existe
-        regexp_contains(
-            e.descricao_evolucao,
-            r'Há interesse em tomar as medidas necessárias'
-        ) as interesse_filiacao_completa,
-        -- possui: NULL se pergunta não existe, true/false literal se existe
-        case
-            when regexp_contains(
-                e.descricao_evolucao,
-                r'Filiação completa na certidão'
-            )
-            then regexp_contains(
-                e.descricao_evolucao,
-                r'Filiação completa na certidão de nascimento\?.*?<b>\s*Sim\s*</b>'
-            )
-        end as possui_filiacao_completa
-    from {{ ref('fct_evolucoes') }} e
-    inner join {{ ref('dim_usuarios') }} dim_u
-        on e.id_usuario_sk = dim_u.id_usuario_sk
-    where e.codigo_abrangencia = 24
-    qualify
-        row_number() over (
-            partition by dim_u.id_usuario
-            order by e.data_evolucao desc
-        ) = 1
-),
-
--- Sobe filiação para família
+-- Filiação documental (última evolução codigo_abrangencia=24 por família)
 filiacao_familia as (
-    select
-        m.id_familia,
-        case
-            when logical_or(fp.possui_filiacao_completa is not null)
-            then logical_or(fp.possui_filiacao_completa)
-        end as possui_filiacao_completa,
-        logical_or(coalesce(fp.interesse_filiacao_completa, false)) as interesse_filiacao_completa
-    from {{ ref('raw_membros_familia') }} m
-    left join filiacao_por_pessoa fp
-        on m.id_paciente = fp.id_paciente
-    where m.data_saida is null
-    group by m.id_familia
+    {{ extrair_formulario(
+        source_relation = ref('fct_evolucoes'),
+        group_cols = ['id_familia'],
+        codigo_abrangencia = 24,
+        titulo_formulario = 'Documentação Civil',
+        latest_by = 'data_evolucao',
+        campos = [
+            {'label': '%Há interesse%', 'col': 'interesse_filiacao_completa', 'type': 'exists'},
+            {'label': '%Filiação completa%', 'col': 'possui_filiacao_completa', 'type': 'boolean', 'true_value': 'Sim'},
+        ]
+    ) }}
 ),
 
 -- Encaminhamentos do formulário Documentação Civil (codigo_abrangencia=24)
 documentacao_civil_encaminhamentos as (
-    select
-        id_familia,
-        logical_or(valor != 'undefined') as possui_encaminhamento_documentacao_civil,
-        array_agg(distinct valor ignore nulls) as encaminhamentos_documentacao_civil
-    from {{ extrair_campos_html_evolucao(
+    {{ extrair_formulario(
         source_relation = ref('fct_evolucoes'),
-        id_cols = ['id_familia'],
-        col_html = 'descricao_evolucao',
-        extra_where = 'codigo_abrangencia = 24 and id_familia is not null'
+        group_cols = ['id_familia'],
+        codigo_abrangencia = 24,
+        titulo_formulario = 'Documentação Civil',
+        campos = [
+            {'label': '%Encaminhamentos%', 'col': 'encaminhamentos_documentacao_civil', 'type': 'array_agg'},
+        ]
     ) }}
-    where titulo_formulario = 'Documentação Civil'
-      and label = 'Encaminhamentos'
-      and valor != 'undefined'
-      and valor is not null
-    group by id_familia
+),
+
+-- Busca Ativa Pequenos Cariocas (extrair_formulario: latest + parser HTML + pivot)
+busca_ativa_pequenos_cariocas as (
+    {{ extrair_formulario(
+        source_relation = ref('fct_evolucoes'),
+        group_cols = ['id_familia'],
+        codigo_abrangencia = 20,
+        titulo_formulario = '1. Pequenos Cariocas - Busca Ativa',
+        latest_by = 'data_evolucao',
+        flag_col = 'possui_busca_ativa_pequenos_cariocas',
+        campos = [
+            {'label': '%Protocolo violado%', 'col': 'protocolo_violado_busca_ativa', 'type': 'array'},
+            {'label': '%Data em que a Busca Ativa%', 'col': 'data_busca_ativa', 'type': 'date', 'format': '%d/%m/%Y'},
+            {'label': '%Tipo de busca ativa%', 'col': 'tipo_busca_ativa', 'type': 'array'},
+            {'label': '%Família localizada%', 'col': 'familia_localizada_busca_ativa', 'type': 'boolean', 'true_value': 'Sim'},
+            {'label': '%Se não, por quê%', 'col': 'motivo_nao_localizada_busca_ativa', 'type': 'array'},
+        ]
+    ) }}
 ),
 
 -- Junção final
@@ -193,8 +171,14 @@ final as (
         coalesce(vd.violacao_direito, []) as violacao_direito,
         ff.possui_filiacao_completa,
         coalesce(ff.interesse_filiacao_completa, false) as interesse_filiacao_completa,
-        coalesce(dce.possui_encaminhamento_documentacao_civil, false) as possui_encaminhamento_documentacao_civil,
-        coalesce(dce.encaminhamentos_documentacao_civil, []) as encaminhamentos_documentacao_civil
+        coalesce(array_length(dce.encaminhamentos_documentacao_civil) > 0, false) as possui_encaminhamento_documentacao_civil,
+        coalesce(dce.encaminhamentos_documentacao_civil, []) as encaminhamentos_documentacao_civil,
+        coalesce(bapc.possui_busca_ativa_pequenos_cariocas, false) as possui_busca_ativa_pequenos_cariocas,
+        coalesce(bapc.protocolo_violado_busca_ativa, []) as protocolo_violado_busca_ativa,
+        bapc.data_busca_ativa as data_busca_ativa,
+        coalesce(bapc.tipo_busca_ativa, []) as tipo_busca_ativa,
+        coalesce(bapc.familia_localizada_busca_ativa, false) as familia_localizada_busca_ativa,
+        coalesce(bapc.motivo_nao_localizada_busca_ativa, []) as motivo_nao_localizada_busca_ativa
     from familias_origens fo
     left join responsavel_familiar rf on fo.id_familia = rf.id_familia
     left join membros_familia mf on fo.id_familia = mf.id_familia
@@ -202,6 +186,7 @@ final as (
     left join violacoes_descricoes vd on fo.id_familia = vd.id_familia
     left join filiacao_familia ff on fo.id_familia = ff.id_familia
     left join documentacao_civil_encaminhamentos dce on fo.id_familia = dce.id_familia
+    left join busca_ativa_pequenos_cariocas bapc on fo.id_familia = bapc.id_familia
     where rf.responsavel_familiar.cpf is not null
 )
 

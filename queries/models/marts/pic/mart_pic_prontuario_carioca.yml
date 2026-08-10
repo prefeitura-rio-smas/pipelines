@@ -1,7 +1,7 @@
 version: 2
 
 models:
-  - name: mart_pic_prontuario_carioca_dev
+  - name: mart_pic_prontuario_carioca
     description: |
       Mart Prontuário Carioca para PIC.
       Grão: 1 linha por família identificada como PIC.
@@ -27,4 +27,16 @@ models:
       - name: possui_encaminhamento_documentacao_civil
         description: "Booleano. True se a familia teve ao menos um encaminhamento valido no formulario Documentacao Civil (codigo_abrangencia=24). Filtra o valor 'undefined' que representa checkbox nao marcado."
       - name: encaminhamentos_documentacao_civil
-        description: "Array de strings com os encaminhamentos distintos registrados no formulario Documentacao Civil. Extraido do HTML via macro extrair_campos_html_evolucao."
+        description: "Array de strings com os encaminhamentos distintos registrados no formulario Documentacao Civil."
+      - name: possui_busca_ativa_pequenos_cariocas
+        description: "Booleano. True se a familia possui ao menos um registro de Busca Ativa no formulario Pequenos Cariocas (codigo_abrangencia=20)."
+      - name: protocolo_violado_busca_ativa
+        description: "Array de strings com os protocolos violados identificados na ultima Busca Ativa."
+      - name: data_busca_ativa
+        description: "Date. Data da ultima Busca Ativa realizada."
+      - name: tipo_busca_ativa
+        description: "Array de strings com os tipos de busca ativa realizados na ultima Busca Ativa (ex: Domicilio, Por telefone)."
+      - name: familia_localizada_busca_ativa
+        description: "Booleano. True se a familia foi localizada na ultima Busca Ativa (campo 'Familia localizada?' = Sim)."
+      - name: motivo_nao_localizada_busca_ativa
+        description: "Array de strings com os motivos de nao localizacao da familia na ultima Busca Ativa (ex: Endereco desatualizado, Ligacao nao atendida). Vazio se a familia foi localizada."
