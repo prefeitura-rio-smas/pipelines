@@ -9,17 +9,23 @@ WITH
         SELECT
             cw.objectid_arcgis AS objectid,
             dev.cpf_pic, dev.cpf_cadun, dev.id_familia, dev.id_membro_familia,
-            dev.nome, dev.sexo, dev.nascimento_data, dev.idade,
+            dev.nome, dev.sexo,
+            CAST(dev.nascimento_data AS STRING) AS nascimento_data,
+            CAST(dev.idade AS STRING) AS idade,
             dev.subprefeitura, dev.regiao_administrativa, dev.bairro,
             dev.grupo, dev.grupo_detalhado, dev.status, dev.cas,
             dev.protocolo_secretaria, dev.protocolo_id, dev.protocolo_descricao,
-            dev.protocolo_status, dev.protocolo_data_referencia,
-            dev.condicao_cadastro_cadun, dev.data_atualizacao_cadun,
+            dev.protocolo_status,
+            CAST(dev.protocolo_data_referencia AS STRING) AS protocolo_data_referencia,
+            dev.condicao_cadastro_cadun,
+            CAST(dev.data_atualizacao_cadun AS STRING) AS data_atualizacao_cadun,
             dev.nome_rf_cadun, dev.cpf_rf_cadun, dev.telefone_cadun,
             dev.bairro_cadun, dev.unidade_territorial_cadun, dev.endereco_cadun,
             dev.complemento_cadun, dev.complemento_adicional_cadun,
-            dev.refencia_logradouro_cadun, dev.data_particao_cadun,
-            dev.data_entrada, dev.data_saida,
+            dev.refencia_logradouro_cadun,
+            CAST(dev.data_particao_cadun AS STRING) AS data_particao_cadun,
+            CAST(dev.data_entrada AS STRING) AS data_entrada,
+            CAST(dev.data_saida AS STRING) AS data_saida,
             'ativo' AS status_monitoramento_cpf
         FROM rj-smas-dev.pic.crosswalk_meta_ar_cpf cw
         JOIN rj-smas-dev.pic.pequenos_cariocas_meta_ar_cpf_dev dev
