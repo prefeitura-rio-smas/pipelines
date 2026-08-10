@@ -1,0 +1,125 @@
+version: 2
+models:
+  - name: raw_identificacao_primeira_pessoa
+    description: "Registro 04 - Identificação da primeira pessoa (responsável) pela família."
+    columns:
+      - name: id_pessoa
+        description: "Chave natural atual da Pessoa"
+      - name: id_original_pessoa
+        description: "Chave natural original da Pessoa"
+      - name: id_prefeitura
+        description: "Chave única de identificação da Família"
+      - name: id_certidao_registrada_cartorio
+        description: "Pessoa registrada em cartório: campo numérico de 1 posição variando de 1 a 4, dependendo da opção marcada no formulário"
+      - name: certidao_registrada_cartorio
+        description: "Pessoa registrada em cartório: campo numérico de 1 posição variando de 1 a 4, dependendo da opção marcada no formulário"
+      - name: id_estado_cadastral
+        description: "Estado cadastral da família: 1- EM CADASTRAMENTO 2- SEM REGISTRO CIVIL 3- CADASTRADO 4- EXCLUIDO 5- AGUARDANDO ATRIBUIÇÃO NIS 6- AGUARDANDO ALTERAÇÃO DE CARACTERIZAÇÃO 7- AGUARDANDO CPF"
+      - name: estado_cadastral
+        description: "Estado cadastral da família: 1- EM CADASTRAMENTO 2- SEM REGISTRO CIVIL 3- CADASTRADO 4- EXCLUIDO 5- AGUARDANDO ATRIBUIÇÃO NIS 6- AGUARDANDO ALTERAÇÃO DE CARACTERIZAÇÃO 7- AGUARDANDO CPF"
+      - name: id_familia
+        description: "Código Familiar"
+      - name: id_municipio_nascimento
+        description: "Código IBGE do Município de nascimento da Pessoa"
+      - name: id_local_nascimento
+        description: "Local de nascimento: 1-Neste município, 2-Em outro município, 3-Em outro país"
+      - name: local_nascimento
+        description: "Local de nascimento: 1-Neste município, 2-Em outro município, 3-Em outro país"
+      - name: id_familia_origem
+        description: "CÓDIGO DA FAMÍLIA DE ORIGEM ANTES DA TRANFERÊNCIA"
+      - name: id_prefeitura_origem
+        description: "CÓDIGO DA PREFEITURA DE ORIGEM ANTES DA TRANFERÊNCIA"
+      - name: id_pais_origem
+        description: "Código do País de nascimento da Pessoa Campo numérico de 4 posições formato NNNN"
+      - name: id_parentesco_responsavel_familia
+        description: "Relaçao de parentesco com o RF: campo numérico de 2 posições variando de 1 a 11, dependendo da opção marcada no formulário"
+      - name: parentesco_responsavel_familia
+        description: "Relaçao de parentesco com o RF: campo numérico de 2 posições variando de 1 a 11, dependendo da opção marcada no formulário"
+      - name: id_raca_cor
+        description: "Cor ou raça: campo numérico de 1 posição variando de 1 a 5, 1-Branca 2 – Preta 3 – Amarela 4 – Parda 5 – Indígena dependendo da opção marcada no formulário"
+      - name: raca_cor
+        description: "Cor ou raça: campo numérico de 1 posição variando de 1 a 5, 1-Branca 2 – Preta 3 – Amarela 4 – Parda 5 – Indígena dependendo da opção marcada no formulário"
+      - name: id_sexo
+        description: "Sexo: 1-Masculino, 2-Feminino"
+      - name: sexo
+        description: "Sexo: 1-Masculino, 2-Feminino"
+      - name: data_ultima_atualizacao
+        description: "Data de última atualização dos dados sociais da pessoa no formato DDMMAAAA"
+      - name: data_cadastro
+        description: "Data de cadastramento da Pessoa no CadÚnico formato DDMMAAAA"
+      - name: data_nascimento
+        description: "Data de nascimento da pessoa no formato DDMMAAAA"
+      - name: filiacao_1
+        description: "Filiação 1 ou Nome da mãe (coluna origem: filiacao_1_nom_completo_mae_pessoa)"
+      - name: filiacao_2
+        description: "Filiação 2"
+      - name: id_filiacao_1_nao_sabe
+        description: "Não sabe Filiação 1 ou nome da mãe: 0-Opção não marcada no formulário, 1-Opção marcada no formulário (coluna origem: id_filiacao_1nom_completo_mae_pessoa)"
+      - name: id_filiacao_2
+        description: "Não sabe: 0-Opção não marcada no formulário, 1-Opção marcada no formulário"
+      - name: sabe_id_municipio_nascimento
+        description: "Sabe o município de nascimento da pessoa: 1-Opção não marcada no formulário, 2-Opção marcada no formulário."
+      - name: id_identidade_genero
+        description: "“4.16-Deseja informar o gênero de (nome)?” Valores possíveis: 1 – Sim, 2 – Não."
+      - name: identidade_genero
+        description: "“4.16-Deseja informar o gênero de (nome)?” Valores possíveis: 1 – Sim, 2 – Não."
+      - name: nao_sabe_nome_mae
+        description: "Não sabe nome da mãe: 0-Opção não marcada no formulário, 1-Opção marcada no formulário"
+      - name: nao_sabe_nome_pai
+        description: "Não sabe nome do pai: 0-Opção não marcada no formulário, 1-Opção marcada no formulário"
+      - name: id_sabe_pais_nascimento
+        description: "Sabe o País de nascimento da pessoa: 1-Opção não marcada no formulário, 2-Opção marcada no formulário."
+      - name: sabe_pais_nascimento
+        description: "Sabe o País de nascimento da pessoa: 1-Opção não marcada no formulário, 2-Opção marcada no formulário."
+      - name: id_trabalho_infantil
+        description: "Trabalho infantil na família: 1-Sim, 2-Não"
+      - name: trabalho_infantil
+        description: "Trabalho infantil na família: 1-Sim, 2-Não"
+      - name: foi_transferido
+        description: "INDICADOR DE TRANSFERÊNCIA: T – TRANSFERIDO"
+      - name: id_transgenero
+        description: "“4.17-(nome) é pessoa trans ou travesti?” Valores possíveis: 1-Sim, a pessoa é trans, 2-Sim, a pessoa é travesti e 3-Não"
+      - name: transgenero
+        description: "“4.17-(nome) é pessoa trans ou travesti?” Valores possíveis: 1-Sim, a pessoa é trans, 2-Sim, a pessoa é travesti e 3-Não"
+      - name: sabe_uf_nascimento
+        description: "Sabe a UF de nascimento da pessoa: 1-Opção não marcada no formulário, 2-Opção marcada no formulário."
+      - name: apelido
+        description: "Apelido da pessoa"
+      - name: nome_mae
+        description: "Nome da mãe"
+      - name: nome_pai
+        description: "Nome do pai"
+      - name: municipio_nascimento
+        description: "Nome do Município de nascimento da Pessoa"
+      - name: origem_alteracao
+        description: "DESCREVE A ORIGEM DA ALTERAÇÃO (CADÚNICO, DATASUS, PIS ONLINE...) *"
+      - name: pais_nascimento
+        description: "Nome do país de nascimento da Pessoa Quando o campo 4.14-COD-PAIS-ORIGEM-PESSOA for igual a 10 (Brasil) preencher com espaços."
+      - name: nome
+        description: "Nome da pessoa"
+      - name: nome_social_pessoa
+        description: "Nome Social da pessoa"
+      - name: nis_original
+        description: "Número de NIS localizado ou atribuído à pessoa no momento de sua inclusão no Cadastro Único O número de NIS original do membro nunca será alterado."
+      - name: id_origem_cadastro_pessoa
+        description: "Valor contendo o domínio da origem.Atualmente temos as origens: 01 – Online 02 – APP"
+      - name: origem_cadastro_pessoa
+        description: "Valor contendo o domínio da origem.Atualmente temos as origens: 01 – Online 02 – APP"
+      - name: id_tipo_identidade_genero
+        description: "4.18-Qual é o gênero/identidade de gênero de (nome)? (termo relativo à identidade da pessoa) Valores possíveis: 001 – Feminina 002 – Masculina e 003 – Não binário/a"
+      - name: tipo_identidade_genero
+        description: "4.18-Qual é o gênero/identidade de gênero de (nome)? (termo relativo à identidade da pessoa) Valores possíveis: 001 – Feminina 002 – Masculina e 003 – Não binário/a"
+      - name: id_membro
+        description: "Número do membro da Família (coluna origem: id_membro_familia)"
+      - name: nis
+        description: "NIS atual da pessoa, campo numérico de 11 posições formato NNNNNNNNNNN"
+      - name: id_numero_ordem
+        description: "Número de ordem, campo numérico de 2 posições no formato NN"
+      - name: numero_registro
+        description: "04 (coluna origem: numero_registro_arquivo)"
+      - name: uf_nascimento
+        description: "UF de nascimento da Pessoa (coluna origem: sigla_uf_municipio_nascimento)"
+      - name: versao_layout
+        description: "Sem descrição na origem."
+      - name: data_particao
+        description: "Sem descrição na origem."

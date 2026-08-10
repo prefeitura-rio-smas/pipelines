@@ -1,0 +1,59 @@
+version: 2
+models:
+  - name: raw_domicilio
+    description: "Registro 02 - Características do domicílio (água, esgoto, iluminação, material e saneamento)."
+    columns:
+      - name: id_prefeitura
+        description: "Chave única de identificação da Família"
+      - name: id_forma_abastecimento_agua
+        description: "Forma de abastecimento de água: campo numérico de 1 posição variando de 1 a 4, dependendo da opção marcada no formulário (coluna origem: id_forma_abatecimento_agua_domicilio)"
+      - name: forma_abastecimento_agua
+        description: "Forma de abastecimento de água: campo numérico de 1 posição variando de 1 a 4, dependendo da opção marcada no formulário (coluna origem: forma_abatecimento_agua_domicilio)"
+      - name: id_possui_agua_encanada
+        description: "Se o domicílio tem água encanada: 1-Sim, 2-Não (coluna origem: id_possui_agua_encanada_domicilio)"
+      - name: possui_agua_encanada
+        description: "Se o domicílio tem água encanada: 1-Sim, 2-Não (coluna origem: possui_agua_encanada_domicilio)"
+      - name: id_possui_banheiro
+        description: "Existência de banheiro: 1-Sim, 2-Não (coluna origem: id_possui_banheiro_domicilio)"
+      - name: possui_banheiro
+        description: "Existência de banheiro: 1-Sim, 2-Não (coluna origem: possui_banheiro_domicilio)"
+      - name: id_calcamento
+        description: "Calçamento: 1-Total, 2-Parcial, 3-Não Existe (coluna origem: id_calcamento_domicilio)"
+      - name: calcamento
+        description: "Calçamento: 1-Total, 2-Parcial, 3-Não Existe (coluna origem: calcamento_domicilio)"
+      - name: id_destino_lixo
+        description: "Forma de coleta do lixo: campo numérico de 1 posição variando de 1 a 6, dependendo da opção marcada no formulário (coluna origem: id_destino_lixo_domicilio)"
+      - name: destino_lixo
+        description: "Forma de coleta do lixo: campo numérico de 1 posição variando de 1 a 6, dependendo da opção marcada no formulário (coluna origem: destino_lixo_domicilio)"
+      - name: id_escoamento_sanitario
+        description: "Forma de escoamento sanitário: campo numérico de 1 posição variando de 1 a 6, dependendo da opção marcada no formulário (coluna origem: id_escoamento_sanitario_domicilio)"
+      - name: escoamento_sanitario
+        description: "Forma de escoamento sanitário: campo numérico de 1 posição variando de 1 a 6, dependendo da opção marcada no formulário (coluna origem: escoamento_sanitario_domicilio)"
+      - name: id_especie
+        description: "Espécie do domicílio: 1-Particular Permanente, 2-Particular improvisado, 3-Coletivo (coluna origem: id_especie_domicilio)"
+      - name: especie
+        description: "Espécie do domicílio: 1-Particular Permanente, 2-Particular improvisado, 3-Coletivo (coluna origem: especie_domicilio)"
+      - name: id_familia
+        description: "Código Familiar"
+      - name: id_iluminacao
+        description: "Iluminação: campo numérico de 1 posição variando de 1 a 6, dependendo da opção marcada no formulário (coluna origem: id_iluminacao_domicilio)"
+      - name: iluminacao
+        description: "Iluminação: campo numérico de 1 posição variando de 1 a 6, dependendo da opção marcada no formulário (coluna origem: iluminacao_domicilio)"
+      - name: id_local
+        description: "Características do local onde está situado o domicílio: 1-Urbanas, 2-Rurais (coluna origem: id_local_domicilio)"
+      - name: local
+        description: "Características do local onde está situado o domicílio: 1-Urbanas, 2-Rurais (coluna origem: local_domicilio)"
+      - name: id_material
+        description: "Material predominante nas paredes externas do domicílio, campo numérico de 1 posição variando de 1 a 8 dependendo da opção marcada no formulário (coluna origem: id_material_domicilio)"
+      - name: material
+        description: "Material predominante nas paredes externas do domicílio, campo numérico de 1 posição variando de 1 a 8 dependendo da opção marcada no formulário (coluna origem: material_domicilio)"
+      - name: id_material_piso
+        description: "Material predominante no piso do domicílio, campo numérico de 1 posição variando de 1 a 7 dependendo da opção marcada no formulário (coluna origem: id_material_piso_domicilio)"
+      - name: material_piso
+        description: "Material predominante no piso do domicílio, campo numérico de 1 posição variando de 1 a 7 dependendo da opção marcada no formulário (coluna origem: material_piso_domicilio)"
+      - name: numero_registro
+        description: "02 (coluna origem: numero_registro_arquivo)"
+      - name: versao_layout
+        description: "Sem descrição na origem."
+      - name: data_particao
+        description: "Sem descrição na origem."

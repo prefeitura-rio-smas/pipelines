@@ -1,0 +1,101 @@
+version: 2
+models:
+  - name: raw_condicao_rua
+    description: "Registro 12 - Condições e motivos de vivência na rua dos membros (população em situação de rua)."
+    columns:
+      - name: id_prefeitura
+        description: "Chave única de identificação da Família"
+      - name: id_carteira_assinada
+        description: "Teve emprego com carteira assinada: 1-Sim, 2-Não, 3-Não sabe"
+      - name: tem_contato_parente
+        description: "Tem contato com parente fora da condição de rua: campo numérico de 1 posição variando de 1 a 6, dependendo da opção marcada no formulário (coluna origem: condicao_rua_contato_parente)"
+      - name: id_familia
+        description: "Código Familiar"
+      - name: id_tempo_municipio
+        description: "Tempo em que mora na cidade: campo numérico de 1 posição variando de 1 a 6, dependendo da opção marcada no formulário"
+      - name: id_tempo_rua
+        description: "Tempo em que vive na rua: campo numérico de 1 posição variando de 1 a 6, dependendo da opção marcada no formulário"
+      - name: vive_com_familia
+        description: "Vive com sua família na rua: 1-Sim, 2-Não (coluna origem: condicao_rua_vive_familia)"
+      - name: atendido_centro_referencia
+        description: "Atendido por Centro Ref Pop Rua: 0-Opção não marcada no formulário, 1-Opção marcada no formulário (coluna origem: atendido_crentro_referencia_populacao_rua)"
+      - name: atendido_cras
+        description: "Atendido por CRAS: 0-Opção não marcada no formulário, 1-Opção marcada no formulário"
+      - name: atendido_creas
+        description: "Atendido por CREAS: 0-Opção não marcada no formulário, 1-Opção marcada no formulário"
+      - name: atendido_hospital_geral
+        description: "Atendido por Hospital Geral: 0-Opção não marcada no formulário, 1-Opção marcada no formulário"
+      - name: atendido_instituicao_governamental
+        description: "Atendido por Instituição Governamental: 0-Opção não marcada no formulário, 1-Opção marcada no formulário"
+      - name: atendido_instituicao_nao_governamental
+        description: "Atendido por Instituição não Governamental: 0-Opção não marcada no formulário, 1-Opção marcada no formulário"
+      - name: atendido_nenhum
+        description: "Não foi atendido por nenhum local: 0-Opção não marcada no formulário, 1-Opção marcada no formulário"
+      - name: atividade_comunitaria_associacao
+        description: "Atividade comunitária em ASSOCIAÇÃO: 0-Opção não marcada no formulário, 1-Opção marcada no formulário"
+      - name: atividade_comunitaria_cooperativa
+        description: "Atividade comunitária em COOPERATIVA: 0-Opção não marcada no formulário, 1-Opção marcada no formulário"
+      - name: atividade_comunitaria_escola
+        description: "Atividade comunitária em ESCOLA: 0-Opção não marcada no formulário, 1-Opção marcada no formulário"
+      - name: atividade_comunitaria_movimento_social
+        description: "Atividade comunitária em Movimento social: 0-Opção não marcada no formulário, 1-Opção marcada no formulário (coluna origem: atibidade_comunitaria_movimento_social)"
+      - name: atividade_comunitaria_nao_respondeu
+        description: "Não respondeu se frequentou atividade comunitária: 0-Opção não marcada no formulário, 1-Opção marcada no formulário"
+      - name: atividade_comunitaria_nao_sabe
+        description: "Não sabe se frequentou atividade comunitária: 0-Opção não marcada no formulário, 1-Opção marcada no formulário"
+      - name: ganha_dinheiro_carregador
+        description: "Ganha dinheiro como carregador: 0-Opção não marcada no formulário, 1-Opção marcada no formulário"
+      - name: ganha_dinheiro_catador
+        description: "Ganha dinheiro como catador: 0-Opção não marcada no formulário, 1-Opção marcada no formulário"
+      - name: ganha_dinheiro_construcao_civil
+        description: "Ganha dinheiro com construção civil: 0-Opção não marcada no formulário, 1-Opção marcada no formulário"
+      - name: ganha_dinheiro_flanelinha
+        description: "Ganha dinheiro como guardador de carro: 0-Opção não marcada no formulário, 1-Opção marcada no formulário"
+      - name: ganha_dinheiro_nao_respondeu
+        description: "Não respondeu como ganha dinheiro: 0-Opção não marcada no formulário, 1-Opção marcada no formulário"
+      - name: ganha_dinheiro_outro
+        description: "Ganha dinheiro de outra forma: 0-Opção não marcada no formulário, 1-Opção marcada no formulário"
+      - name: ganha_dinheiro_pedinte
+        description: "Ganha dinheiro como pedinte: 0-Opção não marcada no formulário, 1-Opção marcada no formulário"
+      - name: ganha_dinheiro_servicos_gerais
+        description: "Ganha dinheiro com serviços gerais: 0-Opção não marcada no formulário, 1-Opção marcada no formulário (coluna origem: ganha_dinheiro_sevicos_gerais)"
+      - name: ganha_dinheiro_vendas
+        description: "Ganha dinheiro com vendas: 0-Opção não marcada no formulário, 1-Opção marcada no formulário"
+      - name: dorme_albergue
+        description: "Dorme em albergue: 0-Opção não marcada no formulário, 1-Opção marcada no formulário"
+      - name: dorme_domicilio_particular
+        description: "Dorme em domicílio particular: 0-Opção não marcada no formulário, 1-Opção marcada no formulário"
+      - name: dorme_rua
+        description: "Dorme na rua: 0-Opção não marcada no formulário, 1-Opção marcada no formulário"
+      - name: motivo_alcool
+        description: "Motivo da condição de rua por alcoolismo: 0-Opção não marcada no formulário, 1-Opção marcada no formulário (coluna origem: condicao_rua_alcool)"
+      - name: motivo_ameaca
+        description: "Motivo da condição de rua por ameaça: 0-Opção não marcada no formulário, 1-Opção marcada no formulário (coluna origem: condicao_rua_ameaca)"
+      - name: motivo_desemprego
+        description: "Motivo da condição de rua por desemprego: 0-Opção não marcada no formulário, 1-Opção marcada no formulário (coluna origem: condicao_rua_desemprego)"
+      - name: motivo_nao_respondeu
+        description: "Não respondeu o motivo da condição de rua: 0-Opção não marcada no formulário, 1-Opção marcada no formulário (coluna origem: condicao_rua_nao_respondeu)"
+      - name: motivo_nao_sabe
+        description: "Não o motivo da condição de rua: 0-Opção não marcada no formulário, 1-Opção marcada no formulário (coluna origem: condicao_rua_nao_sabe)"
+      - name: motivo_outro
+        description: "Motivo da condição de rua por outro motivo: 0-Opção não marcada no formulário, 1-Opção marcada no formulário (coluna origem: condicao_rua_outro)"
+      - name: motivo_perda_moradia
+        description: "Motivo da condição de rua por perda de moradia: 0-Opção não marcada no formulário, 1-Opção marcada no formulário (coluna origem: condicao_rua_perda_moradia)"
+      - name: motivo_preferencia
+        description: "Motivo da condição de rua por preferência: 0-Opção não marcada no formulário, 1-Opção marcada no formulário (coluna origem: condicao_rua_preferencia)"
+      - name: motivo_problemas_familiares
+        description: "Motivo da condição de rua por problemas familiares: 0-Opção não marcada no formulário, 1-Opção marcada no formulário (coluna origem: condicao_rua_problemas_familiares)"
+      - name: motivo_saude
+        description: "Motivo da condição de rua por tratamento de saúde: 0-Opção não marcada no formulário, 1-Opção marcada no formulário (coluna origem: condicao_rua_saude)"
+      - name: motivo_trabalho
+        description: "Motivo da condição de rua por trabalho: 0-Opção não marcada no formulário, 1-Opção marcada no formulário (coluna origem: condicao_rua_trabalho)"
+      - name: dorme_outro
+        description: "Dorme de outra forma: 0-Opção não marcada no formulário, 1-Opção marcada no formulário"
+      - name: id_membro
+        description: "Número do membro da Família (coluna origem: id_membro_familia)"
+      - name: numero_registro
+        description: "12 (coluna origem: numero_registro_arquivo)"
+      - name: versao_layout
+        description: "Sem descrição na origem."
+      - name: data_particao
+        description: "Sem descrição na origem."

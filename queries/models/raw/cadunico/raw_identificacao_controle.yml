@@ -1,0 +1,119 @@
+version: 2
+models:
+  - name: raw_identificacao_controle
+    description: "Registro 01 - Identificação da família, endereço e dados de controle do cadastro."
+    columns:
+      - name: id_prefeitura
+        description: "Chave única de identificação da Prefeitura"
+      - name: id_condicao_cadastro
+        description: "Código de condição do cadastro da família: 1- ATUALIZADO 2- DESATUALIZADO 3- POR CONFIRMAÇÃO 4- NÃO SE APLICA 5– POR CONFIRMAÇÃO DO USUÁRIO 6– PELO RF AO CONFIRMAR O INDICATIVO DE ÓBITO 7- ATUALIZADO "
+      - name: condicao_cadastro
+        description: "Código de condição do cadastro da família: 1- ATUALIZADO 2- DESATUALIZADO 3- POR CONFIRMAÇÃO 4- NÃO SE APLICA 5– POR CONFIRMAÇÃO DO USUÁRIO 6– PELO RF AO CONFIRMAR O INDICATIVO DE ÓBITO 7- ATUALIZADO "
+      - name: id_estado_cadastro
+        description: "Estado cadastral da família: 1- EM CADASTRAMENTO 2- SEM REGISTRO CIVIL 3- CADASTRADO 4- EXCLUIDO"
+      - name: estado_cadastro
+        description: "Estado cadastral da família: 1- EM CADASTRAMENTO 2- SEM REGISTRO CIVIL 3- CADASTRADO 4- EXCLUIDO"
+      - name: id_familia
+        description: "Código Familiar"
+      - name: id_forma_coleta
+        description: "Forma de coleta: 0-Informação migrada como inexistente, 1-Fora do domicílio 2-Em domicílio 3-Impossibilidade em domicílio"
+      - name: forma_coleta
+        description: "Forma de coleta: 0-Informação migrada como inexistente, 1-Fora do domicílio 2-Em domicílio 3-Impossibilidade em domicílio"
+      - name: id_distrito
+        description: "Distrito relacionado ao código IBGE"
+      - name: id_setor_censitario
+        description: "Setor Censitário relacionado ao código IBGE"
+      - name: id_subdistrito
+        description: "Subdistrito relacionado ao código IBGE"
+      - name: id_modalidade
+        description: "Modalidade da operação: 1-Inclusão, 2-Alteração"
+      - name: id_mot_impossib_visita_fam
+        description: "Motivo da impossibilidade de visita domiciliar Preenchido somente se a \"Forma de Coleta\" selecionada for \"3-Impossibilidade em domicílio\" 1 – Área de violência 2 – Calamidade/emergência/desastre 3-Áre"
+      - name: mot_impossib_visita_fam
+        description: "Motivo da impossibilidade de visita domiciliar Preenchido somente se a \"Forma de Coleta\" selecionada for \"3-Impossibilidade em domicílio\" 1 – Área de violência 2 – Calamidade/emergência/desastre 3-Áre"
+      - name: id_uf
+        description: "Primeira parte do código IBGE: numérico de dois algarismos descrevendo sua UF"
+      - name: id_municipio
+        description: "Segunda parte do código IBGE"
+      - name: id_familia_origem
+        description: "CÓDIGO DA FAMÍLIA DE ORIGEM ANTES DA TRANFERÊNCIA"
+      - name: id_prefeitura_origem
+        description: "CÓDIGO DA PREFEITURA DE ORIGEM ANTES DA TRANFERÊNCIA"
+      - name: id_unidade_territorial
+        description: "Código da Unidade Territorial Local, campo numérico formato NNNNN"
+      - name: cpf_usu_alt_fam
+        description: "CPF do usuário que realizou a inclusão ou última alteração da família"
+      - name: data_alteracao
+        description: "Data da última alteração da família no formato DDMMAAAA"
+      - name: data_atualizacao
+        description: "Data da atualização da família no formato DDMMAAAA dos dados considerados sensíveis a manutenção do cadastro"
+      - name: data_cadastro
+        description: "Data do cadastramento da Família, formato DDMMAAAA (coluna origem: data_catrastro)"
+      - name: complemento_adicional
+        description: "Complemento adicional do endereço"
+      - name: complemento
+        description: "Complemento do número do endereço"
+      - name: data_limite_cadastro
+        description: "Data Limite para atualização do cadastro da família (coluna origem: data_limite_catastro_atual)"
+      - name: data_entrevista
+        description: "Data da entrevista no formato DDMMAAAA"
+      - name: data_integracao_escolaridade
+        description: "Data de integração referente a data de processamento de arquivo de escolaridade no formato DDMMAAAA"
+      - name: data_integracao_familia
+        description: "Data de integração referente a data de processamento de arquivo de renda origem CNIS no formato DDMMAAAA"
+      - name: filler
+        description: "Espaços em branco."
+      - name: id_alterada_v7
+        description: "0-Família não atualizada na V7 1-Família atualizada na V7 2-Família oriunda da V7"
+      - name: alterada_v7
+        description: "0-Família não atualizada na V7 1-Família atualizada na V7 2-Família oriunda da V7"
+      - name: id_cadastro_valido
+        description: "Cadastro válido: 1- Sim 2- Não 3- Não se Aplica"
+      - name: cadastro_valido
+        description: "Cadastro válido: 1- Sim 2- Não 3- Não se Aplica"
+      - name: formulario_0
+        description: "O conteúdo deste campo é 1 se a Opção '0-Principal' for marcada no formulário, caso contrário o conteúdo é 0"
+      - name: formulario_1
+        description: "O conteúdo deste campo é 1 se a Opção '1-Avulso 1' for marcada no formulário, caso contrário o conteúdo é 0"
+      - name: formulario_2
+        description: "O conteúdo deste campo é 1 se a Opção '2-Avulso 2' for marcada no formulário, caso contrário o conteúdo é 0"
+      - name: formulario_suplementar_1
+        description: "O conteúdo deste campo é 1 se a opção 3-Formulário Suplementar 1 for marcada no formulário e o código do form suplementar 1 estiver transcrito no campo textual relacionado, caso contrário o conteúdo é"
+      - name: formulario_suplementar_2
+        description: "O conteúdo deste campo é 1 se na Opção '3-Suplementar(es) nº(s)' for marcada no formulário e o código do form Suplementar 2 estiver transcrito no campo textual relacionado, caso contrário o conteúdo é"
+      - name: formulario_suplementar_3
+        description: "O conteúdo deste campo é 1 se na Opção '1.09 – Formulários Preenchidos’ for marcada a opção 5 – Formulário Suplementar 3, caso contrário o conteúdo é 0"
+      - name: id_trabalho_infantil
+        description: "Trabalho infantil na família: 1-Sim, 2-Não"
+      - name: trabalho_infantil
+        description: "Trabalho infantil na família: 1-Sim, 2-Não"
+      - name: entrevistador
+        description: "Nome do entrevistador"
+      - name: localidade
+        description: "Nome da localidade"
+      - name: logradouro
+        description: "Nome do logradouro"
+      - name: tipo_logradouro
+        description: "Típo de logradouro"
+      - name: titulo_logradouro
+        description: "Título do logradouro"
+      - name: unidade_territorial
+        description: "Nome da Unidade Territorial Local"
+      - name: origem_cadastro
+        description: "Valor contendo o domínio da origem Atualmente temos as origens: 01 – Online 02 – APP 03-Novo Portal"
+      - name: cep
+        description: "CEP do endereço, formato 99999999"
+      - name: cpf_entrevistador
+        description: "CPF do entrevistador, campo numérico no formato NNNNNNNNNNN"
+      - name: numero_registro
+        description: "01 (coluna origem: numero_registro_arquivo)"
+      - name: observacoes_entrevistador
+        description: "Observações apontadas pelo entrevistador"
+      - name: referencia_logradouro
+        description: "Referência para localização do endereço (coluna origem: refencia_logradouro)"
+      - name: valor_renda_media_original
+        description: "Valor da renda média (per capita) da família, formato NNNNNNNNN"
+      - name: versao_layout
+        description: "Sem descrição na origem."
+      - name: data_particao
+        description: "Sem descrição na origem."
