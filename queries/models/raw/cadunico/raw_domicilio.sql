@@ -26,7 +26,7 @@ with source as (
         id_material_piso_domicilio as id_material_piso,
         material_piso_domicilio as material_piso,
         numero_registro_arquivo as numero_registro,
-        versao_layout,
+        id_versao_layout_arquivo,
         data_particao
     from {{ source('cadunico', 'domicilio') }}
 )

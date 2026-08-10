@@ -21,7 +21,7 @@ with source as (
         numero_registro_arquivo as numero_registro,
         contato_telefone as telefone,
         contato_2_telefone as telefone_2,
-        versao_layout,
+        id_versao_layout_arquivo,
         data_particao
     from {{ source('cadunico', 'contato') }}
 )

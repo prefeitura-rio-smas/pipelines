@@ -75,7 +75,7 @@ models:
         description: "17 (coluna origem: numero_registro_arquivo)"
       - name: uf_nascimento
         description: "UF de nascimento da Pessoa (coluna origem: sigla_uf_nascimento)"
-      - name: versao_layout
+      - name: id_versao_layout_arquivo
         description: "Sem descrição na origem."
       - name: data_particao
         description: "Sem descrição na origem."

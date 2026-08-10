@@ -15,7 +15,7 @@ with source as (
         numero_parecer_gestao_municipal_cadunico as numero_parecer,
         numero_registro_arquivo as numero_registro,
         sigla_uf_parecer_gestao_municipal_cadunico as uf_parecer,
-        versao_layout,
+        id_versao_layout_arquivo,
         data_particao
     from {{ source('cadunico', 'exclusao_servidor') }}
 )

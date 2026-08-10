@@ -43,7 +43,7 @@ models:
         description: "1º telefone de contato da família (coluna origem: contato_telefone)"
       - name: telefone_2
         description: "2º telefone de contato da família (coluna origem: contato_2_telefone)"
-      - name: versao_layout
+      - name: id_versao_layout_arquivo
         description: "Sem descrição na origem."
       - name: data_particao
         description: "Sem descrição na origem."

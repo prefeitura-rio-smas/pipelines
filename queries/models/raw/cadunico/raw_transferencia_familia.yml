@@ -23,7 +23,7 @@ models:
         description: "Data Da transferência da Família, formato DDMMAAAA"
       - name: numero_registro_transferencia
         description: "16"
-      - name: versao_layout
+      - name: id_versao_layout_arquivo
         description: "Sem descrição na origem."
       - name: data_particao
         description: "Sem descrição na origem."

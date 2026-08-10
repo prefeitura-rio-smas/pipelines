@@ -79,13 +79,13 @@ models:
         description: "Código do município do RL (coluna origem: id_municipio_representante_legal)"
       - name: uf_nascimento
         description: "UF do Estado de nascimento do RL (coluna origem: sigla_uf_nascimento_representante_legal)"
-      - name: uf
+      - name: id_uf
         description: "UF do Estado do logradouro (coluna origem: sigla_uf_representante_legal)"
       - name: id_tipo_representacao
         description: "Tipo de Representação Legal para aquela família Ex.: 01-Curatela, 02-Tutela, 03-Guarda (coluna origem: id_tipo_representacao_legal)"
       - name: tipo_representacao
         description: "Tipo de Representação Legal para aquela família Ex.: 01-Curatela, 02-Tutela, 03-Guarda (coluna origem: tipo_representacao_legal)"
-      - name: versao_layout
+      - name: id_versao_layout_arquivo
         description: "Sem descrição na origem."
       - name: data_particao
         description: "Sem descrição na origem."

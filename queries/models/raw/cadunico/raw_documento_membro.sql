@@ -108,7 +108,7 @@ with source as (
         ptrn_sem_relacao_parentesco,
         id_membro_familia as id_membro,
         numero_registro_arquivo as numero_registro,
-        versao_layout,
+        id_versao_layout_arquivo,
         data_particao
     from {{ source('cadunico', 'documento_membro') }}
 )

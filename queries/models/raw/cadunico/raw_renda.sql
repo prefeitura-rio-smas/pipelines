@@ -37,7 +37,7 @@ with source as (
         nao_recebe_remuneracao,
         id_membro_familia as id_membro,
         numero_registro_arquivo as numero_registro,
-        versao_layout,
+        id_versao_layout_arquivo,
         data_particao
     from {{ source('cadunico', 'renda') }}
 )

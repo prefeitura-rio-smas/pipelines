@@ -227,7 +227,7 @@ models:
         description: "Existência de pendência \"Família sem Responsável Familiar Cadastrado\" para a família 0- Não Existe 1- Existe NULO"
       - name: numero_registro
         description: "13 (coluna origem: numero_registro_arquivo)"
-      - name: versao_layout
+      - name: id_versao_layout_arquivo
         description: "Sem descrição na origem."
       - name: data_particao
         description: "Sem descrição na origem."

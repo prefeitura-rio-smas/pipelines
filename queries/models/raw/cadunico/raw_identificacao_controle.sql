@@ -56,7 +56,7 @@ with source as (
         observacoes_entrevistador,
         refencia_logradouro as referencia_logradouro,
         valor_renda_media_original,
-        versao_layout,
+        id_versao_layout_arquivo,
         data_particao
     from {{ source('cadunico', 'identificacao_controle') }}
 )

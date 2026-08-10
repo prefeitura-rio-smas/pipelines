@@ -45,7 +45,7 @@ with source as (
         despesa_gas_original,
         despesa_medicamentos_original,
         despesa_transporte_original,
-        versao_layout,
+        id_versao_layout_arquivo,
         data_particao
     from {{ source('cadunico', 'familia') }}
 )

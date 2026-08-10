@@ -113,7 +113,7 @@ with source as (
         id_ptrn_sem_responsavel_familiar_cadastrado,
         ptrn_sem_responsavel_familiar_cadastrado,
         numero_registro_arquivo as numero_registro,
-        versao_layout,
+        id_versao_layout_arquivo,
         data_particao
     from {{ source('cadunico', 'status_familia') }}
 )

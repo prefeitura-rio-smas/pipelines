@@ -39,10 +39,10 @@ with source as (
         contato_telefone_2_representante_legal as telefone_2,
         id_municipio_representante_legal as id_municipio,
         sigla_uf_nascimento_representante_legal as uf_nascimento,
-        sigla_uf_representante_legal as uf,
+        sigla_uf_representante_legal as id_uf,
         id_tipo_representacao_legal as id_tipo_representacao,
         tipo_representacao_legal as tipo_representacao,
-        versao_layout,
+        id_versao_layout_arquivo,
         data_particao
     from {{ source('cadunico', 'representante_legal') }}
 )

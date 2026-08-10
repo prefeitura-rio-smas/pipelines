@@ -85,7 +85,7 @@ models:
         description: "Valor recebido de pensão alimentícia Campo numérico de 6 posições formato NNNNNN (sem casas decimais)"
       - name: seguro_desemprego_original
         description: "Valor recebido de seguro desemprego Campo numérico de 6 posições formato NNNNNN (sem casas decimais)"
-      - name: versao_layout
+      - name: id_versao_layout_arquivo
         description: "Sem descrição na origem."
       - name: data_particao
         description: "Sem descrição na origem."

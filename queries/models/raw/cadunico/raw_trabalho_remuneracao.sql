@@ -42,7 +42,7 @@ with source as (
         doacoes_original,
         pensao_alimenticia_original,
         seguro_desemprego_original,
-        versao_layout,
+        id_versao_layout_arquivo,
         data_particao
     from {{ source('cadunico', 'trabalho_remuneracao') }}
 )

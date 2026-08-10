@@ -17,7 +17,7 @@ models:
         description: "Número do membro da Família (coluna origem: id_membro_familia)"
       - name: numero_registro
         description: "11 (coluna origem: numero_registro_arquivo)"
-      - name: versao_layout
+      - name: id_versao_layout_arquivo
         description: "Sem descrição na origem."
       - name: data_particao
         description: "Sem descrição na origem."

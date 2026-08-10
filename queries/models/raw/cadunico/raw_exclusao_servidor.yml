@@ -31,7 +31,7 @@ models:
         description: "18 (coluna origem: numero_registro_arquivo)"
       - name: uf_parecer
         description: "UF do Parecer da Gestão Municipal do Cadastro Único (coluna origem: sigla_uf_parecer_gestao_municipal_cadunico)"
-      - name: versao_layout
+      - name: id_versao_layout_arquivo
         description: "Sem descrição na origem."
       - name: data_particao
         description: "Sem descrição na origem."

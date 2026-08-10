@@ -24,7 +24,7 @@ with source as (
         numero_registro_arquivo as numero_registro,
         sigla_uf_certidao_obito_excluido as uf_certidao_obito,
         sigla_uf_parecer_gestao_municipal_cadunico_membro as uf_parecer,
-        versao_layout,
+        id_versao_layout_arquivo,
         data_particao
     from {{ source('cadunico', 'exclusao_membro') }}
 )

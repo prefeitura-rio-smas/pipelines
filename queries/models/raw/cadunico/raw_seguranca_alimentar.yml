@@ -105,7 +105,7 @@ models:
         description: "ProJovem Urbano: 0-Opção não marcada no formulário, 1-Opção marcada no formulário"
       - name: numero_registro
         description: "11 (coluna origem: numero_registro_arquivo)"
-      - name: versao_layout
+      - name: id_versao_layout_arquivo
         description: "Sem descrição na origem."
       - name: data_particao
         description: "Sem descrição na origem."

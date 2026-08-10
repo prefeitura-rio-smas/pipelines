@@ -27,7 +27,7 @@ with source as (
         id_membro_familia as id_membro,
         numero_registro_arquivo as numero_registro,
         sigla_uf_escola as uf_escola,
-        versao_layout,
+        id_versao_layout_arquivo,
         data_particao
     from {{ source('cadunico', 'escolaridade') }}
 )

@@ -91,7 +91,7 @@ models:
         description: "Valor de despesas com medicamentos Campo numérico de 5 posições formato NNNNN (não existem casas decimais)"
       - name: despesa_transporte_original
         description: "Valor de despesas com transportes Campo numérico de 5 posições formato NNNNN (não existem casas decimais)"
-      - name: versao_layout
+      - name: id_versao_layout_arquivo
         description: "Sem descrição na origem."
       - name: data_particao
         description: "Sem descrição na origem."
