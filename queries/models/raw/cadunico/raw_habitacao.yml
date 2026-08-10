@@ -1,0 +1,23 @@
+version: 2
+models:
+  - name: raw_habitacao
+    description: "Registro 15 - Situação de habitação (programa habitacional)."
+    columns:
+      - name: id_prefeitura
+        description: "Chave única de identificação da Família"
+      - name: contrato_pro_habitacao
+        description: "Número do contrato do programa"
+      - name: id_familia
+        description: "Código Familiar"
+      - name: natureza_pro_habitacao
+        description: "Natureza do benefício do programa"
+      - name: programa_pro_habitacao
+        description: "Programa Ministério das Cidades: campo numérico de 1 posição variando de 1 a 8, dependendo da opção marcada no formulário"
+      - name: id_membro
+        description: "Número do membro da Família (coluna origem: id_membro_familia)"
+      - name: numero_registro
+        description: "11 (coluna origem: numero_registro_arquivo)"
+      - name: versao_layout
+        description: "Sem descrição na origem."
+      - name: data_particao
+        description: "Sem descrição na origem."

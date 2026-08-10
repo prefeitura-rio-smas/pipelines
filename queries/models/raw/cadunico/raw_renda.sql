@@ -1,0 +1,45 @@
+-- Camada Raw: renda
+with source as (
+    select
+        id_prefeitura,
+        id_afastado_semana_passada,
+        id_atividade_extravista as id_atividade_extrativista,
+        id_familia,
+        id_origem_valor_outra_fonte,
+        origem_valor_outra_fonte,
+        id_origem_valor_pensao_alimenticia,
+        origem_valor_pensao_alimenticia,
+        id_origem_valor_rendimento_bruto,
+        origem_valor_rendimento_bruto,
+        id_origem_valor_rendimento_mes_passado,
+        origem_valor_rendimento_mes_passado,
+        id_origem_valor_seguro_desemprego,
+        origem_valor_seguro_desemprego,
+        id_origem_valor_ajuda_doacao,
+        origem_valor_ajuda_doacao,
+        id_origem_valor_aposentadoria,
+        origem_valor_aposentadoria,
+        id_funcao_principal_trabalho,
+        funcao_principal_trabalho,
+        id_trabalho_remunerado_ultimos_12_meses,
+        id_trabalho_semana_passada,
+        data_integracao_aposentadoria,
+        data_integracao_outras_fonte,
+        data_integracao_renda_bruta_12_meses,
+        data_integracao_emprego_ultimo_mes,
+        renda_outras_rendas_original as outras_rendas_original,
+        renda_emprego_ultimo_mes_original as emprego_ultimo_mes_original,
+        renda_aposentadoria_original as aposentadoria_original,
+        renda_bruta_12_meses_original as bruta_12_meses_original,
+        renda_doacao_original as doacao_original,
+        renda_pensao_alimenticia_original as pensao_alimenticia_original,
+        renda_seguro_desemprego_original as seguro_desemprego_original,
+        nao_recebe_remuneracao,
+        id_membro_familia as id_membro,
+        numero_registro_arquivo as numero_registro,
+        versao_layout,
+        data_particao
+    from {{ source('cadunico', 'renda') }}
+)
+
+select * from source

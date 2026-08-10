@@ -1,0 +1,91 @@
+version: 2
+models:
+  - name: raw_representante_legal
+    description: "Registro 20 - Representantes legais dos membros."
+    columns:
+      - name: id_prefeitura
+        description: "Chave única de identificação da Prefeitura da família a qual o membro excluído pertence (coluna origem: id_prefeitura_representante_legal)"
+      - name: id_representante
+        description: "Chave natural atual do RL Código com tamanho de 13 posição que identifica a pessoa no SIISO (coluna origem: id_representante_legal)"
+      - name: id_familia
+        description: "Número da família no Cadastro Única (coluna origem: id_familia_representante_legal)"
+      - name: id_municipio_nascimento
+        description: "Código IBGE do município de nascimento do RL (coluna origem: id_minicipio_nascimento_representante_legal)"
+      - name: id_pais_nascimento
+        description: "Código do país de nascimento do RL (coluna origem: id_pais_nascimento_representante_legal)"
+      - name: id_sexo
+        description: "Sexo: 1 – Masculino 2-Feminino (coluna origem: id_sexo_representante_legal)"
+      - name: sexo
+        description: "Sexo: 1 – Masculino 2-Feminino (coluna origem: sexo_representante_legal)"
+      - name: complemento_logradouro
+        description: "Descrição do complemento do logradouro (coluna origem: descricao_complemento_logradouro_representante_legal)"
+      - name: descricao_representacao
+        description: "Informações digitadas pelo operador municipal com dados do documento de representação legal (coluna origem: descricao_representacao_legal)"
+      - name: data_cadastro
+        description: "Data de cadastramento do Representante Legal no sistema Formato DDMMAAAA (coluna origem: data_cadastro_representante_legal)"
+      - name: data_nascimento
+        description: "Data de nascimento do RL Formato: DDMMAAAA (coluna origem: data_nascimento_representante_legal)"
+      - name: email
+        description: "Endereço de E-mail para contato (coluna origem: email_representante_legal)"
+      - name: id_obito_acatado
+        description: "Indicativo de óbito acatado: S – Óbito Acatado N – Óbito não acatado Vazio para casos onde não há tratamento do óbito do RL ainda ou não há indicação de óbito (coluna origem: id_obito_acatado_representante_legal)"
+      - name: obito_acatado
+        description: "Indicativo de óbito acatado: S – Óbito Acatado N – Óbito não acatado Vazio para casos onde não há tratamento do óbito do RL ainda ou não há indicação de óbito (coluna origem: obito_acatado_representante_legal)"
+      - name: id_obito
+        description: "Indicativo de óbito do RL: S – Possui óbito N – Não possui (coluna origem: id_obito_representante_legal)"
+      - name: obito
+        description: "Indicativo de óbito do RL: S – Possui óbito N – Não possui (coluna origem: obito_representante_legal)"
+      - name: nao_sabe_nome_mae
+        description: "Não sabe Nome da Mãe: 0-Opção não marcada no formulário, 1-Opção marcada no formulário (coluna origem: nao_sabe_nome_mae_representante_legal)"
+      - name: nao_sabe_nome_pai
+        description: "Não sabe Nome do Pai: 0-Opção não marcada no formulário, 1-Opção marcada no formulário (coluna origem: nao_sabe_nome_pai_representante_legal)"
+      - name: nome_mae
+        description: "Nome da mãe do RL (coluna origem: mae_representante_legal)"
+      - name: nome_pai
+        description: "Nome do Pai do RL (coluna origem: pai_representante_legal)"
+      - name: nome
+        description: "Nome do Representante Legal (coluna origem: representante_legal)"
+      - name: bairro
+        description: "Nome Bairro (coluna origem: bairro_representante_legal)"
+      - name: logradouro
+        description: "Dados do logradouro do RL (coluna origem: logradouro_representante_legal)"
+      - name: municipio_nascimento
+        description: "Nome do município de nascimento do RL (coluna origem: municipio_nascimento_representante_legal)"
+      - name: municipio
+        description: "Nome do município (coluna origem: municipio_representante_legal)"
+      - name: pais_nascimento
+        description: "Nome do País de nascimento do RL (coluna origem: pais_nascimento_representante_legal)"
+      - name: tipo_logradouro
+        description: "NOME do tipo de Logradouro do RL (coluna origem: tipo_logradouro_representante_legal)"
+      - name: cep
+        description: "CEP do endereço (coluna origem: cep_representante_legal)"
+      - name: cpf
+        description: "CPF no RL (coluna origem: cpf_representante_legal)"
+      - name: ddd
+        description: "DDD do telefone de contato 1 (coluna origem: contato_ddd_representante_legal)"
+      - name: ddd_2
+        description: "DDD do telefone de contato 2 (coluna origem: contato_ddd_2_representante_legal)"
+      - name: nis
+        description: "NIS do Representante Legal (coluna origem: nis_representante_legal)"
+      - name: numero_registro
+        description: "Número do tipo de registro Para o FS3 será sempre 20 (coluna origem: numero_registro_arquivo)"
+      - name: id_interno
+        description: "Número interno que identifica o RL na base de dados (coluna origem: id_interno_representante_legal)"
+      - name: telefone
+        description: "Número do telefone de contato 1 (coluna origem: contato_telefone_representante_legal)"
+      - name: telefone_2
+        description: "Número do telefone de contato 2 (coluna origem: contato_telefone_2_representante_legal)"
+      - name: id_municipio
+        description: "Código do município do RL (coluna origem: id_municipio_representante_legal)"
+      - name: uf_nascimento
+        description: "UF do Estado de nascimento do RL (coluna origem: sigla_uf_nascimento_representante_legal)"
+      - name: uf
+        description: "UF do Estado do logradouro (coluna origem: sigla_uf_representante_legal)"
+      - name: id_tipo_representacao
+        description: "Tipo de Representação Legal para aquela família Ex.: 01-Curatela, 02-Tutela, 03-Guarda (coluna origem: id_tipo_representacao_legal)"
+      - name: tipo_representacao
+        description: "Tipo de Representação Legal para aquela família Ex.: 01-Curatela, 02-Tutela, 03-Guarda (coluna origem: tipo_representacao_legal)"
+      - name: versao_layout
+        description: "Sem descrição na origem."
+      - name: data_particao
+        description: "Sem descrição na origem."
