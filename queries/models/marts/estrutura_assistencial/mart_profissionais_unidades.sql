@@ -36,21 +36,13 @@
 --     "área programática ex 1.0/2.1 (sem pontuação)". Valores: '01'-'10',
 --     'GE' (unidades centrais/gestão) e '' (sem AP). NÃO é a classificação CAS
 --     do tipo de unidade — é o território de gestão.
---   tipo_unidade: label de BI derivado do nome_tipo da dim_unidades (fonte
---     canônica gh_us_tipo/dsctipous), NÃO do nome livre da unidade. Decisão
---     com evidência (2026-08-07): o cadastro de tipos COBRE todos os tipos
---     (Albergue, Central de Recepção/CRAF/CRI, CRAS, CREAS, República, URS,
---     Centro POP, Lares Cariocas = 'Moradia Primeiro', Escritório Social),
---     então o LIKE sobre nome_unidade é desnecessário E tem falsos positivos
---     comprovados ('%CRI%' classifica 'URS RIO ACOLHEDOR - CRISTO REDENTOR'
---     como Central de Recepção; '%CRAF%'/'%CRI%'/'%URS%' classificam as
---     'INVERNO ACOLHEDOR - ...' — que são Abrigo do Frio — como Central de
---     Recepção/URS). O else preserva o tipo cadastral original (nunca
---     'Unidade Conveniada' hardcoded: é factualmente errado para Nível
---     Central, Pólo Tô de Boa, Central de Regulação etc.). Não há macro de
---     tipo_unidade reutilizável no projeto (map_tipo_unidade existe mas não é
---     usada por nenhum modelo e tem os mesmos bugs de LIKE sobre nome livre);
---     regra mantida no modelo (uso único hoje).
+--   tipo_unidade: coluna derivada da dim_unidades (fonte única). A regra de
+--     classificação (CASE sobre nome_tipo cadastral + exceção ESCRITÓRIO) foi
+--     centralizada na dim_unidades por decisão do Leone — os marts apenas
+--     referenciam unid.tipo_unidade. Label de BI: Albergue, Central de
+--     Recepção, CRAS, CREAS, República, URS, Centro POP, Lares Cariocas
+--     ('Moradia Primeiro'), Escritório Social, 'Não Informado' (sem tipo) e
+--     o tipo cadastral original no else.
 --   classe_unidade: classe E1/E2/EG/EA (Acolhimento/Média Complexidade/
 --     Gestão/Administrativo).
 --   esfera_unidade: rede da unidade — 'Municipal' (rede própria) ou
@@ -148,25 +140,8 @@ joined as (
         unid.id_unidade,
         UPPER(unid.nome_unidade) as nome_unidade,
         unid.cas as territorio,
-        -- tipo_unidade: label de BI derivado do nome_tipo cadastral (fonte
-        -- canônica). Regra documentada no cabeçalho do modelo.
-        case
-            when unid.nome_tipo is null then 'Não Informado'
-            when lower(unid.nome_tipo) like 'albergue%' then 'Albergue'
-            when lower(unid.nome_tipo) like 'central de recepção%' then 'Central de Recepção'
-            when lower(unid.nome_tipo) like '%cras%' then 'CRAS'
-            when lower(unid.nome_tipo) like '%creas%' then 'CREAS'
-            when lower(unid.nome_tipo) like 'centro de ref.espec.popula%' then 'Centro POP'
-            when lower(unid.nome_tipo) like 'complexo da urs%' then 'URS'
-            when lower(unid.nome_tipo) like 'urs%' then 'URS'
-            when lower(unid.nome_tipo) = 'república' then 'República'
-            when lower(unid.nome_tipo) = 'moradia primeiro' then 'Lares Cariocas'
-            -- Unidade única com nome_tipo genérico ('Unidades e Serviços de
-            -- Média Complexidade'); 1:1 comprovado nos dados (só a unidade
-            -- ESCRITÓRIO SOCIAL tem 'ESCRITÓRIO' no nome).
-            when upper(unid.nome_unidade) like '%ESCRITÓRIO%' then 'Escritório Social'
-            else unid.nome_tipo
-        end as tipo_unidade,
+        -- tipo_unidade: coluna derivada da dim_unidades (fonte única)
+        unid.tipo_unidade as tipo_unidade,
         unid.classe as classe_unidade,
 
         -- Frente 3: rede, status e eixos da unidade

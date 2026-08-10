@@ -21,6 +21,8 @@ models:
         description: "Indica se a unidade está ativa (Sim/Não)."
       - name: nome_tipo
         description: "Nome do tipo de unidade (ex: Albergue, CRAS, URS)."
+      - name: tipo_unidade
+        description: "Label de BI do tipo de unidade derivado do nome_tipo cadastral (Albergue, Central de Recepção, CRAS, CREAS, URS, Centro POP, República, Lares Cariocas, Escritório Social). 'Não Informado' quando nome_tipo é NULL; else preserva o tipo cadastral original."
       - name: classe
         description: "Classe da unidade (E1=Acolhimento, E2=Média Complexidade, etc.)."
       - name: descricao_classe

@@ -27,11 +27,9 @@ models:
 
       Classificação da unidade (frente 3): territorio = código da Área
       Programática (AP/CAS, campo apus — '01'-'10', 'GE', ''); tipo_unidade =
-      label de BI derivado do nome_tipo cadastral da dim_unidades (fonte
-      canônica gh_us_tipo — cobre Albergue, Central de Recepção, CRAS, CREAS,
-      República, URS, Centro POP, Lares Cariocas e Escritório Social; else
-      preserva o tipo cadastral original, 'Não Informado' quando a unidade não
-      é válida); classe_unidade = E1/E2/EG/EA; esfera_unidade = rede
+      coluna derivada da dim_unidades (fonte única — a regra de classificação
+      foi centralizada na dim por decisão do Leone); classe_unidade =
+      E1/E2/EG/EA; esfera_unidade = rede
       (Municipal / Rede Conveniada); flag_unidade_ativa = status ativo/inativo
       (BOOLEAN); flag_eixo_* = eixos de atendimento (Sim/Não).
 
@@ -139,7 +137,7 @@ models:
         description: "Código da Área Programática (AP/CAS) da unidade (campo apus da gh_us). Valores: '01'-'10', 'GE' (unidades centrais/gestão) e '' (sem AP). Representa o território de gestão, não a classificação CAS do tipo de unidade."
 
       - name: tipo_unidade
-        description: "Tipo da unidade em label de BI (ex: CRAS, CREAS, Albergue, Central de Recepção, República, URS, Centro POP, Lares Cariocas, Escritório Social). Derivado do nome_tipo cadastral da dim_unidades (fonte canônica gh_us_tipo); else preserva o tipo cadastral original. 'Não Informado' quando a unidade não é válida (nome_tipo NULL)."
+        description: "Tipo da unidade em label de BI (ex: CRAS, CREAS, Albergue, Central de Recepção, República, URS, Centro POP, Lares Cariocas, Escritório Social). Coluna derivada da dim_unidades (fonte única — regra centralizada na dim por decisão do Leone)."
 
       - name: classe_unidade
         description: "Classe da unidade (ex: E1=Acolhimento, E2=Média Complexidade, EG=Gestão/CRAS/CREAS)."
