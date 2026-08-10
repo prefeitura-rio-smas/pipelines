@@ -52,14 +52,22 @@
 --   flag_eixo_*: eixos de atendimento (Sim/Não) derivados do campo indeixo
 --     da gh_us_smas (A=Adulto, F=Família, I=Idoso).
 --
--- Filtro de email da unidade (padrão dos marts de presença, ex:
--- mart_presenca_profissionais/usuarios): LEFT JOIN com raw_sheets_
--- filtro_email_prontuario (planilha de apoio do dashboard) enriquecendo a
--- mart com o(s) email(s) de contato da unidade. JOIN com lower(trim()) nos
--- DOIS lados (padrão mart_acolhimento_diaria) — o join anterior
--- (unid.nome_unidade = upper(fe.unidade_atendimento)) deixava de casar
--- unidades com espaços/acentos divergentes na planilha (ex: unidade
--- ' ABRIGO DO FRIO - BASE DA ABORDAGEM' com espaço inicial não casava).
+-- Filtro de email da unidade (padrão mart_acolhimento_diaria, MÚLTIPLAS
+-- fontes): o email de contato da unidade é combinado de 3 fontes via concat:
+--   1. email_cas     — email institucional da CAS, derivado de unid.cas
+--                      (CASE '01'..'10' → casN@prefeitura.rio);
+--   2. email_planilha — email(s) da planilha raw_sheets_filtro_email_
+--                      prontuario (planilha de apoio do dashboard), via
+--                      LEFT JOIN com lower(trim()) nos DOIS lados (padrão
+--                      mart_acolhimento_diaria) — o join anterior
+--                      (unid.nome_unidade = upper(fe.unidade_atendimento))
+--                      deixava de casar unidades com espaços/acentos
+--                      divergentes (ex: ' ABRIGO DO FRIO - BASE DA
+--                      ABORDAGEM' com espaço inicial não casava);
+--   3. email_unidade — email da dim_unidades.
+-- A coluna final `email` = concat(coalesce(email_cas,''), ',',
+-- coalesce(email_planilha,''), ', ', coalesce(email_unidade,'')) — mesmo
+-- formato/semântica da mart_acolhimento_diaria.
 -- Grão preservado: verificado sem fan-out (planilha com 1 linha por unidade;
 -- id_profissional_unidade_sk permanece única).
 
@@ -160,7 +168,20 @@ joined as (
 
         -- Email da unidade via planilha de filtro (padrão das marts de
         -- presença). Pode conter múltiplos emails separados por vírgula.
-        fe.email as email_unidade
+        case unid.cas
+            when '01' then 'cas1@prefeitura.rio'
+            when '02' then 'cas2@prefeitura.rio'
+            when '03' then 'cas3@prefeitura.rio'
+            when '04' then 'cas4@prefeitura.rio'
+            when '05' then 'cas5@prefeitura.rio'
+            when '06' then 'cas6@prefeitura.rio'
+            when '07' then 'cas7@prefeitura.rio'
+            when '08' then 'cas8@prefeitura.rio'
+            when '09' then 'cas9@prefeitura.rio'
+            when '10' then 'cas10@prefeitura.rio'
+        end                                   as email_cas,
+        unid.email_unidade                    as email_unidade,
+        fe.email                              as email_planilha
 
     from profissionais prof
     left join unnest(prof.ids_unidade) as id_unidade
@@ -176,5 +197,12 @@ joined as (
         and unid.id_unidade = ev.id_unidade
 )
 
-select * from joined
+select
+    *,
+    concat(
+        coalesce(email_cas, ''), ',',
+        coalesce(email_planilha, ''), ', ',
+        coalesce(email_unidade, '')
+    ) as email
+from joined
 where not flag_sem_conta
