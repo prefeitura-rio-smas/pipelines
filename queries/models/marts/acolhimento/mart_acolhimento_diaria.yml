@@ -88,7 +88,7 @@ models:
       - name: unidade
         description: "Nome da unidade (alias para dim_unidades.nome_unidade)."
       - name: tipo_unidade
-        description: "Tipo da unidade (Albergue, CRAS, etc) já classificado pela dim."
+        description: "Tipo da unidade em label de BI (Albergue, CRAS, etc). Coluna derivada da dim_unidades (fonte única — regra centralizada na dim)."
       - name: classe
       - name: esfera
         description: "'Rede Pública' (Municipal), 'Rede Conveniada' ou outro valor bruto."

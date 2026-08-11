@@ -10,6 +10,14 @@ capacidade as (
     select * from {{ ref('int_capacidade_unidades') }}
 ),
 
+planilha_email as (
+    select
+        lower(trim(unidade_atendimento)) as nome_unidade,
+        string_agg(email, ', ') as email_planilha
+    from {{ ref('raw_sheets_filtro_email_prontuario') }}
+    group by 1
+),
+
 final as (
     select
         {{ dbt_utils.generate_surrogate_key(['b.id_unidade']) }} as id_unidade_sk,
@@ -18,11 +26,44 @@ final as (
         b.cas,
         b.esfera,
         b.email_unidade,
+        concat(
+            coalesce(
+                case
+                    when lower(trim(b.cas)) = '10' then 'cas10@prefeitura.rio'
+                    when lower(trim(b.cas)) = '09' then 'cas9@prefeitura.rio'
+                    when lower(trim(b.cas)) = '08' then 'cas8@prefeitura.rio'
+                    when lower(trim(b.cas)) = '07' then 'cas7@prefeitura.rio'
+                    when lower(trim(b.cas)) = '06' then 'cas6@prefeitura.rio'
+                    when lower(trim(b.cas)) = '05' then 'cas5@prefeitura.rio'
+                    when lower(trim(b.cas)) = '04' then 'cas4@prefeitura.rio'
+                    when lower(trim(b.cas)) = '03' then 'cas3@prefeitura.rio'
+                    when lower(trim(b.cas)) = '02' then 'cas2@prefeitura.rio'
+                    when lower(trim(b.cas)) = '01' then 'cas1@prefeitura.rio'
+                end,
+                ''
+            ), ',',
+            coalesce(pe.email_planilha, ''), ', ',
+            coalesce(b.email_unidade, '')
+        ) as email_filtro,
         b.flag_unidade_ativa,
         t.id_tipo_unidade,
         t.nome_tipo,
         t.classe,
         t.descricao_classe,
+        case
+            when t.nome_tipo is null then 'Não Informado'
+            when lower(t.nome_tipo) like 'albergue%' then 'Albergue'
+            when lower(t.nome_tipo) like 'central de recepção%' then 'Central de Recepção'
+            when lower(t.nome_tipo) like '%cras%' then 'CRAS'
+            when lower(t.nome_tipo) like '%creas%' then 'CREAS'
+            when lower(t.nome_tipo) like 'centro de ref.espec.popula%' then 'Centro POP'
+            when lower(t.nome_tipo) like 'complexo da urs%' then 'URS'
+            when lower(t.nome_tipo) like 'urs%' then 'URS'
+            when lower(t.nome_tipo) = 'república' then 'República'
+            when lower(t.nome_tipo) = 'moradia primeiro' then 'Lares Cariocas'
+            when upper(b.nome_unidade) like '%ESCRITÓRIO%' then 'Escritório Social'
+            else t.nome_tipo
+        end as tipo_unidade,
         cap.total_vagas,
         cap.vagas_disponiveis,
         cap.vagas_bloqueadas,
@@ -42,6 +83,7 @@ final as (
     from base b
     left join tipo t on b.id_tipo_unidade = t.id_tipo_unidade
     left join capacidade cap on b.id_unidade = cap.id_unidade
+    left join planilha_email pe on lower(trim(b.nome_unidade)) = pe.nome_unidade
     where b.nome_unidade not like '%TESTE%'
 )
 

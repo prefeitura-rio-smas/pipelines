@@ -16,11 +16,15 @@ models:
       - name: esfera
         description: "Esfera da unidade (Estadual, Municipal, Conveniada)."
       - name: email_unidade
-        description: "E-mail de contato da unidade."
+        description: "E-mail de contato da unidade cadastrado no prontuário (fonte 1)."
+      - name: email_filtro
+        description: "E-mail único consolidado da unidade usado para filtrar relatórios de BI. Unifica as 3 fontes de email em uma coluna: fonte 3 (território/área programática — CASE sobre cas, cobre CAS 01-10 → casN@prefeitura.rio; NULL para GE/sem AP), fonte 2 (email_planilha — planilha externa raw_sheets_filtro_email_prontuario, agregada por unidade via string_agg) e fonte 1 (email_unidade — prontuário). Formato: concat(coalesce(territorio,''), ',', coalesce(planilha,''), ', ', coalesce(unidade,''))."
       - name: flag_unidade_ativa
         description: "Indica se a unidade está ativa (Sim/Não)."
       - name: nome_tipo
         description: "Nome do tipo de unidade (ex: Albergue, CRAS, URS)."
+      - name: tipo_unidade
+        description: "Label de BI do tipo de unidade derivado do nome_tipo cadastral (Albergue, Central de Recepção, CRAS, CREAS, URS, Centro POP, República, Lares Cariocas, Escritório Social). 'Não Informado' quando nome_tipo é NULL; else preserva o tipo cadastral original."
       - name: classe
         description: "Classe da unidade (E1=Acolhimento, E2=Média Complexidade, etc.)."
       - name: descricao_classe

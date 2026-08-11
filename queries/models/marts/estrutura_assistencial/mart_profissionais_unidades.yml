@@ -4,13 +4,41 @@ models:
   - name: mart_profissionais_unidades
     description: |
       Mart de profissionais vinculados às unidades do sistema.
-      Segue o padrão star schema: tabela de associação (fact-less)
-      que referencia as dimensões dim_profissionais e dim_unidades.
-      O vínculo é feito via UNNEST(ids_unidade) da dim_profissionais,
-      eliminando a dependência direta de raw_operadores_unidades.
+      Star schema fact-less: associação que referencia as dimensões
+      dim_profissionais e dim_unidades, com vínculo via UNNEST(ids_unidade)
+      da dim_profissionais (elimina dependência de raw_operadores_unidades).
       Grão: 1 linha por (profissional × unidade).
-      CBOs aparecem agregados via dim_profissionais (STRING_AGG).
-      Inclui perfil de acesso, status da conta e unidades de atuação do operador.
+
+      Exclusão de unidades de teste por design (precedente
+      mart_usuarios_medidas_alternativas): a dim_unidades filtra unidades com
+      nome contendo 'TESTE' e é a fonte de verdade de TODAS as colunas de
+      unidade. unidades_atuacao e qtde_unidades vêm da dim_profissionais,
+      que exclui unidades de teste por design (via dim_unidades). Não há
+      flags nem ifs de teste.
+
+      Métricas (frente 2) — GRÃO POR UNIDADE DO FATO:
+      total_atendimentos e total_evolucoes contam, respectivamente,
+      atendimentos não cancelados (fct_atendimentos, flag_cancelado != 'S')
+      e evoluções ativas (fct_evolucoes, data_cancelamento IS NULL) do
+      profissional NAQUELA unidade — o fato é contabilizado na unidade onde
+      ocorreu (fct_*.id_unidade), NÃO propagado para todas as linhas do
+      profissional. Ambas as métricas usam COUNT(DISTINCT sk do fato) e
+      agrupam por (id_profissional_sk, id_unidade).
+
+      Classificação da unidade (frente 3): territorio = código da Área
+      Programática (AP/CAS, campo apus — '01'-'10', 'GE', ''); tipo_unidade =
+      coluna derivada da dim_unidades (fonte única — a regra de classificação
+      foi centralizada na dim por decisão do Leone); classe_unidade =
+      E1/E2/EG/EA; esfera_unidade = rede
+      (Municipal / Rede Conveniada); flag_unidade_ativa = status ativo/inativo
+      (BOOLEAN); flag_eixo_* = eixos de atendimento (Sim/Não).
+
+      Filtro de email da unidade (filtro de BI): o email usado para filtrar
+      relatórios é consolidado em UMA coluna na dim_unidades (email_filtro),
+      unificando as 3 fontes (território/CAS, planilha externa
+      raw_sheets_filtro_email_prontuario e cadastro do prontuário). A mart
+      apenas referencia unid.email_filtro — não faz concat nem consulta a
+      planilha diretamente.
     columns:
       - name: id_profissional_unidade_sk
         description: "Surrogate key única da associação (hash de id_profissional + id_unidade)."
@@ -91,10 +119,10 @@ models:
         description: "Indicador booleano de profissional sem conta de login (TRUE quando não há conta vinculada)."
 
       - name: unidades_atuacao
-        description: "Lista de nomes de unidades onde o profissional atua em UPPER, propagada da dim_profissionais."
+        description: "Lista de nomes de unidades onde o profissional atua em UPPER. Da dim_profissionais (já exclui unidades de teste por design). NULL quando o profissional não tem unidade válida."
 
       - name: qtde_unidades
-        description: "Quantidade de unidades onde o profissional possui vínculo, propagada da dim_profissionais."
+        description: "Quantidade de unidades válidas onde o profissional possui vínculo. Da dim_profissionais. 0 quando o profissional não tem unidade válida."
 
       - name: id_unidade_sk
         description: "Surrogate key da unidade (FK para dim_unidades)."
@@ -106,10 +134,34 @@ models:
         description: "Nome descritivo da unidade em UPPER."
 
       - name: territorio
-        description: "CAS / território da unidade."
+        description: "Código da Área Programática (AP/CAS) da unidade (campo apus da gh_us). Valores: '01'-'10', 'GE' (unidades centrais/gestão) e '' (sem AP). Representa o território de gestão, não a classificação CAS do tipo de unidade."
 
       - name: tipo_unidade
-        description: "Tipo da unidade (ex: CRAS, CREAS, Acolhimento)."
+        description: "Tipo da unidade em label de BI (ex: CRAS, CREAS, Albergue, Central de Recepção, República, URS, Centro POP, Lares Cariocas, Escritório Social). Coluna derivada da dim_unidades (fonte única — regra centralizada na dim por decisão do Leone)."
 
       - name: classe_unidade
-        description: "Classe da unidade (ex: Pública, Privada)."
+        description: "Classe da unidade (ex: E1=Acolhimento, E2=Média Complexidade, EG=Gestão/CRAS/CREAS)."
+
+      - name: esfera_unidade
+        description: "Rede da unidade (campo esfera da gh_us): 'Municipal' (rede própria) ou 'Rede Conveniada'."
+
+      - name: flag_unidade_ativa
+        description: "Status ativo/inativo da unidade (BOOLEAN, derivada de indinativo <> 'S')."
+
+      - name: flag_eixo_adulto
+        description: "Indica se a unidade atende eixo adulto (Sim/Não)."
+
+      - name: flag_eixo_familia
+        description: "Indica se a unidade atende eixo família (Sim/Não)."
+
+      - name: flag_eixo_idoso
+        description: "Indica se a unidade atende eixo idoso (Sim/Não)."
+
+      - name: total_atendimentos
+        description: "Atendimentos não cancelados (flag_cancelado != 'S') do profissional NAQUELA unidade (fct_atendimentos, COUNT DISTINCT id_atendimento_sk). 0 quando não há. Grão por unidade do fato."
+
+      - name: total_evolucoes
+        description: "Evoluções ativas (data_cancelamento IS NULL) do profissional NAQUELA unidade (fct_evolucoes, COUNT DISTINCT id_evolucao_sk). 0 quando não há. Grão por unidade do fato."
+
+      - name: email_filtro
+        description: "Email único da unidade usado para filtrar relatórios de BI. Consolidado na dim_unidades (unifica as 3 fontes: território/CAS — fonte 3; planilha externa raw_sheets_filtro_email_prontuario — fonte 2; cadastro do prontuário — fonte 1). Formato do concat definido na dim: concat(coalesce(territorio,''), ',', coalesce(planilha,''), ', ', coalesce(unidade,''))."
