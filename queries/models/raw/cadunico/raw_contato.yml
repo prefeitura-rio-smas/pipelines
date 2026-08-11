@@ -17,9 +17,9 @@ models:
         description: "1 quando houver arquivos carregados para a família e 2 quando não houver"
       - name: autoriza_envio_email
         description: "Indicador de autorização de envio de e-mail S-Sim N-Não Caso este campo esteja nulo deverá ficar em branco Caso o campo “IC-TIPO-EMAIL” esteja marcado com os valores “N-Não Tem” ou “D-Não Declarado” e"
-      - name: envio_sms
+      - name: contato_envio_sms
         description: "1º envio SMS do telefone de contato da família (coluna origem: contato_envio_sms)"
-      - name: envio_sms_2
+      - name: contato_2_envio_sms
         description: "2º envio SMS do telefone de contato da família (coluna origem: contato_2_envio_sms)"
       - name: id_contato_tipo
         description: "1º tipo de telefone de contato da família L– Celular C– Trabalho R– Residencial O-Recado S – Sem coleta de dados (família não alterada/atualizada após a obrigatoriedade do campo “Telefone”)"
@@ -33,15 +33,15 @@ models:
         description: "Indicador do tipo de e-mail da família, sendo: P-E-mail Pessoal R- E-Mail de Recado N- Não tem D- Não declarado S – Sem coleta de dados (família não alterada/atualizada após a criação do campo “E-mail"
       - name: email_tipo
         description: "Indicador do tipo de e-mail da família, sendo: P-E-mail Pessoal R- E-Mail de Recado N- Não tem D- Não declarado S – Sem coleta de dados (família não alterada/atualizada após a criação do campo “E-mail"
-      - name: ddd
+      - name: contato_ddd
         description: "1º DDD do telefone de contato da família (coluna origem: contato_ddd)"
-      - name: ddd_2
+      - name: contato_2_ddd
         description: "2º DDD do telefone de contato da família (coluna origem: contato_2_ddd)"
-      - name: numero_registro
+      - name: numero_registro_arquivo
         description: "09 (coluna origem: numero_registro_arquivo)"
-      - name: telefone
+      - name: contato_telefone
         description: "1º telefone de contato da família (coluna origem: contato_telefone)"
-      - name: telefone_2
+      - name: contato_2_telefone
         description: "2º telefone de contato da família (coluna origem: contato_2_telefone)"
       - name: id_versao_layout_arquivo
         description: "Sem descrição na origem."

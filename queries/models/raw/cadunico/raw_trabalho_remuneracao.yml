@@ -7,7 +7,7 @@ models:
         description: "Chave única de identificação da Família"
       - name: id_afastado_semana_passada
         description: "Pessoa afastada na semana passada: 1-Sim, 2-Não"
-      - name: id_atividade_extrativista
+      - name: id_atividade_extravista
         description: "É atividade extrativista: 1-Sim, 2-Não (coluna origem: id_atividade_extravista)"
       - name: id_familia
         description: "Código Familiar"
@@ -67,9 +67,9 @@ models:
         description: "Não recebe pensão alimentícia: 0-Opção não marcada no formulário, 1-Opção marcada no formulário"
       - name: nao_recebe_seguro_desemprego
         description: "Não recebe seguro desemprego: 0-Opção não marcada no formulário, 1-Opção marcada no formulário"
-      - name: id_membro
+      - name: id_membro_familia
         description: "Número do membro da Família (coluna origem: id_membro_familia)"
-      - name: numero_registro
+      - name: numero_registro_arquivo
         description: "08 (coluna origem: numero_registro_arquivo)"
       - name: outras_fontes_original
         description: "Valor recebido de outras fontes Campo numérico de 6 posições formato NNNNNN (sem casas decimais)"

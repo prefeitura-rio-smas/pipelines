@@ -35,13 +35,13 @@ models:
         description: "Data de nascimento da pessoa no formato DDMMAAAA"
       - name: data_transferencia_membro
         description: "Data de TRANSFERÊNCIA da Pessoa no CadÚnico formato DDMMAAAA"
-      - name: filiacao_1
+      - name: filiacao_1_nome_completo_mae_membt
         description: "Filiacao 1 ou Nome da mãe (coluna origem: filiacao_1_nome_completo_mae_membt)"
       - name: filiacao_2
         description: "Filiacao 2"
-      - name: id_filiacao_1_nao_sabe
+      - name: id_filiacao_1_nom_completo_mae_membt
         description: "Não sabe nome da mãe: 0 – Opção não marcada no formulário, 1 – Opção marcada no formulário (coluna origem: id_filiacao_1_nom_completo_mae_membt)"
-      - name: filiacao_1_nao_sabe
+      - name: filiacao_1_nom_completo_mae_membt
         description: "Não sabe nome da mãe: 0 – Opção não marcada no formulário, 1 – Opção marcada no formulário (coluna origem: filiacao_1_nom_completo_mae_membt)"
       - name: id_filiacao_2
         description: "Não sabe: 0 – Opção não marcada no formulário, 1 – Opção marcada no formulário"
@@ -67,13 +67,13 @@ models:
         description: "Nome da pessoa"
       - name: pais_nascimento
         description: "Nome do país de nascimento da Pessoa"
-      - name: id_membro
+      - name: id_membro_familia
         description: "Número do membro da Família (coluna origem: id_membro_familia)"
       - name: nis
         description: "NIS da pessoa, campo numérico de 11 posições formato NNNNNNNNNNN"
-      - name: numero_registro
+      - name: numero_registro_arquivo
         description: "17 (coluna origem: numero_registro_arquivo)"
-      - name: uf_nascimento
+      - name: sigla_uf_nascimento
         description: "UF de nascimento da Pessoa (coluna origem: sigla_uf_nascimento)"
       - name: id_versao_layout_arquivo
         description: "Sem descrição na origem."

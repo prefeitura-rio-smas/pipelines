@@ -75,7 +75,7 @@ models:
         description: "Nome da reserva indígena"
       - name: id_estabelecimento_saude
         description: "Código do estabelecimento EAS/MS"
-      - name: numero_registro
+      - name: numero_registro_arquivo
         description: "03 (coluna origem: numero_registro_arquivo)"
       - name: despesa_agua_esgoto_original
         description: "Valor de despesas com água Campo numérico de 5 posições formato NNNNN (não existem casas decimais)"

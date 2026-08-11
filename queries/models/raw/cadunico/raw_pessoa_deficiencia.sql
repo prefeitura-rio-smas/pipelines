@@ -19,8 +19,8 @@ with source as (
         deficiencia_surdez_leve,
         deficiencia_surdez_profunda,
         deficiencia_transtorno_mental,
-        id_membro_familia as id_membro,
-        numero_registro_arquivo as numero_registro,
+        id_membro_familia,
+        numero_registro_arquivo,
         id_versao_layout_arquivo,
         data_particao
     from {{ source('cadunico', 'pessoa_deficiencia') }}

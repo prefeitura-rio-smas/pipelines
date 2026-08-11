@@ -89,9 +89,9 @@ models:
         description: "Existência de pendência \" Campos Obrigatórios ou Obrigatórios Condicionados Não Preenchidos\" para a pessoa: 0- Não Existe 1- Existe NULO"
       - name: paud_campo_obrigatorio_nao_preenchido
         description: "Existência de pendência \" Campos Obrigatórios ou Obrigatórios Condicionados Não Preenchidos\" para a pessoa: 0- Não Existe 1- Existe NULO"
-      - name: id_paud_cadastrado_com_certidao_obito
+      - name: id_paud_cadatrado_com_certidao_obito
         description: "Existência de pendência \"Membro da Família Cadastrado e com Certidão de Óbito\" para a pessoa: 0- Não Existe 1- Existe NULO (coluna origem: id_paud_cadatrado_com_certidao_obito)"
-      - name: paud_cadastrado_com_certidao_obito
+      - name: paud_cadatrado_com_certidao_obito
         description: "Existência de pendência \"Membro da Família Cadastrado e com Certidão de Óbito\" para a pessoa: 0- Não Existe 1- Existe NULO (coluna origem: paud_cadatrado_com_certidao_obito)"
       - name: id_paud_cpf_invalido
         description: "Existência de pendência \"Membro com CPF inválido (DV inválido)\" para a pessoa: 0- Não Existe 1- Existe NULO"
@@ -121,9 +121,9 @@ models:
         description: "Existência de pendência \"Rejeição de inclusão/atualização dos dados cadastrais da pessoa\" para a pessoa: 0- Não Existe 1- Existe NULO"
       - name: paud_rejeicao_inclusao_atualizacao_dados_cadastrais
         description: "Existência de pendência \"Rejeição de inclusão/atualização dos dados cadastrais da pessoa\" para a pessoa: 0- Não Existe 1- Existe NULO"
-      - name: id_paud_responsavel_sem_cpf_titulo_eleitor
+      - name: id_paud_responsavel_sem_cpf_tiluto_eleitor
         description: "Existência de pendência \"Responsável Familiar sem CPF ou Título de Eleitor \" para a pessoa: 0- Não Existe 1- Existe NULO (coluna origem: id_paud_responsavel_sem_cpf_tiluto_eleitor)"
-      - name: paud_responsavel_sem_cpf_titulo_eleitor
+      - name: paud_responsavel_sem_cpf_tiluto_eleitor
         description: "Existência de pendência \"Responsável Familiar sem CPF ou Título de Eleitor \" para a pessoa: 0- Não Existe 1- Existe NULO (coluna origem: paud_responsavel_sem_cpf_tiluto_eleitor)"
       - name: id_paud_responsavel_cpf_invalido
         description: "Existência de pendência \"• Responsável Familiar com CPF inválido (DV inválido)\" para a pessoa: 0- Não Existe 1- Existe NULO"
@@ -177,9 +177,9 @@ models:
         description: "Existência de pendência \"• Responsável Familiar com CPF inválido (DV inválido)\" para a pessoa: 0- Não Existe 1- Existe NULO"
       - name: pmig_responsavel_cpf_invalido
         description: "Existência de pendência \"• Responsável Familiar com CPF inválido (DV inválido)\" para a pessoa: 0- Não Existe 1- Existe NULO"
-      - name: id_pmig_responsavel_cpf_multiplicidade
+      - name: id_pmig_reponsavel_cpf_multiplicidade
         description: "Existência de pendência \"Responsável Familiar com CPF em multiplicidade\" para a pessoa: 0- Não Existe 1- Existe NULO (coluna origem: id_pmig_reponsavel_cpf_multiplicidade)"
-      - name: pmig_responsavel_cpf_multiplicidade
+      - name: pmig_reponsavel_cpf_multiplicidade
         description: "Existência de pendência \"Responsável Familiar com CPF em multiplicidade\" para a pessoa: 0- Não Existe 1- Existe NULO (coluna origem: pmig_reponsavel_cpf_multiplicidade)"
       - name: id_pmig_responsavel_cpf_divergencia_titularidade
         description: "Existência de pendência \"• Responsável Familiar com divergência de titularidade de CPF (validação de titularidade com base na receita federal)\" para a pessoa: 0- Não Existe 1- Existe NULO"
@@ -197,9 +197,9 @@ models:
         description: "Existência de pendência \"Responsável Familiar com idade inferior a 16 anos\" para a pessoa: 0- Não Existe 1- Existe NULO"
       - name: pmig_responsavel_idade_inferior_16_anos
         description: "Existência de pendência \"Responsável Familiar com idade inferior a 16 anos\" para a pessoa: 0- Não Existe 1- Existe NULO"
-      - name: id_pmig_sem_nenhuma_documentacao
+      - name: id_pmig_sem_nunhuma_documentacao
         description: "Existência de pendência \"Membro da família sem NENHUMA documentação (exceto o caso da pessoa SEM registro civil conforme RN019)\" para a pessoa: 0- Não Existe 1- Existe NULO (coluna origem: id_pmig_sem_nunhuma_documentacao)"
-      - name: pmig_sem_nenhuma_documentacao
+      - name: pmig_sem_nunhuma_documentacao
         description: "Existência de pendência \"Membro da família sem NENHUMA documentação (exceto o caso da pessoa SEM registro civil conforme RN019)\" para a pessoa: 0- Não Existe 1- Existe NULO (coluna origem: pmig_sem_nunhuma_documentacao)"
       - name: id_ptab_desativacao_inep
         description: "Existência de pendência \"Desativação de INEP\" para a pessoa: 0- Não Existe 1- Existe NULO"
@@ -213,9 +213,9 @@ models:
         description: "Existência de pendência \"• Pessoa sem relação de parentesco\" para a pessoa: 0- Não Existe 1- Existe NULO"
       - name: ptrn_sem_relacao_parentesco
         description: "Existência de pendência \"• Pessoa sem relação de parentesco\" para a pessoa: 0- Não Existe 1- Existe NULO"
-      - name: id_membro
+      - name: id_membro_familia
         description: "Numero do membro da Família (coluna origem: id_membro_familia)"
-      - name: numero_registro
+      - name: numero_registro_arquivo
         description: "14 (coluna origem: numero_registro_arquivo)"
       - name: id_versao_layout_arquivo
         description: "Sem descrição na origem."

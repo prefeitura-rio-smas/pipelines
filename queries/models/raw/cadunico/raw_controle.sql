@@ -5,7 +5,7 @@ with source as (
         data_extracao_dados,
         data_posicao_cadastro,
         nome_arquivo,
-        numero_registro_arquivo as numero_registro,
+        numero_registro_arquivo,
         versao_layout,
         data_particao
     from {{ source('cadunico', 'controle') }}

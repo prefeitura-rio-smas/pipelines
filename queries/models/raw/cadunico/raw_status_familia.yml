@@ -199,9 +199,9 @@ models:
         description: "Existência de pendência \" Campos Obrigatórios ou Obrigatórios Condicionados Não Preenchidos do formulário principal\" para a família 0- Não Existe 1- Existe NULO"
       - name: pmig_campos_obrigatorios_nao_preenchidos
         description: "Existência de pendência \" Campos Obrigatórios ou Obrigatórios Condicionados Não Preenchidos do formulário principal\" para a família 0- Não Existe 1- Existe NULO"
-      - name: id_pmig_campos_obrigatorios_nao_preenchidos_suplementar_1
+      - name: id_pmig_campos_obrigatorios_nao_preenchidos_sumeplentar_1
         description: "Existência de pendência • \"• Campos Obrigatórios ou Obrigatórios Condicionados Não Preenchidos do formulário suplementar 1\" para a família 0- Não Existe 1- Existe NULO (coluna origem: id_pmig_campos_obrigatorios_nao_preenchidos_sumeplentar_1)"
-      - name: pmig_campos_obrigatorios_nao_preenchidos_suplementar_1
+      - name: pmig_campos_obrigatorios_nao_preenchidos_sumeplentar_1
         description: "Existência de pendência • \"• Campos Obrigatórios ou Obrigatórios Condicionados Não Preenchidos do formulário suplementar 1\" para a família 0- Não Existe 1- Existe NULO (coluna origem: pmig_campos_obrigatorios_nao_preenchidos_sumeplentar_1)"
       - name: id_pmig_sem_responsavel_familiar_cadastrado
         description: "Existência de pendência • \"Família sem Responsável Familiar cadastrado\" para a família 0- Não Existe 1- Existe NULO"
@@ -225,7 +225,7 @@ models:
         description: "Existência de pendência \"Família sem Responsável Familiar Cadastrado\" para a família 0- Não Existe 1- Existe NULO"
       - name: ptrn_sem_responsavel_familiar_cadastrado
         description: "Existência de pendência \"Família sem Responsável Familiar Cadastrado\" para a família 0- Não Existe 1- Existe NULO"
-      - name: numero_registro
+      - name: numero_registro_arquivo
         description: "13 (coluna origem: numero_registro_arquivo)"
       - name: id_versao_layout_arquivo
         description: "Sem descrição na origem."

@@ -39,9 +39,9 @@ models:
         description: "Deficiência Surdez severa: 0-Opção não marcada no formulário, 1-Opção marcada no formulário"
       - name: deficiencia_transtorno_mental
         description: "Deficiência Transtorno mental: 0-Opção não marcada no formulário, 1-Opção marcada no formulário"
-      - name: id_membro
+      - name: id_membro_familia
         description: "Número do membro da Família (coluna origem: id_membro_familia)"
-      - name: numero_registro
+      - name: numero_registro_arquivo
         description: "06 (coluna origem: numero_registro_arquivo)"
       - name: id_versao_layout_arquivo
         description: "Sem descrição na origem."

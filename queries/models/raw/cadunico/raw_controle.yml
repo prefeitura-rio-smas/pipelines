@@ -11,7 +11,7 @@ models:
         description: "Posição cadastral extraída no formato DDMMAAAA"
       - name: nome_arquivo
         description: "ESPELHO CADUNICO 7 MUNICIPAL"
-      - name: numero_registro
+      - name: numero_registro_arquivo
         description: "0 (coluna origem: numero_registro_arquivo)"
       - name: versao_layout
         description: "Sem descrição na origem."

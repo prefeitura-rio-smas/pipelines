@@ -21,7 +21,7 @@ models:
         description: "Código IBGE do município da certidão"
       - name: livro_certidao_obito_excluido
         description: "Livro da certidão"
-      - name: id_termo_certidao
+      - name: id_termi_matricula_certidao
         description: "Número do Termo / Matrícula.da Certidão (coluna origem: id_termi_matricula_certidao)"
       - name: data_emissao_carteira_trabalho
         description: "Data de emissão da CTPS da Pessoa, formato DDMMAAAA"
@@ -39,9 +39,9 @@ models:
         description: "CPF da Pessoa, formato NNNNNNNNNNN"
       - name: rg
         description: "Número da CI da Pessoa"
-      - name: id_membro
+      - name: id_membro_familia
         description: "Número do membro da Família (coluna origem: id_membro_familia)"
-      - name: numero_registro
+      - name: numero_registro_arquivo
         description: "05 (coluna origem: numero_registro_arquivo)"
       - name: id_secao_titulo_eleitor
         description: "Seção do Título de Eleitor da Pessoa"

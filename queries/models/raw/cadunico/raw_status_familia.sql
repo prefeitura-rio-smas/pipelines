@@ -99,8 +99,8 @@ with source as (
         pmds_pendencia_30,
         id_pmig_campos_obrigatorios_nao_preenchidos,
         pmig_campos_obrigatorios_nao_preenchidos,
-        id_pmig_campos_obrigatorios_nao_preenchidos_sumeplentar_1 as id_pmig_campos_obrigatorios_nao_preenchidos_suplementar_1,
-        pmig_campos_obrigatorios_nao_preenchidos_sumeplentar_1 as pmig_campos_obrigatorios_nao_preenchidos_suplementar_1,
+        id_pmig_campos_obrigatorios_nao_preenchidos_sumeplentar_1,
+        pmig_campos_obrigatorios_nao_preenchidos_sumeplentar_1,
         id_pmig_sem_responsavel_familiar_cadastrado,
         pmig_sem_responsavel_familiar_cadastrado,
         id_ptab_desativacao_cras_creas,
@@ -112,7 +112,7 @@ with source as (
         ptab_desativacao_terras_indigenas,
         id_ptrn_sem_responsavel_familiar_cadastrado,
         ptrn_sem_responsavel_familiar_cadastrado,
-        numero_registro_arquivo as numero_registro,
+        numero_registro_arquivo,
         id_versao_layout_arquivo,
         data_particao
     from {{ source('cadunico', 'status_familia') }}

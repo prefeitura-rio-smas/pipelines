@@ -13,9 +13,9 @@ models:
         description: "Natureza do benefício do programa"
       - name: programa_pro_habitacao
         description: "Programa Ministério das Cidades: campo numérico de 1 posição variando de 1 a 8, dependendo da opção marcada no formulário"
-      - name: id_membro
+      - name: id_membro_familia
         description: "Número do membro da Família (coluna origem: id_membro_familia)"
-      - name: numero_registro
+      - name: numero_registro_arquivo
         description: "11 (coluna origem: numero_registro_arquivo)"
       - name: id_versao_layout_arquivo
         description: "Sem descrição na origem."

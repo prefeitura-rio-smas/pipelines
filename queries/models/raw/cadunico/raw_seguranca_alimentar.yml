@@ -13,7 +13,7 @@ models:
         description: "Algum membro da família é ou foi beneficiário do seguro desemprego especial para pessoas resgatadas do trabalho análogo ao de escravo."
       - name: id_familia
         description: "Código Familiar"
-      - name: energia_doacao
+      - name: enegia_doacao
         description: "Recebeu de sua distribuidora de energia elétrica doação de lâmpadas ou outros equipamentos para reduzir o consumo de energia: 0-Opção não marcada no formulário, 1-Opção marcada no formulário (coluna origem: enegia_doacao)"
       - name: nao_pagou_instalacao_energia
         description: "Não pagou pela instalação de energia na entrada de sua residência: 0-Opção não marcada no formulário, 1-Opção marcada no formulário"
@@ -81,13 +81,13 @@ models:
         description: "Família com crianças 0-6 ações sócio educativas: 0-Opção não marcada no formulário, 1-Opção marcada no formulário"
       - name: snas_enfrenta_violencia_crianca
         description: "Serviço de enfrentamento à violência, abuso e exploração sexual contra crianças, adolescentes e suas famílias: 0-Opção não marcada no formulário, 1-Opção marcada no formulário"
-      - name: snas_grupos_idosos
+      - name: snas_gtupos_idosos
         description: "Família beneficiária do grupo conv para idosos: 0-Opção não marcada no formulário, 1-Opção marcada no formulário (coluna origem: snas_gtupos_idosos)"
       - name: snas_habilitacao_reabilitacao_deficiencia
         description: "Serviço de referência e apoio à habilitação e reabilitação de pessoas com deficiência: 0-Opção não marcada no formulário, 1-Opção marcada no formulário"
       - name: snas_inclusao_produtiva
         description: "Projetos de inclusão produtiva: 0-Opção não marcada no formulário, 1-Opção marcada no formulário"
-      - name: snas_nenhum
+      - name: snas_nunhum
         description: "Família não é beneficiária de programa do SNAS: 0-Opção não marcada no formulário, 1-Opção marcada no formulário (coluna origem: snas_nunhum)"
       - name: snas_orientacao_especial_crianca_adolescente
         description: "Serviço de orientação e apoio especializado a crianças, adolescentes e famílias: 0-Opção não marcada no formulário, 1-Opção marcada no formulário"
@@ -103,7 +103,7 @@ models:
         description: "ProJovem Trabalhador: 0-Opção não marcada no formulário, 1-Opção marcada no formulário"
       - name: snas_projovem_urbano
         description: "ProJovem Urbano: 0-Opção não marcada no formulário, 1-Opção marcada no formulário"
-      - name: numero_registro
+      - name: numero_registro_arquivo
         description: "11 (coluna origem: numero_registro_arquivo)"
       - name: id_versao_layout_arquivo
         description: "Sem descrição na origem."

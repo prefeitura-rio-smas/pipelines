@@ -3,87 +3,87 @@ models:
   - name: raw_representante_legal
     description: "Registro 20 - Representantes legais dos membros."
     columns:
-      - name: id_prefeitura
+      - name: id_prefeitura_representante_legal
         description: "Chave única de identificação da Prefeitura da família a qual o membro excluído pertence (coluna origem: id_prefeitura_representante_legal)"
-      - name: id_representante
+      - name: id_representante_legal
         description: "Chave natural atual do RL Código com tamanho de 13 posição que identifica a pessoa no SIISO (coluna origem: id_representante_legal)"
-      - name: id_familia
+      - name: id_familia_representante_legal
         description: "Número da família no Cadastro Única (coluna origem: id_familia_representante_legal)"
-      - name: id_municipio_nascimento
+      - name: id_minicipio_nascimento_representante_legal
         description: "Código IBGE do município de nascimento do RL (coluna origem: id_minicipio_nascimento_representante_legal)"
-      - name: id_pais_nascimento
+      - name: id_pais_nascimento_representante_legal
         description: "Código do país de nascimento do RL (coluna origem: id_pais_nascimento_representante_legal)"
-      - name: id_sexo
+      - name: id_sexo_representante_legal
         description: "Sexo: 1 – Masculino 2-Feminino (coluna origem: id_sexo_representante_legal)"
-      - name: sexo
+      - name: sexo_representante_legal
         description: "Sexo: 1 – Masculino 2-Feminino (coluna origem: sexo_representante_legal)"
-      - name: complemento_logradouro
+      - name: descricao_complemento_logradouro_representante_legal
         description: "Descrição do complemento do logradouro (coluna origem: descricao_complemento_logradouro_representante_legal)"
-      - name: descricao_representacao
+      - name: descricao_representacao_legal
         description: "Informações digitadas pelo operador municipal com dados do documento de representação legal (coluna origem: descricao_representacao_legal)"
-      - name: data_cadastro
+      - name: data_cadastro_representante_legal
         description: "Data de cadastramento do Representante Legal no sistema Formato DDMMAAAA (coluna origem: data_cadastro_representante_legal)"
-      - name: data_nascimento
+      - name: data_nascimento_representante_legal
         description: "Data de nascimento do RL Formato: DDMMAAAA (coluna origem: data_nascimento_representante_legal)"
-      - name: email
+      - name: email_representante_legal
         description: "Endereço de E-mail para contato (coluna origem: email_representante_legal)"
-      - name: id_obito_acatado
+      - name: id_obito_acatado_representante_legal
         description: "Indicativo de óbito acatado: S – Óbito Acatado N – Óbito não acatado Vazio para casos onde não há tratamento do óbito do RL ainda ou não há indicação de óbito (coluna origem: id_obito_acatado_representante_legal)"
-      - name: obito_acatado
+      - name: obito_acatado_representante_legal
         description: "Indicativo de óbito acatado: S – Óbito Acatado N – Óbito não acatado Vazio para casos onde não há tratamento do óbito do RL ainda ou não há indicação de óbito (coluna origem: obito_acatado_representante_legal)"
-      - name: id_obito
+      - name: id_obito_representante_legal
         description: "Indicativo de óbito do RL: S – Possui óbito N – Não possui (coluna origem: id_obito_representante_legal)"
-      - name: obito
+      - name: obito_representante_legal
         description: "Indicativo de óbito do RL: S – Possui óbito N – Não possui (coluna origem: obito_representante_legal)"
-      - name: nao_sabe_nome_mae
+      - name: nao_sabe_nome_mae_representante_legal
         description: "Não sabe Nome da Mãe: 0-Opção não marcada no formulário, 1-Opção marcada no formulário (coluna origem: nao_sabe_nome_mae_representante_legal)"
-      - name: nao_sabe_nome_pai
+      - name: nao_sabe_nome_pai_representante_legal
         description: "Não sabe Nome do Pai: 0-Opção não marcada no formulário, 1-Opção marcada no formulário (coluna origem: nao_sabe_nome_pai_representante_legal)"
-      - name: nome_mae
+      - name: mae_representante_legal
         description: "Nome da mãe do RL (coluna origem: mae_representante_legal)"
-      - name: nome_pai
+      - name: pai_representante_legal
         description: "Nome do Pai do RL (coluna origem: pai_representante_legal)"
-      - name: nome
+      - name: representante_legal
         description: "Nome do Representante Legal (coluna origem: representante_legal)"
-      - name: bairro
+      - name: bairro_representante_legal
         description: "Nome Bairro (coluna origem: bairro_representante_legal)"
-      - name: logradouro
+      - name: logradouro_representante_legal
         description: "Dados do logradouro do RL (coluna origem: logradouro_representante_legal)"
-      - name: municipio_nascimento
+      - name: municipio_nascimento_representante_legal
         description: "Nome do município de nascimento do RL (coluna origem: municipio_nascimento_representante_legal)"
-      - name: municipio
+      - name: municipio_representante_legal
         description: "Nome do município (coluna origem: municipio_representante_legal)"
-      - name: pais_nascimento
+      - name: pais_nascimento_representante_legal
         description: "Nome do País de nascimento do RL (coluna origem: pais_nascimento_representante_legal)"
-      - name: tipo_logradouro
+      - name: tipo_logradouro_representante_legal
         description: "NOME do tipo de Logradouro do RL (coluna origem: tipo_logradouro_representante_legal)"
-      - name: cep
+      - name: cep_representante_legal
         description: "CEP do endereço (coluna origem: cep_representante_legal)"
-      - name: cpf
+      - name: cpf_representante_legal
         description: "CPF no RL (coluna origem: cpf_representante_legal)"
-      - name: ddd
+      - name: contato_ddd_representante_legal
         description: "DDD do telefone de contato 1 (coluna origem: contato_ddd_representante_legal)"
-      - name: ddd_2
+      - name: contato_ddd_2_representante_legal
         description: "DDD do telefone de contato 2 (coluna origem: contato_ddd_2_representante_legal)"
-      - name: nis
+      - name: nis_representante_legal
         description: "NIS do Representante Legal (coluna origem: nis_representante_legal)"
-      - name: numero_registro
+      - name: numero_registro_arquivo
         description: "Número do tipo de registro Para o FS3 será sempre 20 (coluna origem: numero_registro_arquivo)"
-      - name: id_interno
+      - name: id_interno_representante_legal
         description: "Número interno que identifica o RL na base de dados (coluna origem: id_interno_representante_legal)"
-      - name: telefone
+      - name: contato_telefone_representante_legal
         description: "Número do telefone de contato 1 (coluna origem: contato_telefone_representante_legal)"
-      - name: telefone_2
+      - name: contato_telefone_2_representante_legal
         description: "Número do telefone de contato 2 (coluna origem: contato_telefone_2_representante_legal)"
-      - name: id_municipio
+      - name: id_municipio_representante_legal
         description: "Código do município do RL (coluna origem: id_municipio_representante_legal)"
-      - name: uf_nascimento
+      - name: sigla_uf_nascimento_representante_legal
         description: "UF do Estado de nascimento do RL (coluna origem: sigla_uf_nascimento_representante_legal)"
-      - name: id_uf
+      - name: sigla_uf_representante_legal
         description: "UF do Estado do logradouro (coluna origem: sigla_uf_representante_legal)"
-      - name: id_tipo_representacao
+      - name: id_tipo_representacao_legal
         description: "Tipo de Representação Legal para aquela família Ex.: 01-Curatela, 02-Tutela, 03-Guarda (coluna origem: id_tipo_representacao_legal)"
-      - name: tipo_representacao
+      - name: tipo_representacao_legal
         description: "Tipo de Representação Legal para aquela família Ex.: 01-Curatela, 02-Tutela, 03-Guarda (coluna origem: tipo_representacao_legal)"
       - name: id_versao_layout_arquivo
         description: "Sem descrição na origem."

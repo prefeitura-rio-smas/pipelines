@@ -49,11 +49,11 @@ models:
         description: "Data de cadastramento da Pessoa no CadÚnico formato DDMMAAAA"
       - name: data_nascimento
         description: "Data de nascimento da pessoa no formato DDMMAAAA"
-      - name: filiacao_1
+      - name: filiacao_1_nom_completo_mae_pessoa
         description: "Filiação 1 ou Nome da mãe (coluna origem: filiacao_1_nom_completo_mae_pessoa)"
       - name: filiacao_2
         description: "Filiação 2"
-      - name: id_filiacao_1_nao_sabe
+      - name: id_filiacao_1nom_completo_mae_pessoa
         description: "Não sabe Filiação 1 ou nome da mãe: 0-Opção não marcada no formulário, 1-Opção marcada no formulário (coluna origem: id_filiacao_1nom_completo_mae_pessoa)"
       - name: id_filiacao_2
         description: "Não sabe: 0-Opção não marcada no formulário, 1-Opção marcada no formulário"
@@ -109,15 +109,15 @@ models:
         description: "4.18-Qual é o gênero/identidade de gênero de (nome)? (termo relativo à identidade da pessoa) Valores possíveis: 001 – Feminina 002 – Masculina e 003 – Não binário/a"
       - name: tipo_identidade_genero
         description: "4.18-Qual é o gênero/identidade de gênero de (nome)? (termo relativo à identidade da pessoa) Valores possíveis: 001 – Feminina 002 – Masculina e 003 – Não binário/a"
-      - name: id_membro
+      - name: id_membro_familia
         description: "Número do membro da Família (coluna origem: id_membro_familia)"
       - name: nis
         description: "NIS atual da pessoa, campo numérico de 11 posições formato NNNNNNNNNNN"
       - name: id_numero_ordem
         description: "Número de ordem, campo numérico de 2 posições no formato NN"
-      - name: numero_registro
+      - name: numero_registro_arquivo
         description: "04 (coluna origem: numero_registro_arquivo)"
-      - name: uf_nascimento
+      - name: sigla_uf_municipio_nascimento
         description: "UF de nascimento da Pessoa (coluna origem: sigla_uf_municipio_nascimento)"
       - name: id_versao_layout_arquivo
         description: "Sem descrição na origem."

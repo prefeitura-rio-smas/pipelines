@@ -3,7 +3,7 @@ models:
   - name: raw_registros
     description: "Registro 99 - Marcadores de controle de arquivos por versão do layout."
     columns:
-      - name: numero_registro
+      - name: numero_registro_arquivo
         description: "99 (coluna origem: numero_registro_arquivo)"
       - name: id_versao_layout_arquivo
         description: "Sem descrição na origem."

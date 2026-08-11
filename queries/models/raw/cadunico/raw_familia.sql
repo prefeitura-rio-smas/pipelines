@@ -37,7 +37,7 @@ with source as (
         povo_indigena,
         reserva_indigena,
         id_estabelecimento_saude,
-        numero_registro_arquivo as numero_registro,
+        numero_registro_arquivo,
         despesa_agua_esgoto_original,
         despesa_alimentacao_original,
         despesa_aluguel_original,

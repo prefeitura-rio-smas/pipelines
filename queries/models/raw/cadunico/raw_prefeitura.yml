@@ -5,17 +5,17 @@ models:
     columns:
       - name: id_prefeitura
         description: "Chave de identificação da Prefeitura"
-      - name: id_uf
+      - name: sigla_uf
         description: "Primeira parte do código IBGE: numérico de dois algarismos descrevendo sua UF (coluna origem: sigla_uf)"
-      - name: id_municipio
+      - name: if_municipio
         description: "Segunda parte do código IBGE (coluna origem: if_municipio)"
       - name: id_migracao
         description: "1 se a Prefeitura migrou, senão 0"
       - name: migracao
         description: "1 se a Prefeitura migrou, senão 0"
-      - name: municipio
+      - name: prefeitura
         description: "Nome da Prefeitura (coluna origem: prefeitura)"
-      - name: numero_registro
+      - name: numero_registro_arquivo
         description: "98 (coluna origem: numero_registro_arquivo)"
       - name: id_versao_layout_arquivo
         description: "Sem descrição na origem."

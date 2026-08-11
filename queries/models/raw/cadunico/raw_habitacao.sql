@@ -6,8 +6,8 @@ with source as (
         id_familia,
         natureza_pro_habitacao,
         programa_pro_habitacao,
-        id_membro_familia as id_membro,
-        numero_registro_arquivo as numero_registro,
+        id_membro_familia,
+        numero_registro_arquivo,
         id_versao_layout_arquivo,
         data_particao
     from {{ source('cadunico', 'habitacao') }}

@@ -7,7 +7,7 @@ models:
         description: "Chave única de identificação da Família"
       - name: id_carteira_assinada
         description: "Teve emprego com carteira assinada: 1-Sim, 2-Não, 3-Não sabe"
-      - name: tem_contato_parente
+      - name: condicao_rua_contato_parente
         description: "Tem contato com parente fora da condição de rua: campo numérico de 1 posição variando de 1 a 6, dependendo da opção marcada no formulário (coluna origem: condicao_rua_contato_parente)"
       - name: id_familia
         description: "Código Familiar"
@@ -15,9 +15,9 @@ models:
         description: "Tempo em que mora na cidade: campo numérico de 1 posição variando de 1 a 6, dependendo da opção marcada no formulário"
       - name: id_tempo_rua
         description: "Tempo em que vive na rua: campo numérico de 1 posição variando de 1 a 6, dependendo da opção marcada no formulário"
-      - name: vive_com_familia
+      - name: condicao_rua_vive_familia
         description: "Vive com sua família na rua: 1-Sim, 2-Não (coluna origem: condicao_rua_vive_familia)"
-      - name: atendido_centro_referencia
+      - name: atendido_crentro_referencia_populacao_rua
         description: "Atendido por Centro Ref Pop Rua: 0-Opção não marcada no formulário, 1-Opção marcada no formulário (coluna origem: atendido_crentro_referencia_populacao_rua)"
       - name: atendido_cras
         description: "Atendido por CRAS: 0-Opção não marcada no formulário, 1-Opção marcada no formulário"
@@ -37,7 +37,7 @@ models:
         description: "Atividade comunitária em COOPERATIVA: 0-Opção não marcada no formulário, 1-Opção marcada no formulário"
       - name: atividade_comunitaria_escola
         description: "Atividade comunitária em ESCOLA: 0-Opção não marcada no formulário, 1-Opção marcada no formulário"
-      - name: atividade_comunitaria_movimento_social
+      - name: atibidade_comunitaria_movimento_social
         description: "Atividade comunitária em Movimento social: 0-Opção não marcada no formulário, 1-Opção marcada no formulário (coluna origem: atibidade_comunitaria_movimento_social)"
       - name: atividade_comunitaria_nao_respondeu
         description: "Não respondeu se frequentou atividade comunitária: 0-Opção não marcada no formulário, 1-Opção marcada no formulário"
@@ -57,7 +57,7 @@ models:
         description: "Ganha dinheiro de outra forma: 0-Opção não marcada no formulário, 1-Opção marcada no formulário"
       - name: ganha_dinheiro_pedinte
         description: "Ganha dinheiro como pedinte: 0-Opção não marcada no formulário, 1-Opção marcada no formulário"
-      - name: ganha_dinheiro_servicos_gerais
+      - name: ganha_dinheiro_sevicos_gerais
         description: "Ganha dinheiro com serviços gerais: 0-Opção não marcada no formulário, 1-Opção marcada no formulário (coluna origem: ganha_dinheiro_sevicos_gerais)"
       - name: ganha_dinheiro_vendas
         description: "Ganha dinheiro com vendas: 0-Opção não marcada no formulário, 1-Opção marcada no formulário"
@@ -67,33 +67,33 @@ models:
         description: "Dorme em domicílio particular: 0-Opção não marcada no formulário, 1-Opção marcada no formulário"
       - name: dorme_rua
         description: "Dorme na rua: 0-Opção não marcada no formulário, 1-Opção marcada no formulário"
-      - name: motivo_alcool
+      - name: condicao_rua_alcool
         description: "Motivo da condição de rua por alcoolismo: 0-Opção não marcada no formulário, 1-Opção marcada no formulário (coluna origem: condicao_rua_alcool)"
-      - name: motivo_ameaca
+      - name: condicao_rua_ameaca
         description: "Motivo da condição de rua por ameaça: 0-Opção não marcada no formulário, 1-Opção marcada no formulário (coluna origem: condicao_rua_ameaca)"
-      - name: motivo_desemprego
+      - name: condicao_rua_desemprego
         description: "Motivo da condição de rua por desemprego: 0-Opção não marcada no formulário, 1-Opção marcada no formulário (coluna origem: condicao_rua_desemprego)"
-      - name: motivo_nao_respondeu
+      - name: condicao_rua_nao_respondeu
         description: "Não respondeu o motivo da condição de rua: 0-Opção não marcada no formulário, 1-Opção marcada no formulário (coluna origem: condicao_rua_nao_respondeu)"
-      - name: motivo_nao_sabe
+      - name: condicao_rua_nao_sabe
         description: "Não o motivo da condição de rua: 0-Opção não marcada no formulário, 1-Opção marcada no formulário (coluna origem: condicao_rua_nao_sabe)"
-      - name: motivo_outro
+      - name: condicao_rua_outro
         description: "Motivo da condição de rua por outro motivo: 0-Opção não marcada no formulário, 1-Opção marcada no formulário (coluna origem: condicao_rua_outro)"
-      - name: motivo_perda_moradia
+      - name: condicao_rua_perda_moradia
         description: "Motivo da condição de rua por perda de moradia: 0-Opção não marcada no formulário, 1-Opção marcada no formulário (coluna origem: condicao_rua_perda_moradia)"
-      - name: motivo_preferencia
+      - name: condicao_rua_preferencia
         description: "Motivo da condição de rua por preferência: 0-Opção não marcada no formulário, 1-Opção marcada no formulário (coluna origem: condicao_rua_preferencia)"
-      - name: motivo_problemas_familiares
+      - name: condicao_rua_problemas_familiares
         description: "Motivo da condição de rua por problemas familiares: 0-Opção não marcada no formulário, 1-Opção marcada no formulário (coluna origem: condicao_rua_problemas_familiares)"
-      - name: motivo_saude
+      - name: condicao_rua_saude
         description: "Motivo da condição de rua por tratamento de saúde: 0-Opção não marcada no formulário, 1-Opção marcada no formulário (coluna origem: condicao_rua_saude)"
-      - name: motivo_trabalho
+      - name: condicao_rua_trabalho
         description: "Motivo da condição de rua por trabalho: 0-Opção não marcada no formulário, 1-Opção marcada no formulário (coluna origem: condicao_rua_trabalho)"
       - name: dorme_outro
         description: "Dorme de outra forma: 0-Opção não marcada no formulário, 1-Opção marcada no formulário"
-      - name: id_membro
+      - name: id_membro_familia
         description: "Número do membro da Família (coluna origem: id_membro_familia)"
-      - name: numero_registro
+      - name: numero_registro_arquivo
         description: "12 (coluna origem: numero_registro_arquivo)"
       - name: id_versao_layout_arquivo
         description: "Sem descrição na origem."

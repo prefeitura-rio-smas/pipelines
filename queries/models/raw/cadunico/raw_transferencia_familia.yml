@@ -3,7 +3,7 @@ models:
   - name: raw_transferencia_familia
     description: "Registro 16 - Transferências de famílias entre municípios."
     columns:
-      - name: id_prefeitura_origem
+      - name: id_prefeitura_antes_transferencia
         description: "Chave única de identificação da Prefeitura de origem antes da transferência (coluna origem: id_prefeitura_antes_transferencia)"
       - name: id_familia_destino
         description: "CÓDIGO DA FAMÍLIA DE DESTINO APÓS TRANFERÊNCIA"
@@ -13,11 +13,11 @@ models:
         description: "Estado cadastral da família: 1- EM CADASTRAMENTO 2- SEM REGISTRO CIVIL 3- CADASTRADO 4- EXCLUIDO"
       - name: estado_cadastro_transferencia
         description: "Estado cadastral da família: 1- EM CADASTRAMENTO 2- SEM REGISTRO CIVIL 3- CADASTRADO 4- EXCLUIDO"
-      - name: id_familia_origem
+      - name: id_familia_antes_transferencia
         description: "Código Familiar único de identificação da Família de origem antes da transferência (coluna origem: id_familia_antes_transferencia)"
-      - name: id_uf_origem
+      - name: id_uf_transferencia
         description: "Primeira parte do código IBGE DE ORIGEM: numérico de dois algarismos descrevendo sua UF (coluna origem: id_uf_transferencia)"
-      - name: id_municipio_origem
+      - name: id_municipio_transferencia
         description: "Segunda parte do código IBGE DE ORIGEM (coluna origem: id_municipio_transferencia)"
       - name: data_transferencia
         description: "Data Da transferência da Família, formato DDMMAAAA"

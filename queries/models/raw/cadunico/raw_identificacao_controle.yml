@@ -47,13 +47,13 @@ models:
         description: "Data da última alteração da família no formato DDMMAAAA"
       - name: data_atualizacao
         description: "Data da atualização da família no formato DDMMAAAA dos dados considerados sensíveis a manutenção do cadastro"
-      - name: data_cadastro
+      - name: data_catrastro
         description: "Data do cadastramento da Família, formato DDMMAAAA (coluna origem: data_catrastro)"
       - name: complemento_adicional
         description: "Complemento adicional do endereço"
       - name: complemento
         description: "Complemento do número do endereço"
-      - name: data_limite_cadastro
+      - name: data_limite_catastro_atual
         description: "Data Limite para atualização do cadastro da família (coluna origem: data_limite_catastro_atual)"
       - name: data_entrevista
         description: "Data da entrevista no formato DDMMAAAA"
@@ -105,11 +105,11 @@ models:
         description: "CEP do endereço, formato 99999999"
       - name: cpf_entrevistador
         description: "CPF do entrevistador, campo numérico no formato NNNNNNNNNNN"
-      - name: numero_registro
+      - name: numero_registro_arquivo
         description: "01 (coluna origem: numero_registro_arquivo)"
       - name: observacoes_entrevistador
         description: "Observações apontadas pelo entrevistador"
-      - name: referencia_logradouro
+      - name: refencia_logradouro
         description: "Referência para localização do endereço (coluna origem: refencia_logradouro)"
       - name: valor_renda_media_original
         description: "Valor da renda média (per capita) da família, formato NNNNNNNNN"
