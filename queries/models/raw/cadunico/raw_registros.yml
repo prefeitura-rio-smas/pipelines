@@ -5,7 +5,7 @@ models:
     columns:
       - name: numero_registro_arquivo
         description: "99 (coluna origem: numero_registro_arquivo)"
-      - name: id_versao_layout_arquivo
+      - name: versao_layout
         description: "Sem descrição na origem."
       - name: data_particao
         description: "Sem descrição na origem."

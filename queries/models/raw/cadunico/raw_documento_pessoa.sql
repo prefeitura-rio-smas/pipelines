@@ -29,7 +29,7 @@ with source as (
         sigla_uf_carteira_trabalho,
         sigla_uf_certidao,
         sigla_uf_rg,
-        id_versao_layout_arquivo,
+        versao_layout,
         data_particao
     from {{ source('cadunico', 'documento_pessoa') }}
 )

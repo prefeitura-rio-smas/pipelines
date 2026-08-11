@@ -11,7 +11,7 @@ with source as (
         id_municipio_transferencia,
         data_transferencia,
         numero_registro_transferencia,
-        id_versao_layout_arquivo,
+        versao_layout,
         data_particao
     from {{ source('cadunico', 'transferencia_familia') }}
 )

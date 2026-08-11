@@ -42,7 +42,7 @@ with source as (
         sigla_uf_representante_legal,
         id_tipo_representacao_legal,
         tipo_representacao_legal,
-        id_versao_layout_arquivo,
+        versao_layout,
         data_particao
     from {{ source('cadunico', 'representante_legal') }}
 )

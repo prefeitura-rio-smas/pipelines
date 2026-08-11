@@ -47,7 +47,7 @@ with source as (
         dorme_outro,
         id_membro_familia,
         numero_registro_arquivo,
-        id_versao_layout_arquivo,
+        versao_layout,
         data_particao
     from {{ source('cadunico', 'condicao_rua') }}
 )

@@ -37,7 +37,7 @@ with source as (
         nis,
         numero_registro_arquivo,
         sigla_uf_nascimento,
-        id_versao_layout_arquivo,
+        versao_layout,
         data_particao
     from {{ source('cadunico', 'identificacao_membro') }}
 )

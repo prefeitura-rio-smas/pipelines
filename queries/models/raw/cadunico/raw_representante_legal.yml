@@ -85,7 +85,7 @@ models:
         description: "Tipo de Representação Legal para aquela família Ex.: 01-Curatela, 02-Tutela, 03-Guarda (coluna origem: id_tipo_representacao_legal)"
       - name: tipo_representacao_legal
         description: "Tipo de Representação Legal para aquela família Ex.: 01-Curatela, 02-Tutela, 03-Guarda (coluna origem: tipo_representacao_legal)"
-      - name: id_versao_layout_arquivo
+      - name: versao_layout
         description: "Sem descrição na origem."
       - name: data_particao
         description: "Sem descrição na origem."

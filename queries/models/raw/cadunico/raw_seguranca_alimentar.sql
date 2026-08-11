@@ -52,7 +52,7 @@ with source as (
         snas_projovem_trabalhador,
         snas_projovem_urbano,
         numero_registro_arquivo,
-        id_versao_layout_arquivo,
+        versao_layout,
         data_particao
     from {{ source('cadunico', 'seguranca_alimentar') }}
 )

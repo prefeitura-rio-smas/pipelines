@@ -21,7 +21,7 @@ with source as (
         deficiencia_transtorno_mental,
         id_membro_familia,
         numero_registro_arquivo,
-        id_versao_layout_arquivo,
+        versao_layout,
         data_particao
     from {{ source('cadunico', 'pessoa_deficiencia') }}
 )

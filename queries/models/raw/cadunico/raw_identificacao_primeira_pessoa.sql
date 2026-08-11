@@ -59,7 +59,7 @@ with source as (
         id_numero_ordem,
         numero_registro_arquivo,
         sigla_uf_municipio_nascimento,
-        id_versao_layout_arquivo,
+        versao_layout,
         data_particao
     from {{ source('cadunico', 'identificacao_primeira_pessoa') }}
 )

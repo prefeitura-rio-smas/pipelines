@@ -113,7 +113,7 @@ models:
         description: "Referência para localização do endereço (coluna origem: refencia_logradouro)"
       - name: valor_renda_media_original
         description: "Valor da renda média (per capita) da família, formato NNNNNNNNN"
-      - name: id_versao_layout_arquivo
+      - name: versao_layout
         description: "Sem descrição na origem."
       - name: data_particao
         description: "Sem descrição na origem."

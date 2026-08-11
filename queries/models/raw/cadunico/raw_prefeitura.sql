@@ -8,7 +8,7 @@ with source as (
         migracao,
         prefeitura,
         numero_registro_arquivo,
-        id_versao_layout_arquivo,
+        versao_layout,
         data_particao
     from {{ source('cadunico', 'prefeitura') }}
 )
