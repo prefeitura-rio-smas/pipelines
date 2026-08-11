@@ -70,7 +70,7 @@ uniao_atendimentos as (
         id_atendimento,
         id_unidade,
         id_usuario,
-        safe_cast(trim(regexp_replace(prof_id, r'^0+', '')) as int64) as id_profissional,
+        safe_cast(trim(prof_id) as int64) as id_profissional,
         id_tipo_atendimento,
         data_atendimento,
         hora_atendimento,
@@ -78,8 +78,12 @@ uniao_atendimentos as (
         flag_cancelado,
         id_login_cadastro
     from uniao_atendimentos_base,
-    UNNEST(SPLIT(id_profissional_compartilhado)) AS prof_id
-    WHERE prof_id != ''
+    UNNEST(ARRAY(
+        SELECT DISTINCT trim(regexp_replace(x, r'^0+', ''))
+        FROM UNNEST(SPLIT(uniao_atendimentos_base.id_profissional_compartilhado)) x
+        WHERE x != ''
+    )) AS prof_id
+    WHERE safe_cast(trim(prof_id) as int64) != uniao_atendimentos_base.id_profissional
 ),
 
 operadores as (
