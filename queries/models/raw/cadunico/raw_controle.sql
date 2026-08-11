@@ -9,6 +9,7 @@ with source as (
         versao_layout,
         data_particao
     from {{ source('cadunico', 'controle') }}
+    where {{ filtro_particao_cadunico() }}
 )
 
 select * from source

@@ -24,6 +24,7 @@ with source as (
         versao_layout,
         data_particao
     from {{ source('cadunico', 'contato') }}
+    where {{ filtro_particao_cadunico() }}
 )
 
 select * from source

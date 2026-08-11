@@ -24,6 +24,7 @@ with source as (
         versao_layout,
         data_particao
     from {{ source('cadunico', 'pessoa_deficiencia') }}
+    where {{ filtro_particao_cadunico() }}
 )
 
 select * from source

@@ -50,6 +50,7 @@ with source as (
         versao_layout,
         data_particao
     from {{ source('cadunico', 'condicao_rua') }}
+    where {{ filtro_particao_cadunico() }}
 )
 
 select * from source

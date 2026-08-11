@@ -62,6 +62,7 @@ with source as (
         versao_layout,
         data_particao
     from {{ source('cadunico', 'identificacao_primeira_pessoa') }}
+    where {{ filtro_particao_cadunico() }}
 )
 
 select * from source

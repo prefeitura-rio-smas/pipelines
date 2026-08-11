@@ -346,3 +346,39 @@ deployments:
           SIURB_USER: "{{ $SIURB_USER }}"
           SIURB_PWD: "{{ $SIURB_PWD }}"
     tags: ["prod", "dbt"]
+
+  # ---------------------------------------------------------------------------
+  # Transformação — dbt CadÚnico (snapshot atual)
+  # ---------------------------------------------------------------------------
+  - name: dbt-transform-cadunico-staging
+    entrypoint: pipelines/datalake/transform/dbt/flows.py:dbt_transform_flow
+    parameters:
+      select: "raw.cadunico"
+    work_pool:
+      name: docker-pool
+      job_variables:
+        networks: ["prefect_prefect-stack"]
+        image: "{{ $PREFECT_DEPLOYMENT_IMAGE }}"
+        env:
+          PREFECT_API_URL: http://prefect-api:4200/api
+          MODE: staging
+          GCP_CREDENTIALS: "{{ $GCP_CREDENTIALS }}"
+    tags: ["staging", "dbt", "cadunico"]
+
+  - name: dbt-transform-cadunico-prod
+    entrypoint: pipelines/datalake/transform/dbt/flows.py:dbt_transform_flow
+    parameters:
+      select: "raw.cadunico"
+    schedule:
+      cron: "0 9 * * *"
+      timezone: "America/Sao_Paulo"
+    work_pool:
+      name: docker-pool
+      job_variables:
+        networks: ["prefect_prefect-stack"]
+        image: "{{ $PREFECT_DEPLOYMENT_IMAGE }}"
+        env:
+          PREFECT_API_URL: http://prefect-api:4200/api
+          MODE: prod
+          GCP_CREDENTIALS: "{{ $GCP_CREDENTIALS }}"
+    tags: ["prod", "dbt", "cadunico"]

@@ -9,6 +9,16 @@ models:
     raw:
       +materialized: view
       +schema: "{{ 'raw' if target.name == 'prod' else 'gerenciamento__dbt' }}"
+
+      cadunico:
+        +materialized: incremental
+        +partition_by:
+          field: data_particao
+          data_type: date
+          granularity: month
+        +incremental_strategy: insert_overwrite
+        +post-hook:
+          - "{% if is_incremental() %}alter table {{ this }} drop partition if exists where data_particao < date('{{ obter_particao_cadunico().mes_inicio }}'){% endif %}"
     
     intermediate:
       +materialized: ephemeral
