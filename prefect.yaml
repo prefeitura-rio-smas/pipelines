@@ -355,7 +355,7 @@ deployments:
     parameters:
       select: "+tag:weekly"
     schedule:
-      cron: "0 10 * * 0"
+      cron: "0 10 * * 1"
       timezone: "America/Sao_Paulo"
     work_pool:
       name: docker-pool
