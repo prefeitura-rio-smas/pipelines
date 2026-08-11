@@ -33,18 +33,12 @@ models:
       (Municipal / Rede Conveniada); flag_unidade_ativa = status ativo/inativo
       (BOOLEAN); flag_eixo_* = eixos de atendimento (Sim/Não).
 
-      Filtro de email da unidade (padrão mart_acolhimento_diaria, MÚLTIPLAS
-      fontes): as 3 fontes de email foram centralizadas na dim_unidades e a
-      mart apenas as referencia — NÃO consulta mais
-      raw_sheets_filtro_email_prontuario diretamente:
-      1. email_territorio — email institucional por território/área
-         programática (macro email_territorio sobre o código cas, '01'..'10');
-      2. email_planilha — email(s) da planilha externa de filtro de email
-         (raw_sheets_filtro_email_prontuario), agregados na dim;
-      3. email_unidade — email cadastral do prontuário (dim_unidades).
-      A coluna final `email` = concat(coalesce(email_territorio,''), ',',
-      coalesce(email_planilha,''), ', ', coalesce(email_unidade,'')).
-      Grão preservado (planilha com 1 linha por unidade; sem fan-out na SK).
+      Filtro de email da unidade (filtro de BI): o email usado para filtrar
+      relatórios é consolidado em UMA coluna na dim_unidades (email_filtro),
+      unificando as 3 fontes (território/CAS, planilha externa
+      raw_sheets_filtro_email_prontuario e cadastro do prontuário). A mart
+      apenas referencia unid.email_filtro — não faz concat nem consulta a
+      planilha diretamente.
     columns:
       - name: id_profissional_unidade_sk
         description: "Surrogate key única da associação (hash de id_profissional + id_unidade)."
@@ -169,14 +163,5 @@ models:
       - name: total_evolucoes
         description: "Evoluções ativas (data_cancelamento IS NULL) do profissional NAQUELA unidade (fct_evolucoes, COUNT DISTINCT id_evolucao_sk). 0 quando não há. Grão por unidade do fato."
 
-      - name: email_territorio
-        description: "Email institucional por território/área programática da unidade, derivado da macro email_territorio na dim_unidades a partir do código cas (CASE '01'..'10' → casN@prefeitura.rio). NULL quando a unidade não é uma CAS (código fora de '01'-'10', GE ou sem AP). Fonte 1 do filtro de email (padrão mart_acolhimento_diaria)."
-
-      - name: email_planilha
-        description: "Email(s) de contato da unidade vindos da planilha de filtro de email do prontuário (raw_sheets_filtro_email_prontuario), agregados na dim_unidades (string_agg por unidade). Pode conter múltiplos emails separados por vírgula (mailing list). NULL quando a unidade não está na planilha. Fonte 2 do filtro de email."
-
-      - name: email_unidade
-        description: "Email de contato da unidade vindo da dim_unidades (fonte 1 do filtro: cadastro no prontuário). NULL quando a unidade não possui email cadastrado."
-
-      - name: email
-        description: "Email(s) de contato da unidade combinando as 3 fontes do filtro de email via concat: concat(coalesce(email_territorio,''), ',', coalesce(email_planilha,''), ', ', coalesce(email_unidade,'')) — mesmo formato/semântica da mart_acolhimento_diaria."
+      - name: email_filtro
+        description: "Email único da unidade usado para filtrar relatórios de BI. Consolidado na dim_unidades (unifica as 3 fontes: território/CAS — fonte 3; planilha externa raw_sheets_filtro_email_prontuario — fonte 2; cadastro do prontuário — fonte 1). Formato do concat definido na dim: concat(coalesce(territorio,''), ',', coalesce(planilha,''), ', ', coalesce(unidade,''))."

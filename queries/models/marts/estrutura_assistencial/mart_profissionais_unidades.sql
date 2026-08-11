@@ -2,9 +2,8 @@
 -- Grão: 1 linha por (profissional × unidade). Fact-less star schema que
 -- referencia dim_profissionais e dim_unidades (vínculo via UNNEST).
 -- Unidades de teste excluídas por design nas dims; métricas contadas na
--- unidade do fato (não propagadas por profissional). Email = concat das 3
--- fontes centralizadas na dim_unidades (email_territorio, email_planilha,
--- email_unidade). Detalhes das frentes no YML.
+-- unidade do fato (não propagadas por profissional). Email = filtro único
+-- de BI consolidado na dim_unidades (email_filtro). Detalhes no YML.
 
 {{ config(materialized='table', tags=['daily']) }}
 
@@ -87,10 +86,8 @@ joined as (
 
         (unid.id_unidade IS NOT NULL) as flag_unidade_valida,
 
-        -- Email: 3 fontes centralizadas na dim_unidades
-        unid.email_territorio as email_territorio,
-        unid.email_planilha   as email_planilha,
-        unid.email_unidade    as email_unidade
+        -- Email: filtro único de BI consolidado na dim_unidades
+        unid.email_filtro as email_filtro
 
     from profissionais prof
     left join unnest(prof.ids_unidade) as id_unidade
@@ -104,12 +101,6 @@ joined as (
         and unid.id_unidade = ev.id_unidade
 )
 
-select
-    *,
-    concat(
-        coalesce(email_territorio, ''), ',',
-        coalesce(email_planilha, ''), ', ',
-        coalesce(email_unidade, '')
-    ) as email
+select *
 from joined
 where not flag_sem_conta

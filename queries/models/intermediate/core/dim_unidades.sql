@@ -26,8 +26,25 @@ final as (
         b.cas,
         b.esfera,
         b.email_unidade,
-        {{ email_territorio('b.cas') }} as email_territorio,
-        pe.email_planilha,
+        concat(
+            coalesce(
+                case
+                    when lower(trim(b.cas)) = '10' then 'cas10@prefeitura.rio'
+                    when lower(trim(b.cas)) = '09' then 'cas9@prefeitura.rio'
+                    when lower(trim(b.cas)) = '08' then 'cas8@prefeitura.rio'
+                    when lower(trim(b.cas)) = '07' then 'cas7@prefeitura.rio'
+                    when lower(trim(b.cas)) = '06' then 'cas6@prefeitura.rio'
+                    when lower(trim(b.cas)) = '05' then 'cas5@prefeitura.rio'
+                    when lower(trim(b.cas)) = '04' then 'cas4@prefeitura.rio'
+                    when lower(trim(b.cas)) = '03' then 'cas3@prefeitura.rio'
+                    when lower(trim(b.cas)) = '02' then 'cas2@prefeitura.rio'
+                    when lower(trim(b.cas)) = '01' then 'cas1@prefeitura.rio'
+                end,
+                ''
+            ), ',',
+            coalesce(pe.email_planilha, ''), ', ',
+            coalesce(b.email_unidade, '')
+        ) as email_filtro,
         b.flag_unidade_ativa,
         t.id_tipo_unidade,
         t.nome_tipo,
