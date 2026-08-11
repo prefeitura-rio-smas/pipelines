@@ -6,8 +6,8 @@ models:
       Benefícios dos usuários explodidos (um registro por tipo de benefício).
       Ephemeral — materializado apenas como CTE nos modelos que o referenciam.
     columns:
-      - name: id_usuario_sk
-        description: "Surrogate key do usuário."
+      - name: id_usuario
+        description: "ID original do usuário (seqpac)."
         tests: [not_null]
-      - name: beneficio_label
-        description: "Nome do benefício (ex: Bolsa Família, BPC, Aposentadoria)."
+      - name: beneficio
+        description: "Array estruturado de benefícios recebidos pelo usuário, com STRUCT (codigo, descricao)."
