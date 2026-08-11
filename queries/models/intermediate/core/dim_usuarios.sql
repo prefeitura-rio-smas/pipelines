@@ -14,10 +14,10 @@ violacoes as (
     select * from {{ ref('int_usuarios_violacoes') }}
 ),
 deficiencias as (
-    select * from {{ ref('int_deficiencias_agregadas') }}
+    select * from {{ ref('int_deficiencias_agregados') }}
 ),
 beneficios as (
-    select * from {{ ref('int_beneficios_agregadas') }}
+    select * from {{ ref('int_beneficios_agregados') }}
 ),
 projetos as (
     select * from {{ ref('int_usuarios_projetos_sociais') }}
