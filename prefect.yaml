@@ -320,7 +320,7 @@ deployments:
           SIURB_PWD: "{{ $SIURB_PWD }}"
     tags: ["staging", "dbt"]
 
-  - name: dbt-transform-prod
+  - name: dbt-transform-prod-daily
     entrypoint: pipelines/datalake/transform/dbt/flows.py:dbt_transform_flow
     parameters:
       select: "+tag:daily"
@@ -370,7 +370,7 @@ deployments:
     parameters:
       select: "raw.cadunico"
     schedule:
-      cron: "0 9 * * *"
+      cron: "0 10 * * 0"
       timezone: "America/Sao_Paulo"
     work_pool:
       name: docker-pool
@@ -381,4 +381,4 @@ deployments:
           PREFECT_API_URL: http://prefect-api:4200/api
           MODE: prod
           GCP_CREDENTIALS: "{{ $GCP_CREDENTIALS }}"
-    tags: ["prod", "dbt", "cadunico"]
+    tags: ["prod", "dbt", "cadunico", "weekly"]
