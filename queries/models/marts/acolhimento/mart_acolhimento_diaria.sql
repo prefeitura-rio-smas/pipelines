@@ -148,6 +148,8 @@ final as (
         usr.flag_situacao_rua                 as situacao_de_rua,
         usr.flag_possui_violacao_direito       as flag_violacao_direito,
         usr.violacoes,
+        usr.deficiencia as deficiencias,
+        usr.beneficio,
 
         -- ===== CICLO / FATO =====
         a.data_entrada,

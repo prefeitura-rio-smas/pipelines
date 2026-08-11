@@ -86,6 +86,10 @@ models:
         description: "Indica se possui violação de direito registrada (Sim/Não)."
       - name: violacoes
         description: "Array estruturado de violações de direito (código + descrição)."
+      - name: deficiencia
+        description: "Array estruturado de deficiências do usuário (código + descrição)."
+      - name: beneficio
+        description: "Array estruturado de benefícios recebidos pelo usuário (código + descrição)."
       - name: id_unidade_referencia
         description: "Unidade de referência do usuário (raw_usuarios.sequsref)."
       - name: id_login_cadastro

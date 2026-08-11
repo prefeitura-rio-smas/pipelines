@@ -2,9 +2,9 @@
 
 with base as (
     select
-        id_usuario_sk,
+        id_paciente as id_usuario,
         tipo_beneficio
-    from {{ ref('dim_usuarios') }}
+    from {{ ref('raw_usuarios_saude_mental') }}
     where tipo_beneficio is not null
       and tipo_beneficio != ''
       and upper(trim(tipo_beneficio)) != 'N'
@@ -12,18 +12,32 @@ with base as (
 
 codigos_separados as (
     select
-        id_usuario_sk,
+        id_usuario,
         trim(codigo) as codigo
     from base,
     unnest(split(tipo_beneficio, ',')) as codigo
 ),
 
-final as (
+traducao as (
     select
-        id_usuario_sk,
-        {{ map_coluna_beneficio('codigo') }} as beneficio_label
+        id_usuario,
+        codigo,
+        {{ map_coluna_beneficio('codigo') }} as descricao
     from codigos_separados
     where codigo != ''
+),
+
+final as (
+    select
+        id_usuario,
+        array_agg(
+            struct(
+                codigo,
+                descricao
+             ) 
+          ) as beneficio
+        from traducao
+        group by id_usuario
 )
 
 select * from final

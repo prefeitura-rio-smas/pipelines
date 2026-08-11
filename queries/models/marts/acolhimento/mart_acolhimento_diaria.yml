@@ -71,6 +71,10 @@ models:
       - name: flag_violacao_direito
       - name: violacoes
         description: "Array estruturado de violações de direito (codigo + descricao)."
+      - name: deficiencias
+        description: "Array estruturado de deficiências do usuário (codigo + descricao)."
+      - name: beneficio
+        description: "Array estruturado de benefícios recebidos pelo usuário (codigo + descricao)."
       - name: data_entrada
       - name: data_desligamento
         description: "Alias para fct_acolhimento_diaria.data_saida."

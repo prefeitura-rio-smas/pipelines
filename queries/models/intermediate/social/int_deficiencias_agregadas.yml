@@ -6,8 +6,8 @@ models:
       Deficiências dos usuários explodidas (um registro por tipo de deficiência).
       Ephemeral — materializado apenas como CTE nos modelos que o referenciam.
     columns:
-      - name: id_usuario_sk
-        description: "Surrogate key do usuário."
+      - name: id_usuario
+        description: "ID original do usuário (seqpac)."
         tests: [not_null]
-      - name: deficiencia_label
-        description: "Nome da deficiência (ex: Deficiência motora, Deficiência visual total)."
+      - name: deficiencia
+        description: "Array estruturado de deficiências do usuário, com STRUCT (codigo, descricao)."
