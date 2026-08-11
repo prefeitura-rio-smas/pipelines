@@ -2,6 +2,7 @@ version: 2
 models:
   - name: raw_status_familia
     description: "Registro 13 - Status e pendências da família."
+    tags: [weekly]
     columns:
       - name: id_prefeitura
         description: "Chave única de identificação da Prefeitura"

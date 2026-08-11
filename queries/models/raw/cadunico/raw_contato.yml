@@ -2,6 +2,7 @@ version: 2
 models:
   - name: raw_contato
     description: "Registro 09 - Contatos da família (e-mail, telefones e autorização de envio de SMS)."
+    tags: [weekly]
     columns:
       - name: id_prefeitura
         description: "Chave única de identificação da Família"

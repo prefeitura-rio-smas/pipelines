@@ -2,6 +2,7 @@ version: 2
 models:
   - name: raw_documento_membro
     description: "Registro 14 - Pendências e auditoria de documentação dos membros (CPF, título de eleitor e certidões)."
+    tags: [weekly]
     columns:
       - name: id_prefeitura
         description: "Chave única de identificação da Família"

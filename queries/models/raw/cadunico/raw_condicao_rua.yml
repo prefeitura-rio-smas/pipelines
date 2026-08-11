@@ -2,6 +2,7 @@ version: 2
 models:
   - name: raw_condicao_rua
     description: "Registro 12 - Condições e motivos de vivência na rua dos membros (população em situação de rua)."
+    tags: [weekly]
     columns:
       - name: id_prefeitura
         description: "Chave única de identificação da Família"

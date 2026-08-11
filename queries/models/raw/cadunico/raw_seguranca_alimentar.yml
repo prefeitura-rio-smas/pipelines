@@ -2,6 +2,7 @@ version: 2
 models:
   - name: raw_seguranca_alimentar
     description: "Registro 11 - Segurança alimentar e programas sociais (energia, Sesan e SNAS)."
+    tags: [weekly]
     columns:
       - name: id_prefeitura
         description: "Chave única de identificação da Família"

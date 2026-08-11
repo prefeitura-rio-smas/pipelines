@@ -2,6 +2,7 @@ version: 2
 models:
   - name: raw_registros
     description: "Registro 99 - Marcadores de controle de arquivos por versão do layout."
+    tags: [weekly]
     columns:
       - name: numero_registro_arquivo
         description: "99 (coluna origem: numero_registro_arquivo)"

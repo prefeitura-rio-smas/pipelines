@@ -2,6 +2,7 @@ version: 2
 models:
   - name: raw_controle
     description: "Registro 00 - Controle de arquivos carregados (extração, posição do cadastro e versão do layout)."
+    tags: [weekly]
     columns:
       - name: id_versao_layout_arquivo
         description: "FORMATO '99.99'"

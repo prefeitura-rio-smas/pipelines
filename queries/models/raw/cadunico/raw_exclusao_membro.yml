@@ -2,6 +2,7 @@ version: 2
 models:
   - name: raw_exclusao_membro
     description: "Registro 19 - Exclusões de membros da família."
+    tags: [weekly]
     columns:
       - name: id_prefeitura_membro_excluido
         description: "Chave única de identificação da Prefeitura da família a qual o membro excluído pertence (coluna origem: id_prefeitura_membro_excluido)"

@@ -2,6 +2,7 @@ version: 2
 models:
   - name: raw_transferencia_familia
     description: "Registro 16 - Transferências de famílias entre municípios."
+    tags: [weekly]
     columns:
       - name: id_prefeitura_antes_transferencia
         description: "Chave única de identificação da Prefeitura de origem antes da transferência (coluna origem: id_prefeitura_antes_transferencia)"

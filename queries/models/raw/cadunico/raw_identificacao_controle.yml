@@ -2,6 +2,7 @@ version: 2
 models:
   - name: raw_identificacao_controle
     description: "Registro 01 - Identificação da família, endereço e dados de controle do cadastro."
+    tags: [weekly]
     columns:
       - name: id_prefeitura
         description: "Chave única de identificação da Prefeitura"

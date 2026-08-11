@@ -2,6 +2,7 @@ version: 2
 models:
   - name: raw_exclusao_servidor
     description: "Registro 18 - Exclusões de famílias."
+    tags: [weekly]
     columns:
       - name: id_prefeitura_exclusao
         description: "Chave única de identificação da Prefeitura da família excluída (coluna origem: id_prefeitura_exclusao)"

@@ -2,6 +2,7 @@ version: 2
 models:
   - name: raw_identificacao_primeira_pessoa
     description: "Registro 04 - Identificação da primeira pessoa (responsável) pela família."
+    tags: [weekly]
     columns:
       - name: id_pessoa
         description: "Chave natural atual da Pessoa"

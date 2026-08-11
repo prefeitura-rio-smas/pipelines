@@ -2,6 +2,7 @@ version: 2
 models:
   - name: raw_representante_legal
     description: "Registro 20 - Representantes legais dos membros."
+    tags: [weekly]
     columns:
       - name: id_prefeitura_representante_legal
         description: "Chave única de identificação da Prefeitura da família a qual o membro excluído pertence (coluna origem: id_prefeitura_representante_legal)"

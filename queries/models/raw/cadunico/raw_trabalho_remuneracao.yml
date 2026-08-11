@@ -2,6 +2,7 @@ version: 2
 models:
   - name: raw_trabalho_remuneracao
     description: "Registro 08 - Trabalho e remuneração dos membros."
+    tags: [weekly]
     columns:
       - name: id_prefeitura
         description: "Chave única de identificação da Família"

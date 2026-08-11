@@ -2,6 +2,7 @@ version: 2
 models:
   - name: raw_identificacao_membro
     description: "Registro 17 - Identificação dos membros (nascimento, filiação e transferências)."
+    tags: [weekly]
     columns:
       - name: id_prefeitura_origem
         description: "Chave única de identificação da Prefeitura de origem antes da transferência"

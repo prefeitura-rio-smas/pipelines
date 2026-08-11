@@ -2,6 +2,7 @@ version: 2
 models:
   - name: raw_documento_pessoa
     description: "Registro 05 - Documentação da pessoa (RG, CPF, certidão, carteira de trabalho e título de eleitor)."
+    tags: [weekly]
     columns:
       - name: id_prefeitura
         description: "Chave única de identificação da Família"

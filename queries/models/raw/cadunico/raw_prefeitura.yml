@@ -2,6 +2,7 @@ version: 2
 models:
   - name: raw_prefeitura
     description: "Registro 98 - Cadastro das prefeituras participantes."
+    tags: [weekly]
     columns:
       - name: id_prefeitura
         description: "Chave de identificação da Prefeitura"

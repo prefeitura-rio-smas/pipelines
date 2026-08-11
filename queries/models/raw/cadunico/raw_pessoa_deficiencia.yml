@@ -2,6 +2,7 @@ version: 2
 models:
   - name: raw_pessoa_deficiencia
     description: "Registro 06 - Deficiências e tipos de ajuda recebida pela pessoa."
+    tags: [weekly]
     columns:
       - name: id_prefeitura
         description: "Chave única de identificação da Família"
