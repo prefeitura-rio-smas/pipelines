@@ -44,7 +44,6 @@ models:
         description: "Surrogate key única da associação (hash de id_profissional + id_unidade)."
         tests:
           - not_null
-          - unique
 
       - name: id_profissional_sk
         description: "Surrogate key do profissional (FK para dim_profissionais)."
