@@ -19,7 +19,7 @@ models:
           granularity: month
         +incremental_strategy: insert_overwrite
         +post-hook:
-          - "{% if is_incremental() %}alter table {{ this }} drop partition if exists where data_particao < date('{{ obter_particao_cadunico().mes_inicio }}'){% endif %}"
+          - "{% if is_incremental() %}alter table {{ this }} drop partition if exists where data_particao < date('{{ obter_particao_cadunico() }}'){% endif %}"
     
     intermediate:
       +materialized: ephemeral
