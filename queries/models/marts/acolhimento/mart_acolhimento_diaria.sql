@@ -1,6 +1,7 @@
 {{ config(
     materialized = 'table',
-    schema = 'alta_complexidade'
+    schema = 'alta_complexidade',
+    tags = ['daily']
 ) }}
 
 -- Ocupação diária dos acolhimentos institucionais.
