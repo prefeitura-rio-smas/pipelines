@@ -14,7 +14,7 @@ violacoes as (
     select * from {{ ref('int_usuarios_violacoes') }}
 ),
 deficiencias as (
-    select * from {{ ref('int_deficiencias_agregados') }}
+    select * from {{ ref('int_deficiencias_agregadas') }}
 ),
 beneficios as (
     select * from {{ ref('int_beneficios_agregados') }}
