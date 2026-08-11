@@ -10,6 +10,14 @@ capacidade as (
     select * from {{ ref('int_capacidade_unidades') }}
 ),
 
+planilha_email as (
+    select
+        lower(trim(unidade_atendimento)) as nome_unidade,
+        string_agg(email, ', ') as email_planilha
+    from {{ ref('raw_sheets_filtro_email_prontuario') }}
+    group by 1
+),
+
 final as (
     select
         {{ dbt_utils.generate_surrogate_key(['b.id_unidade']) }} as id_unidade_sk,
@@ -18,6 +26,8 @@ final as (
         b.cas,
         b.esfera,
         b.email_unidade,
+        {{ email_territorio('b.cas') }} as email_territorio,
+        pe.email_planilha,
         b.flag_unidade_ativa,
         t.id_tipo_unidade,
         t.nome_tipo,
@@ -56,6 +66,7 @@ final as (
     from base b
     left join tipo t on b.id_tipo_unidade = t.id_tipo_unidade
     left join capacidade cap on b.id_unidade = cap.id_unidade
+    left join planilha_email pe on lower(trim(b.nome_unidade)) = pe.nome_unidade
     where b.nome_unidade not like '%TESTE%'
 )
 

@@ -16,7 +16,11 @@ models:
       - name: esfera
         description: "Esfera da unidade (Estadual, Municipal, Conveniada)."
       - name: email_unidade
-        description: "E-mail de contato da unidade."
+        description: "E-mail de contato da unidade (fonte 1 do filtro de email: cadastro no prontuário)."
+      - name: email_territorio
+        description: "E-mail institucional por território/área programática, derivado da macro email_territorio a partir de cas (fonte 3 do filtro de email). Cobre CAS 01-10 (cas1@prefeitura.rio a cas10@prefeitura.rio); NULL para GE/sem AP."
+      - name: email_planilha
+        description: "E-mail(s) da planilha externa de filtro de email do prontuário (raw_sheets_filtro_email_prontuario), agregados por unidade via string_agg (fonte 2 do filtro de email). Pode conter múltiplos emails separados por vírgula (mailing list). NULL quando a unidade não está na planilha. Depende da planilha externa raw_sheets_filtro_email_prontuario."
       - name: flag_unidade_ativa
         description: "Indica se a unidade está ativa (Sim/Não)."
       - name: nome_tipo
