@@ -13,6 +13,12 @@ origens as (
 violacoes as (
     select * from {{ ref('int_usuarios_violacoes') }}
 ),
+deficiencias as (
+    select * from {{ ref('int_deficiencias_agregadas') }}
+),
+beneficios as (
+    select * from {{ ref('int_beneficios_agregadas') }}
+),
 projetos as (
     select * from {{ ref('int_usuarios_projetos_sociais') }}
 ),
@@ -64,6 +70,8 @@ final as (
         -- Enriquecimento com Structs e Flags
         if(v.id_usuario is not null, 'Sim', 'Não') as flag_possui_violacao_direito,
         v.violacoes,
+        d.deficiencia,
+        b.beneficio,
         proj.projetos_sociais,
         base.id_unidade_referencia,
         base.id_login_cadastro
@@ -72,6 +80,8 @@ final as (
     left join saude_mental sm on base.id_paciente = sm.id_paciente
     left join origens ori on sm.codigo_origem = ori.id_origem
     left join violacoes v on base.id_paciente = v.id_usuario
+    left join deficiencias d on base.id_paciente = d.id_usuario
+    left join beneficios b on base.id_paciente = b.id_usuario
     left join projetos proj on base.id_paciente = proj.id_usuario
     where base.nome not like '%TESTE%'
 )
