@@ -2,9 +2,32 @@ import prefect
 from prefect import task
 import requests
 import json
+import re
+from datetime import datetime
 from pipelines.arcgis.utils import _get_arcgis_token, bq_client
 from pipelines.arcgis.tasks import resolve_arcgis_url
 from pipelines.arcgis.constants import settings
+
+# Padrão ISO de data pura (YYYY-MM-DD) — convertida para epoch ms
+# porque campos Date clássicos do ArcGIS rejeitam string (esperam timestamp).
+_ISO_DATE_RE = re.compile(r'^\d{4}-\d{2}-\d{2}$')
+
+
+def _to_arcgis_value(value):
+    """Converte valores para o formato aceito pelo applyEdits do ArcGIS.
+    Strings ISO YYYY-MM-DD → epoch ms (campos Date clássicos).
+    """
+    if value is None:
+        return None
+    s = str(value).strip()
+    if _ISO_DATE_RE.match(s):
+        try:
+            dt = datetime.strptime(s, '%Y-%m-%d')
+            return int(dt.timestamp() * 1000)
+        except ValueError:
+            return value
+    return value
+
 
 @task
 def apply_arcgis_feedback(
@@ -42,7 +65,7 @@ def apply_arcgis_feedback(
             if col.lower() == "objectid":
                 attributes["objectid"] = int(value)
             else:
-                attributes[col] = clean_value
+                attributes[col] = _to_arcgis_value(clean_value)
         updates.append({"attributes": attributes})
 
     batch_size = 100
