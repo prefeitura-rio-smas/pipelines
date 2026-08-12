@@ -29,3 +29,5 @@ models:
         description: "Eixo do acolhimento: ADULTO/FAMÍLIA, IDOSO (apenas SMAS). NULL para SMS."
       - name: origem
         description: "Procedência do registro: SMAS (sistema) ou SMS (Google Sheets)."
+      - name: ultima_atualizacao
+        description: "Timestamp da última sincronização do Airbyte (heartbeat da pipeline via raw_configuracoes_sistema)."

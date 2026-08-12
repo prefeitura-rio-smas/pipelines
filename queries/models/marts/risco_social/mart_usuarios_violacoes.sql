@@ -17,7 +17,8 @@ joined as (
         du.cpf,
         du.data_nascimento,
         ve.codigo as codigo_violacao,
-        ve.descricao as descricao_violacao
+        ve.descricao as descricao_violacao,
+        {{ extrair_ultima_atualizacao('raw_configuracoes_sistema') }} as ultima_atualizacao
     from violacoes_explodidas ve
     left join {{ ref('dim_usuarios') }} du
         on ve.id_usuario = du.id_usuario

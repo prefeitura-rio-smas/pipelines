@@ -30,7 +30,8 @@ indicadores as (
             when coalesce(array_length(s.servicos), 0) > 0
                 then 'Sim'
             else 'Não'
-        end as possui_servico
+        end as possui_servico,
+        {{ extrair_ultima_atualizacao('raw_configuracoes_sistema') }} as ultima_atualizacao
     from familias f
     left join vulnerabilidades_agregadas v
         on f.id_familia = v.id_familia

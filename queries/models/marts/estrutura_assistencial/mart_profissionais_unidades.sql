@@ -87,7 +87,9 @@ joined as (
         (unid.id_unidade IS NOT NULL) as flag_unidade_valida,
 
         -- Email: filtro único de BI consolidado na dim_unidades
-        unid.email_filtro as email_filtro
+        unid.email_filtro as email_filtro,
+
+        {{ extrair_ultima_atualizacao('raw_configuracoes_sistema') }} as ultima_atualizacao
 
     from profissionais prof
     left join unnest(prof.ids_unidade) as id_unidade

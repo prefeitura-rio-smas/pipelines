@@ -28,7 +28,8 @@ with smas as (
             when tipo_publico like '%A%' or tipo_publico like '%F%' then 'ADULTO/FAMÍLIA'
             when tipo_publico like '%I%' then 'IDOSO'
         end as eixo,
-        'SMAS' as origem
+        'SMAS' as origem,
+        {{ extrair_ultima_atualizacao('raw_configuracoes_sistema') }} as ultima_atualizacao
     from {{ ref('fct_acolhimento_diaria') }}
     where extract(year from data_referencia) >= 2024
 ),
@@ -48,7 +49,8 @@ sms as (
           else 'cpf_invalido'
         end as cpf_status,
         cast(null as string) as eixo,
-        'SMS' as origem
+        'SMS' as origem,
+        {{ extrair_ultima_atualizacao('raw_configuracoes_sistema') }} as ultima_atualizacao
     from {{ ref('raw_sheets_sms_acolhimento') }} s
     where s.data_acolhimento is not null
 )

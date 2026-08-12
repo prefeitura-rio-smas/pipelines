@@ -117,3 +117,7 @@ models:
 
       - name: data_ultima_evolucao_formulario
         description: 'Data da última evolução do formulário PMA registrada para a pessoa.'
+      - name: ultima_atualizacao
+        description: "Timestamp da última sincronização do Airbyte (heartbeat da pipeline via raw_configuracoes_sistema)."
+        tests:
+          - not_null

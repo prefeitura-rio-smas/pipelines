@@ -110,7 +110,8 @@ select
     coalesce(indicadores.flag_cancelamento_atividades, 'Não') as flag_cancelamento_atividades,
     indicadores.motivo_cancelamento,
     coalesce(indicadores.flag_justificativa_falta, 'Não') as flag_justificativa_falta,
-    indicadores.justificativa_falta
+    indicadores.justificativa_falta,
+    {{ extrair_ultima_atualizacao('raw_configuracoes_sistema') }} as ultima_atualizacao
 from presencas p
 left join usuarios u on p.id_usuario = u.id_usuario
 left join atividades a on p.id_atividade = a.id_atividade

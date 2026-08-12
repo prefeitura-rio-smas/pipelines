@@ -178,7 +178,8 @@ final as (
         bapc.data_busca_ativa as data_busca_ativa,
         coalesce(bapc.tipo_busca_ativa, []) as tipo_busca_ativa,
         coalesce(bapc.familia_localizada_busca_ativa, false) as familia_localizada_busca_ativa,
-        coalesce(bapc.motivo_nao_localizada_busca_ativa, []) as motivo_nao_localizada_busca_ativa
+        coalesce(bapc.motivo_nao_localizada_busca_ativa, []) as motivo_nao_localizada_busca_ativa,
+        {{ extrair_ultima_atualizacao('raw_configuracoes_sistema') }} as ultima_atualizacao
     from familias_origens fo
     left join responsavel_familiar rf on fo.id_familia = rf.id_familia
     left join membros_familia mf on fo.id_familia = mf.id_familia

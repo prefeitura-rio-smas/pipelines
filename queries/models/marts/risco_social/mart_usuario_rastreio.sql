@@ -160,7 +160,8 @@ with
             a.data_ultima_interacao,
             ue.sexo,
             ue.idade,
-            ue.violacoes_descricao
+            ue.violacoes_descricao,
+            {{ extrair_ultima_atualizacao('raw_configuracoes_sistema') }} as ultima_atualizacao
         from agregado_por_pessoa_unidade a
         left join {{ ref('dim_unidades') }} du
             on a.id_unidade = du.id_unidade
