@@ -81,3 +81,4 @@ models:
 
         meta_ar_cpf:
           +tags: ["meta_ar_cpf"]
+          +schema: "{{ 'pequenos_cariocas' if target.name == 'prod' else 'pic' }}"
