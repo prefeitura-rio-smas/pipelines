@@ -61,7 +61,8 @@ final as (
             when lower(t.nome_tipo) like 'urs%' then 'URS'
             when lower(t.nome_tipo) = 'república' then 'República'
             when lower(t.nome_tipo) = 'moradia primeiro' then 'Lares Cariocas'
-            when upper(b.nome_unidade) like '%ESCRITÓRIO%' then 'Escritório Social'
+            when lower(t.nome_tipo) = '%Unid.de Acolhi.Institucional Conveniadas%' then 'Conveniada'
+            when lower(t.nome_tipo) = 'Unid.de Acolhi.Inst.Conv.Pess.Deficiência- Adultos' then 'Conveniada'
             else t.nome_tipo
         end as tipo_unidade,
         cap.total_vagas,
