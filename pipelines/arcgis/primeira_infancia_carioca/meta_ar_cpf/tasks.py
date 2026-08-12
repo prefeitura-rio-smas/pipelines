@@ -5,14 +5,20 @@ import json
 from pipelines.arcgis.utils import _get_arcgis_token, resolve_arcgis_url, bq_client
 from pipelines.arcgis.constants import settings
 
+# Resolve dataset e nomes de tabela por ambiente (MODE)
+IS_PROD = settings.GCP_PROJECT == "rj-smas"
+DATASET = "pequenos_cariocas" if IS_PROD else "pic"
+DEV_TABLE_NAME = "meta_acordo_resultados_cpf" if IS_PROD else "pequenos_cariocas_meta_ar_cpf_dev"
+CW_TABLE_NAME = "crosswalk_meta_acordo_resultados_cpf" if IS_PROD else "crosswalk_meta_ar_cpf"
+
 
 @task
 def ensure_crosswalk_table():
-    """Cria a tabela crosswalk_meta_ar_cpf caso não exista."""
+    """Cria a tabela crosswalk caso não exista."""
     client = bq_client()
     project = settings.GCP_PROJECT
-    dataset = "pic"
-    table_id = f"{project}.{dataset}.crosswalk_meta_ar_cpf"
+    dataset = DATASET
+    table_id = f"{project}.{dataset}.{CW_TABLE_NAME}"
 
     try:
         client.get_table(table_id)
@@ -38,8 +44,8 @@ def apply_arcgis_adds(item_id: str, layer_idx: int = 0):
     logger = prefect.get_run_logger()
     client = bq_client()
     project = settings.GCP_PROJECT
-    dev_table = f"{project}.pic.pequenos_cariocas_meta_ar_cpf_dev"
-    cw_table = f"{project}.pic.crosswalk_meta_ar_cpf"
+    dev_table = f"{project}.{DATASET}.{DEV_TABLE_NAME}"
+    cw_table = f"{project}.{DATASET}.{CW_TABLE_NAME}"
 
     # 1. Garantir que crosswalk existe
     ensure_crosswalk_table()
@@ -149,8 +155,8 @@ def apply_arcgis_status_sync(item_id: str, layer_idx: int = 0):
     logger = prefect.get_run_logger()
     client = bq_client()
     project = settings.GCP_PROJECT
-    dev_table = f"{project}.pic.pequenos_cariocas_meta_ar_cpf_dev"
-    cw_table = f"{project}.pic.crosswalk_meta_ar_cpf"
+    dev_table = f"{project}.{DATASET}.{DEV_TABLE_NAME}"
+    cw_table = f"{project}.{DATASET}.{CW_TABLE_NAME}"
 
     # 1. Buscar inativos (na crosswalk mas sem data_saida NULL na _dev)
     query = f"""

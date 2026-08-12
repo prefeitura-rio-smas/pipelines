@@ -10,13 +10,13 @@ from pipelines.arcgis.constants import settings
 def apply_arcgis_feedback(
     item_id: str,
     delta_table: str,
-    layer_idx: int = 0
+    layer_idx: int = 0,
+    dataset: str = "pic"
 ):
     logger = prefect.get_run_logger()
     
     client = bq_client()
     project = settings.GCP_PROJECT
-    dataset = "pic"
     table_id = f"{project}.{dataset}.{delta_table}"
     
     query = f"SELECT * FROM `{table_id}`"

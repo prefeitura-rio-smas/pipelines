@@ -2,7 +2,19 @@
 -- Registros da _dev que precisam ser atualizados no ArcGIS pic_meta_ar_cpf
 -- Comparação campo a campo entre o estado atual (BQ) e a última extração (raw ArcGIS).
 
-{{ config(materialized='view', tags=['meta_ar_cpf']) }}
+{{ config(
+    materialized='view',
+    tags=['meta_ar_cpf'],
+    alias="delta_feedback_meta_acordo_resultados_cpf" if target.name == 'prod' else "delta_feedback_meta_ar_cpf",
+) }}
+
+{% if target.name == 'prod' %}
+{% set cw_table = 'rj-smas.pequenos_cariocas.crosswalk_meta_acordo_resultados_cpf' %}
+{% set dev_table = 'rj-smas.pequenos_cariocas.meta_acordo_resultados_cpf' %}
+{% else %}
+{% set cw_table = 'rj-smas-dev.pic.crosswalk_meta_ar_cpf' %}
+{% set dev_table = 'rj-smas-dev.pic.pequenos_cariocas_meta_ar_cpf_dev' %}
+{% endif %}
 
 WITH
     calculado AS (
@@ -27,8 +39,8 @@ WITH
             CAST(dev.data_entrada AS STRING) AS data_entrada,
             CAST(dev.data_saida AS STRING) AS data_saida,
             'ativo' AS status_monitoramento_cpf
-        FROM rj-smas-dev.pic.crosswalk_meta_ar_cpf cw
-        JOIN rj-smas-dev.pic.pequenos_cariocas_meta_ar_cpf_dev dev
+        FROM {{ cw_table }} cw
+        JOIN {{ dev_table }} dev
           ON cw.id_membro_familia = dev.id_membro_familia
         WHERE dev.data_saida IS NULL
     ),

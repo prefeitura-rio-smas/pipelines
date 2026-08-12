@@ -5,10 +5,17 @@ from pipelines.arcgis.primeira_infancia_carioca.tasks import apply_arcgis_feedba
 from pipelines.arcgis.primeira_infancia_carioca.meta_ar_cpf.tasks import (
     apply_arcgis_adds,
     apply_arcgis_status_sync,
+    DATASET,
 )
 import os
 
 ITEM_ID = "66155d9b7ccf47d89af31a2bc8ddc5eb"
+
+DELTA_TABLE = (
+    "delta_feedback_meta_acordo_resultados_cpf"
+    if DATASET == "pequenos_cariocas"
+    else "delta_feedback_meta_ar_cpf"
+)
 
 # --- Subflows ---
 
@@ -44,8 +51,9 @@ def flow_feedback_meta_ar_cpf():
 
     updates = apply_arcgis_feedback(
         item_id=ITEM_ID,
-        delta_table="delta_feedback_meta_ar_cpf",
+        delta_table=DELTA_TABLE,
         layer_idx=0,
+        dataset=DATASET,
     )
 
     sync = apply_arcgis_status_sync(item_id=ITEM_ID, layer_idx=0)
