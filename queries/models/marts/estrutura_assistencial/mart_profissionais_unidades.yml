@@ -164,3 +164,11 @@ models:
 
       - name: email_filtro
         description: "Email único da unidade usado para filtrar relatórios de BI. Consolidado na dim_unidades (unifica as 3 fontes: território/CAS — fonte 3; planilha externa raw_sheets_filtro_email_prontuario — fonte 2; cadastro do prontuário — fonte 1). Formato do concat definido na dim: concat(coalesce(territorio,''), ',', coalesce(planilha,''), ', ', coalesce(unidade,''))."
+      - name: ultima_atualizacao
+        description: "Timestamp da última sincronização do Airbyte (heartbeat da pipeline via raw_configuracoes_sistema)."
+        tests:
+          - not_null
+      - name: ano
+        description: "Ano da última extração (derivado de ultima_atualizacao)."
+      - name: mes
+        description: "Mês da última extração (derivado de ultima_atualizacao)."

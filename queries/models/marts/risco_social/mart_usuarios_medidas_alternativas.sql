@@ -164,7 +164,10 @@ final as (
         fpm.data_desligamento,
         fpm.motivo_desligamento,
         fpm.tempo_cumprimento_pena,
-        ue.data_ultima_evolucao_formulario
+        ue.data_ultima_evolucao_formulario,
+        {{ extrair_ultima_atualizacao('raw_configuracoes_sistema') }} as ultima_atualizacao,
+        extract(year  from {{ extrair_ultima_atualizacao('raw_configuracoes_sistema') }}) as ano,
+        extract(month from {{ extrair_ultima_atualizacao('raw_configuracoes_sistema') }}) as mes
     from pessoa_vinculo pv
     left join pessoas_origens po on pv.id_paciente = po.id_paciente
     left join ultima_evolucao_pma ue on pv.id_paciente = ue.id_paciente

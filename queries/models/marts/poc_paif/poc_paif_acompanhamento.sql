@@ -84,7 +84,10 @@ select
     e.data_desligamento,
     -- Unidade (vem da última evolução ou fica nulo se só serviço)
     du.nome_unidade,
-    du.nome_tipo as tipo_unidade
+    du.nome_tipo as tipo_unidade,
+    {{ extrair_ultima_atualizacao('raw_configuracoes_sistema') }} as ultima_atualizacao,
+    extract(year  from {{ extrair_ultima_atualizacao('raw_configuracoes_sistema') }}) as ano,
+    extract(month from {{ extrair_ultima_atualizacao('raw_configuracoes_sistema') }}) as mes
 from familias_com_evolucao e
 full outer join servico_paif s
     on e.id_paciente = s.id_paciente

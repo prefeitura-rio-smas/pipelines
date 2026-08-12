@@ -40,3 +40,11 @@ models:
         description: "Booleano. True se a familia foi localizada na ultima Busca Ativa (campo 'Familia localizada?' = Sim)."
       - name: motivo_nao_localizada_busca_ativa
         description: "Array de strings com os motivos de nao localizacao da familia na ultima Busca Ativa (ex: Endereco desatualizado, Ligacao nao atendida). Vazio se a familia foi localizada."
+      - name: ultima_atualizacao
+        description: "Timestamp da última sincronização do Airbyte (heartbeat da pipeline via raw_configuracoes_sistema)."
+        tests:
+          - not_null
+      - name: ano
+        description: "Ano da última extração (derivado de ultima_atualizacao)."
+      - name: mes
+        description: "Mês da última extração (derivado de ultima_atualizacao)."

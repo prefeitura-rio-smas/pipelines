@@ -44,3 +44,11 @@ models:
         description: "Nome da unidade (CRAS/CREAS) vinculada à última evolução. NULL se origem for apenas 'servico'."
       - name: tipo_unidade
         description: "Tipo da unidade (ex: 'CRAS', 'CREAS', 'Sem informação'). NULL se origem for apenas 'servico'."
+      - name: ultima_atualizacao
+        description: "Timestamp da última sincronização do Airbyte (heartbeat da pipeline via raw_configuracoes_sistema)."
+        tests:
+          - not_null
+      - name: ano
+        description: "Ano da última extração (derivado de ultima_atualizacao)."
+      - name: mes
+        description: "Mês da última extração (derivado de ultima_atualizacao)."

@@ -17,3 +17,11 @@ models:
         description: "Total de usuários distintos com encaminhamento para CRAS."
       - name: encaminhamento_creas
         description: "Total de usuários distintos com encaminhamento para CREAS."
+      - name: ultima_atualizacao
+        description: "Timestamp da última sincronização do Airbyte (heartbeat da pipeline via raw_configuracoes_sistema)."
+        tests:
+          - not_null
+      - name: ano
+        description: "Ano da última extração (derivado de ultima_atualizacao)."
+      - name: mes
+        description: "Mês da última extração (derivado de ultima_atualizacao)."

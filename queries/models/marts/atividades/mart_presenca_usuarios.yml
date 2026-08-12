@@ -89,3 +89,14 @@ models:
       - name: justificativa_falta
         description: "Justificativa registrada em evolução Tô de Boa - Justificativa de Falta."
         data_type: string
+      - name: ultima_atualizacao
+        description: "Timestamp da última sincronização do Airbyte (heartbeat da pipeline via raw_configuracoes_sistema)."
+        data_type: timestamp
+        tests:
+          - not_null
+      - name: ano
+        description: "Ano da última extração (derivado de ultima_atualizacao)."
+        data_type: integer
+      - name: mes
+        description: "Mês da última extração (derivado de ultima_atualizacao)."
+        data_type: integer

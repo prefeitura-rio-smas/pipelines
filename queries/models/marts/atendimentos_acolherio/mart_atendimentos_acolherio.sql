@@ -58,7 +58,11 @@ select
     row_number() over (
         partition by profissional_id, hora_de_atendimento, data_de_atendimento, nome_atendimento_original, id_usuario, unidade_atendimento 
         order by data_cadastro_atendimento
-    ) as atendimento_unico_rank
+    ) as atendimento_unico_rank,
+
+    {{ extrair_ultima_atualizacao('raw_configuracoes_sistema') }} as ultima_atualizacao,
+    extract(year  from {{ extrair_ultima_atualizacao('raw_configuracoes_sistema') }}) as ano,
+    extract(month from {{ extrair_ultima_atualizacao('raw_configuracoes_sistema') }}) as mes
 
 from base_preparada
 
