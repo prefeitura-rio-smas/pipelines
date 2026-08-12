@@ -31,9 +31,7 @@ indicadores as (
                 then 'Sim'
             else 'Não'
         end as possui_servico,
-        {{ extrair_ultima_atualizacao('raw_configuracoes_sistema') }} as ultima_atualizacao,
-        extract(year  from {{ extrair_ultima_atualizacao('raw_configuracoes_sistema') }}) as ano,
-        extract(month from {{ extrair_ultima_atualizacao('raw_configuracoes_sistema') }}) as mes
+        {{ extrair_ultima_atualizacao('raw_configuracoes_sistema') }} as ultima_atualizacao
     from familias f
     left join vulnerabilidades_agregadas v
         on f.id_familia = v.id_familia

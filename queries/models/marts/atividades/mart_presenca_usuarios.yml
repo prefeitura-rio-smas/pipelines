@@ -94,9 +94,3 @@ models:
         data_type: timestamp
         tests:
           - not_null
-      - name: ano
-        description: "Ano da última extração (derivado de ultima_atualizacao)."
-        data_type: integer
-      - name: mes
-        description: "Mês da última extração (derivado de ultima_atualizacao)."
-        data_type: integer

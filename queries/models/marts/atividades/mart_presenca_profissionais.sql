@@ -30,9 +30,7 @@ select
       else p.hora_presenca
     end as hora_presenca,
     fe.email as email_unidade,
-    {{ extrair_ultima_atualizacao('raw_configuracoes_sistema') }} as ultima_atualizacao,
-    extract(year  from {{ extrair_ultima_atualizacao('raw_configuracoes_sistema') }}) as ano,
-    extract(month from {{ extrair_ultima_atualizacao('raw_configuracoes_sistema') }}) as mes
+    {{ extrair_ultima_atualizacao('raw_configuracoes_sistema') }} as ultima_atualizacao
 from presencas p
 left join profissionais pr on p.id_profissional = pr.id_profissional
 left join atividades a on p.id_atividade = a.id_atividade

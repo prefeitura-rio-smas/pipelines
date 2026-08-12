@@ -18,9 +18,7 @@ joined as (
         du.data_nascimento,
         ve.codigo as codigo_violacao,
         ve.descricao as descricao_violacao,
-        {{ extrair_ultima_atualizacao('raw_configuracoes_sistema') }} as ultima_atualizacao,
-        extract(year  from {{ extrair_ultima_atualizacao('raw_configuracoes_sistema') }}) as ano,
-        extract(month from {{ extrair_ultima_atualizacao('raw_configuracoes_sistema') }}) as mes
+        {{ extrair_ultima_atualizacao('raw_configuracoes_sistema') }} as ultima_atualizacao
     from violacoes_explodidas ve
     left join {{ ref('dim_usuarios') }} du
         on ve.id_usuario = du.id_usuario

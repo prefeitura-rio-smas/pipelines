@@ -31,7 +31,3 @@ models:
         description: "Procedência do registro: SMAS (sistema) ou SMS (Google Sheets)."
       - name: ultima_atualizacao
         description: "Timestamp da última sincronização do Airbyte (heartbeat da pipeline via raw_configuracoes_sistema)."
-      - name: ano_extracao
-        description: "Ano da última extração (derivado de ultima_atualizacao)."
-      - name: mes_extracao
-        description: "Mês da última extração (derivado de ultima_atualizacao)."

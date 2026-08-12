@@ -69,9 +69,7 @@ select
     coalesce(sr.total_rua, 0) as total_rua,
     coalesce(ee.encaminhamento_cras, 0) as encaminhamento_cras,
     coalesce(ee.encaminhamento_creas, 0) as encaminhamento_creas,
-    {{ extrair_ultima_atualizacao('raw_configuracoes_sistema') }} as ultima_atualizacao,
-    extract(year  from {{ extrair_ultima_atualizacao('raw_configuracoes_sistema') }}) as ano,
-    extract(month from {{ extrair_ultima_atualizacao('raw_configuracoes_sistema') }}) as mes
+    {{ extrair_ultima_atualizacao('raw_configuracoes_sistema') }} as ultima_atualizacao
 from base_unidades b
 left join {{ ref('dim_unidades') }} du on b.id_unidade_sk = du.id_unidade_sk
 left join servicos_familias sf on du.id_unidade = sf.id_unidade

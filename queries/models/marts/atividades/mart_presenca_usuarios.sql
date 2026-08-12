@@ -111,9 +111,7 @@ select
     indicadores.motivo_cancelamento,
     coalesce(indicadores.flag_justificativa_falta, 'Não') as flag_justificativa_falta,
     indicadores.justificativa_falta,
-    {{ extrair_ultima_atualizacao('raw_configuracoes_sistema') }} as ultima_atualizacao,
-    extract(year  from {{ extrair_ultima_atualizacao('raw_configuracoes_sistema') }}) as ano,
-    extract(month from {{ extrair_ultima_atualizacao('raw_configuracoes_sistema') }}) as mes
+    {{ extrair_ultima_atualizacao('raw_configuracoes_sistema') }} as ultima_atualizacao
 from presencas p
 left join usuarios u on p.id_usuario = u.id_usuario
 left join atividades a on p.id_atividade = a.id_atividade

@@ -60,9 +60,7 @@ select
         order by data_cadastro_atendimento
     ) as atendimento_unico_rank,
 
-    {{ extrair_ultima_atualizacao('raw_configuracoes_sistema') }} as ultima_atualizacao,
-    extract(year  from {{ extrair_ultima_atualizacao('raw_configuracoes_sistema') }}) as ano,
-    extract(month from {{ extrair_ultima_atualizacao('raw_configuracoes_sistema') }}) as mes
+    {{ extrair_ultima_atualizacao('raw_configuracoes_sistema') }} as ultima_atualizacao
 
 from base_preparada
 

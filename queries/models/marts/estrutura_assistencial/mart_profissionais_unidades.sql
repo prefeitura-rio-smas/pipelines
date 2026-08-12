@@ -89,9 +89,7 @@ joined as (
         -- Email: filtro único de BI consolidado na dim_unidades
         unid.email_filtro as email_filtro,
 
-        {{ extrair_ultima_atualizacao('raw_configuracoes_sistema') }} as ultima_atualizacao,
-        extract(year  from {{ extrair_ultima_atualizacao('raw_configuracoes_sistema') }}) as ano,
-        extract(month from {{ extrair_ultima_atualizacao('raw_configuracoes_sistema') }}) as mes
+        {{ extrair_ultima_atualizacao('raw_configuracoes_sistema') }} as ultima_atualizacao
 
     from profissionais prof
     left join unnest(prof.ids_unidade) as id_unidade
