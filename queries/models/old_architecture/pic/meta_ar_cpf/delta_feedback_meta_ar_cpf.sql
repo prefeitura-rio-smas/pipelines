@@ -46,7 +46,13 @@ WITH
     ),
 
     atual AS (
-        SELECT *
+        SELECT
+            * EXCEPT(data_entrada, data_saida, nascimento_data),
+            -- Campos Date clássicos (esriFieldTypeDate): o ArcGIS devolve epoch ms
+            -- (ex: 1786579200000.0). Converte para ISO date para comparar com o BQ.
+            CAST(FORMAT_DATE('%Y-%m-%d', DATE(TIMESTAMP_MILLIS(SAFE_CAST(REGEXP_REPLACE(data_entrada, r'\.0$', '') AS INT64)))) AS STRING) AS data_entrada,
+            CAST(FORMAT_DATE('%Y-%m-%d', DATE(TIMESTAMP_MILLIS(SAFE_CAST(REGEXP_REPLACE(data_saida, r'\.0$', '') AS INT64)))) AS STRING) AS data_saida,
+            CAST(FORMAT_DATE('%Y-%m-%d', DATE(TIMESTAMP_MILLIS(SAFE_CAST(REGEXP_REPLACE(nascimento_data, r'\.0$', '') AS INT64)))) AS STRING) AS nascimento_data
         FROM {{ source('arcgis_raw', 'meta_ar_cpf_raw') }}
     )
 
