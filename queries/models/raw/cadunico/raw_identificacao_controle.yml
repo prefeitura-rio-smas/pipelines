@@ -106,13 +106,19 @@ models:
         description: "CEP do endereço, formato 99999999"
       - name: cpf_entrevistador
         description: "CPF do entrevistador, campo numérico no formato NNNNNNNNNNN"
+      - name: numero_logradouro
+        description: "Número do logradouro"
       - name: numero_registro_arquivo
         description: "01 (coluna origem: numero_registro_arquivo)"
+      - name: quantidade_pes_calc_rnd
+        description: "Quantidade de pessoas para cálculo da renda familiar (per capita)"
       - name: observacoes_entrevistador
         description: "Observações apontadas pelo entrevistador"
       - name: refencia_logradouro
         description: "Referência para localização do endereço (coluna origem: refencia_logradouro)"
       - name: valor_renda_media_original
+        description: "Valor da renda média (per capita) da família, formato NNNNNNNNN"
+      - name: valor_renda_media
         description: "Valor da renda média (per capita) da família, formato NNNNNNNNN"
       - name: versao_layout
         description: "Sem descrição na origem."

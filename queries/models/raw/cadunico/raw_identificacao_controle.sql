@@ -52,10 +52,13 @@ with source as (
         origem_cadastro,
         cep,
         cpf_entrevistador,
+        numero_logradouro,
         numero_registro_arquivo,
+        quantidade_pes_calc_rnd,
         observacoes_entrevistador,
         refencia_logradouro,
         valor_renda_media_original,
+        valor_renda_media,
         versao_layout,
         data_particao
     from {{ source('cadunico', 'identificacao_controle') }}

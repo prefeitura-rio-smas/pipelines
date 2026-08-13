@@ -26,6 +26,8 @@ with source as (
         id_material_piso_domicilio,
         material_piso_domicilio,
         numero_registro_arquivo,
+        quantidade_comodos_domicilio,
+        quantidade_comodos_dormitorio,
         versao_layout,
         data_particao
     from {{ source('cadunico', 'domicilio') }}

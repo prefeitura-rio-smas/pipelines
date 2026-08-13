@@ -54,6 +54,10 @@ models:
         description: "Material predominante no piso do domicílio, campo numérico de 1 posição variando de 1 a 7 dependendo da opção marcada no formulário (coluna origem: material_piso_domicilio)"
       - name: numero_registro_arquivo
         description: "02 (coluna origem: numero_registro_arquivo)"
+      - name: quantidade_comodos_domicilio
+        description: "Quantidade de cômodos do domicílio"
+      - name: quantidade_comodos_dormitorio
+        description: "Quantidade de cômodos dormitório do domicílio"
       - name: versao_layout
         description: "Sem descrição na origem."
       - name: data_particao

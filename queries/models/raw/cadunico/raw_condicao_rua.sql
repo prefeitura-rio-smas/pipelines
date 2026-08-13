@@ -47,6 +47,10 @@ with source as (
         dorme_outro,
         id_membro_familia,
         numero_registro_arquivo,
+        dorme_albergue_vezes_semana,
+        dorme_domicilio_particular_vezes_semana,
+        dorme_rua_vezes_semana,
+        dorme_outro_vezes_semana,
         versao_layout,
         data_particao
     from {{ source('cadunico', 'condicao_rua') }}

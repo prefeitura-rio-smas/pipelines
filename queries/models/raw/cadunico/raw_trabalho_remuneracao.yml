@@ -72,19 +72,35 @@ models:
         description: "Número do membro da Família (coluna origem: id_membro_familia)"
       - name: numero_registro_arquivo
         description: "08 (coluna origem: numero_registro_arquivo)"
+      - name: meses_trabalhados_nos_ultimos_12
+        description: "Quantidade de meses trabalhados nos últimos 12 meses"
       - name: outras_fontes_original
+        description: "Valor recebido de outras fontes Campo numérico de 6 posições formato NNNNNN (sem casas decimais)"
+      - name: outras_fontes
         description: "Valor recebido de outras fontes Campo numérico de 6 posições formato NNNNNN (sem casas decimais)"
       - name: remuneracao_original
         description: "Valor de remuneração Campo numérico de 6 posições formato NNNNNN (sem casas decimais)"
+      - name: remuneracao
+        description: "Valor de remuneração Campo numérico de 6 posições formato NNNNNN (sem casas decimais)"
       - name: aposentadoria_original
+        description: "Valor recebido de aposentadoria Campo numérico de 6 posições formato NNNNNN (sem casas decimais)"
+      - name: aposentadoria
         description: "Valor recebido de aposentadoria Campo numérico de 6 posições formato NNNNNN (sem casas decimais)"
       - name: remuneracao_bruta_original
         description: "Valor de remuneração bruta Campo numérico de 6 posições formato NNNNNN (sem casas decimais)"
+      - name: remuneracao_bruta
+        description: "Valor de remuneração bruta Campo numérico de 6 posições formato NNNNNN (sem casas decimais)"
       - name: doacoes_original
+        description: "Valor recebido de doação Campo numérico de 6 posições formato NNNNNN (sem casas decimais)"
+      - name: doacoes
         description: "Valor recebido de doação Campo numérico de 6 posições formato NNNNNN (sem casas decimais)"
       - name: pensao_alimenticia_original
         description: "Valor recebido de pensão alimentícia Campo numérico de 6 posições formato NNNNNN (sem casas decimais)"
+      - name: pensao_alimenticia
+        description: "Valor recebido de pensão alimentícia Campo numérico de 6 posições formato NNNNNN (sem casas decimais)"
       - name: seguro_desemprego_original
+        description: "Valor recebido de seguro desemprego Campo numérico de 6 posições formato NNNNNN (sem casas decimais)"
+      - name: seguro_desemprego
         description: "Valor recebido de seguro desemprego Campo numérico de 6 posições formato NNNNNN (sem casas decimais)"
       - name: versao_layout
         description: "Sem descrição na origem."

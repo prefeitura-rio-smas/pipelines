@@ -96,6 +96,14 @@ models:
         description: "Número do membro da Família (coluna origem: id_membro_familia)"
       - name: numero_registro_arquivo
         description: "12 (coluna origem: numero_registro_arquivo)"
+      - name: dorme_albergue_vezes_semana
+        description: "Vezes por semana que dorme em albergue"
+      - name: dorme_domicilio_particular_vezes_semana
+        description: "Vezes por semana que dorme em domicílio particular"
+      - name: dorme_rua_vezes_semana
+        description: "Vezes por semana que dorme na rua"
+      - name: dorme_outro_vezes_semana
+        description: "Vezes por semana que dorme de outra forma"
       - name: versao_layout
         description: "Sem descrição na origem."
       - name: data_particao

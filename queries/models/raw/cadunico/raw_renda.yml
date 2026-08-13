@@ -58,24 +58,40 @@ models:
         description: "Data de integração referente ao campo VAL-REMUNER-EMPREGO-MEMB conforme data de processamento de arquivo de renda origem CNIS no formato DDMMAAAA"
       - name: renda_outras_rendas_original
         description: "Valor de remuneração Campo numérico de 2 posições formato NN (coluna origem: renda_outras_rendas_original)"
+      - name: renda_outras_rendas
+        description: "Valor de remuneração Campo numérico de 2 posições formato NN"
       - name: renda_emprego_ultimo_mes_original
         description: "Valor de remuneração Campo numérico de 2 posições formato NN (coluna origem: renda_emprego_ultimo_mes_original)"
+      - name: renda_emprego_ultimo_mes
+        description: "Valor de remuneração Campo numérico de 2 posições formato NN"
       - name: renda_aposentadoria_original
         description: "Valor de remuneração Campo numérico de 2 posições formato NN (coluna origem: renda_aposentadoria_original)"
+      - name: renda_aposentadoria
+        description: "Valor de remuneração Campo numérico de 2 posições formato NN"
       - name: renda_bruta_12_meses_original
         description: "Valor de remuneração Campo numérico de 2 posições formato NN O valor representado na faixa de renda é o conteúdo do campo 8.08 dividido por 12 0-0 1-1 até 109 2-110 até 218 3-219 até SM/2 4-SM/2 + 1 a (coluna origem: renda_bruta_12_meses_original)"
+      - name: renda_bruta_12_meses
+        description: "Valor de remuneração Campo numérico de 2 posições formato NN O valor representado na faixa de renda é o conteúdo do campo 8.08 dividido por 12 0-0 1-1 até 109 2-110 até 218 3-219 até SM/2 4-SM/2 + 1 a"
       - name: renda_doacao_original
         description: "Valor de remuneração Campo numérico de 2 posições formato NN (coluna origem: renda_doacao_original)"
+      - name: renda_doacao
+        description: "Valor de remuneração Campo numérico de 2 posições formato NN"
       - name: renda_pensao_alimenticia_original
         description: "Valor de remuneração Campo numérico de 2 posições formato NN (coluna origem: renda_pensao_alimenticia_original)"
+      - name: renda_pensao_alimenticia
+        description: "Valor de remuneração Campo numérico de 2 posições formato NN"
       - name: renda_seguro_desemprego_original
         description: "Valor de remuneração Campo numérico de 2 posições formato NN (coluna origem: renda_seguro_desemprego_original)"
+      - name: renda_seguro_desemprego
+        description: "Valor de remuneração Campo numérico de 2 posições formato NN"
       - name: nao_recebe_remuneracao
         description: "Não recebeu remuneração de trabalho: 0-Opção não marcada no formulário, 1-Opção marcada no formulário"
       - name: id_membro_familia
         description: "Número do membro da Família (coluna origem: id_membro_familia)"
       - name: numero_registro_arquivo
         description: "21 (coluna origem: numero_registro_arquivo)"
+      - name: meses_trabalhados_nos_ultimos_12
+        description: "Quantidade de meses trabalhados nos últimos 12 meses"
       - name: versao_layout
         description: "Sem descrição na origem."
       - name: data_particao

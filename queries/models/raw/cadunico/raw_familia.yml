@@ -78,19 +78,43 @@ models:
         description: "Código do estabelecimento EAS/MS"
       - name: numero_registro_arquivo
         description: "03 (coluna origem: numero_registro_arquivo)"
+      - name: familias_domicilio
+        description: "Quantidade de famílias residentes no domicílio"
+      - name: pessoas_internadas_0_17_anos
+        description: "Quantidade de pessoas internadas na faixa de 0 a 17 anos"
+      - name: pessoas_internadas_18_59_anos
+        description: "Quantidade de pessoas internadas na faixa de 18 a 59 anos"
+      - name: pessoas_internadas_mais_60_anos
+        description: "Quantidade de pessoas internadas com 60 anos ou mais"
+      - name: pessoas_domicilio
+        description: "Quantidade de pessoas residentes no domicílio"
       - name: despesa_agua_esgoto_original
+        description: "Valor de despesas com água Campo numérico de 5 posições formato NNNNN (não existem casas decimais)"
+      - name: despesa_agua_esgoto
         description: "Valor de despesas com água Campo numérico de 5 posições formato NNNNN (não existem casas decimais)"
       - name: despesa_alimentacao_original
         description: "Valor de despesas com alimentação Campo numérico de 5 posições formato NNNNN (não existem casas decimais)"
+      - name: despesa_alimentacao
+        description: "Valor de despesas com alimentação Campo numérico de 5 posições formato NNNNN (não existem casas decimais)"
       - name: despesa_aluguel_original
+        description: "Valor de despesas com aluguel Campo numérico de 5 posições formato NNNNN (não existem casas decimais)"
+      - name: despesa_aluguel
         description: "Valor de despesas com aluguel Campo numérico de 5 posições formato NNNNN (não existem casas decimais)"
       - name: despesa_energia_original
         description: "Valor de despesas com energia Campo numérico de 5 posições formato NNNNN (não existem casas decimais)"
+      - name: despesa_energia
+        description: "Valor de despesas com energia Campo numérico de 5 posições formato NNNNN (não existem casas decimais)"
       - name: despesa_gas_original
+        description: "Valor de despesas com gás Campo numérico de 5 posições formato NNNNN (não existem casas decimais)"
+      - name: despesa_gas
         description: "Valor de despesas com gás Campo numérico de 5 posições formato NNNNN (não existem casas decimais)"
       - name: despesa_medicamentos_original
         description: "Valor de despesas com medicamentos Campo numérico de 5 posições formato NNNNN (não existem casas decimais)"
+      - name: despesa_medicamentos
+        description: "Valor de despesas com medicamentos Campo numérico de 5 posições formato NNNNN (não existem casas decimais)"
       - name: despesa_transporte_original
+        description: "Valor de despesas com transportes Campo numérico de 5 posições formato NNNNN (não existem casas decimais)"
+      - name: despesa_transporte
         description: "Valor de despesas com transportes Campo numérico de 5 posições formato NNNNN (não existem casas decimais)"
       - name: versao_layout
         description: "Sem descrição na origem."

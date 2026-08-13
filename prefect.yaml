@@ -320,7 +320,7 @@ deployments:
           SIURB_PWD: "{{ $SIURB_PWD }}"
     tags: ["staging", "dbt"]
 
-  - name: dbt-transform-prod-daily
+  - name: dbt-transform-daily-prod
     entrypoint: pipelines/datalake/transform/dbt/flows.py:dbt_transform_flow
     parameters:
       select: "+tag:daily"
@@ -350,7 +350,7 @@ deployments:
   # ---------------------------------------------------------------------------
   # Transformação — dbt semanal 
   # ---------------------------------------------------------------------------
-  - name: dbt-transform-prod-weekly
+  - name: dbt-transform-weekly-prod
     entrypoint: pipelines/datalake/transform/dbt/flows.py:dbt_transform_flow
     parameters:
       select: "+tag:weekly"
@@ -365,5 +365,14 @@ deployments:
         env:
           PREFECT_API_URL: http://prefect-api:4200/api
           MODE: prod
+          PREFECT_EVENTS_ENABLED: "false"
+          PREFECT_SERVER_EVENTS_ENABLED: "false"
+          PREFECT_EVENTS_MESSAGING_ENABLED: "false"
+          PREFECT_SERVER_SERVICES_EVENT_PERSISTER_ENABLED: "false"
+          PREFECT_SERVER_SERVICES_EVENT_LOGGER_ENABLED: "false"
+          PREFECT_SERVER_EVENTS_STREAM_OUT_ENABLED: "false"
           GCP_CREDENTIALS: "{{ $GCP_CREDENTIALS }}"
-    tags: ["prod", "dbt", "cadunico", "weekly"]
+          SIURB_URL: "{{ $SIURB_URL }}"
+          SIURB_USER: "{{ $SIURB_USER }}"
+          SIURB_PWD: "{{ $SIURB_PWD }}"
+    tags: ["prod", "dbt", "weekly"]

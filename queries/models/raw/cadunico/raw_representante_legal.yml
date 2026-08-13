@@ -66,6 +66,8 @@ models:
         description: "DDD do telefone de contato 1 (coluna origem: contato_ddd_representante_legal)"
       - name: contato_ddd_2_representante_legal
         description: "DDD do telefone de contato 2 (coluna origem: contato_ddd_2_representante_legal)"
+      - name: numero_logradouro_representante_legal
+        description: "Número do logradouro do representante legal"
       - name: nis_representante_legal
         description: "NIS do Representante Legal (coluna origem: nis_representante_legal)"
       - name: numero_registro_arquivo

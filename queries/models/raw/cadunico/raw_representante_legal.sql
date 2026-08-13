@@ -32,6 +32,7 @@ with source as (
         cpf_representante_legal,
         contato_ddd_representante_legal,
         contato_ddd_2_representante_legal,
+        numero_logradouro_representante_legal,
         nis_representante_legal,
         numero_registro_arquivo,
         id_interno_representante_legal,
