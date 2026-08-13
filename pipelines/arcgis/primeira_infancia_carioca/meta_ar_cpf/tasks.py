@@ -50,10 +50,10 @@ def apply_arcgis_adds(item_id: str, layer_idx: int = 0):
     # 1. Garantir que crosswalk existe
     ensure_crosswalk_table()
 
-    # 2. Buscar pessoas novas (monitoradas, sem crosswalk)
+    # 2. Buscar pessoas novas (monitoradas na última partição, sem crosswalk)
     query = f"""
         SELECT dev.* FROM `{dev_table}` dev
-        WHERE dev.data_saida IS NULL
+        WHERE dev.data_particao = (SELECT MAX(data_particao) FROM `{dev_table}`)
           AND NOT EXISTS (
             SELECT 1 FROM `{cw_table}` cw
             WHERE cw.id_membro_familia = dev.id_membro_familia
@@ -79,7 +79,8 @@ def apply_arcgis_adds(item_id: str, layer_idx: int = 0):
         for col in row.index:
             value = row[col]
             # Tratar nulos e valores especiais (mesmo padrão do apply_arcgis_feedback)
-            if col.lower() == "objectid":
+            # Colunas internas do BQ que não existem no layer ArcGIS:
+            if col.lower() in ("objectid", "data_particao"):
                 continue
             # Converte date/datetime para string ISO (json.dumps não serializa date nativo)
             if hasattr(value, 'isoformat'):
@@ -158,14 +159,14 @@ def apply_arcgis_status_sync(item_id: str, layer_idx: int = 0):
     dev_table = f"{project}.{DATASET}.{DEV_TABLE_NAME}"
     cw_table = f"{project}.{DATASET}.{CW_TABLE_NAME}"
 
-    # 1. Buscar inativos (na crosswalk mas sem data_saida NULL na _dev)
+    # 1. Buscar inativos (na crosswalk mas sem registro na última partição da _dev)
     query = f"""
         SELECT cw.id_membro_familia, cw.objectid_arcgis
         FROM `{cw_table}` cw
         WHERE NOT EXISTS (
             SELECT 1 FROM `{dev_table}` dev
             WHERE dev.id_membro_familia = cw.id_membro_familia
-              AND dev.data_saida IS NULL
+              AND dev.data_particao = (SELECT MAX(data_particao) FROM `{dev_table}`)
         )
     """
     rows = client.query(query).to_dataframe()
