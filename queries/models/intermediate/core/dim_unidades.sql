@@ -51,20 +51,20 @@ final as (
         t.classe,
         t.descricao_classe,
         case
-            when t.nome_tipo is null then 'Não Informado'
-            when lower(t.nome_tipo) like 'albergue%' then 'Albergue'
-            when lower(t.nome_tipo) like 'central de recepção%' then 'Central de Recepção'
-            when lower(t.nome_tipo) like '%cras%' then 'CRAS'
-            when lower(t.nome_tipo) like '%creas%' then 'CREAS'
-            when lower(t.nome_tipo) like 'centro de ref.espec.popula%' then 'Centro POP'
-            when lower(t.nome_tipo) like 'complexo da urs%' then 'URS'
-            when lower(t.nome_tipo) like 'urs%' then 'URS'
-            when lower(t.nome_tipo) = 'república' then 'República'
-            when lower(t.nome_tipo) = 'moradia primeiro' then 'Lares Cariocas'
-            when lower(t.nome_tipo) = '%Unid.de Acolhi.Institucional Conveniadas%' then 'Conveniada'
-            when lower(t.nome_tipo) = 'Unid.de Acolhi.Inst.Conv.Pess.Deficiência- Adultos' then 'Conveniada'
-            else t.nome_tipo
-        end as tipo_unidade,
+            when nome_tipo is null then 'Não Informado'
+            when lower(nome_tipo) like 'albergue%' then 'Albergue'
+            when lower(nome_tipo) like 'central de recepção%' then 'Central de Recepção'
+            when lower(nome_tipo) like '%cras%' then 'CRAS'
+            when lower(nome_tipo) like '%creas%' then 'CREAS'
+            when lower(nome_tipo) like 'centro de ref.espec.popula%' then 'Centro POP'
+            when lower(nome_tipo) like 'complexo da urs%' then 'URS'
+            when lower(nome_tipo) like 'urs%' then 'URS'
+            when lower(nome_tipo) = 'república' then 'República'
+            when lower(nome_tipo) = 'moradia primeiro' then 'Lares Cariocas'
+            when lower(nome_tipo) like '%unid.de acolhi.institucional conveniadas%' then 'Conveniada'
+            when nome_tipo = 'Unid.de Acolhi.Inst.Conv.Pess.Deficiência- Adultos' then 'Conveniada'
+            else nome_tipo
+        end as tipo_unidade
         cap.total_vagas,
         cap.vagas_disponiveis,
         cap.vagas_bloqueadas,
