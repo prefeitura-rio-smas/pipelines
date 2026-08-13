@@ -10,17 +10,28 @@ from pipelines.arcgis.constants import settings
 
 # Padrão ISO de data pura (YYYY-MM-DD) — convertida para epoch ms
 # porque campos Date clássicos do ArcGIS rejeitam string (esperam timestamp).
+# Campos DateOnly aceitam string ISO e REJEITAM epoch ms — por isso a conversão
+# é seletiva por nome de coluna.
 _ISO_DATE_RE = re.compile(r'^\d{4}-\d{2}-\d{2}$')
 
+# Colunas da camada meta_acordo_resultados_cpf cujo tipo no ArcGIS é Date clássico
+# (esriFieldTypeDate). Somente estas recebem epoch ms.
+_DATE_CLASSIC_COLUMNS = {
+    'data_entrada',
+    'data_saida',
+    'nascimento_data',
+}
 
-def _to_arcgis_value(value):
+
+def _to_arcgis_value(col_name, value):
     """Converte valores para o formato aceito pelo applyEdits do ArcGIS.
-    Strings ISO YYYY-MM-DD → epoch ms (campos Date clássicos).
+    Campos Date clássicos (esriFieldTypeDate): string ISO YYYY-MM-DD → epoch ms.
+    Campos DateOnly (esriFieldTypeDateOnly): mantém string (rejeita epoch ms).
     """
     if value is None:
         return None
     s = str(value).strip()
-    if _ISO_DATE_RE.match(s):
+    if col_name in _DATE_CLASSIC_COLUMNS and _ISO_DATE_RE.match(s):
         try:
             dt = datetime.strptime(s, '%Y-%m-%d')
             return int(dt.timestamp() * 1000)
@@ -65,7 +76,7 @@ def apply_arcgis_feedback(
             if col.lower() == "objectid":
                 attributes["objectid"] = int(value)
             else:
-                attributes[col] = _to_arcgis_value(clean_value)
+                attributes[col] = _to_arcgis_value(col, clean_value)
         updates.append({"attributes": attributes})
 
     batch_size = 100
