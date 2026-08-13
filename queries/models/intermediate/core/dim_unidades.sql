@@ -64,7 +64,7 @@ final as (
             when lower(nome_tipo) like '%unid.de acolhi.institucional conveniadas%' then 'Conveniada'
             when nome_tipo = 'Unid.de Acolhi.Inst.Conv.Pess.Deficiência- Adultos' then 'Conveniada'
             else nome_tipo
-        end as tipo_unidade
+        end as tipo_unidade,
         cap.total_vagas,
         cap.vagas_disponiveis,
         cap.vagas_bloqueadas,
