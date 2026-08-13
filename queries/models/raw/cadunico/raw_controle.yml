@@ -1,0 +1,20 @@
+version: 2
+models:
+  - name: raw_controle
+    description: "Registro 00 - Controle de arquivos carregados (extração, posição do cadastro e versão do layout)."
+    tags: [weekly]
+    columns:
+      - name: id_versao_layout_arquivo
+        description: "FORMATO '99.99'"
+      - name: data_extracao_dados
+        description: "Data da extração no formato DDMMAAAA"
+      - name: data_posicao_cadastro
+        description: "Posição cadastral extraída no formato DDMMAAAA"
+      - name: nome_arquivo
+        description: "ESPELHO CADUNICO 7 MUNICIPAL"
+      - name: numero_registro_arquivo
+        description: "0 (coluna origem: numero_registro_arquivo)"
+      - name: versao_layout
+        description: "Sem descrição na origem."
+      - name: data_particao
+        description: "Sem descrição na origem."

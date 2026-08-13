@@ -1,0 +1,122 @@
+version: 2
+models:
+  - name: raw_familia
+    description: "Registro 03 - Características e despesas da família."
+    tags: [weekly]
+    columns:
+      - name: id_prefeitura
+        description: "Chave única de identificação da Família"
+      - name: id_cras_creas
+        description: "Código do CRAS/CREAS"
+      - name: id_comunidade_quilombola
+        description: "Código da comunidade quilombola, campo numérico de 4 posições no formato NNNN"
+      - name: id_familia_indigena
+        description: "Família indígena: 1-Sim, 2-Não"
+      - name: familia_indigena
+        description: "Família indígena: 1-Sim, 2-Não"
+      - name: id_familia
+        description: "Código Familiar"
+      - name: id_indigena_residente
+        description: "1-Sim 2-Não"
+      - name: indigena_residente
+        description: "1-Sim 2-Não"
+      - name: id_povo_indigena
+        description: "Código de povo indígena, campo numérico de 4 posições formato NNNN"
+      - name: id_reserva_indigena
+        description: "Código da reserva indígena, campo numérico de 4 posições no formato NNNN"
+      - name: data_risco_inseguranca_alimentar
+        description: "Data de integração referente ao campo IND-RISCO-SCL-INSEG-ALIM conforme data de processamento de arquivo"
+      - name: data_risco_violacao_direitos
+        description: "Data de integração referente ao campo IND-RISCO-SCL-VLCO-DRTS conforme data de processamento de arquivo"
+      - name: nao_sabe_comunidade_quilombola
+        description: "'Não sabe(comunidade quilombola da família)': 0-Opção não marcada no formulário, 1-Opção marcada no formulário"
+      - name: nao_tem_despesa_agua_esgoto
+        description: "Não tem despesa com água: 0-Opção não marcada no formulário, 1-Opção marcada no formulário"
+      - name: nao_tem_despesa_alimentacao
+        description: "Não tem despesa com alimentação: 0-Opção não marcada no formulário, 1-Opção marcada no formulário"
+      - name: nao_tem_despesa_aluguel
+        description: "Não tem despesa com aluguel: 0-Opção não marcada no formulário, 1-Opção marcada no formulário"
+      - name: nao_tem_despesa_energia
+        description: "Não tem despesa com energia: 0-Opção não marcada no formulário, 1-Opção marcada no formulário"
+      - name: nao_tem_despesa_gas
+        description: "Não tem despesa com gás: 0-Opção não marcada no formulário, 1-Opção marcada no formulário"
+      - name: nao_tem_despesa_medicamentos
+        description: "Não tem despesa com medicamento: 0-Opção não marcada no formulário, 1-Opção marcada no formulário"
+      - name: nao_tem_despesa_transporte
+        description: "Não tem despesa com transporte: 0-Opção não marcada no formulário, 1-Opção marcada no formulário"
+      - name: id_familia_quilombola
+        description: "Família quilombola: 1-Sim, 2-Não"
+      - name: familia_quilombola
+        description: "Família quilombola: 1-Sim, 2-Não"
+      - name: nao_tem_pessoas_internadas_0_17_anos
+        description: "Não tem pessoas internadas faixa 0-17 anos: 0-Opção não marcada no formulário, 1-Opção marcada no formulário"
+      - name: nao_tem_pessoas_internadas_18_59_anos
+        description: "Não tem pessoas internadas faixa 18-59 anos: 0-Opção não marcada no formulário, 1-Opção marcada no formulário"
+      - name: nao_tem_pessoas_internadas_mais_60_anos
+        description: "Não tem pessoas internadas faixa >= 60 anos: 0-Opção não marcada no formulário, 1-Opção marcada no formulário"
+      - name: nao_sabe_reserva_indigena
+        description: "'Não sabe(reserva indígena da família)': 0-Opção não marcada no formulário, 1-Opção marcada no formulário"
+      - name: id_risco_inseguranca_alimentar
+        description: "Indicador de família associada à risco de insegurança alimentar 1-SIM 2-NÃO"
+      - name: risco_inseguranca_alimentar
+        description: "Indicador de família associada à risco de insegurança alimentar 1-SIM 2-NÃO"
+      - name: id_risco_violacao_direitos
+        description: "Indicador de família associada à risco de violação de direitos 1-SIM 2-NÃO"
+      - name: risco_violacao_direitos
+        description: "Indicador de família associada à risco de violação de direitos 1-SIM 2-NÃO"
+      - name: cras_creas
+        description: "Nome do CRAS/CREAS"
+      - name: comunidade_quilombola
+        description: "Nome da comunidade quilombola"
+      - name: estabelecimento_saude
+        description: "Nome do estabelecimento EAS/MS"
+      - name: povo_indigena
+        description: "Nome do povo indígena"
+      - name: reserva_indigena
+        description: "Nome da reserva indígena"
+      - name: id_estabelecimento_saude
+        description: "Código do estabelecimento EAS/MS"
+      - name: numero_registro_arquivo
+        description: "03 (coluna origem: numero_registro_arquivo)"
+      - name: familias_domicilio
+        description: "Quantidade de famílias residentes no domicílio"
+      - name: pessoas_internadas_0_17_anos
+        description: "Quantidade de pessoas internadas na faixa de 0 a 17 anos"
+      - name: pessoas_internadas_18_59_anos
+        description: "Quantidade de pessoas internadas na faixa de 18 a 59 anos"
+      - name: pessoas_internadas_mais_60_anos
+        description: "Quantidade de pessoas internadas com 60 anos ou mais"
+      - name: pessoas_domicilio
+        description: "Quantidade de pessoas residentes no domicílio"
+      - name: despesa_agua_esgoto_original
+        description: "Valor de despesas com água Campo numérico de 5 posições formato NNNNN (não existem casas decimais)"
+      - name: despesa_agua_esgoto
+        description: "Valor de despesas com água Campo numérico de 5 posições formato NNNNN (não existem casas decimais)"
+      - name: despesa_alimentacao_original
+        description: "Valor de despesas com alimentação Campo numérico de 5 posições formato NNNNN (não existem casas decimais)"
+      - name: despesa_alimentacao
+        description: "Valor de despesas com alimentação Campo numérico de 5 posições formato NNNNN (não existem casas decimais)"
+      - name: despesa_aluguel_original
+        description: "Valor de despesas com aluguel Campo numérico de 5 posições formato NNNNN (não existem casas decimais)"
+      - name: despesa_aluguel
+        description: "Valor de despesas com aluguel Campo numérico de 5 posições formato NNNNN (não existem casas decimais)"
+      - name: despesa_energia_original
+        description: "Valor de despesas com energia Campo numérico de 5 posições formato NNNNN (não existem casas decimais)"
+      - name: despesa_energia
+        description: "Valor de despesas com energia Campo numérico de 5 posições formato NNNNN (não existem casas decimais)"
+      - name: despesa_gas_original
+        description: "Valor de despesas com gás Campo numérico de 5 posições formato NNNNN (não existem casas decimais)"
+      - name: despesa_gas
+        description: "Valor de despesas com gás Campo numérico de 5 posições formato NNNNN (não existem casas decimais)"
+      - name: despesa_medicamentos_original
+        description: "Valor de despesas com medicamentos Campo numérico de 5 posições formato NNNNN (não existem casas decimais)"
+      - name: despesa_medicamentos
+        description: "Valor de despesas com medicamentos Campo numérico de 5 posições formato NNNNN (não existem casas decimais)"
+      - name: despesa_transporte_original
+        description: "Valor de despesas com transportes Campo numérico de 5 posições formato NNNNN (não existem casas decimais)"
+      - name: despesa_transporte
+        description: "Valor de despesas com transportes Campo numérico de 5 posições formato NNNNN (não existem casas decimais)"
+      - name: versao_layout
+        description: "Sem descrição na origem."
+      - name: data_particao
+        description: "Sem descrição na origem."

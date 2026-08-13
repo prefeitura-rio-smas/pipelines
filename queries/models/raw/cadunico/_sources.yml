@@ -1,0 +1,54 @@
+version: 2
+
+sources:
+  - name: cadunico
+    description: "Dataset externo com os dados do Cadastro Único (CadÚnico) do município do Rio de Janeiro, layout versão 0628."
+    database: rj-smas
+    schema: protecao_social_cadunico
+    tables:
+      - name: condicao_rua
+        description: "Registro 12 - Condições e motivos de vivência na rua dos membros (população em situação de rua)."
+      - name: contato
+        description: "Registro 09 - Contatos da família (e-mail, telefones e autorização de envio de SMS)."
+      - name: controle
+        description: "Registro 00 - Controle de arquivos carregados (extração, posição do cadastro e versão do layout)."
+      - name: documento_membro
+        description: "Registro 14 - Pendências e auditoria de documentação dos membros (CPF, título de eleitor e certidões)."
+      - name: documento_pessoa
+        description: "Registro 05 - Documentação da pessoa (RG, CPF, certidão, carteira de trabalho e título de eleitor)."
+      - name: domicilio
+        description: "Registro 02 - Características do domicílio (água, esgoto, iluminação, material e saneamento)."
+      - name: escolaridade
+        description: "Registro 07 - Escolaridade e frequência escolar dos membros."
+      - name: exclusao_membro
+        description: "Registro 19 - Exclusões de membros da família."
+      - name: exclusao_servidor
+        description: "Registro 18 - Exclusões de famílias."
+      - name: familia
+        description: "Registro 03 - Características e despesas da família."
+      - name: habitacao
+        description: "Registro 15 - Situação de habitação (programa habitacional)."
+      - name: identificacao_controle
+        description: "Registro 01 - Identificação da família, endereço e dados de controle do cadastro."
+      - name: identificacao_membro
+        description: "Registro 17 - Identificação dos membros (nascimento, filiação e transferências)."
+      - name: identificacao_primeira_pessoa
+        description: "Registro 04 - Identificação da primeira pessoa (responsável) pela família."
+      - name: pessoa_deficiencia
+        description: "Registro 06 - Deficiências e tipos de ajuda recebida pela pessoa."
+      - name: prefeitura
+        description: "Registro 98 - Cadastro das prefeituras participantes."
+      - name: registros
+        description: "Registro 99 - Marcadores de controle de arquivos por versão do layout."
+      - name: renda
+        description: "Registro 21 - Rendas e remunerações dos membros."
+      - name: representante_legal
+        description: "Registro 20 - Representantes legais dos membros."
+      - name: seguranca_alimentar
+        description: "Registro 11 - Segurança alimentar e programas sociais (energia, Sesan e SNAS)."
+      - name: status_familia
+        description: "Registro 13 - Status e pendências da família."
+      - name: trabalho_remuneracao
+        description: "Registro 08 - Trabalho e remuneração dos membros."
+      - name: transferencia_familia
+        description: "Registro 16 - Transferências de famílias entre municípios."

@@ -1,0 +1,66 @@
+version: 2
+models:
+  - name: raw_documento_pessoa
+    description: "Registro 05 - Documentação da pessoa (RG, CPF, certidão, carteira de trabalho e título de eleitor)."
+    tags: [weekly]
+    columns:
+      - name: id_prefeitura
+        description: "Chave única de identificação da Família"
+      - name: id_cartorio_certidao
+        description: "Código do cartório da certidão"
+      - name: id_certidao_civil
+        description: "Tipo de Certidão: 1-Nascimento, 2-Casamento, 3 – RANI, 4 – Óbito OBS: A regra de prevalência do tipo de certidão enviado neste arquivo é a mesma da exibição do campo no On-Line"
+      - name: certidao_civil
+        description: "Tipo de Certidão: 1-Nascimento, 2-Casamento, 3 – RANI, 4 – Óbito OBS: A regra de prevalência do tipo de certidão enviado neste arquivo é a mesma da exibição do campo no On-Line"
+      - name: id_complemento_rg
+        description: "Complemento do número da CI da Pessoa"
+      - name: id_familia
+        description: "Código Familiar"
+      - name: folha_certidao
+        description: "Folha da certidão"
+      - name: id_municipio_certidao
+        description: "Código IBGE do município da certidão"
+      - name: livro_certidao_obito_excluido
+        description: "Livro da certidão"
+      - name: id_termi_matricula_certidao
+        description: "Número do Termo / Matrícula.da Certidão (coluna origem: id_termi_matricula_certidao)"
+      - name: data_emissao_carteira_trabalho
+        description: "Data de emissão da CTPS da Pessoa, formato DDMMAAAA"
+      - name: data_emissao_certidao
+        description: "Data de emissão da da certidão formato DDMMAAAA"
+      - name: data_emissao_rg
+        description: "Data de emissão da CI da Pessoa, formato DDMMAAAA"
+      - name: cartorio_certidao
+        description: "Nome do cartório da certidão"
+      - name: municipio_certidao
+        description: "Nome do município da certidão"
+      - name: id_carteira_trabalho
+        description: "Número da CTPS da Pessoa"
+      - name: cpf
+        description: "CPF da Pessoa, formato NNNNNNNNNNN"
+      - name: rg
+        description: "Número da CI da Pessoa"
+      - name: id_membro_familia
+        description: "Número do membro da Família (coluna origem: id_membro_familia)"
+      - name: numero_registro_arquivo
+        description: "05 (coluna origem: numero_registro_arquivo)"
+      - name: id_secao_titulo_eleitor
+        description: "Seção do Título de Eleitor da Pessoa"
+      - name: id_serie_carteira_trabalho
+        description: "Série da CTPS da Pessoa"
+      - name: id_titulo_eleitor
+        description: "Número do Título de Eleitor da Pessoa"
+      - name: id_zona_titulo_eleitor
+        description: "Zona do Título de Eleitor da Pessoa"
+      - name: orgao_emissor_rg
+        description: "Órgão Emissor da CI da Pessoa"
+      - name: sigla_uf_carteira_trabalho
+        description: "UF da CTPS da Pessoa"
+      - name: sigla_uf_certidao
+        description: "UF da Certidão"
+      - name: sigla_uf_rg
+        description: "UF da CI da Pessoa"
+      - name: versao_layout
+        description: "Sem descrição na origem."
+      - name: data_particao
+        description: "Sem descrição na origem."

@@ -1,0 +1,56 @@
+version: 2
+models:
+  - name: raw_exclusao_membro
+    description: "Registro 19 - Exclusões de membros da família."
+    tags: [weekly]
+    columns:
+      - name: id_prefeitura_membro_excluido
+        description: "Chave única de identificação da Prefeitura da família a qual o membro excluído pertence (coluna origem: id_prefeitura_membro_excluido)"
+      - name: id_familia_membro_excluido
+        description: "Código Familiar único de identificação da Família na qual o membro excluído pertence (coluna origem: id_familia_membro_excluido)"
+      - name: folha_ceritao_obito_excluido
+        description: "Folha da certidão de óbito da pessoa excluída (coluna origem: folha_ceritao_obito_excluido)"
+      - name: id_municipio_certidao_obito_excluido
+        description: "Código IBGE do município da certidão de óbito da pessoa excluída (coluna origem: id_municipio_certidao_obito_excluido)"
+      - name: livro_certidao_obito_excluido
+        description: "Livro da certidão de óbito da pessoa excluída (coluna origem: livro_certidao_obito_excluido)"
+      - name: numero_termo_matricula_certidao_excluido
+        description: "Número do Termo / Matrícula da Certidão. (coluna origem: numero_termo_matricula_certidao_excluido)"
+      - name: cpf_operador_exclusao_membro
+        description: "CPF do Operador que realizou a exclusão da pessoa Caso a exclusão tenha sido efetuada pelo sistema este campo apresentará o conteúdo “99999999999”. (coluna origem: cpf_operador_exclusao_membro)"
+      - name: cpf_servidor_parecer_gestao_municipal_cadunico_membro
+        description: "CPF do Servidor Público do Parecer da Gestão Municipal do Cadastro Único do Membro Excluído (coluna origem: cpf_servidor_parecer_gestao_municipal_cadunico_membro)"
+      - name: data_emissao_parecer_gestao_municipal_cadunico_membro
+        description: "Data da Emissão do Parecer da Gestão Municipal do Cadastro Único do Membro Excluído (coluna origem: data_emissao_parecer_gestao_municipal_cadunico_membro)"
+      - name: data_exclusao_membro
+        description: "Data da exclusão da família, no formato dd/mm/aaaa (coluna origem: data_exclusao_membro)"
+      - name: descricao_cotivo_exclusao
+        description: "Descrição do complemento do Motivo de Exclusão da pessoa (coluna origem: descricao_cotivo_exclusao)"
+      - name: data_emissao_certidao_obito_excluido
+        description: "Data de emissão da da certidão de óbito da pessoa excluída, formato DDMMAAAA (coluna origem: data_emissao_certidao_obito_excluido)"
+      - name: id_motivo_exclusao_membro
+        description: "Código identificador do motivo de exclusão da pessoa Podendo ser: 01-Falecimento da pessoa 02-Desligamento da pessoa da Família em que está cadastrada 03-Solicitação da pessoa 04-Decisão judicial 05-D (coluna origem: id_motivo_exclusao_membro)"
+      - name: motivo_exclusao_membro
+        description: "Código identificador do motivo de exclusão da pessoa Podendo ser: 01-Falecimento da pessoa 02-Desligamento da pessoa da Família em que está cadastrada 03-Solicitação da pessoa 04-Decisão judicial 05-D (coluna origem: motivo_exclusao_membro)"
+      - name: id_municipio_parecer_gestao_municipal_cadunico_membro
+        description: "Código IBGE do Município do Parecer da Gestão Municipal do Cadastro Único do Membro Excluído (coluna origem: id_municipio_parecer_gestao_municipal_cadunico_membro)"
+      - name: cartorio_certidao_obito_excluido
+        description: "Nome do cartório da certidão de óbito da pessoa excluída (coluna origem: cartorio_certidao_obito_excluido)"
+      - name: municipio_certidao_obito_excluido
+        description: "Nome do município da certidão de óbito da pessoa excluída (coluna origem: municipio_certidao_obito_excluido)"
+      - name: servidor_parecer_gestao_municipal_cadunico_membro
+        description: "Nome do Servidor Público do Parecer da Gestão Municipal do Cadastro Único do Membro Excluído (coluna origem: servidor_parecer_gestao_municipal_cadunico_membro)"
+      - name: id_membro_excluido
+        description: "Número do membro da Família excluído (coluna origem: id_membro_excluido)"
+      - name: numero_parecer_gestao_municipal_cadunico_membro
+        description: "Número do Parecer da Gestão Municipal do Cadastro Único do Membro Excluído (coluna origem: numero_parecer_gestao_municipal_cadunico_membro)"
+      - name: numero_registro_arquivo
+        description: "19 (coluna origem: numero_registro_arquivo)"
+      - name: sigla_uf_certidao_obito_excluido
+        description: "UF da Certidão de óbito da pessoa excluída (coluna origem: sigla_uf_certidao_obito_excluido)"
+      - name: sigla_uf_parecer_gestao_municipal_cadunico_membro
+        description: "UF do Parecer da Gestão Municipal do Cadastro Único do Membro Excluído (coluna origem: sigla_uf_parecer_gestao_municipal_cadunico_membro)"
+      - name: versao_layout
+        description: "Sem descrição na origem."
+      - name: data_particao
+        description: "Sem descrição na origem."

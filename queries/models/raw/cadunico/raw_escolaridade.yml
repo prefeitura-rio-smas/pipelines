@@ -1,0 +1,62 @@
+version: 2
+models:
+  - name: raw_escolaridade
+    description: "Registro 07 - Escolaridade e frequência escolar dos membros."
+    tags: [weekly]
+    columns:
+      - name: id_prefeitura
+        description: "Chave única de identificação da Família"
+      - name: id_ano_serie_frequenta
+        description: "Ano e série que a pessoa frequenta: campo numérico de 2 posições variando de 1 a 10, dependendo da opção marcada no formulário"
+      - name: ano_serie_frequenta
+        description: "Ano e série que a pessoa frequenta: campo numérico de 2 posições variando de 1 a 10, dependendo da opção marcada no formulário"
+      - name: id_ultimo_ano_serie_frequentou
+        description: "Último ano e série frequentado pela pessoa: campo numérico de 2 posições variando de 1 a 10, dependendo da opção marcada no formulário"
+      - name: ultimo_ano_serie_frequentou
+        description: "Último ano e série frequentado pela pessoa: campo numérico de 2 posições variando de 1 a 10, dependendo da opção marcada no formulário"
+      - name: id_inep_escola
+        description: "Código INEP da escola da pessoa, campo numérico de 8 posições, formato NNNNNNNN"
+      - name: id_concluiu_curso_frequentado
+        description: "A pessoa concluiu o curso frequentado: 1-Sim, 2-Não"
+      - name: id_curso_frequenta
+        description: "Curso que a pessoa frequenta: campo numérico de 2 posições variando de 1 a 14, dependendo da opção marcada no formulário"
+      - name: curso_frequenta
+        description: "Curso que a pessoa frequenta: campo numérico de 2 posições variando de 1 a 14, dependendo da opção marcada no formulário"
+      - name: id_curso_mais_elevado_frequentou
+        description: "Curso mais elevado que a pessoa frequentou: campo numérico de 2 posições variando de 1 a 15, dependendo da opção marcada no formulário"
+      - name: curso_mais_elevado_frequentou
+        description: "Curso mais elevado que a pessoa frequentou: campo numérico de 2 posições variando de 1 a 15, dependendo da opção marcada no formulário"
+      - name: id_escola_localizada_municipio
+        description: "Escola localizada no município: 1-Sim, 2-Não"
+      - name: id_familia
+        description: "Código Familiar"
+      - name: id_municipio_escola
+        description: "Código do IBGE do Município da escola da pessoa"
+      - name: id_origem_dados_escolaridade
+        description: "1 – Origem Autodeclarado,2 – Origem Presença"
+      - name: origem_dados_escolaridade
+        description: "1 – Origem Autodeclarado,2 – Origem Presença"
+      - name: id_sabe_ler_escrever
+        description: "Pessoa sabe ler e escrever: 1-Sim, 2-Não"
+      - name: sabe_ler_escrever
+        description: "Pessoa sabe ler e escrever: 1-Sim, 2-Não"
+      - name: data_integracao_escolaridade_membro
+        description: "Data de integração com o sistema Presença"
+      - name: escola_nao_tem_inep
+        description: "A escola não tem INEP: 1-Opção não marcada no formulário, 2-Opção marcada no formulário (Aceita Nulo = Sim)"
+      - name: frequenta_escola
+        description: "Pessoa frequenta escola: campo numérico de 1 posição variando de 1 a 4, dependendo da opção marcada no formulário"
+      - name: escola
+        description: "Nome da escola da pessoa"
+      - name: municipio_escola
+        description: "Nome do Município da Escola da Pessoa"
+      - name: id_membro_familia
+        description: "Número do membro da Família (coluna origem: id_membro_familia)"
+      - name: numero_registro_arquivo
+        description: "07 (coluna origem: numero_registro_arquivo)"
+      - name: sigla_uf_escola
+        description: "UF da Escola da Pessoa (coluna origem: sigla_uf_escola)"
+      - name: versao_layout
+        description: "Sem descrição na origem."
+      - name: data_particao
+        description: "Sem descrição na origem."

@@ -1,0 +1,82 @@
+version: 2
+models:
+  - name: raw_identificacao_membro
+    description: "Registro 17 - Identificação dos membros (nascimento, filiação e transferências)."
+    tags: [weekly]
+    columns:
+      - name: id_prefeitura_origem
+        description: "Chave única de identificação da Prefeitura de origem antes da transferência"
+      - name: id_certidao_registrada_cartorio
+        description: "Pessoa registrada em cartório: campo numérico de 1 posição variando de 1 a 4, dependendo da opção marcada no formulário"
+      - name: certidao_registrada_cartorio
+        description: "Pessoa registrada em cartório: campo numérico de 1 posição variando de 1 a 4, dependendo da opção marcada no formulário"
+      - name: id_familia_destino_transferencia
+        description: "CÓDIGO DA FAMÍLIA DE DESTINO"
+      - name: id_prefeitura_destino_transferencia
+        description: "CÓDIGO DA PREFEITURA DE DESTINO"
+      - name: id_estado_cadastro_transferencia_membro
+        description: "Estado cadastral da pessoa: 1- EM CADASTRAMENTO 2- SEM REGISTRO CIVIL 3- CADASTRADO 4- EXCLUIDO 5- AGUARDANDO ATRIBUIÇÃO NIS 6- AGUARDANDO ALTERAÇÃO DE CARACTERIZAÇÃO"
+      - name: estado_cadastro_transferencia_membro
+        description: "Estado cadastral da pessoa: 1- EM CADASTRAMENTO 2- SEM REGISTRO CIVIL 3- CADASTRADO 4- EXCLUIDO 5- AGUARDANDO ATRIBUIÇÃO NIS 6- AGUARDANDO ALTERAÇÃO DE CARACTERIZAÇÃO"
+      - name: id_familia_origem
+        description: "Código Familiar único de identificação da Família de origem antes da transferência"
+      - name: id_municipio_nascimento
+        description: "Código IBGE do Município de nascimento da Pessoa"
+      - name: id_pais_nascimento
+        description: "Código do País de nascimento da Pessoa Campo numérico de 4 posições formato NNNN"
+      - name: id_raca_cor
+        description: "Cor ou raça: campo numérico de 1 posição variando de 1 a 5, 1-Branca 2 – Preta 3 – Amarela 4 – Parda 5 – Indígena dependendo da opção marcada no formulário"
+      - name: raca_cor
+        description: "Cor ou raça: campo numérico de 1 posição variando de 1 a 5, 1-Branca 2 – Preta 3 – Amarela 4 – Parda 5 – Indígena dependendo da opção marcada no formulário"
+      - name: id_sexo
+        description: "Sexo: 1 – Masculino, 2 – Feminino"
+      - name: sexo
+        description: "Sexo: 1 – Masculino, 2 – Feminino"
+      - name: data_nascimento
+        description: "Data de nascimento da pessoa no formato DDMMAAAA"
+      - name: data_transferencia_membro
+        description: "Data de TRANSFERÊNCIA da Pessoa no CadÚnico formato DDMMAAAA"
+      - name: filiacao_1_nome_completo_mae_membt
+        description: "Filiacao 1 ou Nome da mãe (coluna origem: filiacao_1_nome_completo_mae_membt)"
+      - name: filiacao_2
+        description: "Filiacao 2"
+      - name: id_filiacao_1_nom_completo_mae_membt
+        description: "Não sabe nome da mãe: 0 – Opção não marcada no formulário, 1 – Opção marcada no formulário (coluna origem: id_filiacao_1_nom_completo_mae_membt)"
+      - name: filiacao_1_nom_completo_mae_membt
+        description: "Não sabe nome da mãe: 0 – Opção não marcada no formulário, 1 – Opção marcada no formulário (coluna origem: filiacao_1_nom_completo_mae_membt)"
+      - name: id_filiacao_2
+        description: "Não sabe: 0 – Opção não marcada no formulário, 1 – Opção marcada no formulário"
+      - name: sabe_municipio_nascimento
+        description: "Sabe o município de nascimento da pessoa: 1-Opção não marcada no formulário, 2-Opção marcada no formulário (Aceita Nulo = Sim)."
+      - name: nao_sabe_nome_mae
+        description: "Não sabe nome da mãe: 0 – Opção não marcada no formulário, 1 – Opção marcada no formulário"
+      - name: nao_sabe_nome_pai
+        description: "Não sabe nome do pai: 0 – Opção não marcada no formulário, 1 – Opção marcada no formulário"
+      - name: nao_sabe_pais_nascimento
+        description: "Não sabe o País de nascimento da pessoa: 0 – Opção não marcada no formulário, 1 – Opção marcada no formulário"
+      - name: sabe_sigla_uf_nascimento
+        description: "Sabe a UF de nascimento da pessoa: 1-Opção não marcada no formulário, 2-Opção marcada no formulário (Aceita Nulo = Sim)"
+      - name: apelido
+        description: "Apelido da pessoa"
+      - name: nome_mae
+        description: "Nome da mãe"
+      - name: nome_pai
+        description: "Nome do pai"
+      - name: municipio_nascimento
+        description: "Nome do Município de nascimento da Pessoa"
+      - name: nome
+        description: "Nome da pessoa"
+      - name: pais_nascimento
+        description: "Nome do país de nascimento da Pessoa"
+      - name: id_membro_familia
+        description: "Número do membro da Família (coluna origem: id_membro_familia)"
+      - name: nis
+        description: "NIS da pessoa, campo numérico de 11 posições formato NNNNNNNNNNN"
+      - name: numero_registro_arquivo
+        description: "17 (coluna origem: numero_registro_arquivo)"
+      - name: sigla_uf_nascimento
+        description: "UF de nascimento da Pessoa (coluna origem: sigla_uf_nascimento)"
+      - name: versao_layout
+        description: "Sem descrição na origem."
+      - name: data_particao
+        description: "Sem descrição na origem."

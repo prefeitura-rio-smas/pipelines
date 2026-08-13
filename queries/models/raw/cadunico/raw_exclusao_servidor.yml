@@ -1,0 +1,38 @@
+version: 2
+models:
+  - name: raw_exclusao_servidor
+    description: "Registro 18 - Exclusões de famílias."
+    tags: [weekly]
+    columns:
+      - name: id_prefeitura_exclusao
+        description: "Chave única de identificação da Prefeitura da família excluída (coluna origem: id_prefeitura_exclusao)"
+      - name: id_familia_exclusao
+        description: "Código Familiar único de identificação da Família excluída (coluna origem: id_familia_exclusao)"
+      - name: cpf_operador_exclusao
+        description: "CPF do Operador que realizou a exclusão da família Caso a exclusão tenha sido efetuada pelo sistema este campo apresentará o conteúdo “99999999999” (coluna origem: cpf_operador_exclusao)"
+      - name: cpf_servidor_parecer_gestao_municipal_cadunico
+        description: "CPF do Servidor Público do Parecer da Gestão Municipal do Cadastro Único (coluna origem: cpf_servidor_parecer_gestao_municipal_cadunico)"
+      - name: data_emissao_parecer_gestao_municipal_cadunico
+        description: "Data da Emissão do Parecer da Gestão Municipal do Cadastro Único (coluna origem: data_emissao_parecer_gestao_municipal_cadunico)"
+      - name: data_exclusao
+        description: "Data da exclusão da família, no formato dd/mm/aaaa"
+      - name: descricao_cotivo_exclusao
+        description: "Descrição do complemento do Motivo de Exclusão (coluna origem: descricao_cotivo_exclusao)"
+      - name: id_motivo_exclusao
+        description: "Código identificador do motivo de exclusão da família Podendo ser: 01-Falecimento de toda a família 02-Recusa da família em prestar informações 03-Omissão ou prestação de informações inverídicas pela "
+      - name: motivo_exclusao
+        description: "Código identificador do motivo de exclusão da família Podendo ser: 01-Falecimento de toda a família 02-Recusa da família em prestar informações 03-Omissão ou prestação de informações inverídicas pela "
+      - name: id_municipio_parecer_gestao_municipal_cadunico
+        description: "Código IBGE do Município do Parecer da Gestão Municipal do Cadastro Único (coluna origem: id_municipio_parecer_gestao_municipal_cadunico)"
+      - name: servidor_parecer_gestao_municipal_cadunico
+        description: "Nome do Servidor Público do Parecer da Gestão Municipal do Cadastro Único (coluna origem: servidor_parecer_gestao_municipal_cadunico)"
+      - name: numero_parecer_gestao_municipal_cadunico
+        description: "Número do Parecer da Gestão Municipal do Cadastro Único (coluna origem: numero_parecer_gestao_municipal_cadunico)"
+      - name: numero_registro_arquivo
+        description: "18 (coluna origem: numero_registro_arquivo)"
+      - name: sigla_uf_parecer_gestao_municipal_cadunico
+        description: "UF do Parecer da Gestão Municipal do Cadastro Único (coluna origem: sigla_uf_parecer_gestao_municipal_cadunico)"
+      - name: versao_layout
+        description: "Sem descrição na origem."
+      - name: data_particao
+        description: "Sem descrição na origem."

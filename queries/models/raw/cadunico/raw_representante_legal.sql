@@ -1,0 +1,52 @@
+-- Camada Raw: representante_legal
+with source as (
+    select
+        id_prefeitura_representante_legal,
+        id_representante_legal,
+        id_familia_representante_legal,
+        id_minicipio_nascimento_representante_legal,
+        id_pais_nascimento_representante_legal,
+        id_sexo_representante_legal,
+        sexo_representante_legal,
+        descricao_complemento_logradouro_representante_legal,
+        descricao_representacao_legal,
+        data_cadastro_representante_legal,
+        data_nascimento_representante_legal,
+        email_representante_legal,
+        id_obito_acatado_representante_legal,
+        obito_acatado_representante_legal,
+        id_obito_representante_legal,
+        obito_representante_legal,
+        nao_sabe_nome_mae_representante_legal,
+        nao_sabe_nome_pai_representante_legal,
+        mae_representante_legal,
+        pai_representante_legal,
+        representante_legal,
+        bairro_representante_legal,
+        logradouro_representante_legal,
+        municipio_nascimento_representante_legal,
+        municipio_representante_legal,
+        pais_nascimento_representante_legal,
+        tipo_logradouro_representante_legal,
+        cep_representante_legal,
+        cpf_representante_legal,
+        contato_ddd_representante_legal,
+        contato_ddd_2_representante_legal,
+        numero_logradouro_representante_legal,
+        nis_representante_legal,
+        numero_registro_arquivo,
+        id_interno_representante_legal,
+        contato_telefone_representante_legal,
+        contato_telefone_2_representante_legal,
+        id_municipio_representante_legal,
+        sigla_uf_nascimento_representante_legal,
+        sigla_uf_representante_legal,
+        id_tipo_representacao_legal,
+        tipo_representacao_legal,
+        versao_layout,
+        data_particao
+    from {{ source('cadunico', 'representante_legal') }}
+    where {{ filtro_particao_cadunico() }}
+)
+
+select * from source

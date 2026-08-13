@@ -9,7 +9,11 @@ models:
     raw:
       +materialized: view
       +schema: "{{ 'raw' if target.name == 'prod' else 'gerenciamento__dbt' }}"
-    
+
+      cadunico:
+        +materialized: table
+        +tags: ["weekly"]
+
     intermediate:
       +materialized: ephemeral
       core:

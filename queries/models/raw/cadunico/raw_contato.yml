@@ -1,0 +1,50 @@
+version: 2
+models:
+  - name: raw_contato
+    description: "Registro 09 - Contatos da família (e-mail, telefones e autorização de envio de SMS)."
+    tags: [weekly]
+    columns:
+      - name: id_prefeitura
+        description: "Chave única de identificação da Família"
+      - name: id_familia
+        description: "Código Familiar"
+      - name: cpf_operador_responsavel
+        description: "CPF do operador que carregou os arquivos"
+      - name: data_arquivos_carregados
+        description: "Data de carregamento do arquivo no formato DDMMAAAA"
+      - name: email
+        description: "E-mail de contato da família Caso o campo “IC-TIPO-EMAIL” seja preenchido com os valores “N-NÃO TEM” ou “D-NÃO DECLARADO”deverá ser preenchido com: 0@0.aa"
+      - name: arquivos_carregados
+        description: "1 quando houver arquivos carregados para a família e 2 quando não houver"
+      - name: autoriza_envio_email
+        description: "Indicador de autorização de envio de e-mail S-Sim N-Não Caso este campo esteja nulo deverá ficar em branco Caso o campo “IC-TIPO-EMAIL” esteja marcado com os valores “N-Não Tem” ou “D-Não Declarado” e"
+      - name: contato_envio_sms
+        description: "1º envio SMS do telefone de contato da família (coluna origem: contato_envio_sms)"
+      - name: contato_2_envio_sms
+        description: "2º envio SMS do telefone de contato da família (coluna origem: contato_2_envio_sms)"
+      - name: id_contato_tipo
+        description: "1º tipo de telefone de contato da família L– Celular C– Trabalho R– Residencial O-Recado S – Sem coleta de dados (família não alterada/atualizada após a obrigatoriedade do campo “Telefone”)"
+      - name: contato_tipo
+        description: "1º tipo de telefone de contato da família L– Celular C– Trabalho R– Residencial O-Recado S – Sem coleta de dados (família não alterada/atualizada após a obrigatoriedade do campo “Telefone”)"
+      - name: id_contato_2_tipo
+        description: "2º tipo de telefone de contato da família L– Celular C– Trabalho R– Residencial O-Recado N- Não tem D- Não declarado S – Sem coleta de dados (família não alterada/atualizada após a obrigatoriedade do "
+      - name: contato_2_tipo
+        description: "2º tipo de telefone de contato da família L– Celular C– Trabalho R– Residencial O-Recado N- Não tem D- Não declarado S – Sem coleta de dados (família não alterada/atualizada após a obrigatoriedade do "
+      - name: id_email_tipo
+        description: "Indicador do tipo de e-mail da família, sendo: P-E-mail Pessoal R- E-Mail de Recado N- Não tem D- Não declarado S – Sem coleta de dados (família não alterada/atualizada após a criação do campo “E-mail"
+      - name: email_tipo
+        description: "Indicador do tipo de e-mail da família, sendo: P-E-mail Pessoal R- E-Mail de Recado N- Não tem D- Não declarado S – Sem coleta de dados (família não alterada/atualizada após a criação do campo “E-mail"
+      - name: contato_ddd
+        description: "1º DDD do telefone de contato da família (coluna origem: contato_ddd)"
+      - name: contato_2_ddd
+        description: "2º DDD do telefone de contato da família (coluna origem: contato_2_ddd)"
+      - name: numero_registro_arquivo
+        description: "09 (coluna origem: numero_registro_arquivo)"
+      - name: contato_telefone
+        description: "1º telefone de contato da família (coluna origem: contato_telefone)"
+      - name: contato_2_telefone
+        description: "2º telefone de contato da família (coluna origem: contato_2_telefone)"
+      - name: versao_layout
+        description: "Sem descrição na origem."
+      - name: data_particao
+        description: "Sem descrição na origem."
