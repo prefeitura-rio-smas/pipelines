@@ -2,6 +2,20 @@
 
 Bem-vindo! Este guia vai te ajudar a configurar seu ambiente de desenvolvimento para rodar as pipelines e modelos dbt do projeto **rj-smas**.
 
+## ⚡ Opção rápida: GitHub Codespaces
+
+Abra o repositório no GitHub em **Code → Codespaces**: o ambiente é configurado automaticamente (uv sync + dbt deps). O único passo manual é autenticar:
+
+```bash
+gcloud auth application-default login --project rj-smas-dev
+```
+
+Valide com `dbt debug --project-dir queries --profiles-dir queries` — deve retornar **"All checks passed!"**.
+
+---
+
+*O restante deste guia descreve o fluxo manual (instalação local de uv, gcloud e configuração do editor).*
+
 ## 🛠️ 1. Configuração do Ambiente (Modo Simples com `uv`)
 
 Para garantir que todos usem as mesmas versões de Python e dbt sem conflitos, usamos o **[uv](https://docs.astral.sh/uv/)**. 
