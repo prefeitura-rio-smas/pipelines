@@ -1,0 +1,63 @@
+name: CI - Security
+
+on:
+  pull_request:
+  push:
+    branches:
+      - main
+      - 'staging/**'
+
+concurrency:
+  group: ci-security-${{ github.ref }}
+  cancel-in-progress: true
+
+permissions:
+  contents: read
+
+env:
+  PYTHON_VERSION: '3.13'
+
+jobs:
+  gitleaks:
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Scan for secrets with Gitleaks
+        run: |
+          docker run --rm -v "$PWD:/repo" -w /repo gitleaks/gitleaks:v8.21.2 detect \
+            --source . --no-banner --redact
+
+  audit:
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Install uv
+        uses: astral-sh/setup-uv@v3
+        with:
+          version: '0.4.15'
+
+      - name: Set up Python
+        run: uv python install ${{ env.PYTHON_VERSION }}
+
+      - name: Audit dependencies
+        run: |
+          uv lock --quiet
+          uv export --frozen --no-hashes -o requirements.txt
+          uv run --with pip-audit pip-audit -r requirements.txt
+
+  hadolint:
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Lint Dockerfile
+        uses: hadolint/hadolint-action@v3.1.0
+        with:
+          dockerfile: Dockerfile

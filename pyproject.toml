@@ -28,6 +28,8 @@ dev = [
     "ruff>=0.1.0",
     "pytest>=7.0.0",
     "black>=23.0.0",
+    "sqlfluff>=3.0.0",
+    "sqlfluff-templater-dbt>=3.0.0",
 ]
 
 [tool.setuptools.packages.find]

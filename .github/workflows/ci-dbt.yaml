@@ -1,0 +1,49 @@
+name: CI - DBT
+
+on:
+  pull_request:
+    paths:
+      - 'queries/**'
+      - 'pyproject.toml'
+
+concurrency:
+  group: ci-dbt-${{ github.ref }}
+  cancel-in-progress: true
+
+permissions:
+  contents: read
+
+env:
+  PYTHON_VERSION: '3.13'
+
+jobs:
+  smoke-dbt:
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    env:
+      DBT_PROFILES_DIR: queries
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Install uv
+        uses: astral-sh/setup-uv@v3
+        with:
+          version: '0.4.15'
+
+      - name: Set up Python
+        run: uv python install ${{ env.PYTHON_VERSION }}
+
+      - name: Install dependencies (incluindo dbt)
+        run: uv sync
+
+      - name: Cache dbt packages
+        uses: actions/cache@v4
+        with:
+          path: queries/dbt_packages
+          key: ${{ runner.os }}-dbt-${{ hashFiles('queries/packages.yml') }}
+
+      - name: DBT Deps
+        run: uv run dbt deps --project-dir queries --profiles-dir queries
+
+      - name: DBT Parse
+        run: uv run dbt parse --project-dir queries --profiles-dir queries --target ci
