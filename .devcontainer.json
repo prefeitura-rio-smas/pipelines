@@ -6,8 +6,8 @@
   "image": "mcr.microsoft.com/devcontainers/python:3.13",
 
   "features": {
-    // uv: gerenciador de pacotes do projeto (garante o binário independente da imagem base)
-    "ghcr.io/jsburckhardt/devcontainer-features/uv:1": {},
+    // uv: gerenciador de pacotes do projeto (feature oficial do Astral)
+    "ghcr.io/astral-sh/uv:latest": {},
     // gcloud: SDK do Google Cloud - necessario para autenticacao no BigQuery via ADC
     "ghcr.io/dhoeric/features/google-cloud-cli:1": {}
   },
@@ -26,7 +26,15 @@
         // desativa a ativacao duplicada automatica da extensao Python.
         "python.terminal.activateEnvironment": false,
         "python.testing.pytestEnabled": true,
-        "python.testing.unittestEnabled": false
+        "python.testing.unittestEnabled": false,
+        // dbt Power User: a extensao NAO herda o venv do ~/.bashrc (nao spawna
+        // shell de login), entao apontamos explicitamente para o Python do .venv.
+        "dbt.dbtCoreIntegration": "other",
+        "dbt.pythonInterpreter": ["${containerWorkspaceFolder}/.venv/bin/python"],
+        "dbt.queryLimit": 500,
+        "dbt.enableNewQueryPreview": true,
+        // Sintaxe jinja-sql para os modelos dbt (*.sql)
+        "files.associations": { "*.sql": "jinja-sql" }
       },
       "extensions": [
         "ms-python.python",
@@ -38,7 +46,11 @@
     }
   },
 
-  "postCreateCommand": "uv sync --all-extras --dev && uv run dbt deps --project-dir queries --profiles-dir queries && (grep -q '.venv/bin/activate' ~/.bashrc || echo 'source ${containerWorkspaceFolder}/.venv/bin/activate' >> ~/.bashrc)",
+  "postCreateCommand": "uv sync --all-extras && uv run dbt deps --project-dir queries --profiles-dir queries && (grep -q '.venv/bin/activate' ~/.bashrc || echo 'source ${containerWorkspaceFolder}/.venv/bin/activate' >> ~/.bashrc)",
+
+  // Se ainda nao ha credencial ADC, abre o login OAuth (conta pessoal) no browser.
+  // Se o fluxo headless falhar, o passo manual do README cobre.
+  "postStartCommand": "gcloud auth application-default print-access-token >/dev/null 2>&1 || gcloud auth application-default login --project rj-smas-dev",
 
   "remoteUser": "vscode"
 }
