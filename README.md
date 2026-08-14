@@ -14,7 +14,7 @@ para rodar as pipelines e os modelos dbt do projeto **rj-smas** — usando
 1. Acesse o repositório no GitHub: `prefeitura-rio-smas/pipelines`.
 2. Clique em **Code ▾ → Codespaces → Create codespace on <branch>**.
 3. Aguarde o container ser criado. O `postCreateCommand` roda sozinho e:
-   - executa `uv sync --all-extras --dev` (instala Python 3.13 + dbt + todas as
+   - executa `uv sync --all-extras` (instala Python 3.13 + dbt + todas as
      dependências na pasta `.venv/`);
    - executa `dbt deps` (baixa os pacotes do dbt);
    - ativa o `.venv` automaticamente em todos os terminais novos.
@@ -35,9 +35,6 @@ gcloud auth application-default login --project rj-smas-dev
 ```
 
 Siga o link no navegador e autorize. *(O `--project` evita erros de cota e permissão.)*
-
-O container já tenta abrir esse login sozinho ao iniciar (se não houver
-credencial válida); se não abrir, rode o comando manualmente.
 
 Esse login fica salvo no codespace; se o token expirar, repita o comando.
 **Atenção:** um *rebuild* do codespace (ou prebuild expirado) limpa o login —

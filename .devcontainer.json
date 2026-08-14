@@ -6,10 +6,16 @@
   "image": "mcr.microsoft.com/devcontainers/python:3.13",
 
   "features": {
-    // uv: gerenciador de pacotes do projeto (feature oficial do Astral)
-    "ghcr.io/astral-sh/uv:latest": {},
+    // uv: feature do jsburckhardt (unica feature uv indexada no containers.dev).
+    // NOTA: ghcr.io/astral-sh/uv NAO e devcontainer feature - e a imagem binaria
+    // do uv (so contem os binarios uv/uvx, sem devcontainer-feature.json);
+    // usar como feature quebra o build do codespace. Tag 1.0.0 + versao do
+    // binario 0.11.13 (mesma que gerou o uv.lock) = determinismo ponta a ponta.
+    "ghcr.io/jsburckhardt/devcontainer-features/uv:1.0.0": {
+      "version": "0.11.13"
+    },
     // gcloud: SDK do Google Cloud - necessario para autenticacao no BigQuery via ADC
-    "ghcr.io/dhoeric/features/google-cloud-cli:1": {}
+    "ghcr.io/dhoeric/features/google-cloud-cli:1.0.1": {}
   },
 
   "containerEnv": {
@@ -47,10 +53,6 @@
   },
 
   "postCreateCommand": "uv sync --all-extras && uv run dbt deps --project-dir queries --profiles-dir queries && (grep -q '.venv/bin/activate' ~/.bashrc || echo 'source ${containerWorkspaceFolder}/.venv/bin/activate' >> ~/.bashrc)",
-
-  // Se ainda nao ha credencial ADC, abre o login OAuth (conta pessoal) no browser.
-  // Se o fluxo headless falhar, o passo manual do README cobre.
-  "postStartCommand": "gcloud auth application-default print-access-token >/dev/null 2>&1 || gcloud auth application-default login --project rj-smas-dev",
 
   "remoteUser": "vscode"
 }
