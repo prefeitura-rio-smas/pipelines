@@ -1,13 +1,15 @@
+import os
+
 from prefect import flow
 from prefect_dbt.cli.commands import trigger_dbt_cli_command
-from pipelines.arcgis.tasks import load_arcgis_to_bigquery
-from pipelines.arcgis.primeira_infancia_carioca.tasks import apply_arcgis_feedback
+
 from pipelines.arcgis.primeira_infancia_carioca.meta_ar_cpf.tasks import (
+    DATASET,
     apply_arcgis_adds,
     apply_arcgis_status_sync,
-    DATASET,
 )
-import os
+from pipelines.arcgis.primeira_infancia_carioca.tasks import apply_arcgis_feedback
+from pipelines.arcgis.tasks import load_arcgis_to_bigquery
 
 ITEM_ID = "66155d9b7ccf47d89af31a2bc8ddc5eb"
 
@@ -88,7 +90,6 @@ def meta_ar_cpf_cadunico_sync():
 
 
 if __name__ == "__main__":
-    import sys
     print("Use 'prefect deployment run ...' para executar os flows.")
     print("  Meta AR CPF | Operador Sync  (extract only, horário)")
     print("  Meta AR CPF | Cadúnico Sync  (ciclo completo, manual)")

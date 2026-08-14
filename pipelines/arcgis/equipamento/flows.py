@@ -1,4 +1,5 @@
 import os
+
 from prefect import flow
 from prefect_dbt.cli.commands import trigger_dbt_cli_command
 

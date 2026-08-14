@@ -26,7 +26,7 @@ class RunResultSummarizer:
         relation = getattr(result.node, "relation_name", None)
         if relation:
             return (
-                f"`{result.node.name}`\n   {result.message}: "
+                f"`{result.node.name}`\n   {result.message}: "  # noqa: S608
                 f"``` select * from {relation.replace('`', '')}``` \n"
             )
         return f"`{result.node.name}`\n   {result.message} \n"
@@ -36,7 +36,7 @@ class RunResultSummarizer:
         relation = getattr(result.node, "relation_name", None)
         if relation:
             return (
-                f"`{result.node.name}`\n   {result.message}: "
+                f"`{result.node.name}`\n   {result.message}: "  # noqa: S608
                 f"``` select * from {relation.replace('`', '')}``` \n"
             )
         return f"`{result.node.name}`\n   {result.message} \n"

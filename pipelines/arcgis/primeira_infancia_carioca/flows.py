@@ -1,8 +1,10 @@
+import os
+
 from prefect import flow
 from prefect_dbt.cli.commands import trigger_dbt_cli_command
-from pipelines.arcgis.tasks import load_arcgis_to_bigquery
+
 from pipelines.arcgis.primeira_infancia_carioca.tasks import apply_arcgis_feedback
-import os
+from pipelines.arcgis.tasks import load_arcgis_to_bigquery
 
 # --- Subflows (Etapas Isoladas) ---
 
@@ -36,7 +38,7 @@ def flow_transform_dbt():
 @flow(name="Feedback | Write-back ArcGIS")
 def flow_feedback_arcgis():
     """Envia atualizações de volta para os itens originais do ArcGIS."""
-    
+
     # 4.1 Update para Primeira Infância (Survey)
     feedback_pic = apply_arcgis_feedback(
         item_id="ef6fe5c04520445f91be8a57c4adcd96",

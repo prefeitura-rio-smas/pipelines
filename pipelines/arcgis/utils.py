@@ -1,7 +1,6 @@
 # pipeline/utils.py
 from datetime import UTC, datetime
 from functools import lru_cache
-from typing import Literal
 
 import geopandas as gpd
 from google.cloud import bigquery, storage
@@ -85,7 +84,7 @@ def resolve_arcgis_url(item_id: str, layer_idx: int = None) -> str:
         if item_type == "Feature Service":
             idx = layer_idx if layer_idx is not None else 0
             return f"{service_url.rstrip('/')}/{idx}"
-        
+
         return service_url.rstrip('/')
     except requests.exceptions.RequestException as e:
         logger.error(f"Erro ao resolver URL do ArcGIS: {e}")

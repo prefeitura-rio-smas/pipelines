@@ -1,19 +1,19 @@
-import shutil
 from datetime import UTC, datetime
 from pathlib import Path
+import shutil
+import tempfile
 from typing import List
-from zipfile import ZipFile
 from uuid import uuid4
+from zipfile import ZipFile
 
-from google.cloud import bigquery
-from google.cloud import storage
+from google.cloud import bigquery, storage
 from google.cloud.storage.blob import Blob
 import pandas as pd
 import prefect
 from prefect import task
 
-from pipelines.bolsa_familia.utils import parse_partition
 from pipelines.bolsa_familia.constants import settings
+from pipelines.bolsa_familia.utils import parse_partition
 
 
 @task(cache_policy=None)
@@ -50,7 +50,7 @@ def identify_pending_files(
     try:
         client_bq.get_table(staging_ref)
         staging_df = client_bq.query(
-            f"SELECT DISTINCT data_particao FROM `{staging_ref}`"
+            f"SELECT DISTINCT data_particao FROM `{staging_ref}`"  # noqa: S608
         ).result().to_dataframe()
         staging_partitions = set(staging_df['data_particao'].astype(str).tolist())
         existing_partitions.update(staging_partitions)
@@ -69,7 +69,7 @@ def identify_pending_files(
     try:
         client_bq.get_table(mart_ref)
         mart_df = client_bq.query(
-            f"SELECT DISTINCT data_particao FROM `{mart_ref}`"
+            f"SELECT DISTINCT data_particao FROM `{mart_ref}`"  # noqa: S608
         ).result().to_dataframe()
         mart_partitions = set(mart_df['data_particao'].astype(str).tolist())
         existing_partitions.update(mart_partitions)
@@ -131,7 +131,7 @@ def check_staging_gap(dataset_id: str, table_id: str) -> bool:
     try:
         client.get_table(staging_ref)
         staging_df = client.query(
-            f"SELECT DISTINCT data_particao FROM `{staging_ref}`"
+            f"SELECT DISTINCT data_particao FROM `{staging_ref}`"  # noqa: S608
         ).result().to_dataframe()
         staging_partitions = set(staging_df['data_particao'].astype(str).tolist())
     except Exception:
@@ -153,7 +153,7 @@ def check_staging_gap(dataset_id: str, table_id: str) -> bool:
     try:
         client.get_table(mart_ref)
         mart_df = client.query(
-            f"SELECT DISTINCT data_particao FROM `{mart_ref}`"
+            f"SELECT DISTINCT data_particao FROM `{mart_ref}`"  # noqa: S608
         ).result().to_dataframe()
         mart_partitions = set(mart_df['data_particao'].astype(str).tolist())
         logger.info(
@@ -187,7 +187,7 @@ def process_and_upload_files(
     logger = prefect.get_run_logger()
 
     run_id = str(uuid4())
-    base_work_dir = Path(f"/tmp/bolsa_familia_{run_id}")
+    base_work_dir = Path(tempfile.gettempdir()) / f"bolsa_familia_{run_id}"
     output_directory = base_work_dir / "processed"
 
     env_name = "prod" if "dev" not in settings.GCP_PROJECT else "dev"
@@ -473,7 +473,7 @@ def audit_wap(
         SELECT COUNT(*) as row_count
         FROM `{wap_ref}`
         WHERE data_particao = '{partition}'
-        """
+        """  # noqa: S608
         result = client.query(count_query).result().to_dataframe()
         row_count = int(result['row_count'].iloc[0])
 
@@ -486,7 +486,7 @@ def audit_wap(
             COUNTIF(data_particao IS NULL) as null_particao
         FROM `{wap_ref}`
         WHERE data_particao = '{partition}'
-        """
+        """  # noqa: S608
         null_result = client.query(null_query).result().to_dataframe()
 
         null_linha = int(null_result['null_linha'].iloc[0])
@@ -558,7 +558,7 @@ def promote_wap(
         delete_query = f"""
         DELETE FROM `{staging_ref}`
         WHERE data_particao = '{partition}'
-        """
+        """  # noqa: S608
         client.query(delete_query).result()
         logger.info(
             f"promote_wap | Deleted existing rows for partition {partition} "
@@ -569,7 +569,7 @@ def promote_wap(
         INSERT INTO `{staging_ref}`
         SELECT * FROM `{wap_ref}`
         WHERE data_particao = '{partition}'
-        """
+        """  # noqa: S608
         client.query(insert_query).result()
         logger.info(
             f"promote_wap | Inserted WAP data for partition {partition} "

@@ -1,6 +1,8 @@
 import os
-from typing import Dict, Any
+from typing import Any, Dict
+
 from pipelines.utils.settings import BaseSettings
+
 
 class Settings(BaseSettings):
     """
@@ -21,7 +23,7 @@ class Settings(BaseSettings):
             "project": "rj-smas-dev",
             "bucket": "rj-smas-dev",
             "dataset": "arcgis_raw"
-        } 
+        }
     }
-            
+
 settings = Settings()

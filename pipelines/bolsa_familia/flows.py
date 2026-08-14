@@ -1,16 +1,17 @@
 import os
+
 from prefect import flow
 from prefect_dbt.cli.commands import trigger_dbt_cli_command
 
 from pipelines.bolsa_familia.constants import settings
 from pipelines.bolsa_familia.tasks import (
-    identify_pending_files,
-    check_staging_gap,
-    process_and_upload_files,
-    load_to_wap,
     audit_wap,
-    promote_wap,
+    check_staging_gap,
     cleanup_staging,
+    identify_pending_files,
+    load_to_wap,
+    process_and_upload_files,
+    promote_wap,
 )
 
 

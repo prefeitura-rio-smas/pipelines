@@ -1,12 +1,14 @@
+from datetime import datetime
+import json
+import re
+
 import prefect
 from prefect import task
 import requests
-import json
-import re
-from datetime import datetime
-from pipelines.arcgis.utils import _get_arcgis_token, bq_client
-from pipelines.arcgis.tasks import resolve_arcgis_url
+
 from pipelines.arcgis.constants import settings
+from pipelines.arcgis.tasks import resolve_arcgis_url
+from pipelines.arcgis.utils import _get_arcgis_token, bq_client
 
 # Padrão ISO de data pura (YYYY-MM-DD) — convertida para epoch ms
 # porque campos Date clássicos do ArcGIS rejeitam string (esperam timestamp).
@@ -48,14 +50,14 @@ def apply_arcgis_feedback(
     dataset: str = "pic"
 ):
     logger = prefect.get_run_logger()
-    
+
     client = bq_client()
     project = settings.GCP_PROJECT
     table_id = f"{project}.{dataset}.{delta_table}"
-    
-    query = f"SELECT * FROM `{table_id}`"
+
+    query = f"SELECT * FROM `{table_id}`"  # noqa: S608
     df = client.query(query).to_dataframe()
-    
+
     if df.empty:
         logger.info(f"Nenhum registro para atualizar em {delta_table}")
         return 0
@@ -64,7 +66,7 @@ def apply_arcgis_feedback(
     base_url = resolve_arcgis_url(item_id, layer_idx)
     token = _get_arcgis_token()
     url = f"{base_url}/applyEdits"
-    
+
     updates = []
     for row in rows:
         attributes = {}
@@ -72,7 +74,7 @@ def apply_arcgis_feedback(
             clean_value = value
             if str(value).strip().lower() in ["none", "nan", "null", ""]:
                 clean_value = None
-            
+
             if col.lower() == "objectid":
                 attributes["objectid"] = int(value)
             else:
@@ -81,19 +83,19 @@ def apply_arcgis_feedback(
 
     batch_size = 100
     total_updated = 0
-    
+
     for i in range(0, len(updates), batch_size):
         batch = updates[i : i + batch_size]
-        
+
         payload = {
             "f": "json",
             "token": token,
             "updates": json.dumps(batch)
         }
-        
+
         response = requests.post(url, data=payload, timeout=60)
         response.raise_for_status()
-        
+
         result = response.json()
         update_results = result.get("updateResults", [])
         total_updated += len([r for r in update_results if r.get("success")])

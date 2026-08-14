@@ -1,5 +1,7 @@
-from typing import Dict, Any
+from typing import Any, Dict
+
 from pipelines.utils.settings import BaseSettings
+
 
 class Settings(BaseSettings):
     TABLE_ID: str = "folha"

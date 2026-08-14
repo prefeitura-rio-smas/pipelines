@@ -1,16 +1,23 @@
 from datetime import UTC, datetime
 from pathlib import Path
+import tempfile
 import time
 
-from google.cloud import bigquery
 import geopandas as gpd
+from google.cloud import bigquery
 import pandas as pd
 import prefect
 from prefect import task
 import requests
 from shapely.geometry import LineString, MultiPoint, Point, Polygon
 
-from .utils import _get_arcgis_token, add_timestamp, bq_client, dataset_ref, resolve_arcgis_url
+from .utils import (
+    _get_arcgis_token,
+    add_timestamp,
+    bq_client,
+    dataset_ref,
+    resolve_arcgis_url,
+)
 
 
 @task
@@ -67,7 +74,7 @@ def save_batch_to_staging(
         if col_name in batch_data.columns:
             batch_data[col_name] = batch_data[col_name].astype(str)
 
-    tmp_path = Path(f"/tmp/{staging_table}_{batch_index}.parquet")
+    tmp_path = Path(tempfile.gettempdir()) / f"{staging_table}_{batch_index}.parquet"
     tmp_path.parent.mkdir(parents=True, exist_ok=True)
     batch_data.to_parquet(tmp_path, index=False)
 
@@ -106,7 +113,7 @@ def atomic_replace_raw_table(
     logger = prefect.get_run_logger()
     logger.info(f"Substituindo tabela final '{final_table}' com dados da staging '{staging_table}'")
     client = bq_client()
-    query = f"CREATE OR REPLACE TABLE `{dataset_ref()}.{final_table}` AS SELECT * FROM `{dataset_ref()}.{staging_table}`"
+    query = f"CREATE OR REPLACE TABLE `{dataset_ref()}.{final_table}` AS SELECT * FROM `{dataset_ref()}.{staging_table}`"  # noqa: S608
     query_job = client.query(query)
     query_job.result()
     logger.info(f"Tabela '{final_table}' atualizada com sucesso")
@@ -171,16 +178,16 @@ def load_arcgis_to_bigquery(
     where_clause: str = "1=1"
 ):
     logger = prefect.get_run_logger()
-    
+
     base_url = resolve_arcgis_url(item_id, layer_idx)
     logger.info(f"↳ Processando {job_name} via {base_url}…")
 
     timestamp = datetime.now(UTC).strftime('%Y%m%d%H%M%S')
-    
+
     table_suffix = f"_{layer_name}" if layer_name else ""
     final_table = f"{job_name}{table_suffix}_raw"
     staging_table = f"{final_table}_staging_{timestamp}"
-    
+
     layer_info = get_layer_info(service_url=base_url)
     total_records = get_layer_metadata(service_url=base_url)
     bq_schema = arcgis_to_bq_schema(layer_info["fields"], return_geometry)
@@ -242,10 +249,14 @@ def load_arcgis_to_bigquery(
                 if return_geometry:
                     geometry_data = feature.get("geometry") or {}
                     geom = None
-                    if "rings" in geometry_data: geom = Polygon(geometry_data["rings"][0], geometry_data["rings"][1:])
-                    elif "x" in geometry_data and "y" in geometry_data: geom = Point(geometry_data.get("x"), geometry_data.get("y"))
-                    elif "paths" in geometry_data: geom = LineString(geometry_data["paths"][0])
-                    if geom: attributes["geometry"] = geom
+                    if "rings" in geometry_data:
+                        geom = Polygon(geometry_data["rings"][0], geometry_data["rings"][1:])
+                    elif "x" in geometry_data and "y" in geometry_data:
+                        geom = Point(geometry_data.get("x"), geometry_data.get("y"))
+                    elif "paths" in geometry_data:
+                        geom = LineString(geometry_data["paths"][0])
+                    if geom:
+                        attributes["geometry"] = geom
                 processed_data.append(attributes)
 
             batch_df = pd.DataFrame(processed_data)

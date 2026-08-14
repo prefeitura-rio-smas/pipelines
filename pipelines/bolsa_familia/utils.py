@@ -1,9 +1,7 @@
 # pipeline/utils.py
 from datetime import datetime
-from pathlib import Path
 from typing import Tuple
 
-import pandas as pd
 from google.cloud.storage.blob import Blob
 
 
@@ -73,7 +71,7 @@ def parse_txt_first_line(filepath: str) -> Tuple[str, str]:
     """
     with open(filepath, 'r', encoding='utf-8', errors='ignore') as f:
         first_line = f.readline()
-    
+
     # Estes são valores padrão - ajuste conforme o formato real dos arquivos
     # Por exemplo, se os arquivos do Bolsa Família tiverem um cabeçalho com layout específico
     if len(first_line) >= 90:

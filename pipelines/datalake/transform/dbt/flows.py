@@ -1,5 +1,6 @@
 """Transformação — dbt genérico (tag-driven)."""
 import os
+
 from prefect import flow
 
 from pipelines.datalake.transform.dbt.tasks import create_dbt_report, execute_dbt

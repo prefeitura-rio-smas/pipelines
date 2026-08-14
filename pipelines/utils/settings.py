@@ -1,19 +1,20 @@
 # -*- coding: utf-8 -*-
 import os
 import tempfile
-from typing import Dict, Any
+from typing import Any, Dict
+
 from pipelines.constants import constants as global_constants
 
+
 class BaseSettings:
-    """
-    Nova classe base para configurações de pipeline (v2).
-    
+    """Nova classe base para configurações de pipeline (v2).
+
     Substitui a lógica baseada em Pydantic por uma abordagem explícita baseada em dicionários
     controlados pela constante global MODE.
-    
+
     Também gerencia a autenticação GCP quando as credenciais são injetadas via variável de ambiente (CI/CD).
     """
-    
+
     # Dicionário de configuração por ambiente. Deve ser sobrescrito na subclasse.
     _env_configs: Dict[str, Dict[str, Any]] = {}
 
@@ -26,7 +27,7 @@ class BaseSettings:
         Se receber GCP_CREDENTIALS (conteúdo JSON), cria arquivo temporário para o ADC.
         """
         gcp_credentials = os.getenv("GCP_CREDENTIALS")
-        
+
         if gcp_credentials and gcp_credentials.strip().startswith("{"):
             # Evita criar múltiplos arquivos se já estiver configurado nesta sessão
             if "GOOGLE_APPLICATION_CREDENTIALS" not in os.environ:

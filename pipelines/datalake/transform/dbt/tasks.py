@@ -3,9 +3,9 @@ from datetime import datetime
 
 from prefect import get_run_logger, task
 from prefect.artifacts import create_markdown_artifact
+
 from dbt.cli.main import dbtRunner
 from dbt.contracts.results import NodeStatus
-
 from pipelines.utils.dbt import Summarizer, mensagem_falha
 
 
