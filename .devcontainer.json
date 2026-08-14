@@ -14,8 +14,11 @@
     "ghcr.io/jsburckhardt/devcontainer-features/uv:1.0.0": {
       "version": "0.11.13"
     },
-    // gcloud: SDK do Google Cloud - necessario para autenticacao no BigQuery via ADC
-    "ghcr.io/dhoeric/features/google-cloud-cli:1.0.1": {}
+    // gcloud: SDK do Google Cloud - necessario para autenticacao no BigQuery via ADC.
+    // Fork do dhoeric (joshuanianji) que troca apt-key por gpg --dearmor:
+    // a imagem devcontainers/python:3.13 e Debian 13 (trixie), onde apt-key
+    // foi removido - a feature original dhoeric quebraria o build do codespace.
+    "ghcr.io/joshuanianji/devcontainer-features/google-cloud-cli:1.0.0": {}
   },
 
   "containerEnv": {
