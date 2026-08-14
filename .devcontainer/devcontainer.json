@@ -1,0 +1,44 @@
+{
+  "name": "pipelines-rj-smas (dev)",
+
+  // Imagem de desenvolvimento (NÃO é o Dockerfile de produção do Prefect).
+  // Python 3.13 + git + usuário vscode (sudo) + zsh/bash pré-configurados.
+  "image": "mcr.microsoft.com/devcontainers/python:3.13",
+
+  "features": {
+    // uv: gerenciador de pacotes do projeto (garante o binário independente da imagem base)
+    "ghcr.io/jsburckhardt/devcontainer-features/uv:1": {},
+    // gcloud: SDK do Google Cloud - necessario para autenticacao no BigQuery via ADC
+    "ghcr.io/dhoeric/features/google-cloud-cli:1": {}
+  },
+
+  "containerEnv": {
+    // Permite rodar `dbt` sem flags extras (profiles.yml fica em queries/)
+    "DBT_PROFILES_DIR": "queries"
+  },
+
+  "customizations": {
+    "vscode": {
+      "settings": {
+        // Aponta o interpretador Python para o .venv criado pelo uv sync
+        "python.defaultInterpreterPath": "${containerWorkspaceFolder}/.venv/bin/python",
+        // A ativacao do .venv e feita no ~/.bashrc (postCreateCommand);
+        // desativa a ativacao duplicada automatica da extensao Python.
+        "python.terminal.activateEnvironment": false,
+        "python.testing.pytestEnabled": true,
+        "python.testing.unittestEnabled": false
+      },
+      "extensions": [
+        "ms-python.python",
+        "innoverio.vscode-dbt-power-user",
+        "googlecloudtools.cloudcode",
+        "github.vscode-pull-request-github",
+        "charliermarsh.ruff"
+      ]
+    }
+  },
+
+  "postCreateCommand": "uv sync --all-extras --dev && uv run dbt deps --project-dir queries --profiles-dir queries && (grep -q '.venv/bin/activate' ~/.bashrc || echo 'source ${containerWorkspaceFolder}/.venv/bin/activate' >> ~/.bashrc)",
+
+  "remoteUser": "vscode"
+}
