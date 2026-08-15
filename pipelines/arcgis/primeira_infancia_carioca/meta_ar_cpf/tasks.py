@@ -2,8 +2,10 @@ import prefect
 from prefect import task
 import requests
 import json
+import pandas as pd
 from pipelines.arcgis.utils import _get_arcgis_token, resolve_arcgis_url, bq_client
 from pipelines.arcgis.constants import settings
+from pipelines.arcgis.primeira_infancia_carioca.tasks import _to_arcgis_value
 
 # Resolve dataset e nomes de tabela por ambiente (MODE)
 IS_PROD = settings.GCP_PROJECT == "rj-smas"
@@ -50,10 +52,10 @@ def apply_arcgis_adds(item_id: str, layer_idx: int = 0):
     # 1. Garantir que crosswalk existe
     ensure_crosswalk_table()
 
-    # 2. Buscar pessoas novas (monitoradas, sem crosswalk)
+    # 2. Buscar pessoas novas (monitoradas na última partição, sem crosswalk)
     query = f"""
         SELECT dev.* FROM `{dev_table}` dev
-        WHERE dev.data_saida IS NULL
+        WHERE dev.data_particao = (SELECT MAX(data_particao) FROM `{dev_table}`)
           AND NOT EXISTS (
             SELECT 1 FROM `{cw_table}` cw
             WHERE cw.id_membro_familia = dev.id_membro_familia
@@ -79,7 +81,8 @@ def apply_arcgis_adds(item_id: str, layer_idx: int = 0):
         for col in row.index:
             value = row[col]
             # Tratar nulos e valores especiais (mesmo padrão do apply_arcgis_feedback)
-            if col.lower() == "objectid":
+            # Colunas internas do BQ que não existem no layer ArcGIS:
+            if col.lower() in ("objectid", "data_particao"):
                 continue
             # Converte date/datetime para string ISO (json.dumps não serializa date nativo)
             if hasattr(value, 'isoformat'):
@@ -150,7 +153,10 @@ def apply_arcgis_adds(item_id: str, layer_idx: int = 0):
 def apply_arcgis_status_sync(item_id: str, layer_idx: int = 0):
     """
     Marca status_monitoramento_cpf='inativo' no ArcGIS para pessoas que estão
-    na crosswalk mas não aparecem mais como monitoradas (data_saida preenchida) na _dev.
+    na crosswalk mas não aparecem mais na última partição da _dev.
+    Grava também data_saida = última partição em que a pessoa apareceu na _dev
+    (somente quando há histórico; sem fallback para a data da rodada, para não
+    "flutuar" o data_saida a cada execução).
     """
     logger = prefect.get_run_logger()
     client = bq_client()
@@ -158,14 +164,16 @@ def apply_arcgis_status_sync(item_id: str, layer_idx: int = 0):
     dev_table = f"{project}.{DATASET}.{DEV_TABLE_NAME}"
     cw_table = f"{project}.{DATASET}.{CW_TABLE_NAME}"
 
-    # 1. Buscar inativos (na crosswalk mas sem data_saida NULL na _dev)
+    # 1. Buscar inativos (na crosswalk mas sem registro na última partição da _dev)
     query = f"""
-        SELECT cw.id_membro_familia, cw.objectid_arcgis
+        SELECT cw.id_membro_familia, cw.objectid_arcgis,
+               (SELECT MAX(dev2.data_particao) FROM `{dev_table}` dev2
+                WHERE dev2.id_membro_familia = cw.id_membro_familia) AS data_saida
         FROM `{cw_table}` cw
         WHERE NOT EXISTS (
             SELECT 1 FROM `{dev_table}` dev
             WHERE dev.id_membro_familia = cw.id_membro_familia
-              AND dev.data_saida IS NULL
+              AND dev.data_particao = (SELECT MAX(data_particao) FROM `{dev_table}`)
         )
     """
     rows = client.query(query).to_dataframe()
@@ -181,15 +189,17 @@ def apply_arcgis_status_sync(item_id: str, layer_idx: int = 0):
     token = _get_arcgis_token()
     edits_url = f"{service_url}/applyEdits"
 
-    # 3. Montar payload (só objectid + status_monitoramento_cpf)
+    # 3. Montar payload (objectid + status_monitoramento_cpf + data_saida quando houver histórico)
     updates = []
     for _, row in rows.iterrows():
-        updates.append({
-            "attributes": {
-                "objectid": int(row["objectid_arcgis"]),
-                "status_monitoramento_cpf": "inativo",
-            }
-        })
+        attrs = {
+            "objectid": int(row["objectid_arcgis"]),
+            "status_monitoramento_cpf": "inativo",
+        }
+        if not pd.isna(row["data_saida"]):
+            data_saida_iso = pd.Timestamp(row["data_saida"]).strftime("%Y-%m-%d")
+            attrs["data_saida"] = _to_arcgis_value("data_saida", data_saida_iso)
+        updates.append({"attributes": attrs})
 
     # 4. Enviar
     batch_size = 100

@@ -42,7 +42,7 @@ WITH
         FROM {{ cw_table }} cw
         JOIN {{ dev_table }} dev
           ON cw.id_membro_familia = dev.id_membro_familia
-        WHERE dev.data_saida IS NULL
+        WHERE dev.data_particao = (SELECT MAX(data_particao) FROM {{ dev_table }})
     ),
 
     atual AS (
