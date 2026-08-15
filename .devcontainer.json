@@ -1,0 +1,61 @@
+{
+  "name": "pipelines-rj-smas (dev)",
+
+  // Imagem de desenvolvimento (NÃO é o Dockerfile de produção do Prefect).
+  // Python 3.13 + git + usuário vscode (sudo) + zsh/bash pré-configurados.
+  "image": "mcr.microsoft.com/devcontainers/python:3.13",
+
+  "features": {
+    // uv: feature do jsburckhardt (unica feature uv indexada no containers.dev).
+    // NOTA: ghcr.io/astral-sh/uv NAO e devcontainer feature - e a imagem binaria
+    // do uv (so contem os binarios uv/uvx, sem devcontainer-feature.json);
+    // usar como feature quebra o build do codespace. Tag 1.0.0 + versao do
+    // binario 0.11.13 (mesma que gerou o uv.lock) = determinismo ponta a ponta.
+    "ghcr.io/jsburckhardt/devcontainer-features/uv:1.0.0": {
+      "version": "0.11.13"
+    },
+    // gcloud: SDK do Google Cloud - necessario para autenticacao no BigQuery via ADC.
+    // Fork do dhoeric (joshuanianji) que troca apt-key por gpg --dearmor:
+    // a imagem devcontainers/python:3.13 e Debian 13 (trixie), onde apt-key
+    // foi removido - a feature original dhoeric quebraria o build do codespace.
+    "ghcr.io/joshuanianji/devcontainer-features/google-cloud-cli:1.0.0": {}
+  },
+
+  "containerEnv": {
+    // Permite rodar `dbt` sem flags extras (profiles.yml fica em queries/)
+    "DBT_PROFILES_DIR": "queries"
+  },
+
+  "customizations": {
+    "vscode": {
+      "settings": {
+        // Aponta o interpretador Python para o .venv criado pelo uv sync
+        "python.defaultInterpreterPath": "${containerWorkspaceFolder}/.venv/bin/python",
+        // A ativacao do .venv e feita no ~/.bashrc (postCreateCommand);
+        // desativa a ativacao duplicada automatica da extensao Python.
+        "python.terminal.activateEnvironment": false,
+        "python.testing.pytestEnabled": true,
+        "python.testing.unittestEnabled": false,
+        // dbt Power User: a extensao NAO herda o venv do ~/.bashrc (nao spawna
+        // shell de login), entao apontamos explicitamente para o Python do .venv.
+        "dbt.dbtCoreIntegration": "other",
+        "dbt.pythonInterpreter": ["${containerWorkspaceFolder}/.venv/bin/python"],
+        "dbt.queryLimit": 500,
+        "dbt.enableNewQueryPreview": true,
+        // Sintaxe jinja-sql para os modelos dbt (*.sql)
+        "files.associations": { "*.sql": "jinja-sql" }
+      },
+      "extensions": [
+        "ms-python.python",
+        "innoverio.vscode-dbt-power-user",
+        "googlecloudtools.cloudcode",
+        "github.vscode-pull-request-github",
+        "charliermarsh.ruff"
+      ]
+    }
+  },
+
+  "postCreateCommand": "uv sync --all-extras && uv run dbt deps --project-dir queries --profiles-dir queries && (grep -q '.venv/bin/activate' ~/.bashrc || echo 'source ${containerWorkspaceFolder}/.venv/bin/activate' >> ~/.bashrc)",
+
+  "remoteUser": "vscode"
+}

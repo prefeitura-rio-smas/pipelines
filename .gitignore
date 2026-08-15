@@ -49,7 +49,6 @@ queries/dbt_internal_packages/
 
 # Ferramentas
 /sandbox/
-uv.lock
 poetry.lock
 .vscode/
 .idea/
