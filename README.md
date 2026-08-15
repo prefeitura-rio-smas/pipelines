@@ -7,7 +7,7 @@ Bem-vindo! Este guia vai te ajudar a configurar seu ambiente de desenvolvimento 
 Abra o repositório no GitHub em **Code → Codespaces**: o ambiente é configurado automaticamente (uv sync + dbt deps). O único passo manual é autenticar:
 
 ```bash
-gcloud auth application-default login --project rj-smas-dev
+gcloud auth application-default login
 ```
 
 Valide com `dbt debug --project-dir queries --profiles-dir queries` — deve retornar **"All checks passed!"**.
