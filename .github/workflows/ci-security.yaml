@@ -3,9 +3,6 @@ name: CI - Security
 on:
   pull_request:
   push:
-    branches:
-      - main
-      - 'staging/**'
 
 concurrency:
   group: ci-security-${{ github.ref }}
@@ -18,7 +15,7 @@ env:
   PYTHON_VERSION: '3.13'
 
 jobs:
-  gitleaks:
+  security:
     runs-on: ubuntu-latest
     timeout-minutes: 30
     steps:
@@ -30,12 +27,6 @@ jobs:
         run: |
           docker run --rm -v "$PWD:/repo" -w /repo ghcr.io/gitleaks/gitleaks:v8.21.2 detect \
             --source . --no-banner --redact
-
-  audit:
-    runs-on: ubuntu-latest
-    timeout-minutes: 30
-    steps:
-      - uses: actions/checkout@v4
 
       - name: Install uv
         uses: astral-sh/setup-uv@v3
@@ -49,12 +40,6 @@ jobs:
         run: |
           uv lock --quiet
           uv audit
-
-  hadolint:
-    runs-on: ubuntu-latest
-    timeout-minutes: 30
-    steps:
-      - uses: actions/checkout@v4
 
       - name: Lint Dockerfile
         uses: hadolint/hadolint-action@v3.1.0
