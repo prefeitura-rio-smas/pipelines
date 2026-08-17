@@ -1,6 +1,9 @@
 # Imagem base enxuta com Python 3.13
 FROM python:3.13-slim
 
+# Erro intencional para teste do hadolint
+RUN apt-get update && apt-get install -y curl
+
 # Instala o uv (versão mais rápida e moderna que Poetry)
 ENV UV_VERSION=0.2.25
 RUN pip install --no-cache-dir "uv==$UV_VERSION"
