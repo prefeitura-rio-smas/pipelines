@@ -47,6 +47,7 @@ override-dependencies = [
     "pytest>=9.0.3",
     "requests>=2.33.0",
     "setuptools>=83.0.0",
+    "sqlparse>=0.6.0",
     "urllib3>=2.7.0",
 ]
 
