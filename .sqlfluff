@@ -1,0 +1,10 @@
+[sqlfluff]
+templater = dbt
+dialect = bigquery
+exclude_rules = L016, L031
+
+[sqlfluff:templater:dbt]
+project_dir = queries
+profiles_dir = queries
+profile = rj_smas_dev
+target = ci

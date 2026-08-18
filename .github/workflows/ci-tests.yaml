@@ -1,0 +1,44 @@
+name: CI - Tests
+
+on:
+  pull_request:
+    paths:
+      - 'pipelines/**'
+      - 'pyproject.toml'
+      - 'uv.lock'
+
+concurrency:
+  group: ci-tests-${{ github.ref }}
+  cancel-in-progress: true
+
+permissions:
+  contents: read
+
+env:
+  PYTHON_VERSION: '3.13'
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Install uv
+        uses: astral-sh/setup-uv@v3
+        with:
+          version: '0.12.4'
+
+      - name: Set up Python
+        run: uv python install ${{ env.PYTHON_VERSION }}
+
+      - name: Install dependencies
+        run: uv sync --all-extras --dev
+
+      - name: Run tests
+        run: |
+          if ls tests pipelines/tests 2>/dev/null | grep -q .; then
+            uv run pytest -q
+          else
+            echo "Nenhum teste encontrado em tests/ ou pipelines/tests/, pulando." | tee -a "$GITHUB_STEP_SUMMARY"
+          fi

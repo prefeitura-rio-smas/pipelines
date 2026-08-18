@@ -1,0 +1,99 @@
+name: CI - Lint
+
+on:
+  pull_request:
+    paths:
+      - 'pipelines/**'
+      - 'queries/**'
+      - 'pyproject.toml'
+      - '.sqlfluff'
+      - 'Dockerfile'
+
+concurrency:
+  group: ci-lint-${{ github.ref }}
+  cancel-in-progress: true
+
+permissions:
+  contents: read
+
+env:
+  PYTHON_VERSION: '3.13'
+
+jobs:
+  lint:
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    env:
+      DBT_PROFILES_DIR: queries
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Install uv
+        uses: astral-sh/setup-uv@v3
+        with:
+          version: '0.12.4'
+
+      - name: Set up Python
+        run: uv python install ${{ env.PYTHON_VERSION }}
+
+      - name: Install dependencies (dbt)
+        run: uv sync --all-extras --dev
+
+      - name: Lint changed Python files with Ruff
+        env:
+          BASE_SHA: ${{ github.event.pull_request.base.sha }}
+        shell: bash
+        run: |
+          git cat-file -e "${BASE_SHA}^{commit}"
+
+          mapfile -d '' -t files < <(
+            git diff --name-only -z "$BASE_SHA...HEAD" -- 'pipelines/**' '*.py' |
+            while IFS= read -r -d '' file; do
+              case "$file" in
+                *.py) printf '%s\0' "$file" ;;
+              esac
+            done
+          )
+
+          if ((${#files[@]} == 0)); then
+            echo "Nenhum arquivo .py alterado."
+            exit 0
+          fi
+
+          uv run python -m ruff check "${files[@]}"
+
+      - name: Install SQLFluff (dbt templater)
+        run: |
+          uv tool install sqlfluff --with sqlfluff-templater-dbt --with dbt-bigquery
+          echo "$HOME/.local/bin" >> "$GITHUB_PATH"
+
+      - name: DBT Deps
+        run: uv run dbt deps --project-dir queries --profiles-dir queries
+
+      - name: Lint changed SQL files
+        env:
+          BASE_SHA: ${{ github.event.pull_request.base.sha }}
+        shell: bash
+        run: |
+          printf 'dbt_packages/\nmacros/\ntarget/\n' > .sqlfluffignore
+
+          git cat-file -e "${BASE_SHA}^{commit}"
+
+          mapfile -d '' -t files < <(
+            git diff --name-only -z "$BASE_SHA...HEAD" -- queries/ |
+            while IFS= read -r -d '' file; do
+              case "$file" in
+                queries/dbt_packages/*) ;;
+                *.sql) printf '%s\0' "$file" ;;
+              esac
+            done
+          )
+
+          if ((${#files[@]} == 0)); then
+            echo "Nenhum arquivo .sql alterado em queries/."
+            exit 0
+          fi
+
+          sqlfluff lint "${files[@]}"
