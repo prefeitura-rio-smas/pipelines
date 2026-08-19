@@ -1,0 +1,16 @@
+version: 2
+updates:
+  # Dependencias Python gerenciadas por uv (uv.lock / pyproject.toml)
+  - package-ecosystem: "uv"
+    directory: "/"
+    schedule:
+      interval: "weekly"
+    # Agrupa todos os bumps de dependencias Python num unico PR por
+    # agendamento, evitando N PRs concorrentes re-resolvendo o uv.lock
+    groups:
+      uv-dependencies:
+        patterns:
+          - "*"
+        update-types:
+          - "minor"
+          - "patch"
