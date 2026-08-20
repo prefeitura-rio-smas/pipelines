@@ -110,6 +110,7 @@ jobs:
           exit_code=0
           for file in "${files[@]}"; do
             changed_file="$(mktemp)"
+            json_file="$(mktemp)"
             git diff -U0 "$BASE_SHA...HEAD" -- "$file" |
               awk '
                 /^@@/ {
@@ -124,13 +125,16 @@ jobs:
               ' > "$changed_file"
 
             echo "== Lintando (diff-only): $file =="
-            if sqlfluff lint "$file" --format json 2>/dev/null |
-              CHANGED_FILE="$changed_file" python3 -c 'import json,os,sys; ch={int(x) for x in open(os.environ["CHANGED_FILE"]).read().split()}; r=json.load(sys.stdin); k=[(os.path.basename(i.get("filepath","")),v["start_line_no"],v["code"],v.get("description","")) for i in r for v in i.get("violations",[]) if v.get("start_line_no") in ch]; [print("{}: L{}  {}  {}".format(*t)) for t in k]; sys.exit(1 if k else 0)'; then
+            # sqlfluff sai com código != 0 se houver QUALQUER violação no
+            # arquivo (inclusive linhas fora do diff); por isso o `|| true` e o
+            # processamento do JSON em passo separado (evita o pipefail).
+            sqlfluff lint "$file" --format json > "$json_file" 2>/dev/null || true
+            if CHANGED_FILE="$changed_file" python3 -c 'import json,os,sys; ch={int(x) for x in open(os.environ["CHANGED_FILE"]).read().split()}; r=json.load(open(sys.argv[1])); k=[(os.path.basename(i.get("filepath","")),v["start_line_no"],v["code"],v.get("description","")) for i in r for v in i.get("violations",[]) if v.get("start_line_no") in ch]; [print("{}: L{}  {}  {}".format(*t)) for t in k]; sys.exit(1 if k else 0)' "$json_file"; then
               rc=0
             else
               rc=$?
             fi
-            rm -f "$changed_file"
+            rm -f "$changed_file" "$json_file"
             if [ "$rc" -ne 0 ]; then
               exit_code=$rc
             fi
