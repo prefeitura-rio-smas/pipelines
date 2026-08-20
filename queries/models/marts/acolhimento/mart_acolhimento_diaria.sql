@@ -288,6 +288,7 @@ final as (
     left join usuarios usr   on a.id_usuario_sk = usr.id_usuario_sk
     left join unidades un    on a.id_unidade_sk = un.id_unidade_sk
     left join emails_planilha em on lower(trim(em.unidade_atendimento)) = lower(trim(un.nome_unidade))
+    where usr.nome is not null
 )
 
 select
