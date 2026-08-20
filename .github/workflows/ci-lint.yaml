@@ -72,6 +72,13 @@ jobs:
       - name: DBT Deps
         run: uv run dbt deps --project-dir queries --profiles-dir queries
 
+      - name: Set up GCP credentials
+        env:
+          GCP_CREDENTIALS: ${{ secrets.GCP_CREDENTIALS }}
+        run: |
+          echo "$GCP_CREDENTIALS" > /tmp/gcp-creds.json
+          echo "GOOGLE_APPLICATION_CREDENTIALS=/tmp/gcp-creds.json" >> "$GITHUB_ENV"
+
       - name: Lint changed SQL files
         env:
           BASE_SHA: ${{ github.event.pull_request.base.sha }}
