@@ -8,6 +8,7 @@ on:
       - 'pyproject.toml'
       - '.sqlfluff'
       - 'Dockerfile'
+      - '.github/workflows/**'
 
 concurrency:
   group: ci-lint-${{ github.ref }}
