@@ -1,10 +1,12 @@
 [sqlfluff]
-templater = dbt
+templater = jinja
 dialect = bigquery
 exclude_rules = L016, L031
 
-[sqlfluff:templater:dbt]
-project_dir = queries
-profiles_dir = queries
-profile = rj_smas_dev
-target = ci
+[sqlfluff:templater:jinja]
+apply_dbt_builtins = True
+load_macros_from_path = queries/macros
+library_path = sqlfluff_libs
+
+[sqlfluff:templater:jinja:macros]
+filtro_particao_cadunico = {% macro filtro_particao_cadunico() %}data_particao = date('2024-01-01'){% endmacro %}
