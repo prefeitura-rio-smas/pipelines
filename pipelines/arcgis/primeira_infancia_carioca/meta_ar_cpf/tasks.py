@@ -1,11 +1,12 @@
-import prefect
-from prefect import task
-import requests
 import json
+
 import pandas as pd
-from pipelines.arcgis.utils import _get_arcgis_token, resolve_arcgis_url, bq_client
+import prefect
+import requests
+from prefect import task
 from pipelines.arcgis.constants import settings
 from pipelines.arcgis.primeira_infancia_carioca.tasks import _to_arcgis_value
+from pipelines.arcgis.utils import _get_arcgis_token, resolve_arcgis_url, bq_client
 
 # Resolve dataset e nomes de tabela por ambiente (MODE)
 IS_PROD = settings.GCP_PROJECT == "rj-smas"
