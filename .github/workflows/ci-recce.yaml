@@ -86,14 +86,12 @@ jobs:
         if: steps.changed-models.outputs.has_changes == 'true'
         env:
           DBT_SELECT: ${{ steps.changed-models.outputs.selector }}
-          DBT_SCHEMA_PREFIX: pr${{ github.event.pull_request.number }}
         run: uv run dbt build --select "$DBT_SELECT" --target ci --project-dir queries --profiles-dir queries
 
       - name: DBT Docs Generate
         if: steps.changed-models.outputs.has_changes == 'true'
         env:
           DBT_SELECT: ${{ steps.changed-models.outputs.selector }}
-          DBT_SCHEMA_PREFIX: pr${{ github.event.pull_request.number }}
         run: uv run dbt docs generate --select "$DBT_SELECT" --target ci --project-dir queries --profiles-dir queries
 
       - name: Upload dbt artifacts to Recce Cloud
