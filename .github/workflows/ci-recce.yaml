@@ -76,7 +76,7 @@ jobs:
 
           selector=""
           for m in "${models[@]}"; do
-            selector+="$m+ "
+            selector+="+$m "
           done
           selector="${selector%" "}"
 
