@@ -19,27 +19,27 @@
 WITH
     calculado AS (
         SELECT
-            cw.objectid_arcgis AS objectid,
-            dev.cpf_pic, dev.cpf_cadun, dev.id_familia, dev.id_membro_familia,
-            dev.nome, dev.sexo,
-            CAST(dev.nascimento_data AS STRING) AS nascimento_data,
-            CAST(dev.idade AS STRING) AS idade,
-            dev.subprefeitura, dev.regiao_administrativa, dev.bairro,
-            dev.grupo, dev.grupo_detalhado, dev.status, dev.cas,
-            dev.protocolo_secretaria, dev.protocolo_id, dev.protocolo_descricao,
-            dev.protocolo_status,
-            CAST(dev.protocolo_data_referencia AS STRING) AS protocolo_data_referencia,
-            dev.condicao_cadastro_cadun,
-            CAST(dev.data_atualizacao_cadun AS STRING) AS data_atualizacao_cadun,
-            dev.nome_rf_cadun, dev.cpf_rf_cadun, dev.telefone_cadun,
-            dev.bairro_cadun, dev.unidade_territorial_cadun, dev.endereco_cadun,
-            dev.complemento_cadun, dev.complemento_adicional_cadun,
-            dev.refencia_logradouro_cadun,
-            CAST(dev.data_particao_cadun AS STRING) AS data_particao_cadun,
+        cw.objectid_arcgis AS objectid,
+        dev.cpf_pic, dev.cpf_cadun, dev.id_familia, dev.id_membro_familia,
+        dev.nome, dev.sexo,
+        CAST(dev.nascimento_data AS STRING) AS nascimento_data,
+        CAST(dev.idade AS STRING) AS idade,
+        dev.subprefeitura, dev.regiao_administrativa, dev.bairro,
+        dev.grupo, dev.grupo_detalhado, dev.status, dev.cas,
+        dev.protocolo_secretaria, dev.protocolo_id, dev.protocolo_descricao,
+        dev.protocolo_status,
+        CAST(dev.protocolo_data_referencia AS STRING) AS protocolo_data_referencia,
+        dev.condicao_cadastro_cadun,
+        CAST(dev.data_atualizacao_cadun AS STRING) AS data_atualizacao_cadun,
+        dev.nome_rf_cadun, dev.cpf_rf_cadun, dev.telefone_cadun,
+        dev.bairro_cadun, dev.unidade_territorial_cadun, dev.endereco_cadun,
+        dev.complemento_cadun, dev.complemento_adicional_cadun,
+        dev.refencia_logradouro_cadun,
+        CAST(dev.data_particao_cadun AS STRING) AS data_particao_cadun,
         dev.status_inativo_motivo,
-            CAST(dev.data_entrada AS STRING) AS data_entrada,
-            CAST(dev.data_saida AS STRING) AS data_saida,
-            'ativo' AS status_monitoramento_cpf
+        CAST(dev.data_entrada AS STRING) AS data_entrada,
+        CAST(dev.data_saida AS STRING) AS data_saida,
+        'ativo' AS status_monitoramento_cpf
         FROM {{ cw_table }} cw
         JOIN {{ dev_table }} dev
           ON cw.id_membro_familia = dev.id_membro_familia
