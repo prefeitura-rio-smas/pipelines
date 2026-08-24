@@ -2,11 +2,12 @@ import json
 
 import pandas as pd
 import prefect
-import requests
 from prefect import task
+import requests
+
 from pipelines.arcgis.constants import settings
 from pipelines.arcgis.primeira_infancia_carioca.tasks import _to_arcgis_value
-from pipelines.arcgis.utils import _get_arcgis_token, resolve_arcgis_url, bq_client
+from pipelines.arcgis.utils import _get_arcgis_token, bq_client, resolve_arcgis_url
 
 # Resolve dataset e nomes de tabela por ambiente (MODE)
 IS_PROD = settings.GCP_PROJECT == "rj-smas"
@@ -61,7 +62,7 @@ def apply_arcgis_adds(item_id: str, layer_idx: int = 0):
             SELECT 1 FROM `{cw_table}` cw
             WHERE cw.id_membro_familia = dev.id_membro_familia
           )
-    """
+    """  # noqa: S608 (nomes de tabela vêm de constantes internas)
     rows = client.query(query).to_dataframe()
 
     if rows.empty:
@@ -126,7 +127,7 @@ def apply_arcgis_adds(item_id: str, layer_idx: int = 0):
             logger.error(f"Erro no lote {i} (batch size {len(batch)}): {e}")
             try:
                 logger.error(f"HTTP status: {response.status_code}, body: {response.text[:500]}")
-            except Exception:
+            except Exception:  # noqa: S110 (log secundário opcional)
                 pass
 
     # 6. Registrar objectids na crosswalk
@@ -139,7 +140,7 @@ def apply_arcgis_adds(item_id: str, layer_idx: int = 0):
                 f"('{r['id_membro_familia']}', {r['objectid_arcgis']}, TIMESTAMP('{now.isoformat()}'))"
                 for r in inserted
             )}
-        """
+        """  # noqa: S608 (nomes de tabela vêm de constantes internas)
         try:
             client.query(query_insert).result()
             logger.info(f"Registrados {len(inserted)} objectids na crosswalk.")
@@ -181,7 +182,7 @@ def apply_arcgis_status_sync(item_id: str, layer_idx: int = 0):
             WHERE dev.id_membro_familia = cw.id_membro_familia
               AND dev.data_particao = (SELECT MAX(data_particao) FROM `{dev_table}`)
         )
-    """
+    """  # noqa: S608 (nomes de tabela vêm de constantes internas)
     rows = client.query(query).to_dataframe()
 
     if rows.empty:
