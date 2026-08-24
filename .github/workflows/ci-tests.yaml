@@ -6,7 +6,6 @@ on:
       - 'pipelines/**'
       - 'pyproject.toml'
       - 'uv.lock'
-      - '.github/workflows/**'
 
 concurrency:
   group: ci-tests-${{ github.ref }}
