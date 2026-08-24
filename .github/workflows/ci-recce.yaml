@@ -12,6 +12,7 @@ concurrency:
 permissions:
   contents: read
   pull-requests: write
+  id-token: write
 
 env:
   PYTHON_VERSION: '3.13'
@@ -37,17 +38,24 @@ jobs:
       - name: Install dependencies (incluindo dbt e recce-cloud)
         run: uv sync --all-extras --dev
 
-      - name: Configure GCP credentials
+      - name: Check WIF configuration
+        id: check-wif
         env:
-          GCP_CREDENTIALS: ${{ secrets.GCP_CREDENTIALS }}
+          WIF_PROVIDER: ${{ secrets.GCP_WORKLOAD_IDENTITY_PROVIDER }}
         run: |
-          if [[ -z "$GCP_CREDENTIALS" ]]; then
-            echo "GCP_CREDENTIALS não configurado; Recce não pode conectar no BigQuery." >> "$GITHUB_STEP_SUMMARY"
-            exit 0
+          if [[ -z "$WIF_PROVIDER" ]]; then
+            echo "GCP WIF não configurado; Recce será pulado." >> "$GITHUB_STEP_SUMMARY"
+            echo "has_creds=false" >> "$GITHUB_OUTPUT"
+          else
+            echo "has_creds=true" >> "$GITHUB_OUTPUT"
           fi
-          CRED_FILE="$(mktemp --suffix=.json)"
-          printf '%s' "$GCP_CREDENTIALS" > "$CRED_FILE"
-          echo "GOOGLE_APPLICATION_CREDENTIALS=$CRED_FILE" >> "$GITHUB_ENV"
+
+      - name: Authenticate to Google Cloud (WIF)
+        if: steps.check-wif.outputs.has_creds == 'true'
+        uses: google-github-actions/auth@v2
+        with:
+          workload_identity_provider: ${{ secrets.GCP_WORKLOAD_IDENTITY_PROVIDER }}
+          service_account: ${{ secrets.GCP_SERVICE_ACCOUNT }}
 
       - name: List changed SQL models
         id: changed-models
@@ -79,29 +87,29 @@ jobs:
           echo "Modelos alterados: ${models[*]}" >> "$GITHUB_STEP_SUMMARY"
 
       - name: DBT Deps
-        if: steps.changed-models.outputs.has_changes == 'true'
+        if: steps.changed-models.outputs.has_changes == 'true' && steps.check-wif.outputs.has_creds == 'true'
         run: uv run dbt deps --project-dir queries --profiles-dir queries
 
       - name: DBT Build (modelos alterados + upstream)
-        if: steps.changed-models.outputs.has_changes == 'true'
+        if: steps.changed-models.outputs.has_changes == 'true' && steps.check-wif.outputs.has_creds == 'true'
         env:
           DBT_SELECT: ${{ steps.changed-models.outputs.selector }}
         run: uv run dbt build --select "$DBT_SELECT" --target ci --project-dir queries --profiles-dir queries
 
       - name: DBT Docs Generate
-        if: steps.changed-models.outputs.has_changes == 'true'
+        if: steps.changed-models.outputs.has_changes == 'true' && steps.check-wif.outputs.has_creds == 'true'
         env:
           DBT_SELECT: ${{ steps.changed-models.outputs.selector }}
         run: uv run dbt docs generate --select "$DBT_SELECT" --target ci --project-dir queries --profiles-dir queries
 
       - name: Upload dbt artifacts to Recce Cloud
-        if: steps.changed-models.outputs.has_changes == 'true'
+        if: steps.changed-models.outputs.has_changes == 'true' && steps.check-wif.outputs.has_creds == 'true'
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: uv run recce-cloud upload --target-path queries/target
 
       - name: Upload dbt artifacts (debug)
-        if: steps.changed-models.outputs.has_changes == 'true'
+        if: steps.changed-models.outputs.has_changes == 'true' && steps.check-wif.outputs.has_creds == 'true'
         uses: actions/upload-artifact@v4
         with:
           name: dbt-target-recce
