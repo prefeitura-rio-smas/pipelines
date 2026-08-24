@@ -96,6 +96,23 @@ jobs:
           SIURB_PWD: ${{ secrets.SIURB_PWD }}
         run: prefect deploy --name "*-prod"
 
+      - name: Generate Prod dbt artifacts (Recce baseline)
+        if: github.ref == 'refs/heads/main'
+        env:
+          GCP_CREDENTIALS: ${{ secrets.GCP_CREDENTIALS }}
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          pip install uv
+          uv sync --all-extras --dev
+
+          CRED_FILE="$(mktemp --suffix=.json)"
+          printf '%s' "$GCP_CREDENTIALS" > "$CRED_FILE"
+          export GOOGLE_APPLICATION_CREDENTIALS="$CRED_FILE"
+
+          uv run dbt deps --project-dir queries --profiles-dir queries
+          uv run dbt docs generate --target prod --project-dir queries --profiles-dir queries
+          uv run recce-cloud upload --type prod --target-path queries/target
+
       - name: Write Job Summary
         if: always()
         run: |
