@@ -1,3 +1,4 @@
+-- recce smoke test: validacao do data review em PR
 with base as (
     select * from {{ ref('raw_unidades') }}
 ),
