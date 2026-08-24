@@ -1,0 +1,111 @@
+name: CI - Recce Data Review
+
+on:
+  pull_request:
+    paths:
+      - 'queries/models/**/*.sql'
+
+concurrency:
+  group: ci-recce-${{ github.ref }}
+  cancel-in-progress: true
+
+permissions:
+  contents: read
+  pull-requests: write
+
+env:
+  PYTHON_VERSION: '3.13'
+
+jobs:
+  recce-data-review:
+    runs-on: ubuntu-latest
+    timeout-minutes: 60
+    if: github.event.pull_request.head.repo.full_name == github.repository
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Install uv
+        uses: astral-sh/setup-uv@v3
+        with:
+          version: '0.12.4'
+
+      - name: Set up Python
+        run: uv python install ${{ env.PYTHON_VERSION }}
+
+      - name: Install dependencies (incluindo dbt e recce-cloud)
+        run: uv sync --all-extras --dev
+
+      - name: Configure GCP credentials
+        env:
+          GCP_CREDENTIALS: ${{ secrets.GCP_CREDENTIALS }}
+        run: |
+          if [[ -z "$GCP_CREDENTIALS" ]]; then
+            echo "GCP_CREDENTIALS não configurado; Recce não pode conectar no BigQuery." >> "$GITHUB_STEP_SUMMARY"
+            exit 0
+          fi
+          CRED_FILE="$(mktemp --suffix=.json)"
+          printf '%s' "$GCP_CREDENTIALS" > "$CRED_FILE"
+          echo "GOOGLE_APPLICATION_CREDENTIALS=$CRED_FILE" >> "$GITHUB_ENV"
+
+      - name: List changed SQL models
+        id: changed-models
+        env:
+          BASE_SHA: ${{ github.event.pull_request.base.sha }}
+        run: |
+          git cat-file -e "${BASE_SHA}^{commit}"
+
+          mapfile -t models < <(
+            git diff --name-only "$BASE_SHA...HEAD" -- 'queries/models/**/*.sql' |
+            sed 's|.*/||; s|\.sql$||' |
+            sort -u
+          )
+
+          if ((${#models[@]} == 0)); then
+            echo "Nenhum modelo .sql alterado em queries/models/; Recce não será executado." >> "$GITHUB_STEP_SUMMARY"
+            echo "has_changes=false" >> "$GITHUB_OUTPUT"
+            exit 0
+          fi
+
+          selector=""
+          for m in "${models[@]}"; do
+            selector+="$m+ "
+          done
+          selector="${selector%" "}"
+
+          echo "has_changes=true" >> "$GITHUB_OUTPUT"
+          echo "selector=$selector" >> "$GITHUB_OUTPUT"
+          echo "Modelos alterados: ${models[*]}" >> "$GITHUB_STEP_SUMMARY"
+
+      - name: DBT Deps
+        if: steps.changed-models.outputs.has_changes == 'true'
+        run: uv run dbt deps --project-dir queries --profiles-dir queries
+
+      - name: DBT Build (modelos alterados + upstream)
+        if: steps.changed-models.outputs.has_changes == 'true'
+        env:
+          DBT_SELECT: ${{ steps.changed-models.outputs.selector }}
+          DBT_SCHEMA_PREFIX: pr${{ github.event.pull_request.number }}
+        run: uv run dbt build --select "$DBT_SELECT" --target ci --project-dir queries --profiles-dir queries
+
+      - name: DBT Docs Generate
+        if: steps.changed-models.outputs.has_changes == 'true'
+        env:
+          DBT_SELECT: ${{ steps.changed-models.outputs.selector }}
+          DBT_SCHEMA_PREFIX: pr${{ github.event.pull_request.number }}
+        run: uv run dbt docs generate --select "$DBT_SELECT" --target ci --project-dir queries --profiles-dir queries
+
+      - name: Upload dbt artifacts to Recce Cloud
+        if: steps.changed-models.outputs.has_changes == 'true'
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: uv run recce-cloud upload --target-path queries/target
+
+      - name: Upload dbt artifacts (debug)
+        if: steps.changed-models.outputs.has_changes == 'true'
+        uses: actions/upload-artifact@v4
+        with:
+          name: dbt-target-recce
+          path: queries/target/
+          retention-days: 7
