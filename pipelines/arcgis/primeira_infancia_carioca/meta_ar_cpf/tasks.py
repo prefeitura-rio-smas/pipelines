@@ -163,13 +163,18 @@ def apply_arcgis_status_sync(item_id: str, layer_idx: int = 0):
     project = settings.GCP_PROJECT
     dev_table = f"{project}.{DATASET}.{DEV_TABLE_NAME}"
     cw_table = f"{project}.{DATASET}.{CW_TABLE_NAME}"
+    motivo_table = f"{project}.{DATASET}.motivo_inativo_meta_ar_cpf"
 
-    # 1. Buscar inativos (na crosswalk mas sem registro na última partição da _dev)
+    # 1. Buscar inativos (na crosswalk mas sem registro na última partição da _dev).
+    #    LEFT JOIN com o espelho de motivos (alimentado pelo incremental manual,
+    #    pois a SA não acessa rj-crm-registry) para levar status_inativo_motivo.
     query = f"""
         SELECT cw.id_membro_familia, cw.objectid_arcgis,
                (SELECT MAX(dev2.data_particao) FROM `{dev_table}` dev2
-                WHERE dev2.id_membro_familia = cw.id_membro_familia) AS data_saida
+                WHERE dev2.id_membro_familia = cw.id_membro_familia) AS data_saida,
+               m.status_inativo_motivo
         FROM `{cw_table}` cw
+        LEFT JOIN `{motivo_table}` m ON cw.id_membro_familia = m.id_membro_familia
         WHERE NOT EXISTS (
             SELECT 1 FROM `{dev_table}` dev
             WHERE dev.id_membro_familia = cw.id_membro_familia
@@ -189,7 +194,8 @@ def apply_arcgis_status_sync(item_id: str, layer_idx: int = 0):
     token = _get_arcgis_token()
     edits_url = f"{service_url}/applyEdits"
 
-    # 3. Montar payload (objectid + status_monitoramento_cpf + data_saida quando houver histórico)
+    # 3. Montar payload (objectid + status_monitoramento_cpf + data_saida quando houver
+    #    histórico + status_inativo_motivo quando o espelho tiver o motivo)
     updates = []
     for _, row in rows.iterrows():
         attrs = {
@@ -199,6 +205,8 @@ def apply_arcgis_status_sync(item_id: str, layer_idx: int = 0):
         if not pd.isna(row["data_saida"]):
             data_saida_iso = pd.Timestamp(row["data_saida"]).strftime("%Y-%m-%d")
             attrs["data_saida"] = _to_arcgis_value("data_saida", data_saida_iso)
+        if not pd.isna(row["status_inativo_motivo"]):
+            attrs["status_inativo_motivo"] = row["status_inativo_motivo"]
         updates.append({"attributes": attrs})
 
     # 4. Enviar
