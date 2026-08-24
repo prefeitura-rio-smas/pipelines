@@ -13,7 +13,6 @@ concurrency:
 permissions:
   contents: read
   packages: write
-  id-token: write
 
 env:
   PYTHON_VERSION: '3.13'
@@ -97,12 +96,11 @@ jobs:
           SIURB_PWD: ${{ secrets.SIURB_PWD }}
         run: prefect deploy --name "*-prod"
 
-      - name: Authenticate to Google Cloud (WIF)
+      - name: Authenticate to Google Cloud
         if: github.ref == 'refs/heads/main'
         uses: google-github-actions/auth@v2
         with:
-          workload_identity_provider: ${{ secrets.GCP_WORKLOAD_IDENTITY_PROVIDER }}
-          service_account: ${{ secrets.GCP_SERVICE_ACCOUNT }}
+          credentials_json: ${{ secrets.GCP_CREDENTIALS }}
 
       - name: Generate Prod dbt artifacts (Recce baseline)
         if: github.ref == 'refs/heads/main'
