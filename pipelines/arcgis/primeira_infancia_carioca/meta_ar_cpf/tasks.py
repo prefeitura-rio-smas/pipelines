@@ -84,7 +84,9 @@ def apply_arcgis_adds(item_id: str, layer_idx: int = 0):
             value = row[col]
             # Tratar nulos e valores especiais (mesmo padrão do apply_arcgis_feedback)
             # Colunas internas do BQ que não existem no layer ArcGIS:
-            if col.lower() in ("objectid", "data_particao"):
+            # bairro desativado [2026-08-25] — redundante com bairro_cadun; campo
+            # removido do layer. Reversível: tirar da lista + recriar campo no layer.
+            if col.lower() in ("objectid", "data_particao", "bairro"):
                 continue
             # Converte date/datetime para string ISO (json.dumps não serializa date nativo)
             if hasattr(value, 'isoformat'):

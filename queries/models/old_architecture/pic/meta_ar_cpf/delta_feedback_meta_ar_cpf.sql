@@ -24,7 +24,9 @@ WITH
         dev.nome, dev.sexo,
         CAST(dev.nascimento_data AS STRING) AS nascimento_data,
         CAST(dev.idade AS STRING) AS idade,
-        dev.subprefeitura, dev.regiao_administrativa, dev.bairro,
+        dev.subprefeitura, dev.regiao_administrativa,
+        -- dev.bairro, -- DESATIVADO [2026-08-25]: redundante com dev.bairro_cadun
+        --               (CadÚnico+UTL); campo removido do layer ArcGIS. Reversível.
         dev.grupo, dev.grupo_detalhado, dev.status, dev.cas,
         dev.protocolo_secretaria, dev.protocolo_id, dev.protocolo_descricao,
         dev.protocolo_status,
@@ -72,7 +74,7 @@ WHERE
     OR COALESCE(NULLIF(CAST(calculado.idade AS STRING), 'None'), '')    != COALESCE(NULLIF(CAST(atual.idade AS STRING), 'None'), '')
     OR COALESCE(NULLIF(calculado.subprefeitura, 'None'), '')         != COALESCE(NULLIF(atual.subprefeitura, 'None'), '')
     OR COALESCE(NULLIF(calculado.regiao_administrativa, 'None'), '') != COALESCE(NULLIF(atual.regiao_administrativa, 'None'), '')
-    OR COALESCE(NULLIF(calculado.bairro, 'None'), '')                != COALESCE(NULLIF(atual.bairro, 'None'), '')
+    -- OR COALESCE(NULLIF(calculado.bairro, 'None'), '') != COALESCE(NULLIF(atual.bairro, 'None'), '') -- DESATIVADO [2026-08-25] (reversível)
     OR COALESCE(NULLIF(calculado.grupo, 'None'), '')                 != COALESCE(NULLIF(atual.grupo, 'None'), '')
     OR COALESCE(NULLIF(calculado.grupo_detalhado, 'None'), '')       != COALESCE(NULLIF(atual.grupo_detalhado, 'None'), '')
     OR COALESCE(NULLIF(calculado.status, 'None'), '')                != COALESCE(NULLIF(atual.status, 'None'), '')
