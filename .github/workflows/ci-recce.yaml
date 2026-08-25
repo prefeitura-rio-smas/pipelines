@@ -100,6 +100,27 @@ jobs:
           DBT_SELECT: ${{ steps.changed-models.outputs.selector }}
         run: uv run dbt docs generate --select "$DBT_SELECT" --target ci --project-dir queries --profiles-dir queries
 
+      - name: Disable recce-cloud telemetry (PostHog opt-out)
+        if: steps.changed-models.outputs.has_changes == 'true' && steps.check-creds.outputs.has_creds == 'true'
+        run: |
+          # recce-cloud 1.61.0 não tem env var de disable (RECCE_DISABLE_TELEMETRY
+          # existe só no pacote OSS `recce`). O mecanismo oficial é a flag
+          # anonymous_tracking no ~/.recce/profile.yml — MAS o profile é
+          # auto-criado com anonymous_tracking: true (e o host prod usa chave
+          # PostHog hardcoded), então sem este passo o upload envia telemetria.
+          # Garantimos o opt-out ANTES do primeiro comando recce-cloud.
+          mkdir -p "$HOME/.recce"
+          profile="$HOME/.recce/profile.yml"
+          if [ ! -f "$profile" ] || ! grep -q '^user_id:' "$profile"; then
+            # Sem user_id o recce-cloud REGERA o profile com tracking=true.
+            printf 'user_id: %s\nanonymous_tracking: false\n' \
+              "$(python3 -c 'import uuid; print(uuid.uuid4().hex)')" > "$profile"
+          else
+            sed -i 's/^anonymous_tracking:.*/anonymous_tracking: false/' "$profile"
+            grep -q '^anonymous_tracking:' "$profile" || printf 'anonymous_tracking: false\n' >> "$profile"
+          fi
+          echo "Recce Cloud telemetry: anonymous_tracking=false em $profile"
+
       - name: Upload dbt artifacts to Recce Cloud
         if: steps.changed-models.outputs.has_changes == 'true' && steps.check-creds.outputs.has_creds == 'true'
         env:
