@@ -82,23 +82,11 @@ jobs:
 
           echo "has_changes=true" >> "$GITHUB_OUTPUT"
           echo "selector=$selector" >> "$GITHUB_OUTPUT"
-          echo "Modelos alterados: ${models[*]}" >> "$GITHUB_STEP_SUMMARY"
+          echo "Modelos alterados (git diff): ${models[*]}" >> "$GITHUB_STEP_SUMMARY"
 
       - name: DBT Deps
         if: steps.changed-models.outputs.has_changes == 'true' && steps.check-creds.outputs.has_creds == 'true'
         run: uv run dbt deps --project-dir queries --profiles-dir queries
-
-      - name: DBT Build (modelos alterados + upstream)
-        if: steps.changed-models.outputs.has_changes == 'true' && steps.check-creds.outputs.has_creds == 'true'
-        env:
-          DBT_SELECT: ${{ steps.changed-models.outputs.selector }}
-        run: uv run dbt build --select "$DBT_SELECT" --target ci --project-dir queries --profiles-dir queries
-
-      - name: DBT Docs Generate
-        if: steps.changed-models.outputs.has_changes == 'true' && steps.check-creds.outputs.has_creds == 'true'
-        env:
-          DBT_SELECT: ${{ steps.changed-models.outputs.selector }}
-        run: uv run dbt docs generate --select "$DBT_SELECT" --target ci --project-dir queries --profiles-dir queries
 
       - name: Disable recce-cloud telemetry (PostHog opt-out)
         if: steps.changed-models.outputs.has_changes == 'true' && steps.check-creds.outputs.has_creds == 'true'
@@ -120,6 +108,74 @@ jobs:
             grep -q '^anonymous_tracking:' "$profile" || printf 'anonymous_tracking: false\n' >> "$profile"
           fi
           echo "Recce Cloud telemetry: anonymous_tracking=false em $profile"
+
+      # ======================================================================
+      # Ponto 3 (PR #101): slim CI oficial do Recce Cloud.
+      # 1) Baixa artifacts de prod (baseline) -> queries/target-base
+      # 2) build/docs apenas dos modelos MODIFICADOS (state:modified+),
+      #    com upstream NÃO selecionado deferido para as relações de prod
+      #    (--defer) — sem rebuild de upstream.
+      # ======================================================================
+
+      - name: Download prod baseline artifacts (Recce Cloud — slim CI)
+        if: steps.changed-models.outputs.has_changes == 'true' && steps.check-creds.outputs.has_creds == 'true'
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          # Baseline = artifacts de prod gerados no cd.yaml (job
+          # recce-prod-baseline, upload --type prod). É o estado do
+          # state:modified e a origem das relações deferidas.
+          if ! uv run recce-cloud download --prod --target-path queries/target-base; then
+            echo "::error::recce-cloud download --prod falhou — baseline stale ou Recce Cloud inacessível"
+            {
+              echo "## ⚠️ Baseline de prod indisponível no Recce Cloud"
+              echo ""
+              echo "O download dos artifacts de prod (\`recce-cloud download --prod\`) falhou."
+              echo "O baseline não foi atualizado no último deploy para main (job \`recce-prod-baseline\`"
+              echo "no cd.yaml) ou o Recce Cloud está inacessível. O data review foi abortado."
+              echo ""
+              echo "- **PR**: \`${{ github.event.pull_request.number }}\`"
+              echo "- **Ação**: re-rodar o job manualmente após validar o baseline (cd.yaml)."
+            } >> "$GITHUB_STEP_SUMMARY"
+            exit 1
+          fi
+          ls -la queries/target-base
+
+      - name: DBT Build (slim CI — state:modified+ com defer)
+        if: steps.changed-models.outputs.has_changes == 'true' && steps.check-creds.outputs.has_creds == 'true'
+        run: |
+          # dbt 1.12.2 (dbt-bigquery 1.11.1): state_modified_compare_more_unrendered_values
+          # é DEFAULT true — compara schema/database NÃO renderizados
+          # (unrendered_schema / unrendered_database), evitando falso-positivo do
+          # state:modified com configs env-aware
+          # (ex: "{{ 'marts' if target.name == 'prod' else 'relatorio' }}").
+          # --state resolve relativo ao --project-dir (queries/target-base).
+          # --defer resolve upstream NÃO selecionado para as relações de prod (sem rebuild).
+          # --favor-state é OBRIGATÓRIO aqui: como a SA da CI não cria datasets e o target ci
+          # escreve nos datasets compartilhados (gerenciamento__dbt/relatorio/pic), as relações
+          # atuais podem EXISTIR (de runs anteriores/paralelos) — sem --favor-state o dbt NÃO
+          # deferiria e o modelo leria dados STALE de dev. Com --favor-state, todo upstream não
+          # selecionado resolve SEMPRE para a relação de prod do state.
+          uv run dbt build \
+            --select "state:modified+" \
+            --defer \
+            --favor-state \
+            --state target-base \
+            --target ci \
+            --project-dir queries \
+            --profiles-dir queries
+
+      - name: DBT Docs Generate (mesma seleção do build)
+        if: steps.changed-models.outputs.has_changes == 'true' && steps.check-creds.outputs.has_creds == 'true'
+        run: |
+          uv run dbt docs generate \
+            --select "state:modified+" \
+            --defer \
+            --favor-state \
+            --state target-base \
+            --target ci \
+            --project-dir queries \
+            --profiles-dir queries
 
       - name: Upload dbt artifacts to Recce Cloud
         if: steps.changed-models.outputs.has_changes == 'true' && steps.check-creds.outputs.has_creds == 'true'
