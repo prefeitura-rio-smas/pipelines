@@ -156,6 +156,10 @@ jobs:
           # atuais podem EXISTIR (de runs anteriores/paralelos) — sem --favor-state o dbt NÃO
           # deferiria e o modelo leria dados STALE de dev. Com --favor-state, todo upstream não
           # selecionado resolve SEMPRE para a relação de prod do state.
+          # LIMITAÇÃO CONHECIDA: PRs em paralelo escrevem nos MESMOS datasets compartilhados
+          # (gerenciamento__dbt/relatorio/pic) — colisão residual de escrita (o último a
+          # escrever vence). O data review pode comparar contra tabelas sobrescritas por outro
+          # PR. --favor-state mitiga a leitura (defer), não a escrita concorrente.
           uv run dbt build \
             --select "state:modified+" \
             --defer \
