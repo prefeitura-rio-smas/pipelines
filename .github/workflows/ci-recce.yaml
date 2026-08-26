@@ -1,0 +1,196 @@
+name: CI - Recce Data Review
+
+on:
+  pull_request:
+    paths:
+      - 'queries/models/**/*.sql'
+
+concurrency:
+  group: ci-recce-${{ github.ref }}
+  cancel-in-progress: true
+
+permissions:
+  contents: read
+  pull-requests: write
+
+env:
+  PYTHON_VERSION: '3.13'
+
+jobs:
+  recce-data-review:
+    runs-on: ubuntu-latest
+    timeout-minutes: 60
+    if: github.event.pull_request.head.repo.full_name == github.repository
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Install uv
+        uses: astral-sh/setup-uv@v3
+        with:
+          version: '0.12.4'
+
+      - name: Set up Python
+        run: uv python install ${{ env.PYTHON_VERSION }}
+
+      - name: Install dependencies (incluindo dbt e recce-cloud)
+        run: uv sync --all-extras --dev
+
+      - name: Check GCP credentials
+        id: check-creds
+        env:
+          GCP_CREDENTIALS: ${{ secrets.GCP_CREDENTIALS }}
+        run: |
+          if [[ -z "$GCP_CREDENTIALS" ]]; then
+            echo "GCP_CREDENTIALS não configurado; Recce será pulado." >> "$GITHUB_STEP_SUMMARY"
+            echo "has_creds=false" >> "$GITHUB_OUTPUT"
+          else
+            echo "has_creds=true" >> "$GITHUB_OUTPUT"
+          fi
+
+      - name: Authenticate to Google Cloud
+        if: steps.check-creds.outputs.has_creds == 'true'
+        uses: google-github-actions/auth@v2
+        with:
+          credentials_json: ${{ secrets.GCP_CREDENTIALS }}
+
+      - name: List changed SQL models
+        id: changed-models
+        env:
+          BASE_SHA: ${{ github.event.pull_request.base.sha }}
+        run: |
+          git cat-file -e "${BASE_SHA}^{commit}"
+
+          mapfile -t models < <(
+            git diff --name-only "$BASE_SHA...HEAD" -- 'queries/models/**/*.sql' |
+            sed 's|.*/||; s|\.sql$||' |
+            sort -u
+          )
+
+          if ((${#models[@]} == 0)); then
+            echo "Nenhum modelo .sql alterado em queries/models/; Recce não será executado." >> "$GITHUB_STEP_SUMMARY"
+            echo "has_changes=false" >> "$GITHUB_OUTPUT"
+            exit 0
+          fi
+
+          selector=""
+          for m in "${models[@]}"; do
+            selector+="+$m "
+          done
+          selector="${selector%" "}"
+
+          echo "has_changes=true" >> "$GITHUB_OUTPUT"
+          echo "selector=$selector" >> "$GITHUB_OUTPUT"
+          echo "Modelos alterados (git diff): ${models[*]}" >> "$GITHUB_STEP_SUMMARY"
+
+      - name: DBT Deps
+        if: steps.changed-models.outputs.has_changes == 'true' && steps.check-creds.outputs.has_creds == 'true'
+        run: uv run dbt deps --project-dir queries --profiles-dir queries
+
+      - name: Disable recce-cloud telemetry (PostHog opt-out)
+        if: steps.changed-models.outputs.has_changes == 'true' && steps.check-creds.outputs.has_creds == 'true'
+        run: |
+          # recce-cloud 1.61.0 não tem env var de disable (RECCE_DISABLE_TELEMETRY
+          # existe só no pacote OSS `recce`). O mecanismo oficial é a flag
+          # anonymous_tracking no ~/.recce/profile.yml — MAS o profile é
+          # auto-criado com anonymous_tracking: true (e o host prod usa chave
+          # PostHog hardcoded), então sem este passo o upload envia telemetria.
+          # Garantimos o opt-out ANTES do primeiro comando recce-cloud.
+          mkdir -p "$HOME/.recce"
+          profile="$HOME/.recce/profile.yml"
+          if [ ! -f "$profile" ] || ! grep -q '^user_id:' "$profile"; then
+            # Sem user_id o recce-cloud REGERA o profile com tracking=true.
+            printf 'user_id: %s\nanonymous_tracking: false\n' \
+              "$(python3 -c 'import uuid; print(uuid.uuid4().hex)')" > "$profile"
+          else
+            sed -i 's/^anonymous_tracking:.*/anonymous_tracking: false/' "$profile"
+            grep -q '^anonymous_tracking:' "$profile" || printf 'anonymous_tracking: false\n' >> "$profile"
+          fi
+          echo "Recce Cloud telemetry: anonymous_tracking=false em $profile"
+
+      # ======================================================================
+      # Ponto 3 (PR #101): slim CI oficial do Recce Cloud.
+      # 1) Baixa artifacts de prod (baseline) -> queries/target-base
+      # 2) build/docs apenas dos modelos MODIFICADOS (state:modified+),
+      #    com upstream NÃO selecionado deferido para as relações de prod
+      #    (--defer) — sem rebuild de upstream.
+      # ======================================================================
+
+      - name: Download prod baseline artifacts (Recce Cloud — slim CI)
+        if: steps.changed-models.outputs.has_changes == 'true' && steps.check-creds.outputs.has_creds == 'true'
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          # Baseline = artifacts de prod gerados no cd.yaml (job
+          # recce-prod-baseline, upload --type prod). É o estado do
+          # state:modified e a origem das relações deferidas.
+          if ! uv run recce-cloud download --prod --target-path queries/target-base; then
+            echo "::error::recce-cloud download --prod falhou — baseline stale ou Recce Cloud inacessível"
+            {
+              echo "## ⚠️ Baseline de prod indisponível no Recce Cloud"
+              echo ""
+              echo "O download dos artifacts de prod (\`recce-cloud download --prod\`) falhou."
+              echo "O baseline não foi atualizado no último deploy para main (job \`recce-prod-baseline\`"
+              echo "no cd.yaml) ou o Recce Cloud está inacessível. O data review foi abortado."
+              echo ""
+              echo "- **PR**: \`${{ github.event.pull_request.number }}\`"
+              echo "- **Ação**: re-rodar o job manualmente após validar o baseline (cd.yaml)."
+            } >> "$GITHUB_STEP_SUMMARY"
+            exit 1
+          fi
+          ls -la queries/target-base
+
+      - name: DBT Build (slim CI — state:modified+ com defer)
+        if: steps.changed-models.outputs.has_changes == 'true' && steps.check-creds.outputs.has_creds == 'true'
+        run: |
+          # dbt 1.12.2 (dbt-bigquery 1.11.1): state_modified_compare_more_unrendered_values
+          # é DEFAULT true — compara schema/database NÃO renderizados
+          # (unrendered_schema / unrendered_database), evitando falso-positivo do
+          # state:modified com configs env-aware
+          # (ex: "{{ 'marts' if target.name == 'prod' else 'relatorio' }}").
+          # --state resolve relativo ao --project-dir (queries/target-base).
+          # --defer resolve upstream NÃO selecionado para as relações de prod (sem rebuild).
+          # --favor-state é OBRIGATÓRIO aqui: como a SA da CI não cria datasets e o target ci
+          # escreve nos datasets compartilhados (gerenciamento__dbt/relatorio/pic), as relações
+          # atuais podem EXISTIR (de runs anteriores/paralelos) — sem --favor-state o dbt NÃO
+          # deferiria e o modelo leria dados STALE de dev. Com --favor-state, todo upstream não
+          # selecionado resolve SEMPRE para a relação de prod do state.
+          # LIMITAÇÃO CONHECIDA: PRs em paralelo escrevem nos MESMOS datasets compartilhados
+          # (gerenciamento__dbt/relatorio/pic) — colisão residual de escrita (o último a
+          # escrever vence). O data review pode comparar contra tabelas sobrescritas por outro
+          # PR. --favor-state mitiga a leitura (defer), não a escrita concorrente.
+          uv run dbt build \
+            --select "state:modified+" \
+            --defer \
+            --favor-state \
+            --state target-base \
+            --target ci \
+            --project-dir queries \
+            --profiles-dir queries
+
+      - name: DBT Docs Generate (mesma seleção do build)
+        if: steps.changed-models.outputs.has_changes == 'true' && steps.check-creds.outputs.has_creds == 'true'
+        run: |
+          uv run dbt docs generate \
+            --select "state:modified+" \
+            --defer \
+            --favor-state \
+            --state target-base \
+            --target ci \
+            --project-dir queries \
+            --profiles-dir queries
+
+      - name: Upload dbt artifacts to Recce Cloud
+        if: steps.changed-models.outputs.has_changes == 'true' && steps.check-creds.outputs.has_creds == 'true'
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: uv run recce-cloud upload --target-path queries/target
+
+      - name: Upload dbt artifacts (debug)
+        if: steps.changed-models.outputs.has_changes == 'true' && steps.check-creds.outputs.has_creds == 'true'
+        uses: actions/upload-artifact@v4
+        with:
+          name: dbt-target-recce
+          path: queries/target/
+          retention-days: 7

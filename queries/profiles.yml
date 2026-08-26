@@ -3,12 +3,11 @@ rj_smas_dev:
   target: dev
   outputs:
 
-    prod:         
+    prod:
       type: bigquery
       method: service-account
       project: rj-smas
       dataset: gerenciamento__dbt
-      #keyfile: "{{ env_var('DBT_KEYFILE_PATH') }}"
       keyfile: "{{ env_var('GOOGLE_APPLICATION_CREDENTIALS') }}"
       threads: 10
       location: US

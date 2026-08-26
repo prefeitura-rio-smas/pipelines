@@ -62,15 +62,68 @@ jobs:
             exit 0
           fi
 
-          uv run python -m ruff check "${files[@]}"
+          # Lint por diff: só reprova violações em linhas alteradas pelo PR.
+          # O ruff linta o arquivo inteiro, mas arquivos legados têm dívida
+          # pré-existente fora do escopo do PR; filtramos o JSON de violações
+          # pelas linhas que este PR realmente tocou.
+          exit_code=0
+          for file in "${files[@]}"; do
+            changed_file="$(mktemp)"
+            json_file="$(mktemp)"
+            git diff -U0 "$BASE_SHA...HEAD" -- "$file" |
+              awk '
+                /^@@/ {
+                  match($0, /\+[0-9]+(,[0-9]+)?/);
+                  hunk = substr($0, RSTART, RLENGTH);
+                  sub(/^\+/, "", hunk);
+                  split(hunk, a, ",");
+                  start = a[1] + 0;
+                  count = (a[2] == "" ? 1 : a[2] + 0);
+                  for (i = 0; i < count; i++) print start + i;
+                }
+              ' > "$changed_file"
 
-      - name: Install SQLFluff (dbt templater)
+            echo "== Lintando (diff-only): $file =="
+            # Falha REAL de execução (crash/config/IO) DEVE falhar o job com
+            # diagnóstico claro: sem `|| true` nem `2>/dev/null` — o stderr fica
+            # visível no log. Exit codes do ruff: 0 = sem violações; 1 =
+            # violações encontradas; 2 = erro de execução (config inválida,
+            # arquivo ilegível, crash interno).
+            # O ruff sempre sai != 0 se houver QUALQUER violação no arquivo
+            # (inclusive linhas fora do diff); por isso o JSON ainda é filtrado
+            # pelas linhas que este PR tocou (dívida legada fora do escopo).
+            if uv run python -m ruff check "$file" --output-format=json > "$json_file"; then
+              rc=0
+            else
+              rc=$?
+              if [ "$rc" -ne 1 ]; then
+                echo "::error::Ruff falhou ao executar em '$file' (exit $rc). Diagnóstico no stderr acima."
+                rm -f "$changed_file" "$json_file"
+                exit 1
+              fi
+            fi
+            if [ ! -s "$json_file" ]; then
+              echo "::error::Ruff terminou sem produzir JSON em '$file' (falha silenciosa)."
+              rm -f "$changed_file" "$json_file"
+              exit 1
+            fi
+            if CHANGED_FILE="$changed_file" python3 -c 'import json,os,sys; ch={int(x) for x in open(os.environ["CHANGED_FILE"]).read().split()}; r=json.load(open(sys.argv[1])); k=[(os.path.basename(i.get("filename","")),i["location"]["row"],i["code"],i.get("message","")) for i in r if i["location"]["row"] in ch]; [print("{}: L{}  {}  {}".format(*t)) for t in k]; sys.exit(1 if k else 0)' "$json_file"; then
+              rc=0
+            else
+              rc=$?
+            fi
+            rm -f "$changed_file" "$json_file"
+            if [ "$rc" -ne 0 ]; then
+              exit_code=$rc
+            fi
+          done
+
+          exit "$exit_code"
+
+      - name: Install SQLFluff (jinja templater, offline)
         run: |
-          uv tool install sqlfluff --with sqlfluff-templater-dbt --with dbt-bigquery
+          uv tool install sqlfluff
           echo "$HOME/.local/bin" >> "$GITHUB_PATH"
-
-      - name: DBT Deps
-        run: uv run dbt deps --project-dir queries --profiles-dir queries
 
       - name: Lint changed SQL files
         env:
@@ -96,4 +149,60 @@ jobs:
             exit 0
           fi
 
-          sqlfluff lint "${files[@]}"
+          # Lint por diff: só reprova violações em linhas alteradas pelo PR.
+          # O sqlfluff linta o arquivo inteiro, mas arquivos legados têm dívida
+          # de estilo pré-existente fora do escopo do PR; filtramos o JSON de
+          # violações pelas linhas que este PR realmente tocou.
+          exit_code=0
+          for file in "${files[@]}"; do
+            changed_file="$(mktemp)"
+            json_file="$(mktemp)"
+            git diff -U0 "$BASE_SHA...HEAD" -- "$file" |
+              awk '
+                /^@@/ {
+                  match($0, /\+[0-9]+(,[0-9]+)?/);
+                  hunk = substr($0, RSTART, RLENGTH);
+                  sub(/^\+/, "", hunk);
+                  split(hunk, a, ",");
+                  start = a[1] + 0;
+                  count = (a[2] == "" ? 1 : a[2] + 0);
+                  for (i = 0; i < count; i++) print start + i;
+                }
+              ' > "$changed_file"
+
+            echo "== Lintando (diff-only): $file =="
+            # Falha REAL de execução (crash/config/IO) DEVE falhar o job com
+            # diagnóstico claro: sem `|| true` nem `2>/dev/null` — o stderr fica
+            # visível no log. Exit codes do sqlfluff: 0 = sem violações; 1 =
+            # violações encontradas; 2 = erro de execução (config inválida,
+            # templater quebrado, crash interno).
+            # O sqlfluff sempre sai != 0 se houver QUALQUER violação no arquivo
+            # (inclusive linhas fora do diff); por isso o JSON ainda é filtrado
+            # pelas linhas que este PR tocou (dívida legada fora do escopo).
+            if sqlfluff lint "$file" --format json > "$json_file"; then
+              rc=0
+            else
+              rc=$?
+              if [ "$rc" -ne 1 ]; then
+                echo "::error::SQLFluff falhou ao executar em '$file' (exit $rc). Diagnóstico no stderr acima."
+                rm -f "$changed_file" "$json_file"
+                exit 1
+              fi
+            fi
+            if [ ! -s "$json_file" ]; then
+              echo "::error::SQLFluff terminou sem produzir JSON em '$file' (falha silenciosa)."
+              rm -f "$changed_file" "$json_file"
+              exit 1
+            fi
+            if CHANGED_FILE="$changed_file" python3 -c 'import json,os,sys; ch={int(x) for x in open(os.environ["CHANGED_FILE"]).read().split()}; r=json.load(open(sys.argv[1])); k=[(os.path.basename(i.get("filepath","")),v["start_line_no"],v["code"],v.get("description","")) for i in r for v in i.get("violations",[]) if v.get("start_line_no") in ch]; [print("{}: L{}  {}  {}".format(*t)) for t in k]; sys.exit(1 if k else 0)' "$json_file"; then
+              rc=0
+            else
+              rc=$?
+            fi
+            rm -f "$changed_file" "$json_file"
+            if [ "$rc" -ne 0 ]; then
+              exit_code=$rc
+            fi
+          done
+
+          exit "$exit_code"

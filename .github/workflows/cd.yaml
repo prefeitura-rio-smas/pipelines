@@ -102,3 +102,83 @@ jobs:
           echo "## CD - ${{ github.ref_name }}" >> $GITHUB_STEP_SUMMARY
           echo "- **Imagem**: \`${{ env.IMAGE_REPO }}:${{ env.TAG }}\`" >> $GITHUB_STEP_SUMMARY
           echo "- **Commit**: \`${{ github.sha }}\`" >> $GITHUB_STEP_SUMMARY
+
+  # ============================================================================
+  # Ponto 2 (PR #101): detecção de baseline stale sem acoplar ao deploy.
+  # Job INDEPENDENTE do deploy-flows (sem `needs`). A falha do baseline NÃO
+  # marca o deploy como falho — ela é o ALERTA visível de baseline stale
+  # (job vermelho + GITHUB_STEP_SUMMARY + annotation ::error::).
+  # ============================================================================
+  recce-prod-baseline:
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    if: github.ref == 'refs/heads/main'
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: ${{ env.PYTHON_VERSION }}
+
+      # Necessário: `dbt docs generate --target prod` introspecta o catálogo no
+      # BigQuery (profiles.yml usa keyfile via GOOGLE_APPLICATION_CREDENTIALS).
+      - name: Authenticate to Google Cloud
+        uses: google-github-actions/auth@v2
+        with:
+          credentials_json: ${{ secrets.GCP_CREDENTIALS }}
+
+      - name: Disable recce-cloud telemetry (PostHog opt-out)
+        run: |
+          # recce-cloud 1.61.0 não tem env var de disable (RECCE_DISABLE_TELEMETRY
+          # existe só no pacote OSS `recce`). O mecanismo oficial é a flag
+          # anonymous_tracking no ~/.recce/profile.yml — MAS o profile é
+          # auto-criado com anonymous_tracking: true (e o host prod usa chave
+          # PostHog hardcoded), então sem este passo o upload envia telemetria.
+          # Garantimos o opt-out ANTES do primeiro comando recce-cloud.
+          mkdir -p "$HOME/.recce"
+          profile="$HOME/.recce/profile.yml"
+          if [ ! -f "$profile" ] || ! grep -q '^user_id:' "$profile"; then
+            # Sem user_id o recce-cloud REGERA o profile com tracking=true.
+            printf 'user_id: %s\nanonymous_tracking: false\n' \
+              "$(python3 -c 'import uuid; print(uuid.uuid4().hex)')" > "$profile"
+          else
+            sed -i 's/^anonymous_tracking:.*/anonymous_tracking: false/' "$profile"
+            grep -q '^anonymous_tracking:' "$profile" || printf 'anonymous_tracking: false\n' >> "$profile"
+          fi
+          echo "Recce Cloud telemetry: anonymous_tracking=false em $profile"
+
+      - name: Generate and upload Prod dbt artifacts (Recce baseline)
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          pip install uv
+          uv sync --all-extras --dev
+
+          run_baseline() {
+            uv run dbt deps --project-dir queries --profiles-dir queries
+            uv run dbt docs generate --target prod --project-dir queries --profiles-dir queries
+            uv run recce-cloud upload --type prod --target-path queries/target
+          }
+
+          # Falha visível = alerta de baseline stale. O deploy NÃO é afetado
+          # (job separado, sem `needs` no deploy-flows).
+          if ! run_baseline; then
+            echo "::error::Recce baseline de prod falhou (stale) — upload de artifacts não atualizou o baseline"
+            {
+              echo "## ⚠️ Recce baseline de prod NÃO atualizado (stale)"
+              echo ""
+              echo "A geração/upload dos artifacts de prod (\`recce-cloud upload --type prod\`) falhou."
+              echo "Os próximos data reviews de PR vão comparar contra um baseline **desatualizado**."
+              echo ""
+              echo "- **Job**: \`recce-prod-baseline\` (independente do \`deploy-flows\` — release não afetado)"
+              echo "- **Commit**: \`${{ github.sha }}\`"
+              echo "- **Diagnóstico**: revisar os logs dos passos \`dbt\`/\`recce-cloud\` acima e a conectividade com o Recce Cloud."
+            } >> "$GITHUB_STEP_SUMMARY"
+            exit 1
+          fi
+
+          {
+            echo "✅ Recce baseline de prod atualizado (\`upload --type prod\`)."
+          } >> "$GITHUB_STEP_SUMMARY"
