@@ -1,0 +1,28 @@
+version: 2
+
+models:
+  - name: dim_perfis_acesso
+    description: |
+      Dimensão de catálogo dos perfis de acesso customizados do Prontuário Carioca.
+      Grão: 1 linha por perfil (seqgrupo da gh_perfil_grupos).
+      Alimenta o enriquecimento de profissionais/operadores: a dim_profissionais
+      liga a conta (gh_contas.indnivel=8, acesso personalizado) ao nome do perfil
+      via gh_contas_modulos.seqgrupo → dim_perfis_acesso.id_perfil_acesso.
+    columns:
+      - name: id_perfil_acesso
+        description: "ID do perfil (seqgrupo da gh_perfil_grupos)."
+        tests:
+          - unique
+          - not_null
+      - name: nome_perfil
+        description: "Nome do perfil (dsctitmod). Ex: Acesso Cadastro, Agente Regulador - SECID."
+      - name: nivel_perfil
+        description: "Nível do perfil (indnivel da gh_perfil_grupos)."
+      - name: flag_perfil_em_uso
+        description: "Perfil em uso (indus = 'S')."
+      - name: flag_associado_profissional
+        description: "Perfil requer profissional associado (indassocprof = 'S')."
+      - name: config_acesso_modulos
+        description: "Configuração de módulos e permissões do perfil (dsccnfaccess)."
+      - name: config_acesso_relatorios
+        description: "Configuração de acesso a relatórios do perfil (dsccnfaccessrel)."

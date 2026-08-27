@@ -97,6 +97,17 @@ models:
           - MASTER (99)
           - Nível {código}: para códigos não mapeados na macro
 
+      - name: id_perfil_acesso
+        description: "ID do perfil de acesso customizado (seqgrupo via gh_contas_modulos). NULL quando a conta não tem perfil personalizado."
+
+      - name: perfil_acesso_nome
+        description: |
+          Nome do perfil de acesso customizado (dsctitmod da gh_perfil_grupos,
+          via gh_contas_modulos.seqgrupo). Preenchido para contas com perfil
+          personalizado (indnivel=8 com grupo associado). Ex: Acesso Cadastro,
+          Agente Regulador - SECID, Prof. Nível Médio - Centro de Referência.
+          NULL quando a conta não tem perfil customizado ou o profissional não tem conta.
+
       - name: status_conta_codigo
         description: "Código do status da conta do operador (indstatuser da gh_contas). Valores: '0' a '4'. Mapeado via macro map_coluna_status_conta."
 

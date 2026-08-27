@@ -108,6 +108,12 @@ models:
       - name: perfil_acesso
         description: "Descrição do perfil de acesso (ex: Profissional de Nível Médio, Gestor local, MASTER)."
 
+      - name: id_perfil_acesso
+        description: "ID do perfil de acesso customizado (da dim_profissionais)."
+
+      - name: perfil_acesso_nome
+        description: "Nome do perfil de acesso customizado (da dim_profissionais)."
+
       - name: status_conta_codigo
         description: "Código do status da conta (indstatuser da gh_contas). Valores: '0'-'4'."
 
