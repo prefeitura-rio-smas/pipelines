@@ -312,6 +312,11 @@ select
         else 'Não informada'
     end                                   as faixa_etaria,
 
+    case
+        when idade >= 18 then 'Sim'
+        else 'Não'
+    end as flag_maior_idade,
+
     concat(
         coalesce(email_cas, ''), ',',
         coalesce(email_planilha, ''), ', ',
