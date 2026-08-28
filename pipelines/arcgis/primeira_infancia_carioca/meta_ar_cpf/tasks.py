@@ -84,7 +84,9 @@ def apply_arcgis_adds(item_id: str, layer_idx: int = 0):
             value = row[col]
             # Tratar nulos e valores especiais (mesmo padrão do apply_arcgis_feedback)
             # Colunas internas do BQ que não existem no layer ArcGIS:
-            if col.lower() in ("objectid", "data_particao"):
+            # bairro desativado [2026-08-25] — redundante com bairro_cadun; campo
+            # removido do layer. Reversível: tirar da lista + recriar campo no layer.
+            if col.lower() in ("objectid", "data_particao", "bairro"):
                 continue
             # Converte date/datetime para string ISO (json.dumps não serializa date nativo)
             if hasattr(value, 'isoformat'):
@@ -156,9 +158,12 @@ def apply_arcgis_status_sync(item_id: str, layer_idx: int = 0):
     """
     Marca status_monitoramento_cpf='inativo' no ArcGIS para pessoas que estão
     na crosswalk mas não aparecem mais na última partição da _dev.
-    Grava também data_saida = última partição em que a pessoa apareceu na _dev
-    (somente quando há histórico; sem fallback para a data da rodada, para não
-    "flutuar" o data_saida a cada execução).
+    Grava também:
+    - data_saida = última partição em que a pessoa apareceu na _dev (somente
+      quando há histórico; sem fallback para a data da rodada, para não
+      "flutuar" o data_saida a cada execução)
+    - status = status real do programa (do espelho, alimentado pelo incremental)
+    - status_inativo_motivo = motivo da inativação (do espelho)
     """
     logger = prefect.get_run_logger()
     client = bq_client()
@@ -168,12 +173,13 @@ def apply_arcgis_status_sync(item_id: str, layer_idx: int = 0):
     motivo_table = f"{project}.{DATASET}.motivo_inativo_meta_ar_cpf"
 
     # 1. Buscar inativos (na crosswalk mas sem registro na última partição da _dev).
-    #    LEFT JOIN com o espelho de motivos (alimentado pelo incremental manual,
-    #    pois a SA não acessa rj-crm-registry) para levar status_inativo_motivo.
+    #    LEFT JOIN com o espelho (alimentado pelo incremental manual, pois a SA
+    #    não acessa rj-crm-registry) para levar status e status_inativo_motivo reais.
     query = f"""
         SELECT cw.id_membro_familia, cw.objectid_arcgis,
                (SELECT MAX(dev2.data_particao) FROM `{dev_table}` dev2
                 WHERE dev2.id_membro_familia = cw.id_membro_familia) AS data_saida,
+               m.status AS status_programa,
                m.status_inativo_motivo
         FROM `{cw_table}` cw
         LEFT JOIN `{motivo_table}` m ON cw.id_membro_familia = m.id_membro_familia
@@ -197,7 +203,7 @@ def apply_arcgis_status_sync(item_id: str, layer_idx: int = 0):
     edits_url = f"{service_url}/applyEdits"
 
     # 3. Montar payload (objectid + status_monitoramento_cpf + data_saida quando houver
-    #    histórico + status_inativo_motivo quando o espelho tiver o motivo)
+    #    histórico + status do programa e status_inativo_motivo quando o espelho tiver)
     updates = []
     for _, row in rows.iterrows():
         attrs = {
@@ -207,6 +213,8 @@ def apply_arcgis_status_sync(item_id: str, layer_idx: int = 0):
         if not pd.isna(row["data_saida"]):
             data_saida_iso = pd.Timestamp(row["data_saida"]).strftime("%Y-%m-%d")
             attrs["data_saida"] = _to_arcgis_value("data_saida", data_saida_iso)
+        if not pd.isna(row["status_programa"]):
+            attrs["status"] = row["status_programa"]
         if not pd.isna(row["status_inativo_motivo"]):
             attrs["status_inativo_motivo"] = row["status_inativo_motivo"]
         updates.append({"attributes": attrs})
