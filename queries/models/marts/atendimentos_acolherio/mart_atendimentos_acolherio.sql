@@ -6,57 +6,88 @@ filtro_email_dev as (
     select * from {{ source('dashboard_acolherio', 'filtro_email_dev') }}
 ),
 
+-- Restaura os atributos dimensionais que o fct_atendimentos deixou de expor
+-- (removidos em cda9167). Mapeia as colunas legadas para as dimensões atuais,
+-- preservando a semântica original (ver d2ffe2d).
+profissionais_cbo as (
+    select
+        poc.id_profissional,
+        c.descricao as cbo_descricao
+    from {{ ref('raw_profissionais_ocupacoes') }} as poc
+    left join {{ ref('raw_cbo') }} as c on poc.codigo_cbo = c.codigo_cbo
+    qualify row_number() over (partition by poc.id_profissional order by poc.codigo_cbo) = 1
+),
+
 base_preparada as (
     select
         a.*,
+        dp.nome as profissional,
+        pc.cbo_descricao as profissional_cbo,
+        dun.tipo_unidade,
+        cast(date_diff(current_date(), du.data_nascimento, year) as int64) as idade,
+        dun.email_filtro as email_cas,
+        dun.email_unidade,
+        dun.nome_unidade as unidade_atendimento,
+        a.tipo_atendimento_descricao as nome_atendimento_original,
+        a.data_atendimento as data_de_atendimento,
+        a.data_atendimento as data_cadastro_atendimento,
+        a.hora_atendimento as hora_de_atendimento,
+        a.id_profissional as profissional_id,
         case
-            when a.nome_atendimento_original like '%Recepção%' then 'Atendimento Recepção'
-            when a.profissional = 'ATENDIMENTO RECEPÇÃO' then 'Atendimento Recepção'
-            when a.profissional_cbo in ('Administrador', 'Articulador Comunitário', 'Assistente administrativo', 'Educador social', 'Orientador social', 'Recepcionista')
-             and a.nome_atendimento_original like '%CadÚnico%'
-             then 'Atendimento Recepção'
-            when a.profissional_cbo in ('Advogado', 'Assistente social', 'Pedagogo', 'Psicólogo') then 'Atendimento Técnico'
+            when nome_atendimento_original like '%Recepção%' then 'Atendimento Recepção'
+            when profissional = 'ATENDIMENTO RECEPÇÃO' then 'Atendimento Recepção'
+            when
+                profissional_cbo in ('Administrador', 'Articulador Comunitário', 'Assistente administrativo', 'Educador social', 'Orientador social', 'Recepcionista')
+                and nome_atendimento_original like '%CadÚnico%'
+                then 'Atendimento Recepção'
+            when profissional_cbo in ('Advogado', 'Assistente social', 'Pedagogo', 'Psicólogo') then 'Atendimento Técnico'
             else 'Outros Atendimentos'
         end as tipo_atendimento,
 
         case
-            when a.profissional_cbo in ('Administrador', 'Articulador Comunitário', 'Assistente administrativo', 'Educador social', 'Orientador social', 'Recepcionista')
-             and a.tipo_unidade = 'CRAS'
-             and a.nome_atendimento_original like '%CadÚnico%'
-             then 'CRAS - Recepção - Ação CadÚnico'
-            when a.profissional_cbo in ('Administrador', 'Articulador Comunitário', 'Assistente administrativo', 'Educador social', 'Orientador social', 'Recepcionista')
-             and a.tipo_unidade = 'CREAS'
-             and a.nome_atendimento_original like '%CadÚnico%'
-             then 'CREAS - Recepção - Ação CadÚnico'
-            else a.nome_atendimento_original
+            when
+                profissional_cbo in ('Administrador', 'Articulador Comunitário', 'Assistente administrativo', 'Educador social', 'Orientador social', 'Recepcionista')
+                and dun.tipo_unidade = 'CRAS'
+                and nome_atendimento_original like '%CadÚnico%'
+                then 'CRAS - Recepção - Ação CadÚnico'
+            when
+                profissional_cbo in ('Administrador', 'Articulador Comunitário', 'Assistente administrativo', 'Educador social', 'Orientador social', 'Recepcionista')
+                and dun.tipo_unidade = 'CREAS'
+                and nome_atendimento_original like '%CadÚnico%'
+                then 'CREAS - Recepção - Ação CadÚnico'
+            else nome_atendimento_original
         end as nome_atendimento,
 
         case
-            when a.idade < 18 then 'Até 17 anos'
-            when a.idade >= 18 and a.idade < 30 then 'De 18 a 29 anos'
-            when a.idade >= 30 and a.idade < 45 then 'De 30 a 44 anos'
-            when a.idade >= 45 and a.idade < 60 then 'De 45 a 59 anos'
-            when a.idade >= 60 and a.idade < 75 then 'De 60 a 74 anos'
-            when a.idade >= 75 then 'Mais de 75 anos'
+            when idade < 18 then 'Até 17 anos'
+            when idade >= 18 and idade < 30 then 'De 18 a 29 anos'
+            when idade >= 30 and idade < 45 then 'De 30 a 44 anos'
+            when idade >= 45 and idade < 60 then 'De 45 a 59 anos'
+            when idade >= 60 and idade < 75 then 'De 60 a 74 anos'
+            when idade >= 75 then 'Mais de 75 anos'
             else 'Não Informado'
         end as idade_faixa,
 
-        concat(a.email_cas, ',', a.email_unidade, ',', z.email) as email
+        concat(email_cas, ',', dun.email_unidade, ',', z.email) as email
 
-    from fct_atendimentos a
-    left join filtro_email_dev z 
-        on a.unidade_atendimento = z.unidade_atendimento
+    from fct_atendimentos as a
+    left join dim_usuarios as du on a.id_usuario_sk = du.id_usuario_sk
+    left join dim_profissionais as dp on a.id_profissional_sk = dp.id_profissional_sk
+    left join dim_unidades as dun on a.id_unidade_sk = dun.id_unidade_sk
+    left join profissionais_cbo as pc on a.id_profissional = pc.id_profissional
+    left join filtro_email_dev as z
+        on dun.nome_unidade = z.unidade_atendimento
 )
 
 select
     *,
     row_number() over (
-        partition by id_atendimento 
+        partition by id_atendimento
         order by data_cadastro_atendimento
     ) as cbo_unico_rank,
-    
+
     row_number() over (
-        partition by profissional_id, hora_de_atendimento, data_de_atendimento, nome_atendimento_original, id_usuario, unidade_atendimento 
+        partition by profissional_id, hora_de_atendimento, data_de_atendimento, nome_atendimento_original, id_usuario, unidade_atendimento
         order by data_cadastro_atendimento
     ) as atendimento_unico_rank,
 
@@ -64,5 +95,6 @@ select
 
 from base_preparada
 
-qualify cbo_unico_rank = 1 
+qualify
+    cbo_unico_rank = 1
     and atendimento_unico_rank = 1
