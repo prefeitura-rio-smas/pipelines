@@ -10,4 +10,5 @@ with source as (
     from {{ source('brutos_acolherio_staging', 'gh_contas_modulos') }}
     where seqgrupo is not null
 )
+
 select * from source

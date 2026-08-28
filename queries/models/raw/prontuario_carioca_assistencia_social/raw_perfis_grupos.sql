@@ -12,4 +12,5 @@ with source as (
         dsccnfaccessrel as config_acesso_relatorios
     from {{ source('brutos_acolherio_staging', 'gh_perfil_grupos') }}
 )
+
 select * from source

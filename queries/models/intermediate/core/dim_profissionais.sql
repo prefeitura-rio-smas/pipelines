@@ -95,8 +95,8 @@ final as (
 
     from profissionais p
     left join operadores ope on p.id_login = ope.id_login
-    left join {{ ref('raw_contas_modulos') }} cm on ope.id_login = cm.id_login
-    left join {{ ref('raw_perfis_grupos') }} pa on cm.id_perfil_acesso = pa.id_perfil_acesso
+    left join {{ ref('raw_contas_modulos') }} as cm on ope.id_login = cm.id_login
+    left join {{ ref('raw_perfis_grupos') }} as pa on cm.id_perfil_acesso = pa.id_perfil_acesso
     left join ocupacoes ocu on p.id_profissional = ocu.id_profissional
     left join unidades_atuacao ua on p.id_login = ua.id_login
     where upper(p.nome) not like '%TESTE%'
