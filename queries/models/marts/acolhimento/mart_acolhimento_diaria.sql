@@ -85,7 +85,7 @@ final as (
             when '2' then 'Pessoa com dependência em até 3 atividades'
             when '3' then 'Pessoa com dependência em todas as atividades'
             else 'Não Informado'
-        end                                   as grau_dependencia,
+        end as grau_dependencia,
 
         case usr.flag_recebe_beneficio
             when 'S' then 'Sim'
