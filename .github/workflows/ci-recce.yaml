@@ -160,8 +160,16 @@ jobs:
           # (gerenciamento__dbt/relatorio/pic) — colisão residual de escrita (o último a
           # escrever vence). O data review pode comparar contra tabelas sobrescritas por outro
           # PR. --favor-state mitiga a leitura (defer), não a escrita concorrente.
+          #
+          # EXCLUSÃO TEMPORÁRIA: modelos quebrados em runtime no main (PR A). Remover quando os
+          # fixes caírem em main:
+          #   - delta_feedback_meta_ar_cpf: espera coluna status_inativo_motivo na
+          #     arcgis_raw.meta_ar_cpf_raw (sync externo ArcGIS pendente).
+          #   - mart_atendimentos_acolherio: referencia unidade_atendimento removida do
+          #     fct_atendimentos (da4e83c).
           uv run dbt build \
             --select "state:modified+" \
+            --exclude "delta_feedback_meta_ar_cpf mart_atendimentos_acolherio" \
             --defer \
             --favor-state \
             --state target-base \
@@ -174,6 +182,7 @@ jobs:
         run: |
           uv run dbt docs generate \
             --select "state:modified+" \
+            --exclude "delta_feedback_meta_ar_cpf mart_atendimentos_acolherio" \
             --defer \
             --favor-state \
             --state target-base \

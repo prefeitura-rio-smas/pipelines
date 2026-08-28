@@ -162,21 +162,54 @@ jobs:
             uv run recce-cloud upload --type prod --target-path queries/target
           }
 
+          # `recce-cloud delete --force` (CLI) NÃO deleta a sessão base: chama
+          # delete_with_platform_apis(..., prod=False) (cli.py), que só apaga a
+          # sessão PR. Para recriar o baseline preso ('pipelines-base' devolve
+          # 409 no touch-recce-session) deletamos a sessão base via API direta
+          # (DELETE /api/v2/github/{repo}/session?base=true) e refazemos o upload.
+          # Self-healing: só dispara em erro -> janela de risco mínima.
+          delete_stuck_base() {
+            uv run python - <<'EOF'
+          from recce_cloud.api.factory import create_platform_client
+          from recce_cloud.ci_providers import CIDetector
+
+          ci = CIDetector.detect()
+          client = create_platform_client(ci.access_token, ci)
+          client.delete_session(session_type="prod")
+          EOF
+          }
+
           # Falha visível = alerta de baseline stale. O deploy NÃO é afetado
           # (job separado, sem `needs` no deploy-flows).
           if ! run_baseline; then
-            echo "::error::Recce baseline de prod falhou (stale) — upload de artifacts não atualizou o baseline"
             {
-              echo "## ⚠️ Recce baseline de prod NÃO atualizado (stale)"
+              echo "## ⚠️ Recce baseline de prod NÃO atualizou — tentando recriar"
               echo ""
-              echo "A geração/upload dos artifacts de prod (\`recce-cloud upload --type prod\`) falhou."
-              echo "Os próximos data reviews de PR vão comparar contra um baseline **desatualizado**."
-              echo ""
-              echo "- **Job**: \`recce-prod-baseline\` (independente do \`deploy-flows\` — release não afetado)"
-              echo "- **Commit**: \`${{ github.sha }}\`"
-              echo "- **Diagnóstico**: revisar os logs dos passos \`dbt\`/\`recce-cloud\` acima e a conectividade com o Recce Cloud."
+              echo "O primeiro \`recce-cloud upload --type prod\` falhou (provável 409: sessão"
+              echo "'pipelines-base' presa). Removendo a sessão base via API direta e retentando..."
             } >> "$GITHUB_STEP_SUMMARY"
-            exit 1
+
+            # Remove a sessão base presa e recria do zero. `|| true`: 404 sem
+            # sessão não é erro.
+            if ! delete_stuck_base; then
+              echo "::error::Falha ao deletar a sessão base presa do Recce Cloud"
+            fi
+
+            if ! run_baseline; then
+              echo "::error::Recce baseline de prod falhou (stale) — upload de artifacts não atualizou o baseline"
+              {
+                echo "## ⚠️ Recce baseline de prod NÃO atualizado (stale)"
+                echo ""
+                echo "A geração/upload dos artifacts de prod (\`recce-cloud upload --type prod\`) falhou"
+                echo "mesmo após recriar a sessão base. Os próximos data reviews de PR vão comparar"
+                echo "contra um baseline **desatualizado**."
+                echo ""
+                echo "- **Job**: \`recce-prod-baseline\` (independente do \`deploy-flows\` — release não afetado)"
+                echo "- **Commit**: \`${{ github.sha }}\`"
+                echo "- **Diagnóstico**: revisar os logs dos passos \`dbt\`/\`recce-cloud\` acima e a conectividade com o Recce Cloud."
+              } >> "$GITHUB_STEP_SUMMARY"
+              exit 1
+            fi
           fi
 
           {
