@@ -44,6 +44,8 @@ models:
         description: "Código(s) de violação de direito separados por vírgula."
       - name: pontuacao
         description: "Pontuação do usuário (valpontos)."
+      - name: grau_dependencia
+        description: "Grau de dependência do usuário (código cru, indgraudepend da gh_pac_dados). Domínio: 1=Pessoa Independente, 2=Pessoa com dependência em até 3 atividades, 3=Pessoa com dependência em todas as atividades."
       - name: nome_apoiador
         description: "Nome do apoiador (tomada de decisão apoiada)."
       - name: numero_processo_decisao_apoiada

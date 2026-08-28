@@ -53,6 +53,8 @@ models:
       - name: bairro
       - name: origem_demanda
       - name: motivo_acolhimento
+      - name: grau_dependencia
+        description: "Grau de dependência do usuário (Pessoa Independente, Pessoa com dependência em até 3 atividades, Pessoa com dependência em todas as atividades). Label do domínio oficial indgraudepend."
       - name: flag_recebe_beneficio
       - name: tipo_beneficio
       - name: flag_trabalho
