@@ -77,7 +77,7 @@ final as (
             ELSE {{ map_coluna_perfil_acesso('ope.nivel_conta') }}
         END AS perfil_acesso,
 
-        -- Perfil de acesso personalizado (nome real via gh_contas_modulos → dim_perfis_acesso)
+        -- Perfil de acesso personalizado (nome real via raw_contas_modulos → raw_perfis_grupos)
         pa.id_perfil_acesso,
         pa.nome_perfil as perfil_acesso_nome,
 
@@ -96,7 +96,7 @@ final as (
     from profissionais p
     left join operadores ope on p.id_login = ope.id_login
     left join {{ ref('raw_contas_modulos') }} cm on ope.id_login = cm.id_login
-    left join {{ ref('dim_perfis_acesso') }} pa on cm.id_perfil_acesso = pa.id_perfil_acesso
+    left join {{ ref('raw_perfis_grupos') }} pa on cm.id_perfil_acesso = pa.id_perfil_acesso
     left join ocupacoes ocu on p.id_profissional = ocu.id_profissional
     left join unidades_atuacao ua on p.id_login = ua.id_login
     where upper(p.nome) not like '%TESTE%'

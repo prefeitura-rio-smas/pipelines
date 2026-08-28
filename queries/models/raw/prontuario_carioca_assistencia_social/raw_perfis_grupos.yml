@@ -1,13 +1,8 @@
 version: 2
 
 models:
-  - name: dim_perfis_acesso
-    description: |
-      Dimensão de catálogo dos perfis de acesso customizados do Prontuário Carioca.
-      Grão: 1 linha por perfil (seqgrupo da gh_perfil_grupos).
-      Alimenta o enriquecimento de profissionais/operadores: a dim_profissionais
-      liga a conta (gh_contas.indnivel=8, acesso personalizado) ao nome do perfil
-      via gh_contas_modulos.seqgrupo → dim_perfis_acesso.id_perfil_acesso.
+  - name: raw_perfis_grupos
+    description: "Catálogo de perfis de acesso customizados do sistema (gh_perfil_grupos). 1 linha por perfil (seqgrupo); dsctitmod é o nome do perfil."
     columns:
       - name: id_perfil_acesso
         description: "ID do perfil (seqgrupo da gh_perfil_grupos)."

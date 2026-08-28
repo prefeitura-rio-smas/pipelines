@@ -98,12 +98,12 @@ models:
           - Nível {código}: para códigos não mapeados na macro
 
       - name: id_perfil_acesso
-        description: "ID do perfil de acesso customizado (seqgrupo via gh_contas_modulos). NULL quando a conta não tem perfil personalizado."
+        description: "ID do perfil de acesso customizado (seqgrupo via raw_contas_modulos). NULL quando a conta não tem perfil personalizado."
 
       - name: perfil_acesso_nome
         description: |
-          Nome do perfil de acesso customizado (dsctitmod da gh_perfil_grupos,
-          via gh_contas_modulos.seqgrupo). Preenchido para contas com perfil
+          Nome do perfil de acesso customizado (dsctitmod da raw_perfis_grupos,
+          via raw_contas_modulos.seqgrupo). Preenchido para contas com perfil
           personalizado (indnivel=8 com grupo associado). Ex: Acesso Cadastro,
           Agente Regulador - SECID, Prof. Nível Médio - Centro de Referência.
           NULL quando a conta não tem perfil customizado ou o profissional não tem conta.
