@@ -71,9 +71,9 @@ base_preparada as (
         concat(email_cas, ',', dun.email_unidade, ',', z.email) as email
 
     from fct_atendimentos as a
-    left join dim_usuarios as du on a.id_usuario_sk = du.id_usuario_sk
-    left join dim_profissionais as dp on a.id_profissional_sk = dp.id_profissional_sk
-    left join dim_unidades as dun on a.id_unidade_sk = dun.id_unidade_sk
+    left join {{ ref('dim_usuarios') }} as du on a.id_usuario_sk = du.id_usuario_sk
+    left join {{ ref('dim_profissionais') }} as dp on a.id_profissional_sk = dp.id_profissional_sk
+    left join {{ ref('dim_unidades') }} as dun on a.id_unidade_sk = dun.id_unidade_sk
     left join profissionais_cbo as pc on a.id_profissional = pc.id_profissional
     left join filtro_email_dev as z
         on dun.nome_unidade = z.unidade_atendimento
