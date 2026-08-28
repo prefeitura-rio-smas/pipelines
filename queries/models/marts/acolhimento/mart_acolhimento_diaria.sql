@@ -80,6 +80,12 @@ final as (
         coalesce(usr.bairro, 'Não Informado')           as bairro,
         coalesce(usr.origem_demanda, 'Não Informado')   as origem_demanda,
         usr.motivo_acolhimento,
+        case usr.grau_dependencia
+            when '1' then 'Pessoa Independente'
+            when '2' then 'Pessoa com dependência em até 3 atividades'
+            when '3' then 'Pessoa com dependência em todas as atividades'
+            else 'Não Informado'
+        end as grau_dependencia,
 
         case usr.flag_recebe_beneficio
             when 'S' then 'Sim'

@@ -42,6 +42,7 @@ final as (
         det.flag_cadunico,
         det.violacao_direito as violacao_direito_bruto,
         det.pontuacao,
+        det.grau_dependencia,
         det.nome_apoiador,
         det.numero_processo_decisao_apoiada,
         det.renda_ativa,
