@@ -167,9 +167,11 @@ jobs:
           #     arcgis_raw.meta_ar_cpf_raw (sync externo ArcGIS pendente).
           #   - mart_atendimentos_acolherio: referencia unidade_atendimento removida do
           #     fct_atendimentos (da4e83c).
+          #   - encaminhamentos_unidade: testes id_unidade_sk que o modelo não emite (fix no
+          #     rma_cras work, fora do PR A).
           uv run dbt build \
             --select "state:modified+" \
-            --exclude "delta_feedback_meta_ar_cpf mart_atendimentos_acolherio" \
+            --exclude "delta_feedback_meta_ar_cpf mart_atendimentos_acolherio encaminhamentos_unidade" \
             --defer \
             --favor-state \
             --state target-base \
@@ -182,7 +184,7 @@ jobs:
         run: |
           uv run dbt docs generate \
             --select "state:modified+" \
-            --exclude "delta_feedback_meta_ar_cpf mart_atendimentos_acolherio" \
+            --exclude "delta_feedback_meta_ar_cpf mart_atendimentos_acolherio encaminhamentos_unidade" \
             --defer \
             --favor-state \
             --state target-base \
