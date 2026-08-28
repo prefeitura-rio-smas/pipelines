@@ -61,6 +61,8 @@ joined as (
         prof.dias_ultimo_acesso,
         prof.nivel_conta,
         prof.perfil_acesso,
+        prof.id_perfil_acesso,
+        prof.perfil_acesso_nome,
         prof.status_conta_codigo,
         prof.status_conta,
         prof.flag_sem_conta,

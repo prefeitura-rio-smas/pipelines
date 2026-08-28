@@ -1,0 +1,19 @@
+version: 2
+
+models:
+  - name: raw_contas_modulos
+    description: "Vínculo entre contas de operadores e perfis de acesso customizados (gh_contas_modulos). Grão: 1 linha por conta (seqlogin); filtrado por seqgrupo NOT NULL. O seqgrupo é o ID do perfil customizado (FK para raw_perfis_grupos.id_perfil_acesso)."
+    columns:
+      - name: id_login
+        description: "ID da conta do operador (seqlogin da gh_contas). PK do vínculo (1 linha por conta com perfil)."
+        tests:
+          - unique
+          - not_null
+      - name: id_perfil_acesso
+        description: "ID do perfil de acesso customizado (seqgrupo da gh_contas_modulos). FK para raw_perfis_grupos.id_perfil_acesso."
+        tests:
+          - not_null
+      - name: id_profissional
+        description: "ID do profissional vinculado à conta (seqprof da gh_contas_modulos). NULL quando o perfil não requer profissional."
+      - name: flag_admin
+        description: "Indicador de administrador do vínculo (indadmin da gh_contas_modulos)."

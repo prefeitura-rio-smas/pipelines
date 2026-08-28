@@ -1,0 +1,23 @@
+version: 2
+
+models:
+  - name: raw_perfis_grupos
+    description: "Catálogo de perfis de acesso customizados do sistema (gh_perfil_grupos). 1 linha por perfil (seqgrupo); dsctitmod é o nome do perfil."
+    columns:
+      - name: id_perfil_acesso
+        description: "ID do perfil (seqgrupo da gh_perfil_grupos)."
+        tests:
+          - unique
+          - not_null
+      - name: nome_perfil
+        description: "Nome do perfil (dsctitmod). Ex: Acesso Cadastro, Agente Regulador - SECID."
+      - name: nivel_perfil
+        description: "Nível do perfil (indnivel da gh_perfil_grupos)."
+      - name: flag_perfil_em_uso
+        description: "Perfil em uso (indus = 'S')."
+      - name: flag_associado_profissional
+        description: "Perfil requer profissional associado (indassocprof = 'S')."
+      - name: config_acesso_modulos
+        description: "Configuração de módulos e permissões do perfil (dsccnfaccess)."
+      - name: config_acesso_relatorios
+        description: "Configuração de acesso a relatórios do perfil (dsccnfaccessrel)."
