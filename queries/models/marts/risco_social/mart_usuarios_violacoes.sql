@@ -5,8 +5,9 @@ with violacoes_explodidas as (
         iv.id_usuario,
         v.codigo,
         v.descricao
-    from {{ ref('int_usuarios_violacoes') }} iv
+    from {{ ref('int_usuarios_violacoes') }} as iv
     cross join unnest(iv.violacoes) as v
+    where v.origem = 'checkbox'
 ),
 
 joined as (
@@ -19,8 +20,8 @@ joined as (
         ve.codigo as codigo_violacao,
         ve.descricao as descricao_violacao,
         {{ extrair_ultima_atualizacao('raw_configuracoes_sistema') }} as ultima_atualizacao
-    from violacoes_explodidas ve
-    left join {{ ref('dim_usuarios') }} du
+    from violacoes_explodidas as ve
+    left join {{ ref('dim_usuarios') }} as du
         on ve.id_usuario = du.id_usuario
 )
 

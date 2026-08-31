@@ -110,7 +110,9 @@ violacoes_descricoes as (
     inner join {{ ref('dim_usuarios') }} du
         on m.id_paciente = du.id_usuario,
     unnest(du.violacoes) as v
-    where m.data_saida is null
+    where
+        m.data_saida is null
+        and v.origem = 'checkbox'
     group by m.id_familia
 ),
 

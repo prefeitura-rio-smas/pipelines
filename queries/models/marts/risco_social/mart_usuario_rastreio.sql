@@ -138,8 +138,10 @@ with
             array(
                 select violacao.descricao
                 from unnest(coalesce(u.violacoes, [])) as violacao
-                where violacao.descricao is not null
-                order by violacao.codigo
+            where
+                violacao.origem = 'checkbox'
+                and violacao.descricao is not null
+            order by violacao.codigo
             ) as violacoes_descricao
         from {{ ref('dim_usuarios') }} u
     ),

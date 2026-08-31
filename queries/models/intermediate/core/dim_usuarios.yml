@@ -87,9 +87,15 @@ models:
       - name: flag_possui_violacao_direito
         description: "Indica se possui violação de direito registrada (Sim/Não)."
       - name: violacoes
-        description: "Array estruturado de violações de direito (código + descrição)."
-      - name: ocorrencias
-        description: "Array generalista de ocorrências de evolução com campos de formulário HTML (id_evolucao, data_evolucao, titulo_formulario, campos com label + valor). Filtros por título, label ou valor devem ser feitos via UNNEST no SQL de consumo."
+        description: >
+          Array estruturado e unificado de violações de direito do usuário. Cada
+          item tem a coluna origem ('checkbox' para os códigos do campo
+          violacao_direito do cadastro, mapeados via indvioldir; 'label' para
+          campos extraídos de formulários de evolução). Itens de origem
+          'checkbox' preenchem codigo/descricao; itens de origem 'label'
+          preenchem id_evolucao, origem_modulo, data_evolucao,
+          titulo_formulario, label e valor. Filtros por origem, título, label ou
+          valor devem ser feitos via UNNEST no SQL de consumo.
       - name: deficiencia
         description: "Array estruturado de deficiências do usuário (código + descrição)."
       - name: beneficio

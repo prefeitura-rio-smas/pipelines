@@ -17,164 +17,87 @@ codigos_separados as (
         unnest(split(violacao_direito, ',')) as codigo
 ),
 
-traducao as (
+violacoes_checkbox as (
     select
         id_usuario,
+        'checkbox' as origem,
         codigo,
-        {{ map_violacao_direito_descricao('codigo') }} as descricao
+        {{ map_violacao_direito_descricao('codigo') }} as descricao,
+        cast(null as int64) as id_evolucao,
+        cast(null as string) as origem_modulo,
+        cast(null as datetime) as data_evolucao,
+        cast(null as string) as titulo_formulario,
+        cast(null as string) as label,
+        cast(null as string) as valor
     from codigos_separados
     where codigo != ''
 ),
 
-evolucoes_administrativas as (
-    select
-        id_paciente as id_usuario,
-        id_evolucao,
-        cast(data_evolucao as datetime) as data_evolucao,
-        cast(data_cancelamento as datetime) as data_cancelamento,
-        descricao_evolucao,
-        'administrativa' as origem_modulo
-    from {{ ref('raw_evolucoes_administrativas') }}
-),
-
-evolucoes_usuarios as (
-    select
-        id_usuario,
-        id_evolucao,
-        cast(data_evolucao as datetime) as data_evolucao,
-        cast(data_cancelamento as datetime) as data_cancelamento,
-        descricao_evolucao,
-        'usuario' as origem_modulo
-    from {{ ref('raw_evolucoes_usuarios') }}
-),
-
-evolucoes_familias as (
-    select
-        id_paciente as id_usuario,
-        id_evolucao,
-        cast(data_evolucao as datetime) as data_evolucao,
-        cast(data_cancelamento as datetime) as data_cancelamento,
-        descricao_evolucao,
-        'familia' as origem_modulo
-    from {{ ref('raw_evolucoes_familias') }}
-),
-
-evolucoes_grupo as (
-    select
-        safe_cast(trim(pac) as int64) as id_usuario,
-        id_evolucao,
-        cast(data_evolucao as datetime) as data_evolucao,
-        cast(data_cancelamento as datetime) as data_cancelamento,
-        descricao_evolucao,
-        'grupo' as origem_modulo
-    from {{ ref('raw_evolucoes_grupo') }}
-    cross join
-        unnest(
-            split(replace(replace(lista_pacientes, '(', ''), ')', ''), ',')
-        ) as pac
-    where
-        lista_pacientes != '()'
-        and lista_pacientes is not null
-        and lista_pacientes != ''
-        and trim(pac) != ''
-),
-
-formularios as (
-    select * from {{ extrair_campos_html_evolucao(
-        source_relation = "(select * from evolucoes_administrativas)",
-        id_cols = ['id_usuario', 'id_evolucao', 'data_evolucao', 'data_cancelamento', 'origem_modulo'],
-        col_html = 'descricao_evolucao'
-    ) }}
-    union all
-    select * from {{ extrair_campos_html_evolucao(
-        source_relation = "(select * from evolucoes_usuarios)",
-        id_cols = ['id_usuario', 'id_evolucao', 'data_evolucao', 'data_cancelamento', 'origem_modulo'],
-        col_html = 'descricao_evolucao'
-    ) }}
-    union all
-    select * from {{ extrair_campos_html_evolucao(
-        source_relation = "(select * from evolucoes_familias)",
-        id_cols = ['id_usuario', 'id_evolucao', 'data_evolucao', 'data_cancelamento', 'origem_modulo'],
-        col_html = 'descricao_evolucao'
-    ) }}
-    union all
-    select * from {{ extrair_campos_html_evolucao(
-        source_relation = "(select * from evolucoes_grupo)",
-        id_cols = ['id_usuario', 'id_evolucao', 'data_evolucao', 'data_cancelamento', 'origem_modulo'],
-        col_html = 'descricao_evolucao'
-    ) }}
-),
-
-formularios_ativos as (
+evolucoes as (
     select
         id_usuario,
         id_evolucao,
         data_evolucao,
         origem_modulo,
-        titulo_formulario,
-        label,
-        valor
-    from formularios
+        descricao_evolucao
+    from {{ ref('int_evolucoes') }}
     where
         data_cancelamento is null
         and id_usuario is not null
 ),
 
-campos_evolucao as (
+campos_label as (
+    select * from {{ extrair_campos_html_evolucao(
+        source_relation = "(select * from evolucoes)",
+        id_cols = ['id_usuario', 'id_evolucao', 'data_evolucao', 'origem_modulo'],
+        col_html = 'descricao_evolucao'
+    ) }}
+),
+
+violacoes_label as (
     select
         id_usuario,
+        'label' as origem,
+        cast(null as string) as codigo,
+        cast(null as string) as descricao,
         id_evolucao,
         origem_modulo,
-        max(data_evolucao) as data_evolucao,
-        max(titulo_formulario) as titulo_formulario,
-        array_agg(
-            struct(
-                label,
-                valor
-            )
-            order by label
-        ) as campos
-    from formularios_ativos
-    group by id_usuario, id_evolucao, origem_modulo
+        data_evolucao,
+        titulo_formulario,
+        label,
+        valor
+    from campos_label
+    where
+        label is not null
+        and trim(label) != ''
 ),
 
-ocorrencias as (
-    select
-        id_usuario,
-        array_agg(
-            struct(
-                id_evolucao,
-                origem_modulo,
-                data_evolucao,
-                titulo_formulario,
-                campos
-            )
-            order by data_evolucao
-        ) as ocorrencias
-    from campos_evolucao
-    group by id_usuario
-),
-
-violacoes_agregadas as (
-    select
-        id_usuario,
-        array_agg(
-            struct(
-                codigo,
-                descricao
-            )
-        ) as violacoes
-    from traducao
-    group by id_usuario
+violacoes_unificadas as (
+    select * from violacoes_checkbox
+    union all
+    select * from violacoes_label
 ),
 
 final as (
     select
-        v.violacoes,
-        o.ocorrencias,
-        coalesce(v.id_usuario, o.id_usuario) as id_usuario
-    from violacoes_agregadas as v
-    full outer join ocorrencias as o on v.id_usuario = o.id_usuario
+        id_usuario,
+        array_agg(
+            struct(
+                origem,
+                codigo,
+                descricao,
+                id_evolucao,
+                origem_modulo,
+                data_evolucao,
+                titulo_formulario,
+                label,
+                valor
+            )
+            order by origem, codigo, data_evolucao
+        ) as violacoes
+    from violacoes_unificadas
+    where id_usuario is not null
+    group by id_usuario
 )
 
 select * from final
