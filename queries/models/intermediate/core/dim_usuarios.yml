@@ -96,6 +96,15 @@ models:
           preenchem id_evolucao, origem_modulo, data_evolucao,
           titulo_formulario, label e valor. Filtros por origem, título, label ou
           valor devem ser feitos via UNNEST no SQL de consumo.
+      - name: violacoes_json
+        description: >
+          Array JSON consolidado por violação de direito identificada. Cada
+          elemento contém codigo, descricao, origens (lista com 'checkbox' e/ou
+          'label' — permite identificar violações sinalizadas por ambas as
+          origens) e evidencias (detalhes de cada item por origem). Labels de
+          formulário sem vínculo claro com código de violação (ex.: Demanda
+          Inicial, Outros) não entram neste JSON — permanecem no array violacoes.
+          Consumo via UNNEST e funções JSON no SQL de consumo.
       - name: deficiencia
         description: "Array estruturado de deficiências do usuário (código + descrição)."
       - name: beneficio

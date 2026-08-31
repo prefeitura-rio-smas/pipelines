@@ -58,8 +58,10 @@ violacoes_label as (
     select
         id_usuario,
         'label' as origem,
-        cast(null as string) as codigo,
-        cast(null as string) as descricao,
+        {{ map_label_violacao('titulo_formulario', 'label', 'valor') }} as codigo,
+        {{ map_violacao_direito_descricao(
+            map_label_violacao('titulo_formulario', 'label', 'valor')
+        ) }} as descricao,
         id_evolucao,
         origem_modulo,
         data_evolucao,
@@ -78,7 +80,7 @@ violacoes_unificadas as (
     select * from violacoes_label
 ),
 
-final as (
+violacoes_agregadas as (
     select
         id_usuario,
         array_agg(
@@ -98,6 +100,60 @@ final as (
     from violacoes_unificadas
     where id_usuario is not null
     group by id_usuario
+),
+
+violacoes_por_codigo as (
+    select
+        id_usuario,
+        codigo,
+        max(descricao) as descricao,
+        array_agg(distinct origem order by origem) as origens,
+        array_agg(
+            struct(
+                origem,
+                codigo,
+                descricao,
+                id_evolucao,
+                origem_modulo,
+                data_evolucao,
+                titulo_formulario,
+                label,
+                valor
+            )
+            order by origem, data_evolucao
+        ) as evidencias
+    from violacoes_unificadas
+    where
+        id_usuario is not null
+        and codigo is not null
+    group by id_usuario, codigo
+),
+
+violacoes_json as (
+    select
+        id_usuario,
+        array_agg(
+            to_json(
+                struct(
+                    codigo,
+                    descricao,
+                    origens,
+                    evidencias
+                )
+            )
+            order by codigo
+        ) as violacoes_json
+    from violacoes_por_codigo
+    group by id_usuario
+),
+
+final as (
+    select
+        va.id_usuario,
+        va.violacoes,
+        vj.violacoes_json
+    from violacoes_agregadas as va
+    left join violacoes_json as vj on va.id_usuario = vj.id_usuario
 )
 
 select * from final

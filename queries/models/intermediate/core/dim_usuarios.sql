@@ -71,6 +71,7 @@ final as (
         -- Enriquecimento com Structs e Flags
         if(v.id_usuario is not null, 'Sim', 'Não') as flag_possui_violacao_direito,
         v.violacoes,
+        v.violacoes_json,
         d.deficiencia,
         b.beneficio,
         proj.projetos_sociais,
