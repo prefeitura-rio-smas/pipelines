@@ -96,7 +96,7 @@ WHERE
     OR COALESCE(NULLIF(calculado.complemento_adicional_cadun, 'None'), '') != COALESCE(NULLIF(atual.complemento_adicional_cadun, 'None'), '')
     OR COALESCE(NULLIF(calculado.refencia_logradouro_cadun, 'None'), '') != COALESCE(NULLIF(atual.refencia_logradouro_cadun, 'None'), '')
     OR COALESCE(NULLIF(CAST(calculado.data_particao_cadun AS STRING), 'None'), '') != COALESCE(NULLIF(atual.data_particao_cadun, 'None'), '')
-    -- OR COALESCE(NULLIF(calculado.status_inativo_motivo, 'None'), '') != COALESCE(NULLIF(atual.status_inativo_motivo, 'None'), '') -- DESATIVADO [2026-08-28] (reversível): coluna ainda não sincronizada no layer ArcGIS
+    OR COALESCE(NULLIF(calculado.status_inativo_motivo, 'None'), '') != COALESCE(NULLIF(atual.status_inativo_motivo, 'None'), '')
     OR COALESCE(NULLIF(CAST(calculado.data_entrada AS STRING), 'None'), '') != COALESCE(NULLIF(atual.data_entrada, 'None'), '')
     OR COALESCE(NULLIF(CAST(calculado.data_saida AS STRING), 'None'), '') != COALESCE(NULLIF(atual.data_saida, 'None'), '')
     OR COALESCE(NULLIF(calculado.status_monitoramento_cpf, 'None'), '')   != COALESCE(NULLIF(atual.status_monitoramento_cpf, 'None'), '')
