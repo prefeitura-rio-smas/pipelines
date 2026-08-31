@@ -9,20 +9,11 @@ filtro_email_dev as (
 -- Restaura os atributos dimensionais que o fct_atendimentos deixou de expor
 -- (removidos em cda9167). Mapeia as colunas legadas para as dimensões atuais,
 -- preservando a semântica original (ver d2ffe2d).
-profissionais_cbo as (
-    select
-        poc.id_profissional,
-        c.descricao as cbo_descricao
-    from {{ ref('raw_profissionais_ocupacoes') }} as poc
-    left join {{ ref('raw_cbo') }} as c on poc.codigo_cbo = c.codigo_cbo
-    qualify row_number() over (partition by poc.id_profissional order by poc.codigo_cbo) = 1
-),
-
 base_enriquecida as (
     select
         a.*,
         dp.nome as profissional,
-        pc.cbo_descricao as profissional_cbo,
+        dp.cbo_principal_descricao as profissional_cbo,
         dun.tipo_unidade,
         cast(date_diff(current_date(), du.data_nascimento, year) as int64) as idade,
         dun.nome_unidade as unidade_atendimento,
@@ -36,7 +27,6 @@ base_enriquecida as (
     left join {{ ref('dim_usuarios') }} as du on a.id_usuario_sk = du.id_usuario_sk
     left join {{ ref('dim_profissionais') }} as dp on a.id_profissional_sk = dp.id_profissional_sk
     left join {{ ref('dim_unidades') }} as dun on a.id_unidade_sk = dun.id_unidade_sk
-    left join profissionais_cbo as pc on a.id_profissional = pc.id_profissional
     left join filtro_email_dev as z
         on dun.nome_unidade = z.unidade_atendimento
 ),

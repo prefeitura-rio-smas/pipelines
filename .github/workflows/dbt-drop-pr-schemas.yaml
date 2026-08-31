@@ -1,0 +1,63 @@
+name: CI schema drop on PR close
+
+on:
+  pull_request:
+    types:
+      - closed
+
+concurrency:
+  group: dbt-drop-pr-schemas-${{ github.event.number }}
+  cancel-in-progress: false
+
+permissions:
+  contents: read
+
+env:
+  PYTHON_VERSION: '3.13'
+
+jobs:
+  teardown:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    if: github.event.pull_request.head.repo.full_name == github.repository
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Install uv
+        uses: astral-sh/setup-uv@v3
+        with:
+          version: '0.12.4'
+
+      - name: Set up Python
+        run: uv python install ${{ env.PYTHON_VERSION }}
+
+      - name: Install dependencies (incluindo dbt)
+        run: uv sync --all-extras --dev
+
+      # Necessário: a macro drop_pr_staging_schemas roda run_query no BigQuery
+      # (rj-smas-dev) via INFORMATION_SCHEMA — profiles.yml usa ADC
+      # (GOOGLE_APPLICATION_CREDENTIALS gerado pelo google-github-actions/auth).
+      - name: Authenticate to Google Cloud
+        uses: google-github-actions/auth@v2
+        with:
+          credentials_json: ${{ secrets.GCP_CREDENTIALS }}
+
+      - name: Get PR Number
+        run: echo "PR_NUM=${{ github.event.number }}" >> $GITHUB_ENV
+
+      - name: DBT Deps
+        run: uv run dbt deps --project-dir queries --profiles-dir queries
+
+      # P3 (PR #110): remove os datasets ci_<PR>__* criados pelo ci-recce.yaml
+      # (isolamento de schema por PR). Roda no fechamento do PR (merge ou close).
+      # A var schema_id é passada com placeholder — o dataset do target ci não é
+      # usado pela macro, que consulta INFORMATION_SCHEMA diretamente.
+      - name: Drop PR schemas (ci_PR__SHA)
+        run: |
+          uv run dbt run-operation drop_pr_staging_schemas \
+            --args "{'PR_number': '${PR_NUM}'}" \
+            --target ci \
+            --vars "{'schema_id': '${PR_NUM}__teardown'}" \
+            --project-dir queries \
+            --profiles-dir queries

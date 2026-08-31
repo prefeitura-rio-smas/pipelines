@@ -32,10 +32,13 @@ rj_smas_dev:
       location: US
       timeout_seconds: 300
 
-    ci:                       
+    # P3 (PR #110): dataset dedicado por PR. A var schema_id é passada nos
+    # workflows (--vars "schema_id: <PR>__<SHA>"). Default seguro
+    # 'gerenciamento__dbt' para comandos locais/manuais (vira ci_gerenciamento__dbt).
+    ci:
       type: bigquery
-      method: oauth           
-      project: rj-smas-dev    
-      dataset: gerenciamento__dbt
+      method: oauth
+      project: rj-smas-dev
+      dataset: "ci_{{ var('schema_id', 'gerenciamento__dbt') }}"
       threads: 10
       location: US

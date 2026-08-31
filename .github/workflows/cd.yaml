@@ -156,9 +156,12 @@ jobs:
           pip install uv
           uv sync --all-extras --dev
 
-          run_baseline() {
+          run_dbt_artifacts() {
             uv run dbt deps --project-dir queries --profiles-dir queries
             uv run dbt docs generate --target prod --project-dir queries --profiles-dir queries
+          }
+
+          run_upload() {
             uv run recce-cloud upload --type prod --target-path queries/target
           }
 
@@ -167,7 +170,10 @@ jobs:
           # sessão PR. Para recriar o baseline preso ('pipelines-base' devolve
           # 409 no touch-recce-session) deletamos a sessão base via API direta
           # (DELETE /api/v2/github/{repo}/session?base=true) e refazemos o upload.
-          # Self-healing: só dispara em erro -> janela de risco mínima.
+          # SAFETY (PR #110): delete_stuck_base SÓ roda quando o UPLOAD falhou
+          # com 409/"already exists" (sessão base presa). Falha de GERAÇÃO dbt
+          # (deps/docs) NÃO deleta a base — ela pode estar VÁLIDA e regrediria
+          # de stale para AUSENTE.
           delete_stuck_base() {
             uv run python - <<'EOF'
           from recce_cloud.api.factory import create_platform_client
@@ -179,34 +185,69 @@ jobs:
           EOF
           }
 
-          # Falha visível = alerta de baseline stale. O deploy NÃO é afetado
-          # (job separado, sem `needs` no deploy-flows).
-          if ! run_baseline; then
+          # Passo 1 — geração dos artifacts dbt (deps + docs generate).
+          # Se falhou: alerta SEM deletar a sessão base (a base pode estar válida).
+          if ! run_dbt_artifacts; then
+            echo "::error::Recce baseline de prod não gerado (dbt deps/docs) — sessão base NÃO alterada"
             {
-              echo "## ⚠️ Recce baseline de prod NÃO atualizou — tentando recriar"
+              echo "## ⚠️ Recce baseline de prod NÃO gerado"
               echo ""
-              echo "O primeiro \`recce-cloud upload --type prod\` falhou (provável 409: sessão"
-              echo "'pipelines-base' presa). Removendo a sessão base via API direta e retentando..."
+              echo "A geração dos artifacts dbt (\`dbt deps\` / \`dbt docs generate\`) falhou."
+              echo "A sessão base do Recce Cloud foi **PRESERVADA** (falha não é 409 de sessão presa)."
+              echo ""
+              echo "- **Job**: \`recce-prod-baseline\` (independente do \`deploy-flows\` — release não afetado)"
+              echo "- **Commit**: \`${{ github.sha }}\`"
+              echo "- **Diagnóstico**: revisar os logs do \`dbt deps\`/\`dbt docs generate\` acima."
             } >> "$GITHUB_STEP_SUMMARY"
+            exit 1
+          fi
 
-            # Remove a sessão base presa e recria do zero. `|| true`: 404 sem
-            # sessão não é erro.
-            if ! delete_stuck_base; then
-              echo "::error::Falha ao deletar a sessão base presa do Recce Cloud"
-            fi
-
-            if ! run_baseline; then
-              echo "::error::Recce baseline de prod falhou (stale) — upload de artifacts não atualizou o baseline"
+          # Passo 2 — upload do baseline. Self-healing SÓ no 409/"already exists":
+          # deleta a sessão base presa e retenta 1x. Qualquer outra falha de upload
+          # (rede, auth, etc.) é alerta SEM deletar a base.
+          if ! upload_log=$(run_upload 2>&1); then
+            if grep -qiE '409|already exists' <<< "$upload_log"; then
               {
-                echo "## ⚠️ Recce baseline de prod NÃO atualizado (stale)"
+                echo "## ⚠️ Recce baseline de prod com sessão presa (409) — recriando"
                 echo ""
-                echo "A geração/upload dos artifacts de prod (\`recce-cloud upload --type prod\`) falhou"
-                echo "mesmo após recriar a sessão base. Os próximos data reviews de PR vão comparar"
-                echo "contra um baseline **desatualizado**."
+                echo "O primeiro \`recce-cloud upload --type prod\` falhou com 409 (sessão"
+                echo "'pipelines-base' presa). Removendo a sessão base via API direta e retentando 1x..."
+              } >> "$GITHUB_STEP_SUMMARY"
+
+              # Remove a sessão base presa e recria do zero. `|| true`: 404 sem
+              # sessão não é erro.
+              if ! delete_stuck_base; then
+                echo "::error::Falha ao deletar a sessão base presa do Recce Cloud"
+              fi
+
+              if ! upload_log=$(run_upload 2>&1); then
+                echo "::error::Recce baseline de prod falhou (stale) — upload de artifacts não atualizou o baseline mesmo após recriar a sessão base"
+                {
+                  echo "## ⚠️ Recce baseline de prod NÃO atualizado (stale)"
+                  echo ""
+                  echo "A geração/upload dos artifacts de prod (\`recce-cloud upload --type prod\`) falhou"
+                  echo "mesmo após recriar a sessão base. Os próximos data reviews de PR vão comparar"
+                  echo "contra um baseline **desatualizado**."
+                  echo ""
+                  echo "- **Job**: \`recce-prod-baseline\` (independente do \`deploy-flows\` — release não afetado)"
+                  echo "- **Commit**: \`${{ github.sha }}\`"
+                  echo "- **Diagnóstico**: revisar os logs dos passos \`dbt\`/\`recce-cloud\` acima e a conectividade com o Recce Cloud."
+                } >> "$GITHUB_STEP_SUMMARY"
+                exit 1
+              fi
+            else
+              echo "::error::Recce upload de prod falhou (sem 409) — sessão base PRESERVADA"
+              {
+                echo "## ⚠️ Recce baseline de prod NÃO atualizado (upload falhou sem 409)"
                 echo ""
-                echo "- **Job**: \`recce-prod-baseline\` (independente do \`deploy-flows\` — release não afetado)"
+                echo "O \`recce-cloud upload --type prod\` falhou por motivo NÃO relacionado a"
+                echo "sessão presa (409). A sessão base foi **PRESERVADA**."
+                echo ""
                 echo "- **Commit**: \`${{ github.sha }}\`"
-                echo "- **Diagnóstico**: revisar os logs dos passos \`dbt\`/\`recce-cloud\` acima e a conectividade com o Recce Cloud."
+                echo "- **Log do erro**:"
+                echo "\`\`\`"
+                echo "$upload_log"
+                echo "\`\`\`"
               } >> "$GITHUB_STEP_SUMMARY"
               exit 1
             fi
