@@ -25,22 +25,15 @@ ocupacoes as (
         id_profissional,
         count(*) as qtde_cbos,
         string_agg(cast(codigo_cbo as string), ' | ' order by codigo_cbo) as codigos_cbo,
-        string_agg(descricao, ' | ' order by codigo_cbo) as descricoes_cbo
+        string_agg(descricao, ' | ' order by codigo_cbo) as descricoes_cbo,
+        -- CBO principal (determinístico): menor codigo_cbo do profissional.
+        -- Mesma semântica do antigo ranking da mart_atendimentos_acolherio
+        -- (row_number partition by id_profissional order by codigo_cbo = 1),
+        -- agora exposta na dimensão para o mart consumir só intermediate.
+        string_agg(cast(codigo_cbo as string), ' | ' order by codigo_cbo limit 1) as cbo_principal_codigo,
+        string_agg(descricao, ' | ' order by codigo_cbo limit 1) as cbo_principal_descricao
     from profissionais_ocupacoes_detalhadas
     group by 1
-),
-
--- CBO principal (determinístico): menor codigo_cbo do profissional.
--- Mesma semântica do antigo ranking da mart_atendimentos_acolherio
--- (row_number partition by id_profissional order by codigo_cbo = 1),
--- agora exposta na dimensão para o mart consumir só intermediate.
-primeiro_cbo as (
-    select
-        id_profissional,
-        codigo_cbo as cbo_principal_codigo,
-        descricao as cbo_principal_descricao
-    from profissionais_ocupacoes_detalhadas
-    qualify row_number() over (partition by id_profissional order by codigo_cbo) = 1
 ),
 
 unidades_atuacao as (
@@ -82,8 +75,8 @@ final as (
         case when coalesce(ocu.qtde_cbos, 0) > 1 then 'Sim' else 'Não' end as flag_multi_cbo,
 
         -- CBO principal (determinístico: menor codigo_cbo)
-        pcbo.cbo_principal_codigo,
-        pcbo.cbo_principal_descricao,
+        ocu.cbo_principal_codigo,
+        ocu.cbo_principal_descricao,
 
         -- Perfil de acesso (com a macro map_coluna_perfil_acesso)
         -- Refinamento: nível 8 (Customizado) pode ter subtipo em tipo_acesso_codigo (D=Diretor, M=Master)
@@ -115,7 +108,6 @@ final as (
     left join {{ ref('raw_contas_modulos') }} as cm on ope.id_login = cm.id_login
     left join {{ ref('raw_perfis_grupos') }} as pa on cm.id_perfil_acesso = pa.id_perfil_acesso
     left join ocupacoes ocu on p.id_profissional = ocu.id_profissional
-    left join primeiro_cbo pcbo on p.id_profissional = pcbo.id_profissional
     left join unidades_atuacao ua on p.id_login = ua.id_login
     where upper(p.nome) not like '%TESTE%'
 )
