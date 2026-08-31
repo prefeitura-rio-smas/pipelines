@@ -112,7 +112,7 @@ violacoes_descricoes as (
     unnest(du.violacoes) as v
     where
         m.data_saida is null
-        and v.origem = 'checkbox'
+        and v.origem = 'cadastro'
     group by m.id_familia
 ),
 

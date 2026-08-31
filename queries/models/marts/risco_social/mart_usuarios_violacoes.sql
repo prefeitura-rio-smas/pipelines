@@ -7,7 +7,7 @@ with violacoes_explodidas as (
         v.descricao
     from {{ ref('int_usuarios_violacoes') }} as iv
     cross join unnest(iv.violacoes) as v
-    where v.origem = 'checkbox'
+    where v.origem = 'cadastro'
 ),
 
 joined as (

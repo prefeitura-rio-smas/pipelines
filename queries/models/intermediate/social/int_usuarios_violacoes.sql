@@ -17,10 +17,10 @@ codigos_separados as (
         unnest(split(violacao_direito, ',')) as codigo
 ),
 
-violacoes_checkbox as (
+violacoes_cadastro as (
     select
         id_usuario,
-        'checkbox' as origem,
+        'cadastro' as origem,
         codigo,
         {{ map_violacao_direito_descricao('codigo') }} as descricao,
         cast(null as int64) as id_evolucao,
@@ -46,7 +46,7 @@ evolucoes as (
         and id_usuario is not null
 ),
 
-campos_label as (
+campos_evolucao as (
     select * from {{ extrair_campos_html_evolucao(
         source_relation = "(select * from evolucoes)",
         id_cols = ['id_usuario', 'id_evolucao', 'data_evolucao', 'origem_modulo'],
@@ -54,10 +54,10 @@ campos_label as (
     ) }}
 ),
 
-violacoes_label as (
+violacoes_evolucao as (
     select
         id_usuario,
-        'label' as origem,
+        'evolucao' as origem,
         {{ map_label_violacao('titulo_formulario', 'label', 'valor') }} as codigo,
         {{ map_violacao_direito_descricao(
             map_label_violacao('titulo_formulario', 'label', 'valor')
@@ -68,16 +68,16 @@ violacoes_label as (
         titulo_formulario,
         label,
         valor
-    from campos_label
+    from campos_evolucao
     where
         label is not null
         and trim(label) != ''
 ),
 
 violacoes_unificadas as (
-    select * from violacoes_checkbox
+    select * from violacoes_cadastro
     union all
-    select * from violacoes_label
+    select * from violacoes_evolucao
 ),
 
 violacoes_agregadas as (
@@ -129,22 +129,39 @@ violacoes_por_codigo as (
     group by id_usuario, codigo
 ),
 
-violacoes_json as (
+resumo_violacoes as (
     select
         id_usuario,
         array_agg(
-            to_json(
-                struct(
-                    codigo,
-                    descricao,
-                    origens,
-                    evidencias
-                )
+            struct(
+                codigo,
+                descricao,
+                origens
             )
             order by codigo
-        ) as violacoes_json
+        ) as todas_violacoes
     from violacoes_por_codigo
     group by id_usuario
+),
+
+violacoes_json as (
+    select
+        vp.id_usuario,
+        array_agg(
+            to_json(
+                struct(
+                    vp.codigo,
+                    vp.descricao,
+                    vp.origens,
+                    vp.evidencias,
+                    rv.todas_violacoes
+                )
+            )
+            order by vp.codigo
+        ) as violacoes_json
+    from violacoes_por_codigo as vp
+    left join resumo_violacoes as rv on vp.id_usuario = rv.id_usuario
+    group by vp.id_usuario
 ),
 
 final as (

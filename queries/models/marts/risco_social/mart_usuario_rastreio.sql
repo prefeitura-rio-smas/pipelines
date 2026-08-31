@@ -139,7 +139,7 @@ with
                 select violacao.descricao
                 from unnest(coalesce(u.violacoes, [])) as violacao
             where
-                violacao.origem = 'checkbox'
+                violacao.origem = 'cadastro'
                 and violacao.descricao is not null
             order by violacao.codigo
             ) as violacoes_descricao
