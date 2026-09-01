@@ -110,9 +110,7 @@ violacoes_descricoes as (
     inner join {{ ref('dim_usuarios') }} du
         on m.id_paciente = du.id_usuario,
     unnest(du.violacoes) as v
-    where
-        m.data_saida is null
-        and v.origem = 'cadastro'
+    where m.data_saida is null
     group by m.id_familia
 ),
 
