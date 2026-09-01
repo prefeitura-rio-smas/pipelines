@@ -112,7 +112,9 @@ jobs:
   recce-prod-baseline:
     runs-on: ubuntu-latest
     timeout-minutes: 30
-    if: github.ref == 'refs/heads/main'
+    # TEMPORÁRIO (validação em staging): permite rodar o baseline em staging/recce.
+    # Remover antes do merge do PR #110.
+    if: github.ref == 'refs/heads/main' || github.ref == 'refs/heads/staging/recce'
 
     steps:
       - uses: actions/checkout@v4
