@@ -13,21 +13,12 @@ with violacoes_cadastro as (
         and trim(codigo) != ''
 ),
 
-evolucoes as (
-    select
-        id_usuario,
-        descricao_evolucao
-    from {{ ref('int_evolucoes') }}
-    where
-        data_cancelamento is null
-        and id_usuario is not null
-),
-
 campos_evolucao as (
     select * from {{ extrair_campos_html_evolucao(
-        source_relation = "(select * from evolucoes)",
+        source_relation = ref('int_evolucoes'),
         id_cols = ['id_usuario'],
-        col_html = 'descricao_evolucao'
+        col_html = 'descricao_evolucao',
+        extra_where = 'src.data_cancelamento is null and src.id_usuario is not null'
     ) }}
 ),
 
@@ -84,52 +75,11 @@ agregadas as (
     group by id_usuario
 ),
 
-origens_por_codigo as (
-    select
-        id_usuario,
-        codigo,
-        max(descricao) as descricao,
-        array_agg(distinct origem order by origem) as origens
-    from unificadas
-    where
-        id_usuario is not null
-        and codigo is not null
-    group by id_usuario, codigo
-),
-
-por_codigo as (
-    select
-        id_usuario,
-        array_agg(
-            struct(codigo, descricao, origens)
-            order by codigo
-        ) as violacoes_por_origem
-    from origens_por_codigo
-    group by id_usuario
-),
-
-violacoes_json as (
-    select
-        id_usuario,
-        array_agg(
-            to_json(
-                struct(codigo, descricao, origens)
-            )
-            order by codigo
-        ) as violacoes_json
-    from origens_por_codigo
-    group by id_usuario
-),
-
 final as (
     select
-        a.id_usuario,
-        a.violacoes,
-        p.violacoes_por_origem,
-        j.violacoes_json
-    from agregadas as a
-    left join por_codigo as p on a.id_usuario = p.id_usuario
-    left join violacoes_json as j on a.id_usuario = j.id_usuario
+        id_usuario,
+        violacoes
+    from agregadas
 )
 
 select * from final

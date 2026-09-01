@@ -15,5 +15,3 @@ models:
           - unique
       - name: violacoes
         description: "Array estruturado de violações do usuário, STRUCT (codigo, descricao, origem com 'cadastro'/'evolucao')."
-      - name: violacoes_por_origem
-        description: "Dicionário por código de violação, STRUCT (codigo, descricao, origens ARRAY<STRING> com 'cadastro'/'evolucao') — mapeia de onde cada violação veio."

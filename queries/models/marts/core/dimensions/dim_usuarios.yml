@@ -88,26 +88,12 @@ models:
         description: "Indica se possui violação de direito registrada (Sim/Não)."
       - name: violacoes
         description: >
-          Array estruturado e unificado de violações de direito do usuário. Cada
-          item tem a coluna origem ('cadastro' para os códigos do campo
-          violacao_direito do cadastro, mapeados via indvioldir; 'evolucao' para
-          campos extraídos de formulários de evolução). Itens de origem
-          'cadastro' preenchem codigo/descricao; itens de origem 'evolucao'
-          preenchem id_evolucao, origem_modulo, data_evolucao,
-          titulo_formulario, label e valor. Filtros por origem, título, label ou
-          valor devem ser feitos via UNNEST no SQL de consumo.
-      - name: violacoes_json
-        description: >
-          Array JSON consolidado por violação de direito identificada. Cada
-          elemento contém codigo, descricao, origens (lista com 'cadastro' e/ou
-          'evolucao' — permite identificar violações sinalizadas por ambas as
-          origens), evidencias (detalhes de cada item por origem) e
-          todas_violacoes (resumo codigo+descricao+origens de TODAS as violações
-          do usuário, incluindo a própria — permite ver, ao puxar uma violação,
-          as demais que o usuário tem na mesma linha). Campos de formulário sem
-          vínculo claro com código de violação (ex.: Demanda Inicial, Outros)
-          não entram neste JSON — permanecem no array violacoes. Consumo via
-          UNNEST e funções JSON no SQL de consumo.
+          Array estruturado e unificado de violações de direito do usuário.
+          Granularidade: 1 linha por id_usuario. Cada item é um
+          STRUCT(codigo, descricao, origem), onde origem é 'cadastro' (códigos
+          do campo violacao_direito do cadastro) ou 'evolucao' (campos
+          extraídos de formulários de evolução). Consumo via UNNEST no SQL de
+          consumo.
       - name: deficiencia
         description: "Array estruturado de deficiências do usuário (código + descrição)."
       - name: beneficio
