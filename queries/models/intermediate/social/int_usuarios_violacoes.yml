@@ -5,8 +5,9 @@ models:
     description: |
       Violações de direitos dos usuários, unificadas a partir do atributo do cadastro
       (raw_usuarios_detalhes.violacao_direito) e de campos de formulário em evoluções.
-      Granularidade: 1 linha por id_usuario. Ephemeral — materializado como CTE nos
-      modelos que o referenciam (dim_usuarios, mart_usuarios_violacoes).
+      Granularidade: 1 linha por id_usuario. Ephemeral — materializado como CTE
+      no modelo que o referencia (dim_usuarios, exposta como array violacoes —
+      único ponto de consumo; o BI acessa via UNNEST no SQL de consumo).
     columns:
       - name: id_usuario
         description: "ID original do usuário (seqpac)."
