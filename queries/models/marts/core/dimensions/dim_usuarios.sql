@@ -1,27 +1,35 @@
 with base as (
     select * from {{ ref('raw_usuarios') }}
 ),
+
 detalhes as (
     select * from {{ ref('raw_usuarios_detalhes') }}
 ),
+
 saude_mental as (
     select * from {{ ref('raw_usuarios_saude_mental') }}
 ),
+
 origens as (
     select * from {{ ref('raw_origens') }}
 ),
+
 violacoes as (
     select * from {{ ref('int_usuarios_violacoes') }}
 ),
+
 deficiencias as (
     select * from {{ ref('int_deficiencias_agregadas') }}
 ),
+
 beneficios as (
     select * from {{ ref('int_beneficios_agregados') }}
 ),
+
 projetos as (
     select * from {{ ref('int_usuarios_projetos_sociais') }}
 ),
+
 final as (
     select
         {{ dbt_utils.generate_surrogate_key(['base.id_paciente']) }} as id_usuario_sk,
@@ -47,7 +55,7 @@ final as (
         det.numero_processo_decisao_apoiada,
         det.renda_ativa,
         case
-            when renda_ativa != 0 then "Sim"
+            when det.renda_ativa != 0 then "Sim"
             else "Não"
         end as atvd_remunerada,
         {{ map_coluna_decisao_apoiada('det.numero_processo_decisao_apoiada') }} as flag_decisao_apoiada,
@@ -69,7 +77,7 @@ final as (
         sm.codigo_origem,
         ori.descricao_origem as origem_demanda,
         -- Enriquecimento com Structs e Flags
-        if(v.id_usuario is not null, 'Sim', 'Não') as flag_possui_violacao_direito,
+        if(v.id_usuario is not null, "Sim", "Não") as flag_possui_violacao_direito,
         v.violacoes,
         v.violacoes_json,
         d.deficiencia,
@@ -77,15 +85,15 @@ final as (
         proj.projetos_sociais,
         base.id_unidade_referencia,
         base.id_login_cadastro
-    from base
-    left join detalhes det on base.id_paciente = det.id_paciente
-    left join saude_mental sm on base.id_paciente = sm.id_paciente
-    left join origens ori on sm.codigo_origem = ori.id_origem
-    left join violacoes v on base.id_paciente = v.id_usuario
-    left join deficiencias d on base.id_paciente = d.id_usuario
-    left join beneficios b on base.id_paciente = b.id_usuario
-    left join projetos proj on base.id_paciente = proj.id_usuario
-    where base.nome not like '%TESTE%'
+    from base as base
+    left join detalhes as det on base.id_paciente = det.id_paciente
+    left join saude_mental as sm on base.id_paciente = sm.id_paciente
+    left join origens as ori on sm.codigo_origem = ori.id_origem
+    left join violacoes as v on base.id_paciente = v.id_usuario
+    left join deficiencias as d on base.id_paciente = d.id_usuario
+    left join beneficios as b on base.id_paciente = b.id_usuario
+    left join projetos as proj on base.id_paciente = proj.id_usuario
+    where base.nome not like "%TESTE%"
 )
 
 select * from final
