@@ -1,44 +1,21 @@
-with source as (
+with violacoes_cadastro as (
     select
         id_paciente as id_usuario,
-        violacao_direito
-    from {{ ref('raw_usuarios_detalhes') }}
+        'cadastro' as origem,
+        trim(codigo) as codigo,
+        {{ map_violacao_direito_descricao('codigo') }} as descricao
+    from {{ ref('raw_usuarios_detalhes') }},
+        unnest(split(violacao_direito, ',')) as codigo
     where
         violacao_direito is not null
         and violacao_direito != ''
         and violacao_direito != 'N'
-),
-
-codigos_separados as (
-    select
-        id_usuario,
-        trim(codigo) as codigo
-    from source,
-        unnest(split(violacao_direito, ',')) as codigo
-),
-
-violacoes_cadastro as (
-    select
-        id_usuario,
-        'cadastro' as origem,
-        codigo,
-        {{ map_violacao_direito_descricao('codigo') }} as descricao,
-        cast(null as int64) as id_evolucao,
-        cast(null as string) as origem_modulo,
-        cast(null as datetime) as data_evolucao,
-        cast(null as string) as titulo_formulario,
-        cast(null as string) as label,
-        cast(null as string) as valor
-    from codigos_separados
-    where codigo != ''
+        and trim(codigo) != ''
 ),
 
 evolucoes as (
     select
         id_usuario,
-        id_evolucao,
-        data_evolucao,
-        origem_modulo,
         descricao_evolucao
     from {{ ref('int_evolucoes') }}
     where
@@ -49,7 +26,7 @@ evolucoes as (
 campos_evolucao as (
     select * from {{ extrair_campos_html_evolucao(
         source_relation = "(select * from evolucoes)",
-        id_cols = ['id_usuario', 'id_evolucao', 'data_evolucao', 'origem_modulo'],
+        id_cols = ['id_usuario'],
         col_html = 'descricao_evolucao'
     ) }}
 ),
@@ -57,145 +34,102 @@ campos_evolucao as (
 violacoes_evolucao as (
     select
         id_usuario,
-        'evolucao' as origem,
-        {{ map_label_violacao(
-            titulo_formulario = 'titulo_formulario',
-            regras = [
-                {'codigo': '20', 'titulos': ['Adolescente em trabalho', 'PETI']},
-                {
-                    'codigo': '11',
-                    'titulos': [
-                        'MSE - Medidas Socioeducativas',
-                        'MSE - RETORNO',
-                        'Penas e Medidas Alternativas'
-                    ]
-                }
-            ]
-        ) }} as codigo,
-        id_evolucao,
-        origem_modulo,
-        data_evolucao,
-        titulo_formulario,
-        label,
-        valor
-    from campos_evolucao
-    where
-        label is not null
-        and trim(label) != ''
+        origem,
+        codigo,
+        {{ map_violacao_direito_descricao('codigo') }} as descricao
+    from (
+        select
+            id_usuario,
+            'evolucao' as origem,
+            {{ map_label_violacao(
+                titulo_formulario = 'titulo_formulario',
+                regras = [
+                    {'codigo': '20', 'titulos': ['Adolescente em trabalho', 'PETI']},
+                    {'codigo': '11', 'titulos': ['MSE - Medidas Socioeducativas', 'MSE - RETORNO', 'Penas e Medidas Alternativas']}
+                ]
+            ) }} as codigo
+        from campos_evolucao
+        where
+            label is not null
+            and trim(label) != ''
+    )
+    where codigo is not null
 ),
 
-violacoes_evolucao_desc as (
+unificadas as (
     select
         id_usuario,
         origem,
         codigo,
-        {{ map_violacao_direito_descricao('codigo') }} as descricao,
-        id_evolucao,
-        origem_modulo,
-        data_evolucao,
-        titulo_formulario,
-        label,
-        valor
+        descricao
+    from violacoes_cadastro
+    union all
+    select
+        id_usuario,
+        origem,
+        codigo,
+        descricao
     from violacoes_evolucao
 ),
 
-violacoes_unificadas as (
-    select * from violacoes_cadastro
-    union all
-    select * from violacoes_evolucao_desc
-),
-
-violacoes_agregadas as (
+agregadas as (
     select
         id_usuario,
         array_agg(
-            struct(
-                origem,
-                codigo,
-                descricao,
-                id_evolucao,
-                origem_modulo,
-                data_evolucao,
-                titulo_formulario,
-                label,
-                valor
-            )
-            order by origem, codigo, data_evolucao
+            struct(codigo, descricao, origem)
+            order by origem, codigo
         ) as violacoes
-    from violacoes_unificadas
+    from unificadas
     where id_usuario is not null
     group by id_usuario
 ),
 
-violacoes_por_codigo as (
+origens_por_codigo as (
     select
         id_usuario,
         codigo,
         max(descricao) as descricao,
-        array_agg(distinct origem order by origem) as origens,
-        array_agg(
-            struct(
-                origem,
-                codigo,
-                descricao,
-                id_evolucao,
-                origem_modulo,
-                data_evolucao,
-                titulo_formulario,
-                label,
-                valor
-            )
-            order by origem, data_evolucao
-        ) as evidencias
-    from violacoes_unificadas
+        array_agg(distinct origem order by origem) as origens
+    from unificadas
     where
         id_usuario is not null
         and codigo is not null
     group by id_usuario, codigo
 ),
 
-resumo_violacoes as (
+por_codigo as (
     select
         id_usuario,
         array_agg(
-            struct(
-                codigo,
-                descricao,
-                origens
-            )
+            struct(codigo, descricao, origens)
             order by codigo
-        ) as todas_violacoes
-    from violacoes_por_codigo
+        ) as violacoes_por_origem
+    from origens_por_codigo
     group by id_usuario
 ),
 
 violacoes_json as (
     select
-        vp.id_usuario,
+        id_usuario,
         array_agg(
             to_json(
-                struct(
-                    vp.codigo,
-                    vp.descricao,
-                    vp.origens,
-                    vp.evidencias,
-                    rv.todas_violacoes
-                )
+                struct(codigo, descricao, origens)
             )
-            order by vp.codigo
+            order by codigo
         ) as violacoes_json
-    from violacoes_por_codigo as vp
-    left join resumo_violacoes as rv on vp.id_usuario = rv.id_usuario
-    group by vp.id_usuario
+    from origens_por_codigo
+    group by id_usuario
 ),
 
 final as (
     select
-        va.id_usuario,
-        va.violacoes,
-        vj.violacoes_json
-    from violacoes_agregadas as va
-    left join violacoes_json as vj on va.id_usuario = vj.id_usuario
+        a.id_usuario,
+        a.violacoes,
+        p.violacoes_por_origem,
+        j.violacoes_json
+    from agregadas as a
+    left join por_codigo as p on a.id_usuario = p.id_usuario
+    left join violacoes_json as j on a.id_usuario = j.id_usuario
 )
 
 select * from final

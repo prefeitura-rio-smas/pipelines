@@ -1,0 +1,19 @@
+version: 2
+
+models:
+  - name: int_usuarios_violacoes
+    description: |
+      Violações de direitos dos usuários, unificadas a partir do atributo do cadastro
+      (raw_usuarios_detalhes.violacao_direito) e de campos de formulário em evoluções.
+      Granularidade: 1 linha por id_usuario. Ephemeral — materializado como CTE nos
+      modelos que o referenciam (dim_usuarios, mart_usuarios_violacoes).
+    columns:
+      - name: id_usuario
+        description: "ID original do usuário (seqpac)."
+        tests:
+          - not_null
+          - unique
+      - name: violacoes
+        description: "Array estruturado de violações do usuário, STRUCT (codigo, descricao, origem com 'cadastro'/'evolucao')."
+      - name: violacoes_por_origem
+        description: "Dicionário por código de violação, STRUCT (codigo, descricao, origens ARRAY<STRING> com 'cadastro'/'evolucao') — mapeia de onde cada violação veio."
