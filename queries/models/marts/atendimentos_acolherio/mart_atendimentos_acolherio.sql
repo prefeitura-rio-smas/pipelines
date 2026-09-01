@@ -6,9 +6,7 @@ filtro_email_dev as (
     select * from {{ source('dashboard_acolherio', 'filtro_email_dev') }}
 ),
 
--- Restaura os atributos dimensionais que o fct_atendimentos deixou de expor
--- (removidos em cda9167). Mapeia as colunas legadas para as dimensões atuais,
--- preservando a semântica original (ver d2ffe2d).
+-- Restaura os atributos dimensionais que o fct_atendimentos deixou de expor (ver cda9167).
 base_enriquecida as (
     select
         a.*,

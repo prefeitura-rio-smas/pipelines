@@ -35,9 +35,7 @@ jobs:
       - name: Install dependencies (incluindo dbt)
         run: uv sync --all-extras --dev
 
-      # Necessário: a macro drop_pr_staging_schemas roda run_query no BigQuery
-      # (rj-smas-dev) via INFORMATION_SCHEMA — profiles.yml usa ADC
-      # (GOOGLE_APPLICATION_CREDENTIALS gerado pelo google-github-actions/auth).
+      # A macro roda run_query no BigQuery via ADC (google-github-actions/auth).
       - name: Authenticate to Google Cloud
         uses: google-github-actions/auth@v2
         with:
@@ -49,10 +47,7 @@ jobs:
       - name: DBT Deps
         run: uv run dbt deps --project-dir queries --profiles-dir queries
 
-      # P3 (PR #110): remove os datasets ci_<PR>__* criados pelo ci-recce.yaml
-      # (isolamento de schema por PR). Roda no fechamento do PR (merge ou close).
-      # A var schema_id é passada com placeholder — o dataset do target ci não é
-      # usado pela macro, que consulta INFORMATION_SCHEMA diretamente.
+      # Remove os datasets ci_<PR>__* do ci-recce.yaml no fechamento do PR.
       - name: Drop PR schemas (ci_PR__SHA)
         run: |
           uv run dbt run-operation drop_pr_staging_schemas \

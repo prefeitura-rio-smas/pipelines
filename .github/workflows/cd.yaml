@@ -165,10 +165,6 @@ jobs:
             uv run recce-cloud upload --type prod --target-path queries/target
           }
 
-          # SAFETY (PR #110): delete_stuck_base SÓ roda em falha de upload com
-          # 409/"already exists" (sessão base presa). Falha de GERAÇÃO dbt
-          # (deps/docs) NÃO deleta a base — ela pode estar VÁLIDA e regrediria
-          # de stale para AUSENTE.
           delete_stuck_base() {
             uv run python - <<'EOF'
           from recce_cloud.api.factory import create_platform_client
@@ -180,16 +176,14 @@ jobs:
           EOF
           }
 
-          # Passo 1 — geração dos artifacts dbt (deps + docs generate).
-          # Se falhou: alerta SEM deletar a sessão base (a base pode estar válida).
+          # Passo 1 — geração dos artifacts dbt deps/docs.
           if ! run_dbt_artifacts; then
             echo "::error::Recce baseline de prod não gerado (dbt deps/docs) — sessão base NÃO alterada"
             echo "## ⚠️ Recce baseline de prod NÃO gerado — sessão base PRESERVADA (revisar logs do dbt deps/docs)" >> "$GITHUB_STEP_SUMMARY"
             exit 1
           fi
 
-          # Passo 2 — upload do baseline. Self-healing SÓ no 409/"already exists":
-          # deleta a sessão base presa e retenta 1x. Outras falhas: alerta SEM deletar.
+          # Passo 2 — upload do baseline; self-healing só no 409/"already exists".
           if ! upload_log=$(run_upload 2>&1); then
             if grep -qiE '409|already exists' <<< "$upload_log"; then
               echo "## ⚠️ Recce baseline de prod com sessão presa (409) — recriando sessão base e retentando 1x" >> "$GITHUB_STEP_SUMMARY"

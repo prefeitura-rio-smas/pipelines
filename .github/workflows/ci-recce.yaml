@@ -141,15 +141,6 @@ jobs:
           fi
           ls -la queries/target-base
 
-      # ======================================================================
-      # P3 (PR #110): isolamento de schema por PR. A var schema_id
-      # (<PR>__<SHA>) é usada pela macro generate_schema_name (target ci) para
-      # materializar TUDO no dataset dedicado ci_<PR>__<SHA> em rj-smas-dev.
-      # Cada PR tem dataset próprio -> colisão de escrita entre PRs paralelos
-      # RESOLVIDA. O dataset é removido no fechamento do PR (workflow
-      # dbt-drop-pr-schemas.yaml).
-      # ======================================================================
-
       - name: Get Schema ID (dataset do PR)
         if: steps.changed-models.outputs.has_changes == 'true' && steps.check-creds.outputs.has_creds == 'true'
         run: echo "SCHEMA_ID=${{ github.event.pull_request.number }}__${{ github.sha }}" >> $GITHUB_ENV
@@ -164,22 +155,7 @@ jobs:
           # (ex: "{{ 'marts' if target.name == 'prod' else 'relatorio' }}").
           # --state resolve relativo ao --project-dir (queries/target-base).
           # --defer resolve upstream NÃO selecionado para as relações de prod (sem rebuild).
-          # --favor-state é OBRIGATÓRIO aqui: o target ci escreve no dataset
-          # DEDICADO do PR (ci_<PR>__<SHA>), onde o upstream NÃO selecionado pode
-          # não existir — sem --favor-state o dbt NÃO deferiria e o modelo leria
-          # dados STALE de dev. Com --favor-state, todo upstream não selecionado
-          # resolve SEMPRE para a relação de prod do state.
-          #
-          # ISOLAMENTO POR PR (P3, PR #110): a SA da CI CRIA datasets em
-          # rj-smas-dev (verificado). Cada PR materializa no dataset próprio
-          # ci_<PR>__<SHA> — a antiga limitação de colisão de escrita entre PRs
-          # paralelos (datasets compartilhados gerenciamento__dbt/relatorio/pic)
-          # fica RESOLVIDA.
-          #
-          # EXCLUSÃO TEMPORÁRIA: só encaminhamentos_unidade segue excluído até o fix cair em
-          # main (PR B / rma_cras, testes id_unidade_sk -> nome_canonico que o modelo não
-          # emite). delta_feedback_meta_ar_cpf e mart_atendimentos_acolherio foram corrigidos
-          # no PR #110.
+          # --favor-state: upstream não selecionado resolve SEMPRE para prod (dataset dedicado do PR ainda não existe).
           uv run dbt build \
             --select "state:modified+" \
             --exclude "encaminhamentos_unidade" \
@@ -208,8 +184,7 @@ jobs:
       - name: Expor dataset do PR (para revisão)
         if: steps.changed-models.outputs.has_changes == 'true' && steps.check-creds.outputs.has_creds == 'true'
         run: |
-          # Padrão discreto: endereço do dataset dedicado no step summary
-          # (não comenta no corpo do PR). Removido no fechamento do PR.
+          # Endereço do dataset dedicado no step summary (removido no fechamento do PR).
           echo "## 🧪 Dataset de CI deste PR (isolamento por PR)" >> "$GITHUB_STEP_SUMMARY"
           echo "" >> "$GITHUB_STEP_SUMMARY"
           echo "O build deste PR foi materializado no dataset dedicado (consultável no BigQuery):" >> "$GITHUB_STEP_SUMMARY"
