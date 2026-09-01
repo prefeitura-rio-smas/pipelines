@@ -24,14 +24,11 @@ ocupacoes as (
     select
         id_profissional,
         count(*) as qtde_cbos,
-        string_agg(cast(codigo_cbo as string), ' | ' order by codigo_cbo) as codigos_cbo,
-        string_agg(descricao, ' | ' order by codigo_cbo) as descricoes_cbo,
+        string_agg(cast(codigo_cbo as string), '|' order by codigo_cbo) as codigos_cbo,
+        string_agg(descricao, '|' order by codigo_cbo) as descricoes_cbo,
         -- CBO principal (determinístico): menor codigo_cbo do profissional.
-        -- Mesma semântica do antigo ranking da mart_atendimentos_acolherio
-        -- (row_number partition by id_profissional order by codigo_cbo = 1),
-        -- agora exposta na dimensão para o mart consumir só intermediate.
-        string_agg(cast(codigo_cbo as string), ' | ' order by codigo_cbo limit 1) as cbo_principal_codigo,
-        string_agg(descricao, ' | ' order by codigo_cbo limit 1) as cbo_principal_descricao
+        string_agg(cast(codigo_cbo as string), '|' order by codigo_cbo limit 1) as cbo_principal_codigo,
+        string_agg(descricao, '|' order by codigo_cbo limit 1) as cbo_principal_descricao
     from profissionais_ocupacoes_detalhadas
     group by 1
 ),
