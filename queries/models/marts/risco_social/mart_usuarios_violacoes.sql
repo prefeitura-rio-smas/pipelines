@@ -16,6 +16,7 @@ joined as (
         du.nome as nome_usuario,
         du.cpf,
         du.data_nascimento,
+        du.flag_situacao_rua,
         ve.codigo as codigo_violacao,
         ve.descricao as descricao_violacao,
         {{ extrair_ultima_atualizacao('raw_configuracoes_sistema') }} as ultima_atualizacao

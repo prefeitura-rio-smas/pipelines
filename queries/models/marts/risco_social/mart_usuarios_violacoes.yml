@@ -1,0 +1,55 @@
+version: 2
+
+models:
+  - name: mart_usuarios_violacoes
+    description: >
+      Mart de violações de direitos dos usuários.
+      Granularidade: 1 linha por (id_usuario, codigo_violacao).
+      Base: int_usuarios_violacoes (cross join unnest do array violacoes),
+      enriquecida com dados cadastrais do usuário via dim_usuarios
+      (sk_usuario, nome, cpf, data_nascimento, flag_situacao_rua) e
+      extração da última atualização da pipeline
+      (raw_configuracoes_sistema).
+    columns:
+      - name: sk_usuario
+        description: "Surrogate key do usuário (dim_usuarios.id_usuario_sk)."
+
+      - name: id_usuario
+        description: "Identificador único do usuário (seqpac)."
+        tests:
+          - not_null
+
+      - name: nome_usuario
+        description: "Nome completo do usuário."
+
+      - name: cpf
+        description: "CPF do usuário."
+
+      - name: data_nascimento
+        description: "Data de nascimento do usuário."
+
+      - name: flag_situacao_rua
+        description: >
+          Indica se o usuário está em situação de rua (Sim/Não).
+          Origem: gh_pacientes_sm.indmoradi (cadastro do usuário, módulo
+          saúde mental), mapeada pela macro map_flag_situacao_rua
+          ('5' -> Sim) na raw_usuarios_saude_mental e exposta pela
+          dim_usuarios.
+
+      - name: codigo_violacao
+        description: "Código da violação de direito registrada para o usuário."
+        tests:
+          - not_null
+
+      - name: descricao_violacao
+        description: "Descrição textual da violação de direito."
+
+      - name: ultima_atualizacao
+        description: "Timestamp da última sincronização do Airbyte (heartbeat da pipeline via raw_configuracoes_sistema)."
+
+    tests:
+      - dbt_utils.unique_combination_of_columns:
+          combination_of_columns:
+            - id_usuario
+            - codigo_violacao
+          name: unique_mart_usuarios_violacoes_usuario_violacao
