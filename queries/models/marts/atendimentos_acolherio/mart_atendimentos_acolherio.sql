@@ -1,4 +1,4 @@
--- recce-review-trigger PR #113: validação do data review em staging.
+-- recce-review-trigger PR #113: validação do data review em staging (2º commit).
 with fct_atendimentos as (
     select * from {{ ref('fct_atendimentos') }}
 ),
