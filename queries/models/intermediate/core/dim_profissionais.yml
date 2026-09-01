@@ -72,10 +72,12 @@ models:
         description: "Quantidade de CBOs vinculados ao profissional. 0 se não houver CBO cadastrado."
 
       - name: codigos_cbo
-        description: "Lista de códigos CBO concatenados com '|' em ordem crescente. NULL se não houver CBO."
+        description: "Array de códigos CBO do profissional em ordem crescente. ARRAY<STRING>. Mesa semântica de todos os CBOs. NULL se não houver CBO."
+        data_type: ARRAY<STRING>
 
       - name: descricoes_cbo
-        description: "Lista de descrições CBO concatenadas com '|' na mesma ordem dos códigos. NULL se não houver CBO."
+        description: "Array de descrições CBO na mesma ordem dos códigos. ARRAY<STRING>. NULL se não houver CBO."
+        data_type: ARRAY<STRING>
 
       - name: flag_multi_cbo
         description: "Indica se o profissional possui mais de um CBO. Valores: Sim / Não."

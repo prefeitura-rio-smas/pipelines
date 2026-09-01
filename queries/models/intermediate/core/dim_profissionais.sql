@@ -24,11 +24,13 @@ ocupacoes as (
     select
         id_profissional,
         count(*) as qtde_cbos,
-        string_agg(cast(codigo_cbo as string), '|' order by codigo_cbo) as codigos_cbo,
-        string_agg(descricao, '|' order by codigo_cbo) as descricoes_cbo,
+        -- CBOs agregados em ARRAY<STRING> nativo, ordenados por codigo_cbo.
+        array_agg(cast(codigo_cbo as string) order by codigo_cbo) as codigos_cbo,
+        array_agg(descricao order by codigo_cbo) as descricoes_cbo,
         -- CBO principal (determinístico): menor codigo_cbo do profissional.
-        string_agg(cast(codigo_cbo as string), '|' order by codigo_cbo limit 1) as cbo_principal_codigo,
-        string_agg(descricao, '|' order by codigo_cbo limit 1) as cbo_principal_descricao
+        -- Mantido como STRING (elemento único por definição), extraído do array ordenado.
+        array_agg(cast(codigo_cbo as string) order by codigo_cbo)[safe_offset(0)] as cbo_principal_codigo,
+        array_agg(descricao order by codigo_cbo)[safe_offset(0)] as cbo_principal_descricao
     from profissionais_ocupacoes_detalhadas
     group by 1
 ),

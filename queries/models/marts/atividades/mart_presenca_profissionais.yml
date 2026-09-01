@@ -27,13 +27,13 @@ models:
         description: "Nome completo do profissional."
         data_type: string
 
-      - name: codigos_cbo
-        description: "Códigos CBO do profissional (agregados, separados por ' | ')."
-        data_type: string
+      - name: codigo_cbo
+        description: "Array de códigos CBO do profissional. ARRAY<STRING> (pass-through da dim_profissionais)."
+        data_type: ARRAY<STRING>
 
       - name: nome_cbo
-        description: "Descrições dos CBOs do profissional (agregadas, separadas por ' | ')."
-        data_type: string
+        description: "Array de descrições CBO do profissional. ARRAY<STRING> (pass-through da dim_profissionais)."
+        data_type: ARRAY<STRING>
 
       - name: id_atividade
         description: "Identificador da atividade."

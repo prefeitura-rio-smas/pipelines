@@ -85,10 +85,12 @@ models:
         description: "Quantidade de CBOs do profissional."
 
       - name: codigos_cbo
-        description: "Códigos CBO concatenados (STRING_AGG)."
+        description: "Array de códigos CBO do profissional. ARRAY<STRING> (pass-through da dim_profissionais)."
+        data_type: ARRAY<STRING>
 
       - name: descricoes_cbo
-        description: "Descrições CBO concatenadas (STRING_AGG)."
+        description: "Array de descrições CBO do profissional. ARRAY<STRING> (pass-through da dim_profissionais)."
+        data_type: ARRAY<STRING>
 
       - name: flag_multi_cbo
         description: "Indica se o profissional possui múltiplos CBOs. Sim / Não."
