@@ -14,4 +14,8 @@ models:
           - not_null
           - unique
       - name: violacoes
-        description: "Array estruturado de violações do usuário, STRUCT (codigo, descricao, origem com 'cadastro'/'evolucao')."
+        description: >
+          Array estruturado de violações do usuário, STRUCT (codigo, descricao, origem).
+          Origem com 3 estados: 'cadastro' (só no cadastro), 'evolucao' (só na evolução),
+          'ambas' (presente nas duas origens). 1 item por (id_usuario, codigo) — sem
+          duplicatas de código (multiplicidade de evoluções/campos/cadastro sujo colapsada).

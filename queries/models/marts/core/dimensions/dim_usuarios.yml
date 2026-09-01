@@ -90,10 +90,11 @@ models:
         description: >
           Array estruturado e unificado de violações de direito do usuário.
           Granularidade: 1 linha por id_usuario. Cada item é um
-          STRUCT(codigo, descricao, origem), onde origem é 'cadastro' (códigos
-          do campo violacao_direito do cadastro) ou 'evolucao' (campos
-          extraídos de formulários de evolução). Consumo via UNNEST no SQL de
-          consumo.
+          STRUCT(codigo, descricao, origem) único por código (sem duplicatas),
+          onde origem tem 3 estados: 'cadastro' (códigos do campo
+          violacao_direito do cadastro), 'evolucao' (campos extraídos de
+          formulários de evolução) ou 'ambas' (código presente nas duas
+          origens). Consumo via UNNEST no SQL de consumo.
       - name: deficiencia
         description: "Array estruturado de deficiências do usuário (código + descrição)."
       - name: beneficio

@@ -11,6 +11,9 @@ with violacoes_cadastro as (
         and violacao_direito != ''
         and violacao_direito != 'N'
         and trim(codigo) != ''
+        -- AED: 'N' vaza como item do split (ex.: campo '20,N'); filtra no item,
+        -- nao apenas no campo inteiro
+        and trim(codigo) != 'N'
 ),
 
 campos_evolucao as (
@@ -63,15 +66,37 @@ unificadas as (
     from violacoes_evolucao
 ),
 
+-- Dedup real: 1 item por (id_usuario, codigo). A multiplicidade de evolucoes,
+-- de campos do formulario e o cadastro sujo ('20,20') colapsam no par
+-- (id_usuario, codigo). A origem converge para 'ambas' quando o codigo aparece
+-- nas duas origens; senao mantem a origem unica.
+-- Codigos desconhecidos (ex.: '1204', '2104' no cadastro) sao MANTIDOS com
+-- descricao 'Codigo Desconhecido' - decisao de barra-los nao foi tomada pelo
+-- Leone; apenas documentada aqui.
+deduplicadas as (
+    select
+        id_usuario,
+        codigo,
+        max(descricao) as descricao,
+        case
+            when count(distinct origem) = 2 then 'ambas'
+            else max(origem)
+        end as origem
+    from unificadas
+    where
+        id_usuario is not null
+        and codigo is not null
+    group by id_usuario, codigo
+),
+
 agregadas as (
     select
         id_usuario,
         array_agg(
             struct(codigo, descricao, origem)
-            order by origem, codigo
+            order by codigo
         ) as violacoes
-    from unificadas
-    where id_usuario is not null
+    from deduplicadas
     group by id_usuario
 ),
 
