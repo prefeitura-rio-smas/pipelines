@@ -58,10 +58,20 @@ violacoes_evolucao as (
     select
         id_usuario,
         'evolucao' as origem,
-        {{ map_label_violacao('titulo_formulario', 'label', 'valor') }} as codigo,
-        {{ map_violacao_direito_descricao(
-            map_label_violacao('titulo_formulario', 'label', 'valor')
-        ) }} as descricao,
+        {{ map_label_violacao(
+            titulo_formulario = 'titulo_formulario',
+            regras = [
+                {'codigo': '20', 'titulos': ['Adolescente em trabalho', 'PETI']},
+                {
+                    'codigo': '11',
+                    'titulos': [
+                        'MSE - Medidas Socioeducativas',
+                        'MSE - RETORNO',
+                        'Penas e Medidas Alternativas'
+                    ]
+                }
+            ]
+        ) }} as codigo,
         id_evolucao,
         origem_modulo,
         data_evolucao,
@@ -74,10 +84,25 @@ violacoes_evolucao as (
         and trim(label) != ''
 ),
 
+violacoes_evolucao_desc as (
+    select
+        id_usuario,
+        origem,
+        codigo,
+        {{ map_violacao_direito_descricao('codigo') }} as descricao,
+        id_evolucao,
+        origem_modulo,
+        data_evolucao,
+        titulo_formulario,
+        label,
+        valor
+    from violacoes_evolucao
+),
+
 violacoes_unificadas as (
     select * from violacoes_cadastro
     union all
-    select * from violacoes_evolucao
+    select * from violacoes_evolucao_desc
 ),
 
 violacoes_agregadas as (

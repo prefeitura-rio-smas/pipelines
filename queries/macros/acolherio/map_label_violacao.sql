@@ -1,15 +1,10 @@
-{% macro map_label_violacao(titulo_formulario, label, valor) %}
+{% macro map_label_violacao(titulo_formulario, regras=[]) %}
     CASE
-        WHEN {{ titulo_formulario }} LIKE '%Adolescente em trabalho%'
-            OR {{ titulo_formulario }} LIKE '%PETI%'
-            OR (
-                {{ label }} LIKE '%Marcação%CadÚnico%'
-                AND {{ valor }} LIKE '%Trabalho Infantil%'
-            )
-            THEN '20'
-        WHEN {{ titulo_formulario }} LIKE '%MSE%'
-            OR {{ titulo_formulario }} LIKE '%Penas e Medidas Alternativas%'
-            THEN '11'
+        {% for r in regras %}
+        WHEN (
+            {% for t in r.titulos %}{{ titulo_formulario }} LIKE '%{{ t }}%'{% if not loop.last %} OR {% endif %}{% endfor %}
+        ) THEN '{{ r.codigo }}'
+        {% endfor %}
         ELSE NULL
     END
 {% endmacro %}
