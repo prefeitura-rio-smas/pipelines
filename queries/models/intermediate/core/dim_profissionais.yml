@@ -5,7 +5,7 @@ models:
     description: |
       Dimensão de profissionais do Prontuário Carioca de Assistência Social.
       Grão: 1 linha por profissional.
-      Inclui dados da conta do operador, CBOs agregados (com STRING_AGG),
+      Inclui dados da conta do operador, CBOs agregados (ARRAY<STRING>, ordenados por codigo_cbo),
       CBO principal (determinístico), perfil de acesso, status da conta e
       unidades de atuação.
     columns:
