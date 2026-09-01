@@ -1,0 +1,25 @@
+version: 2
+
+models:
+  - name: mart_atendimentos_acolherio
+    description: |
+      Mart de atendimentos do Prontuário Carioca de Assistência Social (AcolheRio),
+      no grão atendimento × profissional (herdado do fct_atendimentos).
+      Classifica o atendimento por tipo (Recepção / Técnico / Outros), faixa
+      etária do usuário e enriquece com dimensões (profissional, unidade).
+    columns:
+      - name: id_atendimento_sk
+        description: "Surrogate key do atendimento × profissional (hash de id_atendimento_modulo + id_profissional). Grão do mart."
+        data_tests:
+          - unique
+          - not_null
+
+      - name: id_atendimento
+        description: "ID natural do atendimento no sistema."
+        data_tests:
+          - not_null
+
+      - name: data_atendimento
+        description: "Data do atendimento."
+        data_tests:
+          - not_null

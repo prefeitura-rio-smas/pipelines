@@ -24,8 +24,13 @@ ocupacoes as (
     select
         id_profissional,
         count(*) as qtde_cbos,
-        string_agg(cast(codigo_cbo as string), ' | ' order by codigo_cbo) as codigos_cbo,
-        string_agg(descricao, ' | ' order by codigo_cbo) as descricoes_cbo
+        -- CBOs agregados em ARRAY<STRING> nativo, ordenados por codigo_cbo.
+        array_agg(cast(codigo_cbo as string) order by codigo_cbo) as codigos_cbo,
+        array_agg(descricao order by codigo_cbo) as descricoes_cbo,
+        -- CBO principal (determinístico): menor codigo_cbo do profissional.
+        -- Mantido como STRING (elemento único por definição), extraído do array ordenado.
+        array_agg(cast(codigo_cbo as string) order by codigo_cbo)[safe_offset(0)] as cbo_principal_codigo,
+        array_agg(descricao order by codigo_cbo)[safe_offset(0)] as cbo_principal_descricao
     from profissionais_ocupacoes_detalhadas
     group by 1
 ),
@@ -67,6 +72,10 @@ final as (
         ocu.codigos_cbo,
         ocu.descricoes_cbo,
         case when coalesce(ocu.qtde_cbos, 0) > 1 then 'Sim' else 'Não' end as flag_multi_cbo,
+
+        -- CBO principal (determinístico: menor codigo_cbo)
+        ocu.cbo_principal_codigo,
+        ocu.cbo_principal_descricao,
 
         -- Perfil de acesso (com a macro map_coluna_perfil_acesso)
         -- Refinamento: nível 8 (Customizado) pode ter subtipo em tipo_acesso_codigo (D=Diretor, M=Master)
