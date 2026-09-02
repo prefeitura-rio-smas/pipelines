@@ -87,7 +87,14 @@ models:
       - name: flag_possui_violacao_direito
         description: "Indica se possui violação de direito registrada (Sim/Não)."
       - name: violacoes
-        description: "Array estruturado de violações de direito (código + descrição)."
+        description: >
+          Array estruturado e unificado de violações de direito do usuário.
+          Granularidade: 1 linha por id_usuario. Cada item é um
+          STRUCT(codigo, descricao, origem) único por código (sem duplicatas),
+          onde origem tem 3 estados: 'cadastro' (códigos do campo
+          violacao_direito do cadastro), 'evolucao' (campos extraídos de
+          formulários de evolução) ou 'ambas' (código presente nas duas
+          origens). Consumo via UNNEST no SQL de consumo.
       - name: deficiencia
         description: "Array estruturado de deficiências do usuário (código + descrição)."
       - name: beneficio

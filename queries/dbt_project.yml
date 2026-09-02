@@ -24,6 +24,12 @@ models:
       +materialized: table
       +schema: "{{ 'marts' if target.name == 'prod' else 'relatorio' }}"
 
+      core:
+        dimensions:
+          +schema: "{{ 'core' if target.name == 'prod' else 'gerenciamento__dbt' }}"
+        facts:
+          +schema: "{{ 'core' if target.name == 'prod' else 'gerenciamento__dbt' }}"
+
       atividades:
         +tags: ["daily"]
 

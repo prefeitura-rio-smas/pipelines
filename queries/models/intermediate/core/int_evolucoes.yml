@@ -1,0 +1,40 @@
+version: 2
+models:
+  - name: int_evolucoes
+    description: >
+      União das evoluções das 4 origens do prontuário (administrativa, usuário,
+      família e grupo), explodida por usuário (grupo via lista_pacientes).
+      É a fonte única de evoluções para a fct_evolucoes (que adiciona os SKs de
+      dimensões) e para a int_usuarios_violacoes (extração de campos de
+      formulários HTML). Evoluções canceladas do módulo grupo são excluídas.
+    columns:
+      - name: id_usuario
+        description: "ID do usuário (seqpac). NULL para evoluções de família sem paciente vinculado."
+      - name: id_unidade
+        description: "Unidade associada à evolução. No módulo grupo vem da atividade (raw_atividades_grupo); nos demais, de sequs."
+      - name: id_profissional
+        description: "Profissional responsável pela evolução."
+      - name: data_evolucao
+        description: "Data/hora da evolução."
+      - name: descricao_evolucao
+        description: "Conteúdo HTML da evolução (base para extração de campos de formulário)."
+      - name: tipo_evolucao
+        description: "Tipo da evolução."
+      - name: origem_modulo
+        description: "Origem da evolução: administrativa, usuario, familia ou grupo."
+      - name: id_familia
+        description: "FK para a família (módulo família)."
+      - name: modulo_prontuario
+        description: "Módulo do prontuário (módulo família)."
+      - name: codigo_abrangencia
+        description: "Código de abrangência (módulos usuário e grupo)."
+      - name: id_paciente_familia
+        description: "Paciente vinculado à evolução de família."
+      - name: id_evolucao_grupo
+        description: "ID da evolução de grupo (seqevogrp)."
+      - name: id_evolucao
+        description: "ID da evolução."
+      - name: id_atividade
+        description: "FK para raw_atividades_grupo (módulo grupo)."
+      - name: data_cancelamento
+        description: "Data de cancelamento da evolução. NULL para evoluções ativas."
