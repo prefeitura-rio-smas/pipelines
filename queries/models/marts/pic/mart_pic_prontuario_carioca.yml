@@ -9,6 +9,10 @@ models:
       (2) evolução aba Pequenos Cariocas (codigo_abrangencia=20) via fct_evolucoes.
       Indicadores propagam para toda a família via LOGICAL_OR entre membros ativos.
       Famílias sem crianças 0-6 permanecem com membros = [].
+      Busca Ativa: coluna busca_ativa = ARRAY<STRUCT> com TODAS as buscas ativas da
+      família (todas as evoluções do formulário '1. Pequenos Cariocas - Busca Ativa',
+      codigo_abrangencia=20), em ordem cronológica (data_evolucao, id_evolucao).
+      possui_busca deriva de ARRAY_LENGTH(busca_ativa) > 0.
     columns:
       - name: responsavel_familiar
         description: "Struct com CPF e nome do responsável familiar (dado por dim_familias.id_usuario_responsavel -> dim_usuarios)."
@@ -28,18 +32,23 @@ models:
         description: "Booleano. True se a familia teve ao menos um encaminhamento valido no formulario Documentacao Civil (codigo_abrangencia=24). Filtra o valor 'undefined' que representa checkbox nao marcado."
       - name: encaminhamentos_documentacao_civil
         description: "Array de strings com os encaminhamentos distintos registrados no formulario Documentacao Civil."
-      - name: possui_busca_ativa_pequenos_cariocas
-        description: "Booleano. True se a familia possui ao menos um registro de Busca Ativa no formulario Pequenos Cariocas (codigo_abrangencia=20)."
-      - name: protocolo_violado_busca_ativa
-        description: "Array de strings com os protocolos violados identificados na ultima Busca Ativa."
-      - name: data_busca_ativa
-        description: "Date. Data da ultima Busca Ativa realizada."
-      - name: tipo_busca_ativa
-        description: "Array de strings com os tipos de busca ativa realizados na ultima Busca Ativa (ex: Domicilio, Por telefone)."
-      - name: familia_localizada_busca_ativa
-        description: "Booleano. True se a familia foi localizada na ultima Busca Ativa (campo 'Familia localizada?' = Sim)."
-      - name: motivo_nao_localizada_busca_ativa
-        description: "Array de strings com os motivos de nao localizacao da familia na ultima Busca Ativa (ex: Endereco desatualizado, Ligacao nao atendida). Vazio se a familia foi localizada."
+      - name: busca_ativa
+        description: |
+          ARRAY<STRUCT> com TODAS as buscas ativas realizadas pela família (histórico completo,
+          não apenas a última). Shape idiomático BigQuery: cada elemento do array é UMA busca
+          (1 evolução do formulário '1. Pequenos Cariocas - Busca Ativa', codigo_abrangencia=20),
+          em ordem cronológica (data_evolucao, id_evolucao). Não suporta ARRAY<ARRAY>, por isso
+          os campos multi-valor são ARRAY<STRING> dentro do struct de cada busca.
+          possui_busca (uso: ARRAY_LENGTH(busca_ativa) > 0) não fica como coluna — deriva do array.
+          Campos de cada struct:
+          - data: date. Data digitada no formulário (safe.parse_date '%d/%m/%Y'). NULL NAQUELA
+            busca se a data for inválida (ex.: 06/08/25026) — a evolução é PRESERVADA no array
+            com data NULL, não descartada, e as buscas anteriores NÃO são afetadas.
+          - tipo: array de strings com os tipos de busca ativa (ex: Domicilio, Por telefone).
+          - familia_localizada: booleano. True se a família foi localizada (campo 'Família localizada?' = Sim).
+          - motivo_nao_localizada: array de strings com os motivos de não localização (ex: Endereco
+            desatualizado, Ligacao nao atendida). Vazio se a família foi localizada.
+          - protocolo_violado: array de strings com os protocolos violados identificados naquela busca.
       - name: ultima_atualizacao
         description: "Timestamp da última sincronização do Airbyte (heartbeat da pipeline via raw_configuracoes_sistema)."
         tests:

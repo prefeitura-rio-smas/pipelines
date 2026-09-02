@@ -7,6 +7,15 @@
 --
 -- Membros: crianças de 0 a 6 anos ativas na família
 -- Indicadores propagam para toda a família (LOGICAL_OR)
+-- Busca Ativa: coluna busca_ativa = ARRAY<STRUCT> com TODAS as buscas ativas
+--   feitas pela família (todas as evoluções do formulário
+--   '1. Pequenos Cariocas - Busca Ativa', codigo_abrangencia=20), em ordem
+--   cronológica (data_evolucao, id_evolucao). Cada struct = 1 busca, com
+--   campos: data (DATE - NULL se a data digitada for inválida, ex. 06/08/25026;
+--   a evolução é PRESERVADA no array com data NULL, não descartada),
+--   tipo (ARRAY), familia_localizada (BOOL), motivo_nao_localizada (ARRAY),
+--   protocolo_violado (ARRAY). NÃO existe mais 'última busca' - a lista expõe
+--   o histórico completo; possui_busca deriva de ARRAY_LENGTH(busca_ativa) > 0.
 -- Versão _dev para validação
 
 {{ config(
@@ -142,23 +151,73 @@ documentacao_civil_encaminhamentos as (
     ) }}
 ),
 
--- Busca Ativa Pequenos Cariocas (extrair_formulario: latest + parser HTML + pivot)
-busca_ativa_pequenos_cariocas as (
-    {{ extrair_formulario(
-        source_relation = ref('fct_evolucoes'),
-        group_cols = ['id_familia'],
-        codigo_abrangencia = 20,
-        titulo_formulario = '1. Pequenos Cariocas - Busca Ativa',
-        latest_by = 'data_evolucao',
-        flag_col = 'possui_busca_ativa_pequenos_cariocas',
-        campos = [
-            {'label': '%Protocolo violado%', 'col': 'protocolo_violado_busca_ativa', 'type': 'array'},
-            {'label': '%Data em que a Busca Ativa%', 'col': 'data_busca_ativa', 'type': 'date', 'format': '%d/%m/%Y'},
-            {'label': '%Tipo de busca ativa%', 'col': 'tipo_busca_ativa', 'type': 'array'},
-            {'label': '%Família localizada%', 'col': 'familia_localizada_busca_ativa', 'type': 'boolean', 'true_value': 'Sim'},
-            {'label': '%Se não, por quê%', 'col': 'motivo_nao_localizada_busca_ativa', 'type': 'array'},
-        ]
-    ) }}
+-- Buscas Ativas Pequenos Cariocas: UMA LINHA POR EVOLUÇÃO do formulário
+-- '1. Pequenos Cariocas - Busca Ativa' (codigo_abrangencia=20), pivotando os
+-- campos do formulário (parser HTML). Data digitada inválida (ex.: 06/08/25026)
+-- vira NULL NAQUELA evolução via safe.parse_date - a evolução NÃO é descartada.
+buscas_ativas_evolucoes as (
+    select
+        id_familia,
+        id_evolucao,
+        data_evolucao,
+        safe.parse_date('%d/%m/%Y', data_raw) as data,
+        array(
+            select trim(x)
+            from unnest(split(ifnull(tipo_raw, ''), ',')) as x
+            where trim(x) != ''
+        ) as tipo,
+        familia_localizada_raw = 'Sim' as familia_localizada,
+        array(
+            select trim(x)
+            from unnest(split(ifnull(motivo_raw, ''), ',')) as x
+            where trim(x) != ''
+        ) as motivo_nao_localizada,
+        array(
+            select trim(x)
+            from unnest(split(ifnull(protocolo_raw, ''), ',')) as x
+            where trim(x) != ''
+        ) as protocolo_violado
+    from (
+        select
+            id_familia,
+            id_evolucao,
+            data_evolucao,
+            max(case when label like '%Data em que a Busca Ativa%' then valor end) as data_raw,
+            max(case when label like '%Tipo de busca ativa%' then valor end) as tipo_raw,
+            max(case when label like '%Família localizada%' then valor end) as familia_localizada_raw,
+            max(case when label like '%Se não, por quê%' then valor end) as motivo_raw,
+            max(case when label like '%Protocolo violado%' then valor end) as protocolo_raw
+        from {{ extrair_campos_html_evolucao(
+            source_relation = ref('fct_evolucoes'),
+            id_cols = ['id_evolucao', 'id_familia', 'data_evolucao'],
+            col_html = 'descricao_evolucao',
+            extra_where = 'codigo_abrangencia = 20'
+        ) }}
+        where titulo_formulario = '1. Pequenos Cariocas - Busca Ativa'
+        group by id_familia, id_evolucao, data_evolucao
+    )
+),
+
+-- Agrega TODAS as buscas por família em ARRAY<STRUCT>, em ordem cronológica
+-- (data_evolucao, id_evolucao). Shape idiomático BigQuery: array de structs
+-- direto no valor da coluna (leitura "SELECT família, busca_ativa -> lista").
+-- BigQuery não suporta ARRAY<ARRAY>; os campos multi-valor (tipo, motivo,
+-- protocolo) são ARRAY<STRING> DENTRO do struct de cada busca - permitido.
+buscas_ativas_por_familia as (
+    select
+        id_familia,
+        array_agg(
+            struct(
+                data,
+                tipo,
+                familia_localizada,
+                motivo_nao_localizada,
+                protocolo_violado
+            )
+            order by data_evolucao, id_evolucao
+        ) as busca_ativa
+    from buscas_ativas_evolucoes
+    group by id_familia
 ),
 
 -- Junção final
@@ -173,12 +232,7 @@ final as (
         coalesce(ff.interesse_filiacao_completa, false) as interesse_filiacao_completa,
         coalesce(array_length(dce.encaminhamentos_documentacao_civil) > 0, false) as possui_encaminhamento_documentacao_civil,
         coalesce(dce.encaminhamentos_documentacao_civil, []) as encaminhamentos_documentacao_civil,
-        coalesce(bapc.possui_busca_ativa_pequenos_cariocas, false) as possui_busca_ativa_pequenos_cariocas,
-        coalesce(bapc.protocolo_violado_busca_ativa, []) as protocolo_violado_busca_ativa,
-        bapc.data_busca_ativa as data_busca_ativa,
-        coalesce(bapc.tipo_busca_ativa, []) as tipo_busca_ativa,
-        coalesce(bapc.familia_localizada_busca_ativa, false) as familia_localizada_busca_ativa,
-        coalesce(bapc.motivo_nao_localizada_busca_ativa, []) as motivo_nao_localizada_busca_ativa,
+        coalesce(baf.busca_ativa, []) as busca_ativa,
         {{ extrair_ultima_atualizacao('raw_configuracoes_sistema') }} as ultima_atualizacao
     from familias_origens fo
     left join responsavel_familiar rf on fo.id_familia = rf.id_familia
@@ -187,7 +241,7 @@ final as (
     left join violacoes_descricoes vd on fo.id_familia = vd.id_familia
     left join filiacao_familia ff on fo.id_familia = ff.id_familia
     left join documentacao_civil_encaminhamentos dce on fo.id_familia = dce.id_familia
-    left join busca_ativa_pequenos_cariocas bapc on fo.id_familia = bapc.id_familia
+    left join buscas_ativas_por_familia baf on fo.id_familia = baf.id_familia
     where rf.responsavel_familiar.cpf is not null
 )
 
