@@ -49,7 +49,7 @@ jobs:
           git cat-file -e "${BASE_SHA}^{commit}"
 
           mapfile -d '' -t files < <(
-            git diff --name-only -z "$BASE_SHA...HEAD" -- 'pipelines/**' '*.py' |
+            git diff --diff-filter=ACMR --name-only -z "$BASE_SHA...HEAD" -- 'pipelines/**' '*.py' |
             while IFS= read -r -d '' file; do
               case "$file" in
                 *.py) printf '%s\0' "$file" ;;
@@ -135,7 +135,7 @@ jobs:
           git cat-file -e "${BASE_SHA}^{commit}"
 
           mapfile -d '' -t files < <(
-            git diff --name-only -z "$BASE_SHA...HEAD" -- queries/ |
+            git diff --diff-filter=ACMR --name-only -z "$BASE_SHA...HEAD" -- queries/ |
             while IFS= read -r -d '' file; do
               case "$file" in
                 queries/dbt_packages/*) ;;
