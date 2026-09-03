@@ -2,7 +2,7 @@ version: 2
 
 models:
   - name: int_encaminhamentos_evolucoes
-    description: "Extrai campos de encaminhamento (SMAS e Órgãos) do texto das evoluções."
+    description: "Extrai campos de encaminhamento (SMAS, Benefícios e Órgãos) do texto das evoluções."
     columns:
       - name: id_evolucao_sk
         description: "Surrogate key da evolução."
@@ -12,5 +12,7 @@ models:
         description: "Surrogate key da unidade."
       - name: encaminhamento_smas
         description: "Texto do campo Encaminhamentos - SMAS (ou Atividades SMAS)."
+      - name: encaminhamento_beneficios
+        description: "Texto do campo Encaminhamentos - Benefícios."
       - name: encaminhamento_orgaos
         description: "Texto do campo Encaminhamentos Órgãos."
