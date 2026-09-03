@@ -7,12 +7,6 @@
 -- Mês de referência: var competencia ('AAAA-MM'); vazio = mês corrente.
 -- C2 = C3 por construção da fonte (checkbox único 'Cadastro/Atualização Cadúnico').
 
-{% set competencia = var('competencia', '') %}
-{% if competencia == '' %}
-    {% set mes_ref = "date_trunc(current_date(), month)" %}
-{% else %}
-    {% set mes_ref = "date('" + competencia + "-01')" %}
-{% endif %}
 {% set corte_ep = var('corte_extrema_pobreza', 218) %}
 
 with unidades_cras as (
@@ -38,7 +32,7 @@ paif_novas as (
         violacoes,
         vulnerabilidades
     from paif
-    where date_trunc(data_cadastro_paif, month) = {{ mes_ref }}
+    where {{ no_mes('data_cadastro_paif') }}
 ),
 
 -- Itens A1 e A2 do bloco I (RMA CRAS)
@@ -48,7 +42,7 @@ total_paif as (
         count(distinct id_familia) as total_famil_paif_sistema_a1,
         count(
             distinct if(
-                date_trunc(data_cadastro_paif, month) = {{ mes_ref }},
+                {{ no_mes('data_cadastro_paif') }},
                 id_familia,
                 null
             )
@@ -121,7 +115,7 @@ trabalho_infantil_crianca_adolescente as (
         count(
             distinct if(
                 v.descricao = 'Trabalho Infantil'
-                and date_diff(last_day({{ mes_ref }}), p.data_nascimento, year) < 18,
+                and {{ calc_idade('p.data_nascimento', 'last_day(' ~ mes_referencia() ~ ')') }} < 18,
                 p.id_familia,
                 null
             )
@@ -144,7 +138,7 @@ acolhimento as (
         count(
             distinct if(
                 c.id_usuario is not null
-                and date_diff(last_day({{ mes_ref }}), p.data_nascimento, year) < 18,
+                and {{ calc_idade('p.data_nascimento', 'last_day(' ~ mes_referencia() ~ ')') }} < 18,
                 p.id_familia,
                 null
             )
@@ -163,7 +157,7 @@ atendimentos as (
     where
         not regexp_contains(tipo_atendimento_descricao, '(?i)recepção')
         and (flag_cancelado is null or flag_cancelado != 'S')
-        and date_trunc(data_atendimento, month) = {{ mes_ref }}
+        and {{ no_mes('data_atendimento') }}
     group by 1
 ),
 
@@ -176,7 +170,7 @@ atendimentos_domiciliar as (
     where
         regexp_contains(tipo_atendimento_descricao, '(?i)domiciliar')
         and (flag_cancelado is null or flag_cancelado != 'S')
-        and date_trunc(data_atendimento, month) = {{ mes_ref }}
+        and {{ no_mes('data_atendimento') }}
     group by 1
 ),
 
@@ -206,7 +200,7 @@ evolucao as (
             )
         ) as encaminhamento_creas_c5
     from {{ ref('int_encaminhamentos_rma_cras') }}
-    where date_trunc(data_evolucao, month) = {{ mes_ref }}
+    where {{ no_mes('data_evolucao') }}
     group by 1
 ),
 
