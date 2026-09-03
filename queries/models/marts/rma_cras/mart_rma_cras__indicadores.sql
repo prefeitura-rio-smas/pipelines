@@ -115,7 +115,7 @@ trabalho_infantil_crianca_adolescente as (
         count(
             distinct if(
                 v.descricao = 'Trabalho Infantil'
-                and {{ calc_idade('p.data_nascimento', 'last_day(' ~ mes_referencia() ~ ')') }} < 18,
+                and {{ calc_idade('p.data_nascimento', 'fim_do_mes') }} < 18,
                 p.id_familia,
                 null
             )
@@ -138,7 +138,7 @@ acolhimento as (
         count(
             distinct if(
                 c.id_usuario is not null
-                and {{ calc_idade('p.data_nascimento', 'last_day(' ~ mes_referencia() ~ ')') }} < 18,
+                and {{ calc_idade('p.data_nascimento', 'fim_do_mes') }} < 18,
                 p.id_familia,
                 null
             )
@@ -156,7 +156,7 @@ atendimentos as (
     from {{ ref('fct_atendimentos') }}
     where
         not regexp_contains(tipo_atendimento_descricao, '(?i)recepção')
-        and (flag_cancelado is null or flag_cancelado != 'S')
+        and {{ nao_cancelado() }}
         and {{ no_mes('data_atendimento') }}
     group by 1
 ),
@@ -169,7 +169,7 @@ atendimentos_domiciliar as (
     from {{ ref('fct_atendimentos') }}
     where
         regexp_contains(tipo_atendimento_descricao, '(?i)domiciliar')
-        and (flag_cancelado is null or flag_cancelado != 'S')
+        and {{ nao_cancelado() }}
         and {{ no_mes('data_atendimento') }}
     group by 1
 ),

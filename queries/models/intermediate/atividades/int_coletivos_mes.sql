@@ -20,7 +20,7 @@ enriquecida as (
         p.data_presenca,
         a.id_tipo_atividade,
         a.nome_tipo_atividade,
-        {{ calc_idade('u.data_nascimento', 'last_day(' ~ mes_referencia() ~ ')') }} as idade_anos,
+        {{ calc_idade('u.data_nascimento', 'fim_do_mes') }} as idade_anos,
         u.flag_deficiencia
     from presencas as p
     left join {{ ref('dim_atividades_grupo') }} as a

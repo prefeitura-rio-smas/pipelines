@@ -1,9 +1,12 @@
 {% macro calc_idade(data_nascimento, data_referencia=none) %}
     -- Idade aniversario-correta na data de referência (expressão SQL como texto).
     -- Sem data_referencia, usa current_date() (comportamento original).
-    -- Ex. RMA: calc_idade('data_nascimento', 'last_day(' ~ mes_referencia() ~ ')').
+    -- Sentinel 'fim_do_mes' resolve last_day do mês de referência (var competencia).
+    -- Ex. RMA: calc_idade('data_nascimento', 'fim_do_mes').
     {% if data_referencia is none %}
         {% set ref = "current_date()" %}
+    {% elif data_referencia == 'fim_do_mes' %}
+        {% set ref = "last_day(" ~ mes_referencia() ~ ")" %}
     {% else %}
         {% set ref = data_referencia %}
     {% endif %}
