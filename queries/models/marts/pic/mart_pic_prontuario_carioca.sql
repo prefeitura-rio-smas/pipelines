@@ -21,7 +21,8 @@
 {{ config(
     schema="pic",
     alias="mart_pic_prontuario_carioca",
-    materialized="table"
+    materialized="table",
+    tags = ['daily']
 ) }}
 
 with
