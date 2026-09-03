@@ -4,7 +4,9 @@ models:
   - name: int_paif_membros_unidade
     description: |
       Membros de famílias em acompanhamento PAIF (serviço assistencial 1, sem data de cancelamento),
-      com a unidade responsável atribuída a partir do id_unidade do próprio registro do serviço.
+      com a unidade responsável atribuída a partir do id_unidade do próprio registro do serviço;
+      quando o registro do serviço não possui unidade, a unidade é obtida do operador que cadastrou
+      a família (id_login_cadastro → raw_operadores_unidades).
       Granularidade: 1 linha por (id_unidade, id_familia, id_usuario membro). Ephemeral —
       materializado como CTE no modelo que o referencia (mart_rma_cras__indicadores).
     columns:
