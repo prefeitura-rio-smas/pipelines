@@ -8,8 +8,8 @@ with base as (
         e.id_unidade_sk,
         e.descricao_evolucao,
         u.nome as nome_usuario
-    from {{ ref('fct_evolucoes') }} e
-    left join {{ ref('dim_usuarios') }} u on e.id_usuario_sk = u.id_usuario_sk
+    from {{ ref('fct_evolucoes') }} as e
+    left join {{ ref('dim_usuarios') }} as u on e.id_usuario_sk = u.id_usuario_sk
 ),
 
 limpa_html as (
@@ -44,6 +44,10 @@ extrai_encaminhamentos as (
         ) as encaminhamento_smas,
         regexp_extract(
             descricao_limpa,
+            r'Encaminhamentos - Benefícios:\s*;?([^;]+?)(?:;Encaminhamentos|;Outros|$)'
+        ) as encaminhamento_beneficios,
+        regexp_extract(
+            descricao_limpa,
             r'Encaminhamentos Órgãos:\s*;?([^;]+?)(?:;Encaminhamentos|;Outros|$)'
         ) as encaminhamento_orgaos
     from limpa_delimitadores
@@ -53,6 +57,7 @@ select *
 from extrai_encaminhamentos
 where (
     encaminhamento_smas is not null
+    or encaminhamento_beneficios is not null
     or encaminhamento_orgaos is not null
 )
 and (nome_usuario not like '%TESTES%' or nome_usuario is null)

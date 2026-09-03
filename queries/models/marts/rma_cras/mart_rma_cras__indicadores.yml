@@ -1,0 +1,48 @@
+version: 2
+
+models:
+  - name: mart_rma_cras__indicadores
+    description: |
+      Indicadores mensais do RMA CRAS por unidade CRAS, na nova arquitetura.
+      Granularidade: 1 linha por unidade CRAS (dim_unidades, tipo_unidade = 'CRAS').
+      Bloco I — famílias em acompanhamento PAIF (A1, A2, B2, B3, B4, B5) e Bloco II —
+      atendimentos e encaminhamentos (C1, C2_C3, C4, C5, C6), seguindo as colunas
+      do antigo mart_cras_rma.
+    columns:
+      - name: id_unidade_sk
+        description: "Surrogate key da unidade CRAS."
+        tests:
+          - not_null
+          - unique
+      - name: id_unidade
+        description: "ID da unidade CRAS."
+        tests:
+          - not_null
+      - name: nome_unidade
+        description: "Nome da unidade CRAS."
+      - name: total_famil_paif_sistema_a1
+        description: "A1 — total de famílias em acompanhamento PAIF no sistema."
+      - name: total_famil_paif_mes_atual_a2
+        description: "A2 — famílias PAIF com cadastro no mês atual."
+      - name: total_famil_paif_bf_b2
+        description: "B2 — famílias PAIF do mês atual com membro beneficiário Bolsa Família."
+      - name: total_famil_paif_descumprimento_b3
+        description: "B3 — famílias PAIF do mês atual com vulnerabilidade de descumprimento de condicionalidades (id_vulnerabilidade = 1)."
+      - name: total_famil_paif_bpc_b4
+        description: "B4 — famílias PAIF do mês atual com membro beneficiário BPC."
+      - name: trab_infantil_crianca_adolescente_b5
+        description: "B5 — famílias PAIF do mês atual com membro em situação de trabalho infantil (18 anos)."
+      - name: total_atendimentos_c1
+        description: "C1 — total de atendimentos (exceto recepção) na unidade."
+      - name: encaminhamento_cadunico_c2_c3
+        description: "C2/C3 — usuários com encaminhamento de Cadastro/Atualização Cadúnico."
+      - name: encaminhamento_bpc_c4
+        description: "C4 — usuários com encaminhamento BPC - Idoso ou BPC - PCD."
+      - name: encaminhamento_creas_c5
+        description: "C5 — usuários com encaminhamento para CREAS."
+      - name: total_atendimentos_domiciliar_c6
+        description: "C6 — total de atendimentos domiciliares na unidade."
+      - name: ultima_atualizacao
+        description: "Data da última atualização dos dados de origem."
+        tests:
+          - not_null

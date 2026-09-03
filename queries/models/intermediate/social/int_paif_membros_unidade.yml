@@ -1,0 +1,32 @@
+version: 2
+
+models:
+  - name: int_paif_membros_unidade
+    description: |
+      Membros de famílias em acompanhamento PAIF (serviço assistencial 1, sem data de cancelamento),
+      com a unidade responsável atribuída a partir do id_unidade do próprio registro do serviço.
+      Granularidade: 1 linha por (id_unidade, id_familia, id_usuario membro). Ephemeral —
+      materializado como CTE no modelo que o referencia (mart_rma_cras__indicadores).
+    columns:
+      - name: id_unidade
+        description: "ID da unidade responsável pelo acompanhamento PAIF."
+        tests:
+          - not_null
+      - name: id_familia
+        description: "ID da família em acompanhamento PAIF."
+        tests:
+          - not_null
+      - name: data_cadastro_paif
+        description: "Data de cadastro da família no serviço PAIF."
+      - name: id_usuario
+        description: "ID do membro da família (seqpac)."
+        tests:
+          - not_null
+      - name: data_nascimento
+        description: "Data de nascimento do membro (dim_usuarios)."
+      - name: beneficio
+        description: "Array de benefícios do membro (dim_usuarios), STRUCT (codigo, descricao)."
+      - name: violacoes
+        description: "Array de violações do membro (dim_usuarios), STRUCT (codigo, descricao, origem)."
+      - name: vulnerabilidades
+        description: "Array de vulnerabilidades da família, STRUCT (id_vulnerabilidade, data_cadastro)."
