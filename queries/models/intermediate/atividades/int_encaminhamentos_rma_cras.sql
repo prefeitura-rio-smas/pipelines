@@ -70,51 +70,24 @@ base as (
         on p.id_usuario_sk = u.id_usuario_sk
 ),
 
-limpa_html as (
-    select
-        id_evolucao_sk,
-        id_usuario_sk,
-        id_unidade_sk,
-        id_unidade,
-        data_evolucao,
-        nome_usuario,
-        regexp_replace(descricao_evolucao, '<[^>]+>', ';') as descricao_sem_html
-    from base
-),
-
-limpa_delimitadores as (
-    select
-        id_evolucao_sk,
-        id_usuario_sk,
-        id_unidade_sk,
-        id_unidade,
-        data_evolucao,
-        nome_usuario,
-        regexp_replace(descricao_sem_html, ';+', ';') as descricao_limpa
-    from limpa_html
-),
-
-extrai_encaminhamentos as (
-    select
-        id_evolucao_sk,
-        id_usuario_sk,
-        id_unidade_sk,
-        id_unidade,
-        data_evolucao,
-        nome_usuario,
-        regexp_extract(
-            descricao_limpa,
-            r'Encaminhamentos - Benefícios:\s*;?([^;]+?)(?:;Encaminhamentos|;Outros|$)'
-        ) as encaminhamento_beneficios,
-        regexp_extract(
-            descricao_limpa,
-            r'Encaminhamentos Órgãos:\s*;?([^;]+?)(?:;Encaminhamentos|;Outros|$)'
-        ) as encaminhamento_orgaos
-    from limpa_delimitadores
+limpa_e_extrai as (
+    select * from {{
+        extrair_encaminhamentos(
+            'base',
+            [
+                'id_evolucao_sk',
+                'id_usuario_sk',
+                'id_unidade_sk',
+                'id_unidade',
+                'data_evolucao',
+                'nome_usuario'
+            ]
+        )
+    }}
 )
 
 select *
-from extrai_encaminhamentos
+from limpa_e_extrai
 where (
     encaminhamento_beneficios is not null
     or encaminhamento_orgaos is not null
