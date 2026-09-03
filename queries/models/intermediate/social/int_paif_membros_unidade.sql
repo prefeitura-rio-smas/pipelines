@@ -20,6 +20,22 @@ unidade_por_login as (
     group by id_login
 ),
 
+unidade_por_atendimento as (
+    -- Terceiro nível de atribuição: unidade CRAS do atendimento mais recente
+    -- da família (atividade real de serviço). Restrito a CRAS para não atribuir
+    -- CREAS/outras à família no RMA CRAS.
+    select
+        a.id_familia,
+        array_agg(a.id_unidade order by a.data_atendimento desc, a.id_unidade asc limit 1)[offset(0)] as id_unidade
+    from {{ ref('raw_atendimentos_familias') }} as a
+    inner join {{ ref('dim_unidades') }} as d
+        on
+            a.id_unidade = d.id_unidade
+            and d.tipo_unidade = 'CRAS'
+    where coalesce(a.flag_cancelado, 'N') != 'S'
+    group by a.id_familia
+),
+
 membros as (
     select
         id_familia,
@@ -60,12 +76,13 @@ final as (
         u.beneficio,
         u.violacoes,
         vf.vulnerabilidades,
-        coalesce(p.id_unidade, ul.id_unidade) as id_unidade
+        coalesce(p.id_unidade, ul.id_unidade, af.id_unidade) as id_unidade
     from paif as p
     inner join membros as m on p.id_familia = m.id_familia
     inner join usuarios as u on m.id_usuario = u.id_usuario
     left join vulnerabilidades_familia as vf on p.id_familia = vf.id_familia
     left join unidade_por_login as ul on p.id_login_cadastro = ul.id_login
+    left join unidade_por_atendimento as af on p.id_familia = af.id_familia
 )
 
 select * from final
