@@ -1,0 +1,20 @@
+version: 2
+
+models:
+  - name: int_encaminhamentos_rma_cras
+    description: "Pool de evoluções elegível ao RMA CRAS: módulo administrativo tipo F com aba 'CRAS - Ficha de Atendimento Individualizado' + módulo família explodido em membros ativos. Extrai encaminhamentos (Benefícios e Órgãos). Grão: 1 linha por evolução com encaminhamento."
+    columns:
+      - name: id_evolucao_sk
+        description: "Surrogate key da evolução."
+      - name: id_usuario_sk
+        description: "Surrogate key do usuário."
+      - name: id_unidade_sk
+        description: "Surrogate key da unidade."
+      - name: id_unidade
+        description: "ID da unidade (raw)."
+      - name: data_evolucao
+        description: "Data da evolução."
+      - name: encaminhamento_beneficios
+        description: "Texto do campo Encaminhamentos - Benefícios."
+      - name: encaminhamento_orgaos
+        description: "Texto do campo Encaminhamentos Órgãos."

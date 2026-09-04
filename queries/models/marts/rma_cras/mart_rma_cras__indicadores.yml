@@ -1,0 +1,73 @@
+version: 2
+
+models:
+  - name: mart_rma_cras__indicadores
+    description: |
+      Indicadores do mês de referência do RMA CRAS por unidade CRAS, na nova arquitetura
+      (var competencia 'AAAA-MM'; vazio = mês corrente).
+      Granularidade: 1 linha por unidade CRAS (dim_unidades, tipo_unidade = 'CRAS').
+      Bloco I — famílias em acompanhamento PAIF (A1, A2, B1, B2, B3, B4, B5, B6),
+      Bloco II — atendimentos individualizados e encaminhamentos (C1, C2_C3, C4, C5, C6)
+      e Bloco D — convivência e atividades coletivas (D.1-D.7), seguindo os itens do
+      formulário oficial. Só A1 é acumulado; demais itens filtram o mês de referência.
+      C2 = C3 por construção da fonte (checkbox único 'Cadastro/Atualização Cadúnico').
+      C2-C5 restritos a evoluções adm tipo 'F' na aba 'CRAS - Ficha de Atendimento
+      Individualizado' + evoluções de família atribuídas aos membros ativos.
+      D.2 conta 0-6 anos em qualquer tipo (sem tipo SCFV 0-6 no sistema); D.6 usa
+      tipos Tô de Boa (5-8) como proxy de não continuado.
+    columns:
+      - name: id_unidade_sk
+        description: "Surrogate key da unidade CRAS."
+        tests:
+          - not_null
+          - unique
+      - name: id_unidade
+        description: "ID da unidade CRAS."
+        tests:
+          - not_null
+      - name: nome_unidade
+        description: "Nome da unidade CRAS."
+      - name: total_famil_paif_sistema_a1
+        description: "A1 — total de famílias em acompanhamento PAIF no sistema."
+      - name: total_famil_paif_mes_atual_a2
+        description: "A2 — novas famílias inseridas no PAIF no mês de referência."
+      - name: total_famil_paif_extrema_pobreza_b1
+        description: "B1 — famílias PAIF do mês com renda per capita CadÚnico <= corte (var corte_extrema_pobreza)."
+      - name: total_famil_paif_bf_b2
+        description: "B2 — famílias PAIF do mês com membro beneficiário Bolsa Família (fonte: módulo Saúde Mental; cobertura parcial, maioria dos membros sem registro)."
+      - name: total_famil_paif_descumprimento_b3
+        description: "B3 — famílias PAIF do mês com vulnerabilidade de descumprimento de condicionalidades (id_vulnerabilidade = 1)."
+      - name: total_famil_paif_bpc_b4
+        description: "B4 — famílias PAIF do mês com membro beneficiário BPC (fonte: módulo Saúde Mental; cobertura parcial)."
+      - name: trab_infantil_crianca_adolescente_b5
+        description: "B5 — famílias PAIF do mês com membro < 18 anos em situação de trabalho infantil."
+      - name: total_famil_paif_acolhimento_b6
+        description: "B6 — famílias PAIF do mês com criança/adolescente em ciclo de acolhimento aberto."
+      - name: total_atendimentos_c1
+        description: "C1 — atendimentos individualizados (exceto recepção, não cancelados) no mês."
+      - name: encaminhamento_cadunico_c2_c3
+        description: "C2/C3 — usuários com encaminhamento de Cadastro/Atualização Cadúnico no mês (fonte não distingue inclusão de atualização; adm ficha-CRAS parada desde 02/2026, volume atual vem do ramo família)."
+      - name: encaminhamento_bpc_c4
+        description: "C4 — usuários com encaminhamento BPC - Idoso ou BPC - PCD no mês (idem C2/C3)."
+      - name: encaminhamento_creas_c5
+        description: "C5 — indivíduos com encaminhamento para CREAS no mês (grão indivíduo, como na série histórica; idem C2/C3)."
+      - name: total_atendimentos_domiciliar_c6
+        description: "C6 — visitas/atendimentos domiciliares no mês."
+      - name: total_familias_grupos_paif_d1
+        description: "D.1 — famílias PAIF com membro presente em atividade de grupo no mês (atribuição pela unidade PAIF; atividades ocorrem em polos)."
+      - name: total_criancas_0_6_d2
+        description: "D.2 — crianças 0-6 anos presentes em atividades de grupo no mês."
+      - name: total_criancas_7_14_scfv_d3
+        description: "D.3 — crianças/adolescentes 7-14 anos em SCFV (tipos 1-2) no mês."
+      - name: total_adolescentes_15_17_scfv_d4
+        description: "D.4 — adolescentes 15-17 anos em SCFV (tipo 3) no mês."
+      - name: total_idosos_scfv_d5
+        description: "D.5 — idosos (60+) em SCFV idosos (tipo 4) no mês."
+      - name: total_participantes_nao_continuado_d6
+        description: "D.6 — pessoas em atividades não continuadas (tipos Tô de Boa 5-8) no mês."
+      - name: total_pcd_coletivos_d7
+        description: "D.7 — pessoas com deficiência presentes em atividades de grupo no mês."
+      - name: ultima_atualizacao
+        description: "Data da última atualização dos dados de origem."
+        tests:
+          - not_null

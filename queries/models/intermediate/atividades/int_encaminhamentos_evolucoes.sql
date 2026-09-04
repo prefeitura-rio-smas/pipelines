@@ -1,6 +1,5 @@
--- TODO: Baixa prioridade — faz parse de conteúdo de campo, não extração
--- label/valor. O extrair_campos_html_evolucao poderia substituir o strip
--- HTML inicial (linhas 8-17), mas a classificação SMAS/Órgãos é permanente.
+-- Extração dos campos de encaminhamento via macro extrair_encaminhamentos
+-- (a classificação SMAS/Órgãos/Benefícios é permanente).
 with base as (
     select
         e.id_evolucao_sk,
@@ -8,51 +7,29 @@ with base as (
         e.id_unidade_sk,
         e.descricao_evolucao,
         u.nome as nome_usuario
-    from {{ ref('fct_evolucoes') }} e
-    left join {{ ref('dim_usuarios') }} u on e.id_usuario_sk = u.id_usuario_sk
+    from {{ ref('fct_evolucoes') }} as e
+    left join {{ ref('dim_usuarios') }} as u on e.id_usuario_sk = u.id_usuario_sk
 ),
 
-limpa_html as (
-    select
-        id_evolucao_sk,
-        id_usuario_sk,
-        id_unidade_sk,
-        nome_usuario,
-        regexp_replace(descricao_evolucao, '<[^>]+>', ';') as descricao_sem_html
-    from base
-),
-
-limpa_delimitadores as (
-    select
-        id_evolucao_sk,
-        id_usuario_sk,
-        id_unidade_sk,
-        nome_usuario,
-        regexp_replace(descricao_sem_html, ';+', ';') as descricao_limpa
-    from limpa_html
-),
-
-extrai_encaminhamentos as (
-    select
-        id_evolucao_sk,
-        id_usuario_sk,
-        id_unidade_sk,
-        nome_usuario,
-        regexp_extract(
-            descricao_limpa,
-            r'Encaminhamentos - (?:Atividades )?SMAS:\s*;?([^;]+?)(?:;Encaminhamentos|;Outros|$)'
-        ) as encaminhamento_smas,
-        regexp_extract(
-            descricao_limpa,
-            r'Encaminhamentos Órgãos:\s*;?([^;]+?)(?:;Encaminhamentos|;Outros|$)'
-        ) as encaminhamento_orgaos
-    from limpa_delimitadores
+extraida as (
+    select * from {{
+        extrair_encaminhamentos(
+            'base',
+            [
+                'id_evolucao_sk',
+                'id_usuario_sk',
+                'id_unidade_sk',
+                'nome_usuario'
+            ]
+        )
+    }}
 )
 
 select *
-from extrai_encaminhamentos
+from extraida
 where (
     encaminhamento_smas is not null
+    or encaminhamento_beneficios is not null
     or encaminhamento_orgaos is not null
 )
 and (nome_usuario not like '%TESTES%' or nome_usuario is null)

@@ -1,0 +1,22 @@
+version: 2
+
+models:
+  - name: int_coletivos_mes
+    description: "Presenças em atividades coletivas no mês de referência (var competencia), enriquecidas com idade no fim do mês, tipo de atividade e flag de deficiência. Grão: 1 linha por presença."
+    columns:
+      - name: id_unidade
+        description: "ID da unidade (raw, pode ser null — atividades de Polo)."
+      - name: id_usuario
+        description: "ID do usuário presente."
+      - name: id_atividade
+        description: "ID da atividade de grupo."
+      - name: data_presenca
+        description: "Data da presença."
+      - name: id_tipo_atividade
+        description: "ID do tipo de atividade (dim_atividades_grupo)."
+      - name: nome_tipo_atividade
+        description: "Nome do tipo de atividade."
+      - name: idade_anos
+        description: "Idade do usuário no fim do mês de referência."
+      - name: flag_deficiencia
+        description: "Flag de deficiência do usuário (dim_usuarios)."
