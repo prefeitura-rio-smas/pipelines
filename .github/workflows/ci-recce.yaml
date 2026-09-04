@@ -88,6 +88,26 @@ jobs:
         if: steps.changed-models.outputs.has_changes == 'true' && steps.check-creds.outputs.has_creds == 'true'
         run: uv run dbt deps --project-dir queries --profiles-dir queries
 
+      # ======================================================================
+      # Teardown por commit: a cada run, dropa TODOS os datasets ci_<PR>__*
+      # do PR antes do build (a macro casa o padrao ci_<PR>__%). Garante
+      # estado limpo por commit - so o dataset do commit atual permanece
+      # apos o run (o build o recria logo abaixo). Sem lixo acumulado de
+      # commits anteriores durante um PR aberto. O teardown no FECHAMENTO
+      # do PR continua no dbt-drop-pr-schemas.yaml (inalterado).
+      # ======================================================================
+      - name: Drop datasets de CI do PR anteriores (teardown por commit)
+        if: steps.changed-models.outputs.has_changes == 'true' && steps.check-creds.outputs.has_creds == 'true'
+        env:
+          PR_NUM: ${{ github.event.pull_request.number }}
+        run: |
+          uv run dbt run-operation drop_pr_staging_schemas \
+            --args "{'PR_number': '${PR_NUM}'}" \
+            --target ci \
+            --vars "{'schema_id': '${PR_NUM}__teardown'}" \
+            --project-dir queries \
+            --profiles-dir queries
+
       - name: Disable recce-cloud telemetry (PostHog opt-out)
         if: steps.changed-models.outputs.has_changes == 'true' && steps.check-creds.outputs.has_creds == 'true'
         run: |
