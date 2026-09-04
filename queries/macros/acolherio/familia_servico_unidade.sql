@@ -59,14 +59,14 @@
         left join (
             select
                 id_login,
-                array_agg(id_unidade order by id_unidade limit 1)[offset(0)] as id_unidade
+                min(id_unidade) as id_unidade
             from {{ ref('raw_operadores_unidades') }}
             group by id_login
         ) as ul on p.id_login_cadastro = ul.id_login
         left join (
             select
                 a.id_familia,
-                array_agg(a.id_unidade order by a.data_atendimento desc, a.id_unidade asc limit 1)[offset(0)] as id_unidade
+                array_agg(a.id_unidade order by a.data_atendimento desc, a.id_unidade asc limit 1)[safe_offset(0)] as id_unidade
             from {{ ref('raw_atendimentos_familias') }} as a
             inner join {{ ref('dim_unidades') }} as d
                 on

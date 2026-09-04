@@ -6,5 +6,10 @@ models:
     columns:
       - name: id_familia
         description: "ID da família no Prontuário."
+        tests:
+          - not_null
+          - unique
       - name: renda_media_pc
         description: "Menor renda média per capita (identificacao_controle.valor_renda_media) entre as famílias CadÚnico vinculadas aos CPFs dos membros."
+        tests:
+          - not_null
