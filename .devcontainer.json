@@ -22,8 +22,10 @@
   },
 
   "containerEnv": {
-    // Permite rodar `dbt` sem flags extras (profiles.yml fica em queries/)
-    "DBT_PROFILES_DIR": "queries"
+    // Permite rodar `dbt` sem flags extras (profiles.yml fica em queries/).
+    // Caminho ABSOLUTO via ${containerWorkspaceFolder}: resolve o profiles.yml
+    // independente do CWD (raiz /workspaces/pipelines OU dentro de queries/).
+    "DBT_PROFILES_DIR": "${containerWorkspaceFolder}/queries"
   },
 
   "customizations": {
