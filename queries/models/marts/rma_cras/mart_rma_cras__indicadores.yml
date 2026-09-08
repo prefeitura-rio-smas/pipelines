@@ -24,11 +24,22 @@ models:
         ao contrário do legado (current_date na execução do job) — muda paridade em B5/D.6.
       - Unidade das famílias PAIF atribuída em 3 níveis (serviço → operador → atendimento);
         legado usava apenas o operador. Pode deslocar A1/A2 e séries B vs. histórico.
-      - VERIFICAÇÃO PENDENTE (C1×C6): C1 conta todos os tipos de atendimento exceto
-        recepção, portanto inclui os domiciliares — a mesma visita pode entrar em C1
-        e em C6 (legado idêntico). Conferir a taxonomia real de
-        raw_tipos_atendimento.descricao (fonte gh_tpatendimentos / descatend) para
-        decidir se C1 deve excluir o tipo "domiciliar" e ajustar a série histórica.
+      - C1×C6 (verificado em dados, 2026-09): C1 conta todos os tipos de atendimento
+        exceto recepção, portanto inclui os domiciliares — a mesma visita pode entrar
+        em C1 e em C6 (paridade deliberada com o legado). No mês de competência,
+        55 de 60 atendimentos domiciliares também entram em C1. Taxonomia real de
+        fct_atendimentos que casa `(?i)domiciliar`: 'CRAS - Atendimento Domiciliar
+        Técnico' (35 unicos/37 linhas), 'CREAS - Atendimento Domiciliar' (18/21),
+        'LARES CARIOCAS - Visita Domiciliar' (2/2). 'Busca Ativa - Família
+        localizada/não localizada' NÃO casa o regex e é contabilizada apenas em C1.
+      - C6 usa count(*) sem distinct (grão legado); C1 usa count(distinct
+        id_atendimento_modulo) — se um mesmo atendimento gerar mais de uma linha em
+        fct_atendimentos, C6 pode inflar. Comportamento intencional (paridade).
+      - Os itens B1-B6 restringem deliberadamente o universo às famílias NOVAS do
+        mês (paif_novas: data_cadastro_paif no mês de referência), em linha com a
+        série legada. Exemplo (comp. set/2026, dev): A1=2.041 famílias totais vs
+        A2=B1=9 (novas do mês). Perfis de famílias que entraram em meses anteriores
+        não são reavaliados — documentado e deliberado.
     columns:
       - name: id_unidade_sk
         description: "Surrogate key da unidade CRAS."
