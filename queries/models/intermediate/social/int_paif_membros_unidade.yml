@@ -33,4 +33,8 @@ models:
       - name: violacoes
         description: "Array de violações do membro (dim_usuarios), STRUCT (codigo, descricao, origem)."
       - name: vulnerabilidades
-        description: "Array de vulnerabilidades da família, STRUCT (id_vulnerabilidade, data_cadastro)."
+        description: |
+          Array de vulnerabilidades da família (fonte raw_familias_vulnerabilidades,
+          agrupado em int_vulnerabilidades_agregadas), STRUCT (id_vulnerabilidade, data_cadastro, id_profissional).
+          Obs.: o significado de cada id_vulnerabilidade (ex.: 1 = "Descumprimento de
+          condicionalidades") é assunção herdada do legado e ainda a validar com o domínio (SMAS).
