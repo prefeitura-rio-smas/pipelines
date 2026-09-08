@@ -185,7 +185,7 @@ evolucao as (
         count(
             distinct if(
                 regexp_contains(encaminhamento_beneficios, '(?i)Cadastro/Atualização Cadúnico'),
-                coalesce(id_familia, id_usuario_sk),
+                coalesce(cast(id_familia as string), id_usuario_sk),
                 null
             )
         ) as encaminhamento_cadunico_c2_c3,
@@ -199,7 +199,7 @@ evolucao as (
         count(
             distinct if(
                 regexp_contains(encaminhamento_orgaos, '(?i)CREAS'),
-                coalesce(id_familia, id_usuario_sk),
+                coalesce(cast(id_familia as string), id_usuario_sk),
                 null
             )
         ) as encaminhamento_creas_c5
