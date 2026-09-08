@@ -3,7 +3,8 @@
     -- registrado na aba informada + (opcional) módulo família explodido
     -- nos membros ativos (com surrogate keys resolvidas).
     -- Colunas: id_evolucao_sk, id_usuario_sk, id_unidade_sk, id_unidade,
-    -- data_evolucao, descricao_evolucao.
+    -- data_evolucao, descricao_evolucao, id_familia (id_familia da evolução;
+    -- NULL no ramo adm quando a ficha não referencia família).
     -- Ex. CRAS: pool_evolucoes_ficha('CRAS - Ficha de Atendimento Individualizado').
     (
         select
@@ -12,7 +13,8 @@
             e.id_unidade_sk,
             e.id_unidade,
             e.data_evolucao,
-            e.descricao_evolucao
+            e.descricao_evolucao,
+            e.id_familia
         from {{ ref('fct_evolucoes') }} as e
         where
             e.origem_modulo = 'administrativa'
@@ -27,7 +29,8 @@
             f.id_unidade_sk,
             f.id_unidade,
             f.data_evolucao,
-            f.descricao_evolucao
+            f.descricao_evolucao,
+            f.id_familia
         from {{ ref('fct_evolucoes') }} as f
         inner join {{ ref('raw_membros_familia') }} as m
             on f.id_familia = m.id_familia

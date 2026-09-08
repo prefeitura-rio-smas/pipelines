@@ -13,6 +13,7 @@ base as (
     select
         p.id_evolucao_sk,
         p.id_usuario_sk,
+        p.id_familia,
         p.id_unidade_sk,
         p.id_unidade,
         p.data_evolucao,
@@ -30,6 +31,7 @@ limpa_e_extrai as (
             [
                 'id_evolucao_sk',
                 'id_usuario_sk',
+                'id_familia',
                 'id_unidade_sk',
                 'id_unidade',
                 'data_evolucao',

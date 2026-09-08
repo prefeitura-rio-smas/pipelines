@@ -8,6 +8,8 @@ models:
         description: "Surrogate key da evolução."
       - name: id_usuario_sk
         description: "Surrogate key do usuário."
+      - name: id_familia
+        description: "ID da família quando a evolução referencia família (ramo família; NULL no ramo adm quando a ficha não referencia)."
       - name: id_unidade_sk
         description: "Surrogate key da unidade."
       - name: id_unidade
