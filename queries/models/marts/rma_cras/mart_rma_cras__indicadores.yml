@@ -15,6 +15,15 @@ models:
       Individualizado' + evoluções de família atribuídas aos membros ativos.
       D.2 conta 0-6 anos em qualquer tipo (sem tipo SCFV 0-6 no sistema); D.6 usa
       tipos Tô de Boa (5-8) como proxy de não continuado.
+
+      Assunções / paridade (deliberadas):
+      - O mapeamento `id_vulnerabilidade = 1` = "Descumprimento de condicionalidades"
+        (B3) vem da série legada (`seqvulnerab = 1`) e ainda NÃO está confirmado por
+        catálogo no repo — validar com o domínio (SMAS).
+      - Idades são avaliadas no fim do mês de competência (`calc_idade(..., 'fim_do_mes')`),
+        ao contrário do legado (current_date na execução do job) — muda paridade em B5/D.6.
+      - Unidade das famílias PAIF atribuída em 3 níveis (serviço → operador → atendimento);
+        legado usava apenas o operador. Pode deslocar A1/A2 e séries B vs. histórico.
     columns:
       - name: id_unidade_sk
         description: "Surrogate key da unidade CRAS."
@@ -36,7 +45,10 @@ models:
       - name: total_famil_paif_bf_b2
         description: "B2 — famílias PAIF do mês com membro beneficiário Bolsa Família (fonte: módulo Saúde Mental; cobertura parcial, maioria dos membros sem registro)."
       - name: total_famil_paif_descumprimento_b3
-        description: "B3 — famílias PAIF do mês com vulnerabilidade de descumprimento de condicionalidades (id_vulnerabilidade = 1)."
+        description: |
+          B3 — famílias PAIF do mês com vulnerabilidade "descumprimento de condicionalidades"
+          (id_vulnerabilidade = 1). Assunção herdada da série legada (seqvulnerab = 1);
+          mapeamento ainda não confirmado por catálogo no repo — validar com SMAS.
       - name: total_famil_paif_bpc_b4
         description: "B4 — famílias PAIF do mês com membro beneficiário BPC (fonte: módulo Saúde Mental; cobertura parcial)."
       - name: trab_infantil_crianca_adolescente_b5
