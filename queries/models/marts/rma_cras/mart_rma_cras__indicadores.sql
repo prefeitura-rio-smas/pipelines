@@ -174,14 +174,18 @@ atendimentos_domiciliar as (
     group by 1
 ),
 
--- Itens C2, C3, C4 e C5 do bloco II (RMA CRAS): encaminhamentos no mês
+-- Itens C2, C3, C4 e C5 do bloco II (RMA CRAS): encaminhamentos no mês.
+-- C2/C3/C5 têm grão família (definição oficial RMA): contam famílias
+-- encaminhadas. id_familia vem da evolução (ramo família) ou, quando a ficha
+-- adm não referencia família, cai para o indivíduo (1 usuário = 1 família).
+-- C4 mantém grão indivíduo (definição oficial conta INDIVÍDUOS p/ BPC).
 evolucao as (
     select
         id_unidade_sk,
         count(
             distinct if(
                 regexp_contains(encaminhamento_beneficios, '(?i)Cadastro/Atualização Cadúnico'),
-                id_usuario_sk,
+                coalesce(id_familia, id_usuario_sk),
                 null
             )
         ) as encaminhamento_cadunico_c2_c3,
@@ -195,7 +199,7 @@ evolucao as (
         count(
             distinct if(
                 regexp_contains(encaminhamento_orgaos, '(?i)CREAS'),
-                id_usuario_sk,
+                coalesce(id_familia, id_usuario_sk),
                 null
             )
         ) as encaminhamento_creas_c5

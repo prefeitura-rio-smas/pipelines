@@ -24,6 +24,11 @@ models:
         ao contrário do legado (current_date na execução do job) — muda paridade em B5/D.6.
       - Unidade das famílias PAIF atribuída em 3 níveis (serviço → operador → atendimento);
         legado usava apenas o operador. Pode deslocar A1/A2 e séries B vs. histórico.
+      - VERIFICAÇÃO PENDENTE (C1×C6): C1 conta todos os tipos de atendimento exceto
+        recepção, portanto inclui os domiciliares — a mesma visita pode entrar em C1
+        e em C6 (legado idêntico). Conferir a taxonomia real de
+        raw_tipos_atendimento.descricao (fonte gh_tpatendimentos / descatend) para
+        decidir se C1 deve excluir o tipo "domiciliar" e ajustar a série histórica.
     columns:
       - name: id_unidade_sk
         description: "Surrogate key da unidade CRAS."
@@ -58,11 +63,11 @@ models:
       - name: total_atendimentos_c1
         description: "C1 — atendimentos individualizados (exceto recepção, não cancelados) no mês."
       - name: encaminhamento_cadunico_c2_c3
-        description: "C2/C3 — usuários com encaminhamento de Cadastro/Atualização Cadúnico no mês (fonte não distingue inclusão de atualização; adm ficha-CRAS parada desde 02/2026, volume atual vem do ramo família)."
+        description: "C2/C3 — famílias com encaminhamento de Cadastro/Atualização Cadúnico no mês (grão família, como na definição oficial; fonte não distingue inclusão de atualização; adm ficha-CRAS parada desde 02/2026, volume atual vem do ramo família)."
       - name: encaminhamento_bpc_c4
-        description: "C4 — usuários com encaminhamento BPC - Idoso ou BPC - PCD no mês (idem C2/C3)."
+        description: "C4 — indivíduos com encaminhamento BPC - Idoso ou BPC - PCD no mês (grão indivíduo, como na definição oficial; idem C2/C3)."
       - name: encaminhamento_creas_c5
-        description: "C5 — indivíduos com encaminhamento para CREAS no mês (grão indivíduo, como na série histórica; idem C2/C3)."
+        description: "C5 — famílias com encaminhamento para CREAS no mês (grão família, como na definição oficial; idem C2/C3)."
       - name: total_atendimentos_domiciliar_c6
         description: "C6 — visitas/atendimentos domiciliares no mês."
       - name: total_familias_grupos_paif_d1
