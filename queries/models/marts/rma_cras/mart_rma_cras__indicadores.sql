@@ -21,6 +21,58 @@ with unidades_cras as (
 -- PAIF: famílias vinculadas ao serviço 1 (PAIF), membros ativos, com
 -- atribuição de unidade em 3 níveis (serviço → operador → atendimento mais
 -- recente no CRAS). Legado usava apenas o operador.
+membros_ativos as (
+    select
+        id_familia,
+        id_paciente as id_usuario
+    from {{ ref('raw_membros_familia') }}
+    where data_saida is null
+),
+
+usuarios_paif as (
+    select
+        id_usuario,
+        data_nascimento,
+        beneficio,
+        violacoes
+    from {{ ref('dim_usuarios') }}
+),
+
+vulnerabilidades_familia as (
+    select
+        id_familia,
+        array_agg(
+            struct(
+                id_vulnerabilidade,
+                data_cadastro
+            )
+        ) as vulnerabilidades
+    from {{ ref('raw_familias_vulnerabilidades') }}
+    where data_cancelamento is null
+    group by 1
+),
+
+operadores_unidades as (
+    select
+        id_login,
+        min(id_unidade) as id_unidade
+    from {{ ref('raw_operadores_unidades') }}
+    group by 1
+),
+
+unidade_atendimento_recente as (
+    select
+        a.id_familia,
+        array_agg(a.id_unidade order by a.data_atendimento desc, a.id_unidade asc limit 1)[safe_offset(0)] as id_unidade
+    from {{ ref('raw_atendimentos_familias') }} as a
+    inner join {{ ref('dim_unidades') }} as d
+        on
+            a.id_unidade = d.id_unidade
+            and d.tipo_unidade = 'CRAS'
+    where {{ nao_cancelado('a.flag_cancelado') }}
+    group by 1
+),
+
 paif as (
     select
         p.id_familia,
@@ -42,53 +94,11 @@ paif as (
             id_servico_assistencial = 1
             and data_cancelamento is null
     ) as p
-    inner join (
-        select
-            id_familia,
-            id_paciente as id_usuario
-        from {{ ref('raw_membros_familia') }}
-        where data_saida is null
-    ) as m on p.id_familia = m.id_familia
-    inner join (
-        select
-            id_usuario,
-            data_nascimento,
-            beneficio,
-            violacoes
-        from {{ ref('dim_usuarios') }}
-    ) as u on m.id_usuario = u.id_usuario
-    left join (
-        select
-            id_familia,
-            array_agg(
-                struct(
-                    id_vulnerabilidade,
-                    data_cadastro
-                )
-            ) as vulnerabilidades
-        from {{ ref('raw_familias_vulnerabilidades') }}
-        where data_cancelamento is null
-        group by id_familia
-    ) as vf on p.id_familia = vf.id_familia
-    left join (
-        select
-            id_login,
-            min(id_unidade) as id_unidade
-        from {{ ref('raw_operadores_unidades') }}
-        group by id_login
-    ) as ul on p.id_login_cadastro = ul.id_login
-    left join (
-        select
-            a.id_familia,
-            array_agg(a.id_unidade order by a.data_atendimento desc, a.id_unidade asc limit 1)[safe_offset(0)] as id_unidade
-        from {{ ref('raw_atendimentos_familias') }} as a
-        inner join {{ ref('dim_unidades') }} as d
-            on
-                a.id_unidade = d.id_unidade
-                and d.tipo_unidade = 'CRAS'
-        where {{ nao_cancelado('a.flag_cancelado') }}
-        group by a.id_familia
-    ) as af on p.id_familia = af.id_familia
+    inner join membros_ativos as m on p.id_familia = m.id_familia
+    inner join usuarios_paif as u on m.id_usuario = u.id_usuario
+    left join vulnerabilidades_familia as vf on p.id_familia = vf.id_familia
+    left join operadores_unidades as ul on p.id_login_cadastro = ul.id_login
+    left join unidade_atendimento_recente as af on p.id_familia = af.id_familia
 ),
 
 paif_novas as (
