@@ -18,8 +18,77 @@ with unidades_cras as (
     where tipo_unidade = 'CRAS'
 ),
 
+-- PAIF: famílias vinculadas ao serviço 1 (PAIF), membros ativos, com
+-- atribuição de unidade em 3 níveis (serviço → operador → atendimento mais
+-- recente no CRAS). Legado usava apenas o operador.
 paif as (
-    select * from {{ ref('int_paif_membros_unidade') }}
+    select
+        p.id_familia,
+        p.data_cadastro_servico as data_cadastro_paif,
+        m.id_usuario,
+        u.data_nascimento,
+        u.beneficio,
+        u.violacoes,
+        vf.vulnerabilidades,
+        coalesce(p.id_unidade, ul.id_unidade, af.id_unidade) as id_unidade
+    from (
+        select
+            id_familia,
+            id_unidade,
+            id_login_cadastro,
+            data_cadastro as data_cadastro_servico
+        from {{ ref('raw_familias_servicos_assistenciais') }}
+        where
+            id_servico_assistencial = 1
+            and data_cancelamento is null
+    ) as p
+    inner join (
+        select
+            id_familia,
+            id_paciente as id_usuario
+        from {{ ref('raw_membros_familia') }}
+        where data_saida is null
+    ) as m on p.id_familia = m.id_familia
+    inner join (
+        select
+            id_usuario,
+            data_nascimento,
+            beneficio,
+            violacoes
+        from {{ ref('dim_usuarios') }}
+    ) as u on m.id_usuario = u.id_usuario
+    left join (
+        select
+            id_familia,
+            array_agg(
+                struct(
+                    id_vulnerabilidade,
+                    data_cadastro
+                )
+            ) as vulnerabilidades
+        from {{ ref('raw_familias_vulnerabilidades') }}
+        where data_cancelamento is null
+        group by id_familia
+    ) as vf on p.id_familia = vf.id_familia
+    left join (
+        select
+            id_login,
+            min(id_unidade) as id_unidade
+        from {{ ref('raw_operadores_unidades') }}
+        group by id_login
+    ) as ul on p.id_login_cadastro = ul.id_login
+    left join (
+        select
+            a.id_familia,
+            array_agg(a.id_unidade order by a.data_atendimento desc, a.id_unidade asc limit 1)[safe_offset(0)] as id_unidade
+        from {{ ref('raw_atendimentos_familias') }} as a
+        inner join {{ ref('dim_unidades') }} as d
+            on
+                a.id_unidade = d.id_unidade
+                and d.tipo_unidade = 'CRAS'
+        where {{ nao_cancelado('a.flag_cancelado') }}
+        group by a.id_familia
+    ) as af on p.id_familia = af.id_familia
 ),
 
 paif_novas as (
@@ -175,10 +244,50 @@ atendimentos_domiciliar as (
 ),
 
 -- Itens C2, C3, C4 e C5 do bloco II (RMA CRAS): encaminhamentos no mês.
+-- Pool restrito à regra histórica: evoluções da aba 'CRAS - Ficha de
+-- Atendimento Individualizado' + família explodida em membros.
 -- C2/C3/C5 têm grão família (definição oficial RMA): contam famílias
 -- encaminhadas. id_familia vem da evolução (ramo família) ou, quando a ficha
 -- adm não referencia família, cai para o indivíduo (1 usuário = 1 família).
 -- C4 mantém grão indivíduo (definição oficial conta INDIVÍDUOS p/ BPC).
+pool_evolucoes as (
+    select * from {{
+        pool_evolucoes_ficha('CRAS - Ficha de Atendimento Individualizado')
+    }}
+),
+
+base_evolucoes as (
+    select
+        p.id_evolucao_sk,
+        p.id_usuario_sk,
+        p.id_familia,
+        p.id_unidade_sk,
+        p.id_unidade,
+        p.data_evolucao,
+        p.descricao_evolucao,
+        u.nome as nome_usuario
+    from pool_evolucoes as p
+    left join {{ ref('dim_usuarios') }} as u
+        on p.id_usuario_sk = u.id_usuario_sk
+),
+
+encaminhamentos_evolucoes as (
+    select * from {{
+        extrair_encaminhamentos(
+            'base_evolucoes',
+            [
+                'id_evolucao_sk',
+                'id_usuario_sk',
+                'id_familia',
+                'id_unidade_sk',
+                'id_unidade',
+                'data_evolucao',
+                'nome_usuario'
+            ]
+        )
+    }}
+),
+
 evolucao as (
     select
         id_unidade_sk,
@@ -203,13 +312,18 @@ evolucao as (
                 null
             )
         ) as encaminhamento_creas_c5
-    from {{ ref('int_encaminhamentos_rma_cras') }}
-    where {{ no_mes('data_evolucao') }}
+    from encaminhamentos_evolucoes
+    where
+        {{ no_mes('data_evolucao') }}
+        and (encaminhamento_beneficios is not null or encaminhamento_orgaos is not null)
+        and (nome_usuario not like '%TESTES%' or nome_usuario is null)
     group by 1
 ),
 
 -- Bloco D (RMA CRAS): atividades de grupo ocorrem em polos, não nos CRAS;
--- a atribuição por unidade usa o vínculo PAIF do participante
+-- a atribuição por unidade usa o vínculo PAIF do participante.
+-- Fonte: fct_presencas_usuarios (presenças) + dim_atividades_grupo (tipo) +
+-- dim_usuarios (idade, deficiência).
 paif_membros as (
     select distinct
         id_familia,
@@ -226,7 +340,21 @@ coletivo_membros as (
         c.idade_anos,
         c.id_tipo_atividade,
         c.flag_deficiencia
-    from {{ ref('int_coletivos_mes') }} as c
+    from (
+        select
+            pr.id_unidade,
+            pr.id_usuario,
+            a.id_tipo_atividade,
+            a.nome_tipo_atividade,
+            {{ calc_idade('u.data_nascimento', 'fim_do_mes') }} as idade_anos,
+            u.flag_deficiencia
+        from {{ ref('fct_presencas_usuarios') }} as pr
+        left join {{ ref('dim_atividades_grupo') }} as a
+            on pr.id_atividade = a.id_atividade
+        left join {{ ref('dim_usuarios') }} as u
+            on pr.id_usuario = u.id_usuario
+        where {{ no_mes('pr.data_presenca') }}
+    ) as c
     inner join paif_membros as p
         on c.id_usuario = p.id_usuario
 ),
