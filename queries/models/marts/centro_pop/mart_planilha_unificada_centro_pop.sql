@@ -50,7 +50,7 @@ atendimentos as (
     inner join {{ ref('dim_usuarios') }} as du on a.id_usuario_sk = du.id_usuario_sk
     inner join centro_pop as c on a.id_unidade = c.id_unidade
     left join {{ ref('dim_profissionais') }} as dp on a.id_profissional_sk = dp.id_profissional_sk
-    where {{ nao_cancelado('a.flag_cancelado') }}
+    where (a.flag_cancelado is null or a.flag_cancelado != 'S')
 ),
 
 atendimentos_mes as (
@@ -73,8 +73,8 @@ profissional_referencia as (
     select
         id_usuario,
         id_unidade,
-        date_trunc(data_atendimento, month) as mes_referencia,
-        profissional
+        profissional,
+        date_trunc(data_atendimento, month) as mes_referencia
     from atendimentos
     qualify row_number() over (
         partition by id_usuario, id_unidade, date_trunc(data_atendimento, month)
@@ -117,46 +117,49 @@ usuarios as (
 evolucoes_pai as (
     select
         e.id_evolucao,
-        coalesce(du.id_usuario, e.id_paciente_familia) as id_paciente,
         e.id_unidade,
         e.codigo_abrangencia,
         e.descricao_evolucao,
-        e.data_evolucao
+        e.data_evolucao,
+        coalesce(du.id_usuario, e.id_paciente_familia) as id_paciente
     from {{ ref('fct_evolucoes') }} as e
     left join {{ ref('dim_usuarios') }} as du on e.id_usuario_sk = du.id_usuario_sk
-    where e.codigo_abrangencia = 29
-      and e.data_cancelamento is null
-      and coalesce(du.id_usuario, e.id_paciente_familia) is not null
+    where
+        e.codigo_abrangencia = 29
+        and e.data_cancelamento is null
+        and coalesce(du.id_usuario, e.id_paciente_familia) is not null
 ),
 
 evolucoes_atendimento_social as (
     select
         e.id_evolucao,
-        coalesce(du.id_usuario, e.id_paciente_familia) as id_paciente,
         e.id_unidade,
         e.codigo_abrangencia,
         e.descricao_evolucao,
-        e.data_evolucao
+        e.data_evolucao,
+        coalesce(du.id_usuario, e.id_paciente_familia) as id_paciente
     from {{ ref('fct_evolucoes') }} as e
     left join {{ ref('dim_usuarios') }} as du on e.id_usuario_sk = du.id_usuario_sk
-    where e.codigo_abrangencia = 29
-      and e.data_cancelamento is null
-      and coalesce(du.id_usuario, e.id_paciente_familia) is not null
+    where
+        e.codigo_abrangencia = 29
+        and e.data_cancelamento is null
+        and coalesce(du.id_usuario, e.id_paciente_familia) is not null
 ),
 
 evolucoes_desligamento as (
     select
         e.id_evolucao,
-        coalesce(du.id_usuario, e.id_paciente_familia) as id_paciente,
         e.id_unidade,
         e.codigo_abrangencia,
         e.descricao_evolucao,
-        e.data_evolucao
+        e.data_evolucao,
+        coalesce(du.id_usuario, e.id_paciente_familia) as id_paciente
     from {{ ref('fct_evolucoes') }} as e
     left join {{ ref('dim_usuarios') }} as du on e.id_usuario_sk = du.id_usuario_sk
-    where e.codigo_abrangencia = 29
-      and e.data_cancelamento is null
-      and coalesce(du.id_usuario, e.id_paciente_familia) is not null
+    where
+        e.codigo_abrangencia = 29
+        and e.data_cancelamento is null
+        and coalesce(du.id_usuario, e.id_paciente_familia) is not null
 ),
 
 -- Motivo de permanência na rua: formulário 'Acolhimento' (não existe o campo
@@ -164,29 +167,31 @@ evolucoes_desligamento as (
 evolucoes_acolhimento as (
     select
         e.id_evolucao,
-        du.id_usuario as id_paciente,
         e.codigo_abrangencia,
         e.descricao_evolucao,
-        e.data_evolucao
+        e.data_evolucao,
+        du.id_usuario as id_paciente
     from {{ ref('fct_evolucoes') }} as e
     inner join {{ ref('dim_usuarios') }} as du on e.id_usuario_sk = du.id_usuario_sk
-    where e.codigo_abrangencia = 1
-      and e.data_cancelamento is null
-      and e.origem_modulo = 'usuario'
+    where
+        e.codigo_abrangencia = 1
+        and e.data_cancelamento is null
+        and e.origem_modulo = 'usuario'
 ),
 
 evolucoes_documentacao as (
     select
         e.id_evolucao,
-        coalesce(du.id_usuario, e.id_paciente_familia) as id_paciente,
         e.codigo_abrangencia,
         e.descricao_evolucao,
-        e.data_evolucao
+        e.data_evolucao,
+        coalesce(du.id_usuario, e.id_paciente_familia) as id_paciente
     from {{ ref('fct_evolucoes') }} as e
     left join {{ ref('dim_usuarios') }} as du on e.id_usuario_sk = du.id_usuario_sk
-    where e.codigo_abrangencia = 24
-      and e.data_cancelamento is null
-      and coalesce(du.id_usuario, e.id_paciente_familia) is not null
+    where
+        e.codigo_abrangencia = 24
+        and e.data_cancelamento is null
+        and coalesce(du.id_usuario, e.id_paciente_familia) is not null
 ),
 
 -- Inclusão no acompanhamento: primeira evolução do formulário PAI (por usuário e unidade)
@@ -282,7 +287,7 @@ nis_cadunico as (
         d.cpf,
         any_value(m.nis) as nis
     from {{ ref('raw_documento_pessoa') }} as d
-    left join {{ ref('raw_identificacao_membro') }} as m using (id_membro_familia)
+    left join {{ ref('raw_identificacao_membro') }} as m on d.id_membro_familia = m.id_membro_familia
     where d.cpf is not null
     group by d.cpf
 ),
@@ -308,19 +313,22 @@ final as (
         pr.profissional as profissional_referencia,
         u.nome as nome_usuario,
         u.nome_social,
-        case
-            when pi.data_inclusao_acompanhamento is not null and pi.data_inclusao_acompanhamento < date_add(am.mes_referencia, interval 1 month) then false
-            else true
-        end as flag_atendido_pontualmente,
-        case
-            when pi.data_inclusao_acompanhamento is not null and pi.data_inclusao_acompanhamento < date_add(am.mes_referencia, interval 1 month) then true
-            else false
-        end as flag_inserido_acompanhamento,
+        not coalesce(
+            pi.data_inclusao_acompanhamento is not null
+            and pi.data_inclusao_acompanhamento < date_add(am.mes_referencia, interval 1 month),
+            false
+        ) as flag_atendido_pontualmente,
+        coalesce(
+            pi.data_inclusao_acompanhamento is not null
+            and pi.data_inclusao_acompanhamento < date_add(am.mes_referencia, interval 1 month),
+            false
+        ) as flag_inserido_acompanhamento,
         pi.data_inclusao_acompanhamento,
-        case
-            when pi.data_inclusao_acompanhamento is not null and pi.data_inclusao_acompanhamento < date_add(am.mes_referencia, interval 1 month) then true
-            else false
-        end as flag_possui_plano_individual,
+        coalesce(
+            pi.data_inclusao_acompanhamento is not null
+            and pi.data_inclusao_acompanhamento < date_add(am.mes_referencia, interval 1 month),
+            false
+        ) as flag_possui_plano_individual,
         am.data_ultimo_atendimento_tecnico,
         am.qtd_atendimentos_total,
         am.qtd_atendimentos_tecnico,
@@ -374,25 +382,24 @@ final as (
         end as flag_possui_cadunico,
         null as flag_cadastro_atualizado,
         n.nis as nis_usuario,
-        case
-            when ofc.qtd_oficinas is not null and ofc.qtd_oficinas > 0 then true
-            else false
-        end as flag_participacao_oficinas,
+        coalesce(ofc.qtd_oficinas > 0, false) as flag_participacao_oficinas,
         ofc.qtd_oficinas as qtd_oficinas_participadas_mes,
         array(
             select x
-            from unnest([
-                struct('Centro POP - Plano de Atendimento Individual (PAI)' as origem, nullif(pf.demandas_pai, 'undefined') as demanda),
-                struct('Centro POP - Atendimento Social' as origem, nullif(asf.demanda_inicial, 'undefined') as demanda)
-            ]) as x
+            from
+                unnest([
+                    struct('Centro POP - Plano de Atendimento Individual (PAI)' as origem, nullif(pf.demandas_pai, 'undefined') as demanda),
+                    struct('Centro POP - Atendimento Social' as origem, nullif(asf.demanda_inicial, 'undefined') as demanda)
+                ]) as x
             where x.demanda is not null
         ) as demandas,
         array(
             select x
-            from unnest([
-                struct('Centro POP - Plano de Atendimento Individual (PAI)' as origem, nullif(pf.encaminhamentos_pai, 'undefined') as encaminhamento),
-                struct('Centro POP - Atendimento Social' as origem, nullif(asf.encaminhamentos_as, 'undefined') as encaminhamento)
-            ]) as x
+            from
+                unnest([
+                    struct('Centro POP - Plano de Atendimento Individual (PAI)' as origem, nullif(pf.encaminhamentos_pai, 'undefined') as encaminhamento),
+                    struct('Centro POP - Atendimento Social' as origem, nullif(asf.encaminhamentos_as, 'undefined') as encaminhamento)
+                ]) as x
             where x.encaminhamento is not null
         ) as encaminhamentos,
         null as resultado_acesso,
@@ -411,29 +418,35 @@ final as (
     from atendimentos_mes as am
     inner join centro_pop as c on am.id_unidade = c.id_unidade
     left join profissional_referencia as pr
-        on am.id_usuario = pr.id_usuario
-        and am.id_unidade = pr.id_unidade
-        and am.mes_referencia = pr.mes_referencia
+        on
+            am.id_usuario = pr.id_usuario
+            and am.id_unidade = pr.id_unidade
+            and am.mes_referencia = pr.mes_referencia
     left join usuarios as u on am.id_usuario = u.id_usuario
     left join pai_inclusao as pi
-        on am.id_usuario = pi.id_usuario
-        and am.id_unidade = pi.id_unidade
+        on
+            am.id_usuario = pi.id_usuario
+            and am.id_unidade = pi.id_unidade
     left join pai_form as pf
-        on am.id_usuario = pf.id_paciente
-        and am.id_unidade = pf.id_unidade
+        on
+            am.id_usuario = pf.id_paciente
+            and am.id_unidade = pf.id_unidade
     left join atendimento_social_form as asf
-        on am.id_usuario = asf.id_paciente
-        and am.id_unidade = asf.id_unidade
+        on
+            am.id_usuario = asf.id_paciente
+            and am.id_unidade = asf.id_unidade
     left join desligamento_form as df
-        on am.id_usuario = df.id_paciente
-        and am.id_unidade = df.id_unidade
+        on
+            am.id_usuario = df.id_paciente
+            and am.id_unidade = df.id_unidade
     left join acolhimento_form as acf on am.id_usuario = acf.id_paciente
     left join documentacao_form as doc on am.id_usuario = doc.id_paciente
     left join nis_cadunico as n on u.cpf = n.cpf
     left join oficinas as ofc
-        on am.id_usuario = ofc.id_usuario
-        and am.id_unidade = ofc.id_unidade
-        and am.mes_referencia = ofc.mes_referencia
+        on
+            am.id_usuario = ofc.id_usuario
+            and am.id_unidade = ofc.id_unidade
+            and am.mes_referencia = ofc.mes_referencia
 )
 
 select * from final
