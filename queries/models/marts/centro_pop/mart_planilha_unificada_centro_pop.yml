@@ -1,0 +1,151 @@
+version: 2
+
+models:
+  - name: mart_planilha_unificada_centro_pop
+    description: |
+      Planilha Unificada Centro POP — 1 linha por usuário × mês de referência × Centro POP.
+      Base: usuários com pelo menos um atendimento (não cancelado) em unidade Centro POP
+      (dim_unidades.tipo_unidade = 'Centro POP') no mês de referência. Acompanha as 50 colunas
+      da planilha (1me-dxFcE-SZ_WgZ75_sq1t92Se1zwxk9YPgZ_YYMKu8), com fontes indicadas nas
+      linhas 5/6 da própria planilha.
+
+      Premissas/limitações documentadas:
+      - 'Profissional de referência': profissional do último atendimento TÉCNICO do mês
+        (fallback: último atendimento do mês, qualquer tipo).
+      - 'Atendido pontualmente' / 'Inserido no acompanhamento' / 'Tem PAI': derivados do
+        formulário 'Centro POP - Plano de Atendimento Individual (PAI)' (codigo_abrangencia=29).
+        Se a primeira inclusão acontece após o fim do mês de referência, o usuário é
+        considerado atendido pontualmente no mês.
+      - 'Motivo de permanência na rua': o campo 'Motivo da ida às ruas' não existe na fonte;
+        usa 'Motivo da ida às ras' → 'Motivo do acolhimento' do formulário 'Acolhimento'
+        (codigo_abrangencia=1) como fallback.
+      - Colunas sem fonte nos dados hoje (aguardando inclusão nos formulários do prontuário):
+        'Território de referência da família', 'Reinserção familiar', 'Empregabilidade
+        imediata', 'Capacidade/habilidades', 'Interesse em curso', 'Cadastro atualizado',
+        'Resultado/Acesso', 'Resultado/Descrição', 'Observações' e colunas de saúde
+        (substâncias psicoativas, problemas de saúde, acompanhamento de saúde).
+      - 'Possui referências familiares?' do formulário 'Centro POP - Atendimento Social':
+        extraído por label; não presente nos registros atuais (fica NULL até o campo existir).
+      - 'NIS': via CadÚnico (documento_pessoa → identificacao_membro pelo CPF); ~96% de
+        cobertura esperada.
+    columns:
+      - name: id_usuario
+        description: Identificador do usuário no prontuário (id_paciente).
+      - name: id_unidade
+        description: Identificador da unidade Centro POP.
+      - name: nome_centro_pop
+        description: Nome da unidade Centro POP.
+      - name: mes_referencia
+        description: Mês de referência (primeiro dia do mês), derivado dos atendimentos.
+      - name: profissional_referencia
+        description: Profissional de referência (último atendimento técnico do mês).
+      - name: nome_usuario
+        description: Nome do usuário do serviço (cadastro).
+      - name: nome_social
+        description: Nome social do usuário (cadastro).
+      - name: flag_atendido_pontualmente
+        description: True se o usuário NÃO entrou no acompanhamento (PAI) até o fim do mês.
+      - name: flag_inserido_acompanhamento
+        description: True se o usuário foi inserido no acompanhamento (primeira evolução PAI).
+      - name: data_inclusao_acompanhamento
+        description: Data da primeira evolução do formulário PAI (por usuário e unidade).
+      - name: flag_possui_plano_individual
+        description: True se o usuário possui Plano de Atendimento Individual (PAI).
+      - name: data_ultimo_atendimento_tecnico
+        description: Data do último atendimento de profissional técnico no mês.
+      - name: qtd_atendimentos_total
+        description: Quantidade de atendimentos do usuário no mês (não cancelados).
+      - name: qtd_atendimentos_tecnico
+        description: Quantidade de atendimentos técnicos no mês.
+      - name: qtd_atendimentos_recepcao
+        description: Quantidade de atendimentos de recepção no mês.
+      - name: qtd_atendimentos_outros
+        description: Quantidade de atendimentos de outros tipos no mês.
+      - name: motivo_principal_permanencia_rua
+        description: Motivo principal de permanência na rua (formulário Acolhimento).
+      - name: motivo_secundario_permanencia_rua
+        description: Motivo secundário de permanência na rua (campo Outros do Acolhimento).
+      - name: data_nascimento
+        description: Data de nascimento (cadastro).
+      - name: idade
+        description: Idade calculada no fim do mês de referência.
+      - name: filiacao_mae
+        description: Nome da mãe (cadastro).
+      - name: flag_registro_documentacao_civil
+        description: True se há registro de demanda de documentação civil (formulário Documentação Civil).
+      - name: genero
+        description: Gênero informado no cadastro.
+      - name: orientacao_sexual
+        description: Orientação sexual informada no cadastro.
+      - name: raca_cor
+        description: Cor e etnia informada no cadastro.
+      - name: naturalidade
+        description: UF de nascimento (cadastro).
+      - name: flag_estuda
+        description: Sim/Não/Não Informado — estuda (cadastro).
+      - name: ano_cursando
+        description: Ano cursando (cadastro).
+      - name: nivel_escolaridade
+        description: Nível de escolaridade (cadastro).
+      - name: flag_deficiencia
+        description: Sim/Não/Não Informado — possui deficiência (cadastro).
+      - name: tipo_deficiencia
+        description: Tipo de deficiência (cadastro).
+      - name: flag_uso_substancias_psicoativas
+        description: NULL — campo ainda não disponível na fonte (aguardando inclusão no formulário).
+      - name: flag_problema_saude
+        description: NULL — campo ainda não disponível na fonte.
+      - name: flag_acompanhamento_saude
+        description: NULL — campo ainda não disponível na fonte.
+      - name: flag_possui_vinculo_familiar
+        description: Possui referências familiares (formulário Centro POP - Atendimento Social).
+      - name: territorio_referencia_familia
+        description: NULL — campo ainda não disponível na fonte.
+      - name: flag_possibilidade_reinsercao_familiar
+        description: NULL — campo ainda não disponível na fonte.
+      - name: flag_exerce_atividade_renda
+        description: Exerce atividade que gera renda (cadastro).
+      - name: atividade_renda_qual
+        description: Qual atividade que gera renda (cadastro).
+      - name: valor_renda
+        description: Valor da renda obtida através da atividade (cadastro).
+      - name: flag_empregabilidade_imediata
+        description: NULL — campo ainda não disponível na fonte.
+      - name: capacidade_habilidades
+        description: NULL — campo ainda não disponível na fonte.
+      - name: flag_interesse_curso
+        description: NULL — campo ainda não disponível na fonte.
+      - name: flag_possui_beneficio
+        description: Sim/Não/Não Informado — possui benefício (cadastro).
+      - name: tipo_beneficio
+        description: Tipo(s) de benefício (códigos do cadastro).
+      - name: beneficio
+        description: Detalhamento dos benefícios (estrutura agregada).
+      - name: flag_possui_cadunico
+        description: Sim/Não/Não Informado — possui CadÚnico (cadastro).
+      - name: flag_cadastro_atualizado
+        description: NULL — campo ainda não disponível na fonte.
+      - name: nis_usuario
+        description: NIS do usuário (CadÚnico, via CPF).
+      - name: flag_participacao_oficinas
+        description: True se o usuário participou de oficina/atividade coletiva no mês na unidade.
+      - name: qtd_oficinas_participadas_mes
+        description: Quantidade de oficinas participadas no mês de referência.
+      - name: demandas
+        description: Demandas identificadas (ARRAY<STRUCT<origem, demanda>>) dos formulários PAI e Atendimento Social.
+      - name: encaminhamentos
+        description: Encaminhamentos (ARRAY<STRUCT<origem, encaminhamento>>) dos formulários PAI e Atendimento Social.
+      - name: resultado_acesso
+        description: NULL — campo ainda não disponível na fonte.
+      - name: resultado_descricao
+        description: NULL — campo ainda não disponível na fonte.
+      - name: data_desligamento
+        description: Data de desligamento do acompanhamento (formulário Centro POP - Desligamento PAI).
+      - name: motivo_desligamento
+        description: Motivo do desligamento (inclui campo Outros, concatenado).
+      - name: observacoes
+        description: NULL — campo ainda não disponível na fonte.
+      - name: flag_situacao_rua
+        description: Situação de rua do usuário (cadastro saúde mental).
+      - name: ultima_atualizacao
+        description: Última atualização da origem (sys_config).
