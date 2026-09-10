@@ -160,7 +160,8 @@ bolsa_familia_e_descumprimento_condicionalidades as (
         ) as total_famil_paif_bf_b2,
         count(
             distinct if(
-                v.id_vulnerabilidade = 1,
+                v.id_vulnerabilidade = 1
+                and b.descricao = 'Bolsa Família',
                 p.id_familia,
                 null
             )

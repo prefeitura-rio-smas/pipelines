@@ -62,9 +62,10 @@ models:
         description: "B2 — famílias PAIF do mês com membro beneficiário Bolsa Família (fonte: módulo Saúde Mental; cobertura parcial, maioria dos membros sem registro)."
       - name: total_famil_paif_descumprimento_b3
         description: |
-          B3 — famílias PAIF do mês com vulnerabilidade "descumprimento de condicionalidades"
-          (id_vulnerabilidade = 1). Assunção herdada da série legada (seqvulnerab = 1);
-          mapeamento ainda não confirmado por catálogo no repo — validar com SMAS.
+          B3 — famílias PAIF do mês beneficiárias do Bolsa Família com vulnerabilidade
+          "descumprimento de condicionalidades" (id_vulnerabilidade = 1 AND benefício Bolsa Família).
+          Assunção herdada da série legada (seqvulnerab = 1); mapeamento ainda não confirmado
+          por catálogo no repo — validar com SMAS.
       - name: total_famil_paif_bpc_b4
         description: "B4 — famílias PAIF do mês com membro beneficiário BPC (fonte: módulo Saúde Mental; cobertura parcial)."
       - name: trab_infantil_crianca_adolescente_b5
