@@ -281,6 +281,23 @@ documentacao_form as (
     ) }}
 ),
 
+-- Respostas do questionário estruturado 'Situação do Usuário' (módulo
+-- HIST_PAC): pergunta 'Motivo da ida às ras:' (id_template=3, id_questao=18).
+-- Campo inativo na fonte — sem registros hoje; mantém fallback do form Acolhimento.
+questionario_situacao_usuario as (
+    select
+        q.id_prontuario as id_usuario,
+        ql.data_resposta,
+        ql.resposta as motivo_ida_ruas
+    from {{ ref('raw_evolucoes_questionario') }} as q
+    inner join {{ ref('raw_evolucoes_questionario_lista') }} as ql
+        on q.id_evolucao = ql.id_evolucao
+    where
+        q.id_template = 3
+        and ql.id_questao = 18
+    qualify row_number() over (partition by q.id_prontuario order by ql.data_resposta desc) = 1
+),
+
 -- NIS via CadÚnico (documento_pessoa → identificacao_membro pelo CPF)
 nis_cadunico as (
     select
@@ -335,6 +352,7 @@ final as (
         am.qtd_atendimentos_recepcao,
         am.qtd_atendimentos_outros,
         coalesce(
+            nullif(q.motivo_ida_ruas, 'undefined'),
             nullif(acf.motivo_ida_ruas, 'undefined'),
             nullif(acf.motivo_acolhimento, 'undefined')
         ) as motivo_principal_permanencia_rua,
@@ -440,6 +458,7 @@ final as (
             am.id_usuario = df.id_paciente
             and am.id_unidade = df.id_unidade
     left join acolhimento_form as acf on am.id_usuario = acf.id_paciente
+    left join questionario_situacao_usuario as q on am.id_usuario = q.id_usuario
     left join documentacao_form as doc on am.id_usuario = doc.id_paciente
     left join nis_cadunico as n on u.cpf = n.cpf
     left join oficinas as ofc

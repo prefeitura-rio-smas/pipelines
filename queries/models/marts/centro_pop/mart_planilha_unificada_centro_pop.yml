@@ -16,9 +16,12 @@ models:
         formulário 'Centro POP - Plano de Atendimento Individual (PAI)' (codigo_abrangencia=29).
         Se a primeira inclusão acontece após o fim do mês de referência, o usuário é
         considerado atendido pontualmente no mês.
-      - 'Motivo de permanência na rua': o campo 'Motivo da ida às ruas' não existe na fonte;
-        usa 'Motivo da ida às ras' → 'Motivo do acolhimento' do formulário 'Acolhimento'
-        (codigo_abrangencia=1) como fallback.
+      - 'Motivo de permanência na rua': extraído do questionário estruturado
+        'Situação do Usuário' (módulo HIST_PAC; raw_evolucoes_questionario +
+        raw_evolucoes_questionario_lista, id_template=3/id_questao=18). A pergunta
+        está INATIVA na fonte e sem respostas gravadas hoje; mantém fallback para o
+        formulário 'Acolhimento' (codigo_abrangencia=1) — 'Motivo do acolhimento'.
+        Vínculo seqprontuario → id_usuario é premissa do modelo.
       - Colunas sem fonte nos dados hoje (aguardando inclusão nos formulários do prontuário):
         'Território de referência da família', 'Reinserção familiar', 'Empregabilidade
         imediata', 'Capacidade/habilidades', 'Interesse em curso', 'Cadastro atualizado',
@@ -62,9 +65,9 @@ models:
       - name: qtd_atendimentos_outros
         description: Quantidade de atendimentos de outros tipos no mês.
       - name: motivo_principal_permanencia_rua
-        description: Motivo principal de permanência na rua (formulário Acolhimento).
+        description: Motivo principal de permanência na rua — questionário estruturado 'Situação do Usuário' (HIST_PAC, id_template=3/id_questao=18, campo inativo/sem dados hoje) com fallback no formulário Acolhimento.
       - name: motivo_secundario_permanencia_rua
-        description: Motivo secundário de permanência na rua (campo Outros do Acolhimento).
+        description: Motivo secundário de permanência na rua (campo Outros do formulário Acolhimento).
       - name: data_nascimento
         description: Data de nascimento (cadastro).
       - name: idade
