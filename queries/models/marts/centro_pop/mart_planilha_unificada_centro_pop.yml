@@ -51,7 +51,10 @@ models:
       - name: flag_inserido_acompanhamento
         description: True se o usuário foi inserido no acompanhamento (primeira evolução PAI).
       - name: data_inclusao_acompanhamento
-        description: Data da primeira evolução do formulário PAI (por usuário e unidade).
+        description: |
+          Data da inclusão no acompanhamento — campo 'Data do atendimento:' do
+          formulário PAI (primeira data preenchida pelo profissional, por usuário
+          e unidade). Fallback: data da evolução quando o campo não foi preenchido.
       - name: flag_possui_plano_individual
         description: True se o usuário possui Plano de Atendimento Individual (PAI).
       - name: data_ultimo_atendimento_tecnico

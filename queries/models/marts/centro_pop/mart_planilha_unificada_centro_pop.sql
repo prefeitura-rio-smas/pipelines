@@ -194,14 +194,39 @@ evolucoes_documentacao as (
         and coalesce(du.id_usuario, e.id_paciente_familia) is not null
 ),
 
--- Inclusão no acompanhamento: primeira evolução do formulário PAI (por usuário e unidade)
+-- Campo 'Data do atendimento:' do formulário PAI, por evolução
+pai_data_atendimento as (
+    select
+        id_paciente,
+        id_unidade,
+        id_evolucao,
+        max(case when label like 'Data do atendimento' then valor end) as data_atendimento
+    from {{ extrair_campos_html_evolucao(
+        source_relation = 'evolucoes_pai',
+        id_cols = ['id_paciente', 'id_unidade', 'id_evolucao'],
+        extra_where = 'codigo_abrangencia = 29'
+    ) }}
+    where titulo_formulario = 'Centro POP - Plano de Atendimento Individual (PAI)'
+    group by id_paciente, id_unidade, id_evolucao
+),
+
+-- Inclusão no acompanhamento: campo 'Data do atendimento:' do formulário PAI
+-- (primeira data preenchida pelo profissional; fallback: data da evolução).
 pai_inclusao as (
     select
-        id_paciente as id_usuario,
-        id_unidade,
-        min(data_evolucao) as data_inclusao_acompanhamento
-    from evolucoes_pai
-    group by id_paciente, id_unidade
+        e.id_paciente as id_usuario,
+        e.id_unidade,
+        coalesce(
+            min(safe.parse_date('%d/%m/%Y', pv.data_atendimento)),
+            min(e.data_evolucao)
+        ) as data_inclusao_acompanhamento
+    from evolucoes_pai as e
+    left join pai_data_atendimento as pv
+        on
+            e.id_paciente = pv.id_paciente
+            and e.id_unidade = pv.id_unidade
+            and e.id_evolucao = pv.id_evolucao
+    group by e.id_paciente, e.id_unidade
 ),
 
 pai_form as (
