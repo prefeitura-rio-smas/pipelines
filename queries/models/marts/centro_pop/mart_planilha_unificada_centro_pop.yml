@@ -58,11 +58,11 @@ models:
       - name: flag_possui_plano_individual
         description: True se o usuário possui Plano de Atendimento Individual (PAI).
       - name: data_ultimo_atendimento_tecnico
-        description: Data do último atendimento de profissional técnico no mês.
+        description: Data do último atendimento do mês realizado por profissional de nível superior (grupo CBO 2).
       - name: qtd_atendimentos_total
         description: Quantidade de atendimentos do usuário no mês (não cancelados).
       - name: qtd_atendimentos_tecnico
-        description: Quantidade de atendimentos técnicos no mês.
+        description: Quantidade de atendimentos do mês realizados por profissional de nível superior (grupo CBO 2).
       - name: qtd_atendimentos_recepcao
         description: Quantidade de atendimentos de recepção no mês.
       - name: qtd_atendimentos_outros

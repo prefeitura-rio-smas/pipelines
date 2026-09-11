@@ -35,15 +35,14 @@ atendimentos as (
         dp.nome as profissional,
         dp.cbo_principal_descricao as profissional_cbo,
         case
+            -- Profissional de nível superior = grupo CBO 2 (descrições da fonte têm sufixo " CENTRO POP")
+            when substr(trim(cast(dp.cbo_principal_codigo as string)), 1, 1) = '2' then 'Atendimento Técnico'
             when a.tipo_atendimento_descricao like '%Recepção%' then 'Atendimento Recepção'
             when dp.nome = 'ATENDIMENTO RECEPÇÃO' then 'Atendimento Recepção'
             when
                 dp.cbo_principal_descricao in ('Administrador', 'Articulador Comunitário', 'Assistente administrativo', 'Educador social', 'Orientador social', 'Recepcionista')
                 and a.tipo_atendimento_descricao like '%CadÚnico%'
                 then 'Atendimento Recepção'
-            when
-                dp.cbo_principal_descricao in ('Advogado', 'Assistente social', 'Pedagogo', 'Psicólogo')
-                then 'Atendimento Técnico'
             else 'Outros Atendimentos'
         end as tipo_atendimento
     from {{ ref('fct_atendimentos') }} as a
