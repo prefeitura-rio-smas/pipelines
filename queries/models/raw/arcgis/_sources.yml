@@ -1,0 +1,24 @@
+version: 2
+
+sources:
+  - name: arcgis_raw
+    description: "Dataset com dados brutos sincronizados do ArcGIS (servidor SIURB)."
+    database: rj-smas
+    schema: arcgis_raw
+    tables:
+      - name: primeira_infancia_carioca_raw
+        description: "Survey de entrega do Cartão Primeira Infância (entregas reais, campos de retirada e profissionais)."
+      - name: controle_cas_raw
+        description: "Controle CAS (folhas de beneficiários, CRAS, documentação verificada e justificativas)."
+      - name: equipamento_raw
+        description: "Equipamentos da rede socioassistencial (CRAS/CAS) — usado para endereço e nome popular das unidades."
+      - name: meta_ar_cpf_raw
+        description: "Crosswalk Meta AR CPF (ArcGIS) — usado pelo fluxo de feedback do programa."
+      - name: cras_cas_poligonos_smas_raw
+        description: "Polígonos CRAS e CAS (legado equipamentos)."
+      - name: abordagem_raw
+        description: "Fichas de abordagem (legado dashboard_arcgis)."
+      - name: abordagem_repeat_raw
+        description: "Repetições de abordagem (legado dashboard_arcgis)."
+      - name: gestao_vagas_repeat_raw
+        description: "Gestão de vagas (legado dashboard_arcgis)."
