@@ -1,5 +1,5 @@
--- Extração dos campos de encaminhamento via macro extrair_encaminhamentos
--- (a classificação SMAS/Órgãos/Benefícios é permanente).
+-- Extração dos campos de encaminhamento (SMAS/Benefícios/Órgãos) do HTML das
+-- evoluções via macro genérica extrair_campos_html_evolucao + pivô por label.
 with base as (
     select
         e.id_evolucao_sk,
@@ -11,22 +11,28 @@ with base as (
     left join {{ ref('dim_usuarios') }} as u on e.id_usuario_sk = u.id_usuario_sk
 ),
 
-extraida as (
-    select * from {{
-        extrair_encaminhamentos(
-            'base',
-            [
-                'id_evolucao_sk',
-                'id_usuario_sk',
-                'id_unidade_sk',
-                'nome_usuario'
-            ]
-        )
-    }}
+campos as (
+    select * from {{ extrair_campos_html_evolucao(
+        source_relation = 'base',
+        id_cols = ['id_evolucao_sk', 'id_usuario_sk', 'id_unidade_sk', 'nome_usuario']
+    ) }}
+),
+
+pivotada as (
+    select
+        id_evolucao_sk,
+        id_usuario_sk,
+        id_unidade_sk,
+        nome_usuario,
+        max(case when label like '%Encaminhamentos - %SMAS%' then nullif(valor, '') end) as encaminhamento_smas,
+        max(case when label like '%Encaminhamentos - Benefícios%' then nullif(valor, '') end) as encaminhamento_beneficios,
+        max(case when label like '%Encaminhamentos Órgãos%' then nullif(valor, '') end) as encaminhamento_orgaos
+    from campos
+    group by 1, 2, 3, 4
 )
 
 select *
-from extraida
+from pivotada
 where (
     encaminhamento_smas is not null
     or encaminhamento_beneficios is not null
