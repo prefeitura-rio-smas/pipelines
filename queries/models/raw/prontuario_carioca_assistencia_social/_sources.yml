@@ -70,5 +70,9 @@ sources:
         description: "Tipos de atividade (ex: Tô de Boa: Educação e Cultura)."
       - name: gh_evolugrupo
         description: "Evoluções registradas em atividades de grupo."
+      - name: gh_regeatv_evol_quest
+        description: "Evoluções de questionários estruturados do prontuário (ex: módulo HIST_PAC 'Situação do Usuário')."
+      - name: gh_regeatv_evol_quest_list
+        description: "Respostas de lista dos questionários estruturados do prontuário."
       - name: sys_config
         description: "Configurações globais do sistema (sys_config), utilizada como heartbeat de atualização da pipeline."
