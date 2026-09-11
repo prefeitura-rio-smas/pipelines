@@ -1,12 +1,5 @@
 version: 2
 
-sources:
-  - name: arcgis_raw
-    schema: arcgis_raw
-    tables:
-      - name: cras_cas_poligonos_smas_raw
-      - name: equipamento_raw
-
 models:
   - name: poligonos_rmi
     description: "Tabela de polígonos CRAS e CAS"
@@ -18,17 +11,3 @@ models:
           - unique
       - name: SHAPE_Area
         description: "Área do polígono"
-      - name: cod_unid
-        description: "Código da unidade"
-      - name: nome_unid
-        description: "Nome da unidade"
-      - name: categoria
-        description: "Categoria da unidade"
-      - name: SHAPE_Leng
-        description: "Comprimento do polígono (formato alternativo)"
-      - name: SHAPE_Length
-        description: "Comprimento do polígono"
-      - name: shape
-        description: "Geometria do polígono"
-
-
