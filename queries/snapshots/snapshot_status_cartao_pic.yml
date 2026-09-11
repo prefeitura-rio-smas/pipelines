@@ -1,0 +1,22 @@
+snapshots:
+  - name: snapshot_status_cartao_pic
+    relation: ref('mart_status')
+    config:
+      strategy: timestamp
+      unique_key: ['data_particao', 'cod_familiar_fam']
+      updated_at: data_atualizacao
+      invalidate_hard_deletes: false
+      tags: ["cartao_pic_status"]
+    columns:
+      - name: data_particao
+        description: "Partição da folha (cursor da status empilhada)."
+      - name: cod_familiar_fam
+        description: "Código da família."
+      - name: status_entrega
+        description: "Status de entrega do cartão observado no dia (retirado / não retirado / aguardando evento)."
+      - name: flag_entrega
+        description: "Booleano: cartão entregue observado no dia."
+      - name: alerta
+        description: "Destino operacional (retirar_cartao* / aviso / NULL)."
+      - name: acao_smas
+        description: "Classificação do beneficiário (novos/retorno/ausência/reconcessão/mantidos)."

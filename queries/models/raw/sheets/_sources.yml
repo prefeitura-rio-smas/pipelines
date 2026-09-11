@@ -18,3 +18,11 @@ sources:
         description: "Base externa (Google Sheets) com dados de acolhimento da SMS (Saúde)."
       - name: consolidado_sms_acolhimento_2026
         description: "Base externa (Google Sheets) com dados de acolhimento da SMS - 2026."
+
+  - name: pic_eventos
+    description: "Planilha de eventos de entrega do Cartão PIC (capacidade por bairro, disparos WhatsApp)."
+    database: rj-smas-dev
+    schema: pic
+    tables:
+      - name: raw_cartao_primeira_infancia_carioca_bairros_entrega
+        description: "Eventos de entrega por bairro: capacidade (QUANTIDADE), previsão e disparos (aviso/lembrete/CRAS)."
