@@ -14,7 +14,10 @@ with
 -- 0. Dimensão de unidades CRAS
 -- ============================================================================
 unidades_cras as (
-    select id_unidade_sk, id_unidade, nome_unidade
+    select
+        id_unidade_sk,
+        id_unidade,
+        nome_unidade
     from {{ ref('dim_unidades') }}
     where tipo_unidade = 'CRAS'
 ),
@@ -24,13 +27,19 @@ unidades_cras as (
 -- ============================================================================
 -- I.1 extração: vínculo da família ao serviço PAIF, membros ativos, unidade
 membros_ativos as (
-    select id_familia, id_paciente as id_usuario
+    select
+        id_familia,
+        id_paciente as id_usuario
     from {{ ref('raw_membros_familia') }}
     where data_saida is null
 ),
 
 usuarios as (
-    select id_usuario, data_nascimento, beneficio, violacoes
+    select
+        id_usuario,
+        data_nascimento,
+        beneficio,
+        violacoes
     from {{ ref('dim_usuarios') }}
 ),
 
@@ -44,7 +53,9 @@ vulnerabilidades_familia as (
 ),
 
 operadores_unidades as (
-    select id_login, min(id_unidade) as id_unidade
+    select
+        id_login,
+        min(id_unidade) as id_unidade
     from {{ ref('raw_operadores_unidades') }}
     group by 1
 ),
@@ -90,7 +101,14 @@ paif as (
 
 -- recorte do mês: famílias NOVAS no PAIF no mês de referência
 paif_novas as (
-    select id_familia, id_unidade, id_usuario, data_nascimento, beneficio, violacoes, vulnerabilidades
+    select
+        id_familia,
+        id_unidade,
+        id_usuario,
+        data_nascimento,
+        beneficio,
+        violacoes,
+        vulnerabilidades
     from paif
     where {{ no_mes('data_cadastro_paif') }}
 ),
@@ -190,8 +208,7 @@ pool_evolucoes as (
     where
         e.origem_modulo = 'administrativa'
         and e.tipo_evolucao = 'F'
-        and regexp_extract(e.descricao_evolucao, r'<h3>(.*?)</h3>')
-            = 'CRAS - Ficha de Atendimento Individualizado'
+        and regexp_extract(e.descricao_evolucao, r'<h3>(.*?)</h3>') = 'CRAS - Ficha de Atendimento Individualizado'
     union all
     select
         f.id_evolucao_sk,
@@ -265,7 +282,10 @@ agg_encaminhamentos as (
 -- III. Bloco D — convivência e atividades coletivas
 -- ============================================================================
 paif_membros as (
-    select distinct id_familia, id_usuario, id_unidade
+    select distinct
+        id_familia,
+        id_usuario,
+        id_unidade
     from paif
 ),
 
