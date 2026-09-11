@@ -25,10 +25,14 @@ models:
       - Colunas sem fonte nos dados hoje (aguardando inclusão nos formulários do prontuário):
         'Território de referência da família', 'Reinserção familiar', 'Empregabilidade
         imediata', 'Capacidade/habilidades', 'Interesse em curso', 'Cadastro atualizado',
-        'Resultado/Acesso', 'Resultado/Descrição', 'Observações' e colunas de saúde
-        (substâncias psicoativas, problemas de saúde, acompanhamento de saúde).
+        'Resultado/Acesso', 'Resultado/Descrição' e 'Observações'.
+      - 'Saúde': formulário 'Situação de Saúde' (codigo_abrangencia=1) como fonte
+        primária, com fallback no cadastro (grau_dependencia e
+        flag_saude_mental_comprometida) quando o usuário não tem formulário.
       - 'Possui referências familiares?' do formulário 'Centro POP - Atendimento Social':
-        extraído por label; não presente nos registros atuais (fica NULL até o campo existir).
+        extraído por label; quando não há formulário preenchido fica NULL.
+      - 'Motivo de permanência na rua': o campo 'Motivo da ida às ruas' não existe no
+        cadastro; fonte real é o formulário 'Acolhimento' (codigo_abrangencia=1).
       - 'NIS': via CadÚnico (documento_pessoa → identificacao_membro pelo CPF); ~96% de
         cobertura esperada.
     columns:
@@ -58,11 +62,11 @@ models:
       - name: flag_possui_plano_individual
         description: True se o usuário possui Plano de Atendimento Individual (PAI).
       - name: data_ultimo_atendimento_tecnico
-        description: Data do último atendimento de profissional técnico no mês.
+        description: Data do último atendimento do mês realizado por profissional de nível superior (grupo CBO 2).
       - name: qtd_atendimentos_total
         description: Quantidade de atendimentos do usuário no mês (não cancelados).
       - name: qtd_atendimentos_tecnico
-        description: Quantidade de atendimentos técnicos no mês.
+        description: Quantidade de atendimentos do mês realizados por profissional de nível superior (grupo CBO 2).
       - name: qtd_atendimentos_recepcao
         description: Quantidade de atendimentos de recepção no mês.
       - name: qtd_atendimentos_outros
@@ -98,11 +102,19 @@ models:
       - name: tipo_deficiencia
         description: Tipo de deficiência (cadastro).
       - name: flag_uso_substancias_psicoativas
-        description: NULL — campo ainda não disponível na fonte (aguardando inclusão no formulário).
+        description: |
+          True se o usuário faz uso de substâncias psicoativas — formulário
+          'Situação de Saúde' (campo 'Faz uso de substâncias psicoativas?');
+          fallback no cadastro (grau_dependencia 1/2/3) quando não há formulário.
       - name: flag_problema_saude
-        description: NULL — campo ainda não disponível na fonte.
+        description: |
+          True se o usuário tem ou teve problema de saúde — formulário
+          'Situação de Saúde' (campo 'Situação'); fallback no cadastro
+          (flag_saude_mental_comprometida) quando não há formulário.
       - name: flag_acompanhamento_saude
-        description: NULL — campo ainda não disponível na fonte.
+        description: |
+          True se o usuário realiza acompanhamento de saúde — formulário
+          'Situação de Saúde' (campo 'Local onde faz tratamento'). Sem fallback.
       - name: flag_possui_vinculo_familiar
         description: Possui referências familiares (formulário Centro POP - Atendimento Social).
       - name: territorio_referencia_familia
@@ -140,7 +152,11 @@ models:
       - name: demandas
         description: Demandas identificadas (ARRAY<STRUCT<origem, demanda>>) dos formulários PAI e Atendimento Social.
       - name: encaminhamentos
-        description: Encaminhamentos (ARRAY<STRUCT<origem, encaminhamento>>) dos formulários PAI e Atendimento Social.
+        description: |
+          Encaminhamentos (ARRAY<STRUCT<origem, encaminhamento>>) dos formulários
+          PAI e Atendimento Social — inclui os tópicos 'Encaminhamentos – Saúde',
+          '– Órgãos', '– Rede Socioassistencial' e '– Benefícios'; valores
+          'undefined' são ignorados.
       - name: resultado_acesso
         description: NULL — campo ainda não disponível na fonte.
       - name: resultado_descricao

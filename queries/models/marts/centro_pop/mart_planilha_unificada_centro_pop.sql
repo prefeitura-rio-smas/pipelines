@@ -35,15 +35,14 @@ atendimentos as (
         dp.nome as profissional,
         dp.cbo_principal_descricao as profissional_cbo,
         case
+            -- Profissional de nível superior = grupo CBO 2 (descrições da fonte têm sufixo " CENTRO POP")
+            when substr(trim(cast(dp.cbo_principal_codigo as string)), 1, 1) = '2' then 'Atendimento Técnico'
             when a.tipo_atendimento_descricao like '%Recepção%' then 'Atendimento Recepção'
             when dp.nome = 'ATENDIMENTO RECEPÇÃO' then 'Atendimento Recepção'
             when
                 dp.cbo_principal_descricao in ('Administrador', 'Articulador Comunitário', 'Assistente administrativo', 'Educador social', 'Orientador social', 'Recepcionista')
                 and a.tipo_atendimento_descricao like '%CadÚnico%'
                 then 'Atendimento Recepção'
-            when
-                dp.cbo_principal_descricao in ('Advogado', 'Assistente social', 'Pedagogo', 'Psicólogo')
-                then 'Atendimento Técnico'
             else 'Outros Atendimentos'
         end as tipo_atendimento
     from {{ ref('fct_atendimentos') }} as a
@@ -103,6 +102,8 @@ usuarios as (
         du.flag_deficiencia,
         du.tipo_deficiencia,
         du.flag_situacao_rua,
+        du.grau_dependencia,
+        du.flag_saude_mental_comprometida,
         du.atvd_remunerada,
         du.profissao,
         du.renda_ativa,
@@ -194,6 +195,23 @@ evolucoes_documentacao as (
         and coalesce(du.id_usuario, e.id_paciente_familia) is not null
 ),
 
+-- Situação de Saúde: formulário do prontuário (codigo_abrangencia = 1),
+-- registrado no módulo do usuário; join por usuário sem filtro de unidade,
+-- pois o formulário pode ter sido preenchido em outra unidade.
+evolucoes_saude as (
+    select
+        e.id_evolucao,
+        e.codigo_abrangencia,
+        e.descricao_evolucao,
+        e.data_evolucao,
+        du.id_usuario as id_paciente
+    from {{ ref('fct_evolucoes') }} as e
+    inner join {{ ref('dim_usuarios') }} as du on e.id_usuario_sk = du.id_usuario_sk
+    where
+        e.codigo_abrangencia = 1
+        and e.data_cancelamento is null
+),
+
 -- Campo 'Data do atendimento:' do formulário PAI, por evolução
 pai_data_atendimento as (
     select
@@ -239,7 +257,7 @@ pai_form as (
         campos = [
             {'label': 'Data do atendimento', 'col': 'data_ultimo_pai', 'type': 'date'},
             {'label': 'Identificação das demandas apresentadas pelo usuário', 'col': 'demandas_pai', 'type': 'string'},
-            {'label': 'Encaminhamentos', 'col': 'encaminhamentos_pai', 'type': 'string'}
+            {'label': 'Encaminhamentos%', 'col': 'encaminhamentos_pai', 'type': 'array_agg'}
         ]
     ) }}
 ),
@@ -259,7 +277,7 @@ atendimento_social_form as (
             {'label': 'Local de permanência na rua', 'col': 'local_permanencia_rua', 'type': 'string'},
             {'label': 'Local onde dorme', 'col': 'local_dorme', 'type': 'string'},
             {'label': 'Descrição das atividades de interesse', 'col': 'descricao_atividades_interesse', 'type': 'string'},
-            {'label': 'Encaminhamentos', 'col': 'encaminhamentos_as', 'type': 'string'}
+            {'label': 'Encaminhamentos%', 'col': 'encaminhamentos_as', 'type': 'array_agg'}
         ]
     ) }}
 ),
@@ -303,6 +321,23 @@ documentacao_form as (
         latest_by = 'data_evolucao',
         flag_col = 'flag_registro_documentacao_civil',
         campos = []
+    ) }}
+),
+
+-- Saúde: formulário 'Situação de Saúde' (primário) com fallback para o
+-- cadastro (dim_usuarios: grau_dependencia e flag_saude_mental_comprometida).
+situacao_saude as (
+    {{ extrair_formulario(
+        source_relation = 'evolucoes_saude',
+        group_cols = ['id_paciente'],
+        codigo_abrangencia = 1,
+        titulo_formulario = 'Situação de Saúde',
+        latest_by = 'data_evolucao',
+        campos = [
+            {'label': 'Faz uso de substâncias psicoativas?', 'col': 'uso_substancias', 'type': 'string'},
+            {'label': 'Situação', 'col': 'situacao_saude', 'type': 'string'},
+            {'label': 'Local onde faz tratamento', 'col': 'local_tratamento', 'type': 'string'}
+        ]
     ) }}
 ),
 
@@ -399,9 +434,19 @@ final as (
         u.escolaridade_indice as nivel_escolaridade,
         u.flag_deficiencia,
         u.tipo_deficiencia,
-        null as flag_uso_substancias_psicoativas,
-        null as flag_problema_saude,
-        null as flag_acompanhamento_saude,
+        case
+            when ss.uso_substancias = 'S' then true
+            when ss.uso_substancias = 'N' then false
+            when u.grau_dependencia in ('1', '2', '3') then true
+        end as flag_uso_substancias_psicoativas,
+        case
+            when nullif(ss.situacao_saude, 'undefined') is not null then true
+            when u.flag_saude_mental_comprometida not in ('N', '') then true
+            when u.flag_saude_mental_comprometida = 'N' then false
+        end as flag_problema_saude,
+        case
+            when nullif(ss.local_tratamento, 'undefined') is not null then true
+        end as flag_acompanhamento_saude,
         asf.flag_possui_referencias_familiares as flag_possui_vinculo_familiar,
         null as territorio_referencia_familia,
         null as flag_possibilidade_reinsercao_familiar,
@@ -437,13 +482,21 @@ final as (
             where x.demanda is not null
         ) as demandas,
         array(
-            select x
+            select as struct
+                x.origem,
+                e as encaminhamento
             from
                 unnest([
-                    struct('Centro POP - Plano de Atendimento Individual (PAI)' as origem, nullif(pf.encaminhamentos_pai, 'undefined') as encaminhamento),
-                    struct('Centro POP - Atendimento Social' as origem, nullif(asf.encaminhamentos_as, 'undefined') as encaminhamento)
+                    struct(
+                        'Centro POP - Plano de Atendimento Individual (PAI)' as origem,
+                        pf.encaminhamentos_pai as encaminhamento
+                    ),
+                    struct(
+                        'Centro POP - Atendimento Social' as origem,
+                        asf.encaminhamentos_as as encaminhamento
+                    )
                 ]) as x
-            where x.encaminhamento is not null
+            cross join unnest(coalesce(x.encaminhamento, [])) as e
         ) as encaminhamentos,
         null as resultado_acesso,
         null as resultado_descricao,
@@ -483,6 +536,7 @@ final as (
             am.id_usuario = df.id_paciente
             and am.id_unidade = df.id_unidade
     left join acolhimento_form as acf on am.id_usuario = acf.id_paciente
+    left join situacao_saude as ss on am.id_usuario = ss.id_paciente
     left join questionario_situacao_usuario as q on am.id_usuario = q.id_usuario
     left join documentacao_form as doc on am.id_usuario = doc.id_paciente
     left join nis_cadunico as n on u.cpf = n.cpf
