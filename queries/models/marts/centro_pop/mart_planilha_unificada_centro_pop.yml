@@ -141,6 +141,9 @@ models:
         description: Detalhamento dos benefícios (estrutura agregada).
       - name: flag_possui_cadunico
         description: Sim/Não/Não Informado — possui CadÚnico (cadastro).
+        tests:
+          - accepted_values:
+              values: ['Sim', 'Não', 'Não Informado']
       - name: flag_cadastro_atualizado
         description: NULL — campo ainda não disponível na fonte.
       - name: nis_usuario

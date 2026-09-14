@@ -464,8 +464,8 @@ final as (
         u.tipo_beneficio,
         u.beneficio,
         case u.flag_cadunico
-            when 'S' then 'Sim'
-            when 'N' then 'Não'
+            when 'Sim' then 'Sim'
+            when 'Não' then 'Não'
             else 'Não Informado'
         end as flag_possui_cadunico,
         null as flag_cadastro_atualizado,
