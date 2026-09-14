@@ -61,7 +61,7 @@ atendimentos_mes as (
         countif(tipo_atendimento = 'Atendimento Técnico') as qtd_atendimentos_tecnico,
         countif(tipo_atendimento = 'Atendimento Recepção') as qtd_atendimentos_recepcao,
         countif(tipo_atendimento = 'Outros Atendimentos') as qtd_atendimentos_outros,
-        max(case when tipo_atendimento = 'Atendimento Técnico' then data_atendimento end) as data_ultimo_atendimento_tecnico
+        max(data_atendimento) as data_ultimo_atendimento
     from atendimentos
     group by id_usuario, id_unidade, mes_referencia
 ),
@@ -78,6 +78,18 @@ profissional_referencia as (
     qualify row_number() over (
         partition by id_usuario, id_unidade, date_trunc(data_atendimento, month)
         order by (tipo_atendimento = 'Atendimento Técnico') desc, data_atendimento desc, id_atendimento desc
+    ) = 1
+),
+
+-- Família do usuário via Cadastro de Famílias (1 família por usuário responsável)
+familia_usuario as (
+    select
+        id_usuario_responsavel as id_usuario,
+        id_familia
+    from {{ ref('dim_familias') }}
+    qualify row_number() over (
+        partition by id_usuario_responsavel
+        order by data_ultima_modificacao desc
     ) = 1
 ),
 
@@ -384,6 +396,7 @@ oficinas as (
 final as (
     select
         am.id_usuario,
+        fam.id_familia,
         am.id_unidade,
         c.nome_unidade as nome_centro_pop,
         am.mes_referencia,
@@ -406,7 +419,7 @@ final as (
             and pi.data_inclusao_acompanhamento < date_add(am.mes_referencia, interval 1 month),
             false
         ) as flag_possui_plano_individual,
-        am.data_ultimo_atendimento_tecnico,
+        am.data_ultimo_atendimento,
         am.qtd_atendimentos_total,
         am.qtd_atendimentos_tecnico,
         am.qtd_atendimentos_recepcao,
@@ -464,8 +477,8 @@ final as (
         u.tipo_beneficio,
         u.beneficio,
         case u.flag_cadunico
-            when 'S' then 'Sim'
-            when 'N' then 'Não'
+            when 'Sim' then 'Sim'
+            when 'Não' then 'Não'
             else 'Não Informado'
         end as flag_possui_cadunico,
         null as flag_cadastro_atualizado,
@@ -519,6 +532,7 @@ final as (
             and am.id_unidade = pr.id_unidade
             and am.mes_referencia = pr.mes_referencia
     left join usuarios as u on am.id_usuario = u.id_usuario
+    left join familia_usuario as fam on am.id_usuario = fam.id_usuario
     left join pai_inclusao as pi
         on
             am.id_usuario = pi.id_usuario
