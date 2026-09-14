@@ -61,7 +61,7 @@ atendimentos_mes as (
         countif(tipo_atendimento = 'Atendimento Técnico') as qtd_atendimentos_tecnico,
         countif(tipo_atendimento = 'Atendimento Recepção') as qtd_atendimentos_recepcao,
         countif(tipo_atendimento = 'Outros Atendimentos') as qtd_atendimentos_outros,
-        max(case when tipo_atendimento = 'Atendimento Técnico' then data_atendimento end) as data_ultimo_atendimento_tecnico
+        max(data_atendimento) as data_ultimo_atendimento
     from atendimentos
     group by id_usuario, id_unidade, mes_referencia
 ),
@@ -419,7 +419,7 @@ final as (
             and pi.data_inclusao_acompanhamento < date_add(am.mes_referencia, interval 1 month),
             false
         ) as flag_possui_plano_individual,
-        am.data_ultimo_atendimento_tecnico,
+        am.data_ultimo_atendimento,
         am.qtd_atendimentos_total,
         am.qtd_atendimentos_tecnico,
         am.qtd_atendimentos_recepcao,
