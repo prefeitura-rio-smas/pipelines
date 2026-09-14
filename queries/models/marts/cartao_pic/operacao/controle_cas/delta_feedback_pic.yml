@@ -1,0 +1,8 @@
+version: 2
+
+models:
+  - name: delta_feedback_pic
+    description: >
+      Deltas para atualizar o ArcGIS do Survey Primeira Infância.
+      Compara o estado calculado (primeira_infancia_carioca) com o estado atual no ArcGIS (primeira_infancia_carioca_raw).
+    tags: [controle_cas]

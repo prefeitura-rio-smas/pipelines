@@ -1,0 +1,26 @@
+version: 2
+
+sources:
+  - name: arcgis_raw
+    description: "Equipamentos da rede socioassistencial — ArcGIS (SIURB)."
+    database: rj-smas
+    schema: arcgis_raw
+    tables:
+      - name: equipamento_raw
+        description: "Equipamentos (CRAS/CAS) — endereço, nome popular, UTL."
+
+models:
+  - name: raw_unidade
+    description: >
+      Unidades da rede socioassistencial (CRAS/CAS). Colunas principais:
+      nome_popular, endereco_completo, cas. Usado para enriquecer o Controle CAS.
+    tags: [weekly]
+    columns:
+      - name: codigo_unidade
+        description: "Código SIC da unidade."
+      - name: nome_popular
+        description: "Nome popular da unidade (ex: CRAS Centro)."
+      - name: endereco_completo
+        description: "Endereço completo da unidade."
+      - name: cas
+        description: "CAS ao qual a unidade pertence."

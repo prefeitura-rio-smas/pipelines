@@ -39,12 +39,12 @@ models:
         +schema: "{{ 'cartao_pic' if target.name == 'prod' else 'relatorio' }}"
         +tags: ["cartao_pic_status"]
 
-        feedback:
-          +schema: "{{ 'pic' if target.name == 'prod' else 'relatorio' }}"
+        operacao:
+          +schema: pic
           +tags: ["controle_cas"]
 
         meta_ar_cpf:
-          +schema: "{{ 'pequenos_cariocas' if target.name == 'prod' else 'relatorio' }}"
+          +schema: "{{ 'pequenos_cariocas' if target.name == 'prod' else 'pic' }}"
           +tags: ["meta_ar_cpf"]
 
       atividades:

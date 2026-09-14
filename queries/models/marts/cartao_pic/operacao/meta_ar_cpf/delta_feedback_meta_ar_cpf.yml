@@ -1,0 +1,17 @@
+version: 2
+
+sources:
+  - name: arcgis_raw
+    description: "Meta AR CPF — ArcGIS (SIURB)."
+    database: rj-smas
+    schema: arcgis_raw
+    tables:
+      - name: meta_ar_cpf_raw
+        description: "Crosswalk Meta AR CPF (ArcGIS) — used by the meta_ar_cpf feedback flow."
+
+models:
+  - name: delta_feedback_meta_ar_cpf
+    description: >
+      Deltas para atualizar o ArcGIS do Meta AR CPF.
+      Compara o estado calculado (crosswalk pic) com o estado atual no ArcGIS (meta_ar_cpf_raw).
+    tags: [meta_ar_cpf]
