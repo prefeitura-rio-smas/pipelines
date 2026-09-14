@@ -24,13 +24,12 @@ atual AS (
     FROM {{ source('arcgis_raw', 'controle_cas_raw') }}
 )
 
-SELECT
-    calculado.*
+SELECT calculado.*
 FROM calculado
-JOIN atual ON calculado.objectid = atual.objectid
+INNER JOIN atual ON calculado.objectid = atual.objectid
 WHERE
-    COALESCE(NULLIF(calculado.cartao_entregue, 'None'), '')   != COALESCE(NULLIF(atual.cartao_entregue, 'None'), '') OR
-    COALESCE(NULLIF(calculado.local_entrega, 'None'), '')    != COALESCE(NULLIF(atual.local_entrega, 'None'), '') OR
-    COALESCE(NULLIF(calculado.data_entrega_text, 'None'), '') != COALESCE(NULLIF(atual.data_entrega_text, 'None'), '') OR
-    COALESCE(NULLIF(calculado.resp_retirada, 'None'), '')     != COALESCE(NULLIF(atual.resp_retirada, 'None'), '') OR
-    COALESCE(NULLIF(CAST(calculado.data_particao_retirada AS STRING), 'None'), '') != COALESCE(NULLIF(CAST(atual.data_particao_retirada AS STRING), 'None'), '')
+    COALESCE(NULLIF(calculado.cartao_entregue, 'None'), '') != COALESCE(NULLIF(atual.cartao_entregue, 'None'), '')
+    OR COALESCE(NULLIF(calculado.local_entrega, 'None'), '') != COALESCE(NULLIF(atual.local_entrega, 'None'), '')
+    OR COALESCE(NULLIF(calculado.data_entrega_text, 'None'), '') != COALESCE(NULLIF(atual.data_entrega_text, 'None'), '')
+    OR COALESCE(NULLIF(calculado.resp_retirada, 'None'), '') != COALESCE(NULLIF(atual.resp_retirada, 'None'), '')
+    OR COALESCE(NULLIF(CAST(calculado.data_particao_retirada AS STRING), 'None'), '') != COALESCE(NULLIF(CAST(atual.data_particao_retirada AS STRING), 'None'), '')
