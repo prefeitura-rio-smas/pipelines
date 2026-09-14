@@ -64,7 +64,7 @@ models:
       - name: flag_possui_plano_individual
         description: True se o usuário possui Plano de Atendimento Individual (PAI).
       - name: data_ultimo_atendimento
-        description: Data do último atendimento do mês (qualquer tipo: técnico, recepção ou outros).
+        description: 'Data do último atendimento do mês (qualquer tipo: técnico, recepção ou outros).'
       - name: qtd_atendimentos_total
         description: Quantidade de atendimentos do usuário no mês (não cancelados).
       - name: qtd_atendimentos_tecnico
