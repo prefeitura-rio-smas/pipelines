@@ -81,6 +81,18 @@ profissional_referencia as (
     ) = 1
 ),
 
+-- Família do usuário via Cadastro de Famílias (1 família por usuário responsável)
+familia_usuario as (
+    select
+        id_usuario_responsavel as id_usuario,
+        id_familia
+    from {{ ref('dim_familias') }}
+    qualify row_number() over (
+        partition by id_usuario_responsavel
+        order by data_ultima_modificacao desc
+    ) = 1
+),
+
 -- Perfil cadastral do usuário
 usuarios as (
     select
@@ -384,6 +396,7 @@ oficinas as (
 final as (
     select
         am.id_usuario,
+        fam.id_familia,
         am.id_unidade,
         c.nome_unidade as nome_centro_pop,
         am.mes_referencia,
@@ -519,6 +532,7 @@ final as (
             and am.id_unidade = pr.id_unidade
             and am.mes_referencia = pr.mes_referencia
     left join usuarios as u on am.id_usuario = u.id_usuario
+    left join familia_usuario as fam on am.id_usuario = fam.id_usuario
     left join pai_inclusao as pi
         on
             am.id_usuario = pi.id_usuario
