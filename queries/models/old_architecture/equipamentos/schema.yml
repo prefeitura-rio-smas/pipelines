@@ -1,5 +1,12 @@
 version: 2
 
+sources:
+  - name: arcgis_raw
+    database: rj-smas
+    schema: arcgis_raw
+    tables:
+      - name: cras_cas_poligonos_smas_raw
+
 models:
   - name: poligonos_rmi
     description: "Tabela de polígonos CRAS e CAS"

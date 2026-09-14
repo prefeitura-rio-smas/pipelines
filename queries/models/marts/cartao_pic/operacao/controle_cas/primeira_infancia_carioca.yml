@@ -1,0 +1,20 @@
+version: 2
+
+models:
+  - name: primeira_infancia_carioca
+    description: >
+      Survey Primeira Infância Carioca — limpeza e filtro (arquivar_registro IS NULL).
+      Fonte: arcgis_raw.primeira_infancia_carioca_raw.
+    tags: [controle_cas]
+    columns:
+      - name: objectid
+        description: "ObjectID do ArcGIS."
+        tests: [not_null]
+      - name: cpf
+        description: "CPF sem máscara."
+      - name: nome_rf
+        description: "Nome do RF."
+      - name: local_entrega
+        description: "Local da entrega (CRAS ou outros)."
+      - name: data_entrega
+        description: "Data da entrega (epoch_ms → TIMESTAMP)."
