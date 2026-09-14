@@ -1,0 +1,31 @@
+version: 2
+
+models:
+  - name: mart_status
+    description: >
+      Status final do Cartão PIC (produto único empilhado). Incremental
+      insert_overwrite particionada por data_particao. Consome int_status
+      (estáticos) + Survey/Controle CAS/Eventos (dinâmicos).
+      Recorte de eventos: alerta IN (retirar_cartao, retirar_cartao_apos_atualizacao,
+      retirar_cartao_regularizacao_documento).
+    config:
+      tags: ["cartao_pic_status"]
+    columns:
+      - name: data_particao
+        description: "Partição da folha (cursor da status empilhada)."
+      - name: cod_familiar_fam
+        description: "Código da família."
+        tests: [not_null]
+      - name: num_cpf_responsavel
+        description: "CPF do RF."
+      - name: acao_smas
+        description: "Classificação: novos_beneficiarios / retorno_apos_atualizacao / ausencia_documentacao_obrigatoria / reconcessao / mantidos."
+      - name: alerta
+        description: "Destino operacional: retirar_cartao / retirar_cartao_apos_atualizacao / retirar_cartao_regularizacao_documento / aviso / NULL."
+      - name: status_entrega
+        description: "Status de entrega do cartão: retirado / não retirado / aguardando evento / verificar."
+      - name: flag_entrega
+        description: "Booleano: cartão entregue."
+      - name: data_atualizacao
+        description: "Data da atualização (partição atual = CURRENT_DATE; antigas = data_particao)."
+        tests: [not_null]

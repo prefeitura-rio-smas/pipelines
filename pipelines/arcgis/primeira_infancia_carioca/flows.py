@@ -28,7 +28,17 @@ def flow_transform_dbt():
     """Executa os modelos dbt do projeto PIC usando a integração nativa."""
     dbt_target = os.getenv("MODE", "staging")
     return trigger_dbt_cli_command(
-        command=f"dbt run --select tag:controle_cas --target {dbt_target}",
+        command=f"dbt run --select tag:controle_cas tag:cartao_pic_status --target {dbt_target}",
+        project_dir="queries",
+        profiles_dir="queries"
+    )
+
+@flow(name="Snapshot | Status Cartão PIC (diário)")
+def flow_snapshot_status_cartao_pic():
+    """Snapshot diário da partição corrente da status (preserva observações)."""
+    dbt_target = os.getenv("MODE", "staging")
+    return trigger_dbt_cli_command(
+        command=f"dbt snapshot --select tag:cartao_pic_status --target {dbt_target}",
         project_dir="queries",
         profiles_dir="queries"
     )

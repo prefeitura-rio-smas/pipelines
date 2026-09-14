@@ -1,0 +1,8 @@
+version: 2
+
+models:
+  - name: historico_feedback
+    description: >
+      Histórico incremental de todas as atualizações enviadas para o ArcGIS
+      (Controle CAS + Survey PIC). Chaveado por objectid + produto + coluna.
+    tags: [controle_cas]

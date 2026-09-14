@@ -1,0 +1,33 @@
+version: 2
+
+sources:
+  - name: pic_snapshots
+    description: "Snapshots das folhas históricas do Cartão PIC (dev)."
+    database: rj-smas-dev
+    schema: pic
+    tables:
+      - name: cartao_primeira_infancia_carioca_status_202508
+        description: "Folha ago/2025 (29.501)."
+      - name: cartao_primeira_infancia_carioca_status_completo_202602
+        description: "Folha fev/2026 (29.999)."
+      - name: cartao_primeira_infancia_carioca_status_completo_202604
+        description: "Folha abr/2026 (30.000) — folha imediatamente anterior."
+
+  - name: cartao_pic
+    description: "Dataset do Cartão PIC (prod)."
+    database: rj-smas
+    schema: cartao_pic
+    tables:
+      - name: beneficiarios
+        description: "Folha nova de beneficiários (30.000) gerada pela pipeline de elegibilidade."
+      - name: analise_elegibilidade_cadunico
+        description: "Análise completa de elegibilidade (1.118.156 famílias)."
+
+models:
+  - name: int_status
+    description: >
+      Base empilhada da status do Cartão PIC (atributos estáticos por folha).
+      4 partições: snapshots históricas (ago/2025, fev/2026, abr/2026) + folha nova
+      (jul/2026). Colunas novas das partições antigas = NULL.
+      Acao_smas, alerta, cohort, ativo/inativo, filtro_email_cas, flags.
+    tags: [cartao_pic_status]

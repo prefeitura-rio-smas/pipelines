@@ -1,0 +1,18 @@
+version: 2
+
+models:
+  - name: controle_cas
+    description: >
+      Controle CAS do Cartão PIC — limpeza e deduplicação.
+      Fonte: arcgis_raw.controle_cas_raw. Dedup por objectid.
+    tags: [controle_cas]
+    columns:
+      - name: objectid
+        description: "ObjectID do ArcGIS."
+        tests: [unique, not_null]
+      - name: cpf
+        description: "CPF sem máscara."
+      - name: data_particao
+        description: "Data da partição (folha)."
+      - name: cartao_entregue
+        description: "Status de entrega: CARTAO ENTREGUE ou NULL."
