@@ -486,3 +486,12 @@ case
     else upper({{ dsccbo_col }})
 end
 {% endmacro %}
+
+-- Converte booleano em rótulo Sim/Não (NULL vira 'Não Informado').
+{% macro map_flag_boolean (coluna) %}
+  case
+    when {{ coluna }} then 'Sim'
+    when not {{ coluna }} then 'Não'
+    else 'Não Informado'
+  end
+{% endmacro %}

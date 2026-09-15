@@ -53,18 +53,20 @@ models:
       - name: nome_social
         description: Nome social do usuário (cadastro).
       - name: flag_atendido_pontualmente
-        description: True se o usuário NÃO entrou no acompanhamento (PAI) até o fim do mês.
+        description: Sim/Não — o usuário NÃO entrou no acompanhamento (PAI) até o fim do mês.
       - name: flag_inserido_acompanhamento
-        description: True se o usuário foi inserido no acompanhamento (primeira evolução PAI).
+        description: Sim/Não — o usuário foi inserido no acompanhamento (primeira evolução PAI).
       - name: data_inclusao_acompanhamento
         description: |
           Data da inclusão no acompanhamento — campo 'Data do atendimento:' do
           formulário PAI (primeira data preenchida pelo profissional, por usuário
           e unidade). Fallback: data da evolução quando o campo não foi preenchido.
       - name: flag_possui_plano_individual
-        description: True se o usuário possui Plano de Atendimento Individual (PAI).
+        description: Sim/Não — o usuário possui Plano de Atendimento Individual (PAI).
       - name: data_ultimo_atendimento
         description: 'Data do último atendimento do mês (qualquer tipo: técnico, recepção ou outros).'
+      - name: tipo_ultimo_atendimento
+        description: 'Tipo do último atendimento do mês (Atendimento Técnico, Atendimento Recepção ou Outros Atendimentos).'
       - name: qtd_atendimentos_total
         description: Quantidade de atendimentos do usuário no mês (não cancelados).
       - name: qtd_atendimentos_tecnico
@@ -84,7 +86,7 @@ models:
       - name: filiacao_mae
         description: Nome da mãe (cadastro).
       - name: flag_registro_documentacao_civil
-        description: True se há registro de demanda de documentação civil (formulário Documentação Civil).
+        description: Sim/Não/Não Informado — há registro de demanda de documentação civil (formulário Documentação Civil).
       - name: genero
         description: Gênero informado no cadastro.
       - name: orientacao_sexual
@@ -102,23 +104,23 @@ models:
       - name: flag_deficiencia
         description: Sim/Não/Não Informado — possui deficiência (cadastro).
       - name: tipo_deficiencia
-        description: Tipo de deficiência (cadastro).
+        description: Tipo de deficiência traduzido (Deficiência auditiva total/parcial, visual parcial/total, motora, mental ou intelectual).
       - name: flag_uso_substancias_psicoativas
         description: |
-          True se o usuário faz uso de substâncias psicoativas — formulário
+          Sim/Não Informado — o usuário faz uso de substâncias psicoativas — formulário
           'Situação de Saúde' (campo 'Faz uso de substâncias psicoativas?');
           fallback no cadastro (grau_dependencia 1/2/3) quando não há formulário.
       - name: flag_problema_saude
         description: |
-          True se o usuário tem ou teve problema de saúde — formulário
+          Sim/Não/Não Informado — o usuário tem ou teve problema de saúde — formulário
           'Situação de Saúde' (campo 'Situação'); fallback no cadastro
           (flag_saude_mental_comprometida) quando não há formulário.
       - name: flag_acompanhamento_saude
         description: |
-          True se o usuário realiza acompanhamento de saúde — formulário
+          Sim/Não Informado — o usuário realiza acompanhamento de saúde — formulário
           'Situação de Saúde' (campo 'Local onde faz tratamento'). Sem fallback.
       - name: flag_possui_vinculo_familiar
-        description: Possui referências familiares (formulário Centro POP - Atendimento Social).
+        description: Sim/Não/Não Informado — possui referências familiares (formulário Centro POP - Atendimento Social).
       - name: territorio_referencia_familia
         description: NULL — campo ainda não disponível na fonte.
       - name: flag_possibilidade_reinsercao_familiar
@@ -146,12 +148,12 @@ models:
         tests:
           - accepted_values:
               values: ['Sim', 'Não', 'Não Informado']
-      - name: flag_cadastro_atualizado
-        description: NULL — campo ainda não disponível na fonte.
+      - name: data_atualizacao_cadunico
+        description: Última data de atualização do CadÚnico da família (raw_identificacao_controle, por id_familia).
       - name: nis_usuario
         description: NIS do usuário (CadÚnico, via CPF).
       - name: flag_participacao_oficinas
-        description: True se o usuário participou de oficina/atividade coletiva no mês na unidade.
+        description: Sim/Não — o usuário participou de oficina/atividade coletiva no mês na unidade.
       - name: qtd_oficinas_participadas_mes
         description: Quantidade de oficinas participadas no mês de referência.
       - name: demandas
