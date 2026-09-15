@@ -61,10 +61,23 @@ atendimentos_mes as (
         countif(tipo_atendimento = 'Atendimento Técnico') as qtd_atendimentos_tecnico,
         countif(tipo_atendimento = 'Atendimento Recepção') as qtd_atendimentos_recepcao,
         countif(tipo_atendimento = 'Outros Atendimentos') as qtd_atendimentos_outros,
-        max(data_atendimento) as data_ultimo_atendimento,
-        array_agg(tipo_atendimento order by data_atendimento desc, id_atendimento desc limit 1)[offset(0)] as tipo_ultimo_atendimento
+        max(data_atendimento) as data_ultimo_atendimento
     from atendimentos
     group by id_usuario, id_unidade, mes_referencia
+),
+
+-- Tipo do último atendimento do mês (qualquer tipo), sem array.
+ultimo_atendimento as (
+    select
+        id_usuario,
+        id_unidade,
+        tipo_atendimento as tipo_ultimo_atendimento,
+        date_trunc(data_atendimento, month) as mes_referencia
+    from atendimentos
+    qualify row_number() over (
+        partition by id_usuario, id_unidade, date_trunc(data_atendimento, month)
+        order by data_atendimento desc, id_atendimento desc
+    ) = 1
 ),
 
 -- Profissional de referência: profissional do último atendimento TÉCNICO do mês
@@ -430,7 +443,7 @@ final as (
             false
         )') }} as flag_possui_plano_individual,
         am.data_ultimo_atendimento,
-        am.tipo_ultimo_atendimento,
+        ul.tipo_ultimo_atendimento,
         am.qtd_atendimentos_total,
         am.qtd_atendimentos_tecnico,
         am.qtd_atendimentos_recepcao,
@@ -545,6 +558,11 @@ final as (
             am.id_usuario = pr.id_usuario
             and am.id_unidade = pr.id_unidade
             and am.mes_referencia = pr.mes_referencia
+    left join ultimo_atendimento as ul
+        on
+            am.id_usuario = ul.id_usuario
+            and am.id_unidade = ul.id_unidade
+            and am.mes_referencia = ul.mes_referencia
     left join usuarios as u on am.id_usuario = u.id_usuario
     left join familia_usuario as fam on am.id_usuario = fam.id_usuario
     left join pai_inclusao as pi
