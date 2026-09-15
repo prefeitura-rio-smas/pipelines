@@ -3,6 +3,12 @@ version: "1.0"
 profile: "rj_smas_dev"
 model-paths: ["models"]
 
+vars:
+  # Mês de referência do RMA CRAS ('AAAA-MM'); vazio = mês corrente.
+  competencia: ''
+  # Corte de extrema pobreza per capita (R$) para o item B.1.
+  corte_extrema_pobreza: 218
+
 models:
   queries:
     # --- Nova Arquitetura Medallion ---
