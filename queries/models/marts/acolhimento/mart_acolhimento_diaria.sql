@@ -226,7 +226,8 @@ final as (
 
         -- ===== UNIDADE =====
         un.id_unidade                         as sequs,
-        un.nome_unidade                       as unidade,
+        -- Normaliza espacos duplos no nome (2 CTs tinham '  ' interno e sumiam do dash).
+        regexp_replace(un.nome_unidade, r'\s+', ' ') as unidade,
         un.tipo_unidade as tipo_unidade,
         un.classe,
 
