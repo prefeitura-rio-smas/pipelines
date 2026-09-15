@@ -592,6 +592,9 @@ final as (
             am.id_usuario = ofc.id_usuario
             and am.id_unidade = ofc.id_unidade
             and am.mes_referencia = ofc.mes_referencia
+    -- Exclui usuários de teste (o inner join com dim_usuarios já garante,
+    -- este filtro é defesa explícita: nenhum usuário teste passa na mart).
+    where lower(u.nome) not like '%teste%'
 )
 
 select * from final
