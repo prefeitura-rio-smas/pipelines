@@ -586,7 +586,8 @@ final as (
     left join questionario_situacao_usuario as q on am.id_usuario = q.id_usuario
     left join documentacao_form as doc on am.id_usuario = doc.id_paciente
     left join nis_cadunico as n on u.cpf = n.cpf
-    left join cadunico_atualizacao as ic on fam.id_familia = ic.id_familia
+    -- ic.id_familia é STRING no CadÚnico; fam.id_familia é INT64.
+    left join cadunico_atualizacao as ic on fam.id_familia = safe_cast(ic.id_familia as int64)
     left join oficinas as ofc
         on
             am.id_usuario = ofc.id_usuario
