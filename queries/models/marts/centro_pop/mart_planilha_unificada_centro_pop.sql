@@ -66,6 +66,20 @@ atendimentos_mes as (
     group by id_usuario, id_unidade, mes_referencia
 ),
 
+-- Tipo do último atendimento do mês (qualquer tipo), sem array.
+ultimo_atendimento as (
+    select
+        id_usuario,
+        id_unidade,
+        tipo_atendimento as tipo_ultimo_atendimento,
+        date_trunc(data_atendimento, month) as mes_referencia
+    from atendimentos
+    qualify row_number() over (
+        partition by id_usuario, id_unidade, date_trunc(data_atendimento, month)
+        order by data_atendimento desc, id_atendimento desc
+    ) = 1
+),
+
 -- Profissional de referência: profissional do último atendimento TÉCNICO do mês
 -- (fallback: último atendimento do mês de qualquer tipo).
 profissional_referencia as (
@@ -393,6 +407,15 @@ oficinas as (
     group by p.id_usuario, p.id_unidade, mes_referencia
 ),
 
+-- Última atualização do CadÚnico por família (grão família)
+cadunico_atualizacao as (
+    select
+        id_familia,
+        max(data_atualizacao) as data_atualizacao
+    from {{ ref('raw_identificacao_controle') }}
+    group by id_familia
+),
+
 final as (
     select
         am.id_usuario,
@@ -403,23 +426,24 @@ final as (
         pr.profissional as profissional_referencia,
         u.nome as nome_usuario,
         u.nome_social,
-        not coalesce(
+        {{ map_flag_boolean('not coalesce(
             pi.data_inclusao_acompanhamento is not null
             and pi.data_inclusao_acompanhamento < date_add(am.mes_referencia, interval 1 month),
             false
-        ) as flag_atendido_pontualmente,
-        coalesce(
+        )') }} as flag_atendido_pontualmente,
+        {{ map_flag_boolean('coalesce(
             pi.data_inclusao_acompanhamento is not null
             and pi.data_inclusao_acompanhamento < date_add(am.mes_referencia, interval 1 month),
             false
-        ) as flag_inserido_acompanhamento,
+        )') }} as flag_inserido_acompanhamento,
         pi.data_inclusao_acompanhamento,
-        coalesce(
+        {{ map_flag_boolean('coalesce(
             pi.data_inclusao_acompanhamento is not null
             and pi.data_inclusao_acompanhamento < date_add(am.mes_referencia, interval 1 month),
             false
-        ) as flag_possui_plano_individual,
+        )') }} as flag_possui_plano_individual,
         am.data_ultimo_atendimento,
+        ul.tipo_ultimo_atendimento,
         am.qtd_atendimentos_total,
         am.qtd_atendimentos_tecnico,
         am.qtd_atendimentos_recepcao,
@@ -433,7 +457,7 @@ final as (
         u.data_nascimento,
         cast(date_diff(date_add(am.mes_referencia, interval 1 month) - interval 1 day, u.data_nascimento, year) as int64) as idade,
         u.filiacao_mae,
-        doc.flag_registro_documentacao_civil,
+        {{ map_flag_boolean('doc.flag_registro_documentacao_civil') }} as flag_registro_documentacao_civil,
         u.genero,
         u.orientacao_sexual,
         u.raca_cor,
@@ -446,21 +470,24 @@ final as (
         u.serie_escolar as ano_cursando,
         u.escolaridade_indice as nivel_escolaridade,
         u.flag_deficiencia,
-        u.tipo_deficiencia,
+        {{ map_coluna_tipo_deficiencia('u.tipo_deficiencia') }} as tipo_deficiencia,
         case
-            when ss.uso_substancias = 'S' then true
-            when ss.uso_substancias = 'N' then false
-            when u.grau_dependencia in ('1', '2', '3') then true
+            when ss.uso_substancias = 'S' then 'Sim'
+            when ss.uso_substancias = 'N' then 'Não'
+            when u.grau_dependencia in ('1', '2', '3') then 'Sim'
+            else 'Não Informado'
         end as flag_uso_substancias_psicoativas,
         case
-            when nullif(ss.situacao_saude, 'undefined') is not null then true
-            when u.flag_saude_mental_comprometida not in ('N', '') then true
-            when u.flag_saude_mental_comprometida = 'N' then false
+            when nullif(ss.situacao_saude, 'undefined') is not null then 'Sim'
+            when u.flag_saude_mental_comprometida not in ('N', '') then 'Sim'
+            when u.flag_saude_mental_comprometida = 'N' then 'Não'
+            else 'Não Informado'
         end as flag_problema_saude,
         case
-            when nullif(ss.local_tratamento, 'undefined') is not null then true
+            when nullif(ss.local_tratamento, 'undefined') is not null then 'Sim'
+            else 'Não Informado'
         end as flag_acompanhamento_saude,
-        asf.flag_possui_referencias_familiares as flag_possui_vinculo_familiar,
+        {{ map_flag_boolean('asf.flag_possui_referencias_familiares') }} as flag_possui_vinculo_familiar,
         null as territorio_referencia_familia,
         null as flag_possibilidade_reinsercao_familiar,
         u.atvd_remunerada as flag_exerce_atividade_renda,
@@ -481,9 +508,9 @@ final as (
             when 'Não' then 'Não'
             else 'Não Informado'
         end as flag_possui_cadunico,
-        null as flag_cadastro_atualizado,
+        ic.data_atualizacao as data_atualizacao_cadunico,
         n.nis as nis_usuario,
-        coalesce(ofc.qtd_oficinas > 0, false) as flag_participacao_oficinas,
+        {{ map_flag_boolean('coalesce(ofc.qtd_oficinas > 0, false)') }} as flag_participacao_oficinas,
         ofc.qtd_oficinas as qtd_oficinas_participadas_mes,
         array(
             select x
@@ -531,6 +558,11 @@ final as (
             am.id_usuario = pr.id_usuario
             and am.id_unidade = pr.id_unidade
             and am.mes_referencia = pr.mes_referencia
+    left join ultimo_atendimento as ul
+        on
+            am.id_usuario = ul.id_usuario
+            and am.id_unidade = ul.id_unidade
+            and am.mes_referencia = ul.mes_referencia
     left join usuarios as u on am.id_usuario = u.id_usuario
     left join familia_usuario as fam on am.id_usuario = fam.id_usuario
     left join pai_inclusao as pi
@@ -554,11 +586,16 @@ final as (
     left join questionario_situacao_usuario as q on am.id_usuario = q.id_usuario
     left join documentacao_form as doc on am.id_usuario = doc.id_paciente
     left join nis_cadunico as n on u.cpf = n.cpf
+    -- ic.id_familia é STRING no CadÚnico; fam.id_familia é INT64.
+    left join cadunico_atualizacao as ic on fam.id_familia = safe_cast(ic.id_familia as int64)
     left join oficinas as ofc
         on
             am.id_usuario = ofc.id_usuario
             and am.id_unidade = ofc.id_unidade
             and am.mes_referencia = ofc.mes_referencia
+    -- Exclui usuários de teste (o inner join com dim_usuarios já garante,
+    -- este filtro é defesa explícita: nenhum usuário teste passa na mart).
+    where lower(u.nome) not like '%teste%'
 )
 
 select * from final
