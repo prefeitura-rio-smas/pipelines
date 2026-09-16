@@ -45,7 +45,7 @@ models:
         +tags: ["monthly"]
 
       centro_pop:
-        +tags: ["monthly"]
+        +tags: ["daily"]
 
       poc_paif:
         +materialized: table
