@@ -219,7 +219,7 @@ agg_beneficios_vulnerabilidades as (
         {{ contar('p.id_familia', "ben.descricao = 'Bolsa Família'") }} as total_famil_paif_bf_b2,
         {{ contar('p.id_familia', "vul.id_vulnerabilidade = " ~ id_vulnerabilidade_b3 ~ " and ben.descricao = 'Bolsa Família'") }} as total_famil_paif_descumprimento_b3,
         {{ contar('p.id_familia', "ben.descricao = 'BPC-Benefício de Prestação Continuada'") }} as total_famil_paif_bpc_b4,
-        {{ contar('p.id_familia', "vio.descricao = 'Trabalho Infantil' and " ~ calc_idade('p.data_nascimento', 'fim_do_mes') ~ " < 18") }} as trab_infantil_crianca_adolescente_b5
+        {{ contar('p.id_familia', "vio.descricao = 'Trabalho Infantil' and " ~ calc_idade('p.data_nascimento', fim_mes_referencia()) ~ " < 18") }} as trab_infantil_crianca_adolescente_b5
     from paif_novas as p
     left join unnest(p.beneficio) as ben on true
     left join unnest(p.vulnerabilidades) as vul on true
@@ -242,7 +242,7 @@ ciclos_abertos_no_fim_mes as (
 agg_acolhimento as (
     select
         p.id_unidade,
-        {{ contar('p.id_familia', "c.id_usuario is not null and " ~ calc_idade('p.data_nascimento', 'fim_do_mes') ~ " < 18") }} as total_famil_paif_acolhimento_b6
+        {{ contar('p.id_familia', "c.id_usuario is not null and " ~ calc_idade('p.data_nascimento', fim_mes_referencia()) ~ " < 18") }} as total_famil_paif_acolhimento_b6
     from paif_novas as p
     left join ciclos_abertos_no_fim_mes as c on p.id_usuario = c.id_usuario
     group by 1
@@ -292,7 +292,7 @@ pool_evolucoes as (
     where
         e.origem_modulo = 'administrativa'
         and e.tipo_evolucao = 'F'
-        and e.data_cancelamento is null
+        and {{ nao_cancelado('e.data_cancelamento', none) }}
         and regexp_extract(e.descricao_evolucao, r'<h3>(.*?)</h3>') = 'CRAS - Ficha de Atendimento Individualizado'
     union all
     select
@@ -315,7 +315,7 @@ pool_evolucoes as (
     inner join {{ ref('dim_usuarios') }} as u on m.id_paciente = u.id_usuario
     where
         f.origem_modulo = 'familia'
-        and f.data_cancelamento is null
+        and {{ nao_cancelado('f.data_cancelamento', none) }}
 ),
 
 base_evolucoes as (
@@ -394,7 +394,7 @@ presencas as (
         a.nome_atividade,
         a.nome_tipo_atividade,
         a.recorrencia,
-        {{ calc_idade('u.data_nascimento', 'fim_do_mes') }} as idade_anos,
+        {{ calc_idade('u.data_nascimento', fim_mes_referencia()) }} as idade_anos,
         u.flag_deficiencia
     from {{ ref('fct_presencas_usuarios') }} as pr
     left join {{ ref('dim_atividades_grupo') }} as a on pr.id_atividade = a.id_atividade

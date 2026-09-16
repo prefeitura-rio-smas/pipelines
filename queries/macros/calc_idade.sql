@@ -1,21 +1,23 @@
+{#
+    Idade completa em qualquer expressão SQL de data de referência.
+    Quando omitida, preserva o comportamento histórico de usar current_date().
+#}
 {% macro calc_idade(data_nascimento, data_referencia=none) %}
-    -- Idade aniversario-correta na data de referência (expressão SQL como texto).
-    -- Sem data_referencia, usa current_date() (comportamento original).
-    -- Sentinel 'fim_do_mes' resolve last_day do mês de referência (var competencia).
-    -- Ex. RMA: calc_idade('data_nascimento', 'fim_do_mes').
-    {% if data_referencia is none %}
-        {% set ref = "current_date()" %}
-    {% elif data_referencia == 'fim_do_mes' %}
-        {% set ref = fim_mes_referencia() %}
-    {% else %}
-        {% set ref = data_referencia %}
+    {% set ref = data_referencia %}
+    {% if ref is none %}
+        {% set ref = 'current_date()' %}
     {% endif %}
-    date_diff({{ ref }}, {{ data_nascimento }}, year) -
+    date_diff(date({{ ref }}), date({{ data_nascimento }}), year) -
     case
-        when extract(month from {{ ref }}) < extract(month from {{ data_nascimento }})
+        when
+            extract(month from date({{ ref }}))
+            < extract(month from date({{ data_nascimento }}))
             then 1
-        when extract(month from {{ ref }}) = extract(month from {{ data_nascimento }})
-              and extract(day from {{ ref }}) < extract(day from {{ data_nascimento }})
+        when
+            extract(month from date({{ ref }}))
+            = extract(month from date({{ data_nascimento }}))
+            and extract(day from date({{ ref }}))
+            < extract(day from date({{ data_nascimento }}))
             then 1
         else 0
     end

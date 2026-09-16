@@ -33,7 +33,8 @@ models:
       - O mapeamento `id_vulnerabilidade = 1` = "Descumprimento de condicionalidades"
         (B3) vem da série legada (`seqvulnerab = 1`) e ainda NÃO está confirmado por
         catálogo no repo — validar com o domínio (SMAS).
-      - Idades são avaliadas no fim do mês de competência (`calc_idade(..., 'fim_do_mes')`),
+      - Idades são avaliadas no fim do mês de competência
+        (`calc_idade(..., fim_mes_referencia())`),
         ao contrário do legado (current_date na execução do job) — muda paridade em B5/D.6.
       - Unidade das famílias PAIF atribuída em 3 níveis (serviço → operador → atendimento);
         legado usava apenas o operador. Pode deslocar A1/A2 e séries B vs. histórico.

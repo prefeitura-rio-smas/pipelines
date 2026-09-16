@@ -1,0 +1,73 @@
+version: 2
+
+macros:
+  - name: inicio_mes
+    description: "Retorna o primeiro dia do mês de qualquer expressão SQL de data, datetime ou timestamp."
+    arguments:
+      - name: data_referencia
+        type: string
+        description: "Expressão SQL usada como referência."
+
+  - name: fim_mes
+    description: "Retorna o último dia do mês de qualquer expressão SQL de data, datetime ou timestamp."
+    arguments:
+      - name: data_referencia
+        type: string
+        description: "Expressão SQL usada como referência."
+
+  - name: mes_referencia
+    description: "Retorna o primeiro dia da competência mensal definida em uma variável do dbt; usa o mês corrente quando a variável estiver ausente ou vazia."
+    arguments:
+      - name: nome_variavel
+        type: string
+        description: "Nome da variável dbt no formato AAAA-MM. Padrão: competencia."
+
+  - name: fim_mes_referencia
+    description: "Retorna o último dia da competência mensal definida em uma variável do dbt."
+    arguments:
+      - name: nome_variavel
+        type: string
+        description: "Nome da variável dbt no formato AAAA-MM. Padrão: competencia."
+
+  - name: no_mes
+    description: "Gera um predicado de intervalo semiaberto para verificar se uma data pertence ao mês de referência."
+    arguments:
+      - name: col_data
+        type: string
+        description: "Expressão SQL que contém a data a testar."
+      - name: data_referencia
+        type: string
+        description: "Expressão SQL opcional; quando omitida, usa mes_referencia()."
+
+  - name: nao_cancelado
+    description: "Gera o predicado de registro não cancelado para uma flag ou uma coluna de data de cancelamento."
+    arguments:
+      - name: coluna
+        type: string
+        description: "Expressão SQL da flag ou data de cancelamento."
+      - name: valor_cancelado
+        type: string
+        description: "Valor que representa cancelamento; use none para exigir que a coluna seja nula."
+
+  - name: calc_idade
+    description: "Calcula a idade completa entre o nascimento e qualquer expressão SQL de data de referência."
+    arguments:
+      - name: data_nascimento
+        type: string
+        description: "Expressão SQL da data de nascimento."
+      - name: data_referencia
+        type: string
+        description: "Expressão SQL opcional; quando omitida, usa current_date()."
+
+  - name: contar
+    description: "Gera contagens simples, distintas ou condicionais, usando CASE WHEN para manter a expressão reutilizável."
+    arguments:
+      - name: expr
+        type: string
+        description: "Expressão SQL a contar; pode ser * somente quando distinto=false."
+      - name: condicao
+        type: string
+        description: "Condição SQL opcional para incluir uma linha na contagem."
+      - name: distinto
+        type: bool
+        description: "Quando true, aplica DISTINCT. Padrão: true para compatibilidade."
