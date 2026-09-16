@@ -4,7 +4,7 @@
 -- Reúne a folha corrente (cartao_pic.beneficiarios) com: Controle CAS (CRAS,
 -- doc verificada), Survey de entregas (dedup de negócio: primeira entrega
 -- registrada no ArcGIS, created_date ASC) e Eventos de entrega (capacidade
--- acumulada por bairro, recorte alerta IN retirar_*).
+-- acumulada por bairro, recorte por acao_smas: novos/retorno/ausência).
 --
 -- Base INCREMENTAL (insert_overwrite por data_particao): cada execução processa
 -- apenas as partições da folha corrente e preserva as históricas materializadas.
@@ -188,7 +188,7 @@ beneficiario_enriquecido as (
             and s.data_particao = c.data_particao
 ),
 
--- Junção final: base + eventos (recorte alerta IN retirar_*) + survey
+-- Junção final: base + eventos (recorte por acao_smas: novos/retorno/ausência) + survey
 final as (
     select
         s.data_particao,
@@ -266,7 +266,7 @@ final as (
     left join eventos_com_faixa as b
         on
             s.bairro = b.bairro
-            and s.alerta in ('retirar_cartao', 'retirar_cartao_apos_atualizacao', 'retirar_cartao_regularizacao_documento')
+            and s.acao_smas in ('novos_beneficiarios', 'retorno_apos_atualizacao', 'ausencia_documentacao_obrigatoria')
             and s.rank_alfabetico > b.cap_anterior
             and s.rank_alfabetico <= b.rank_maximo_acumulado
     left join survey as e
