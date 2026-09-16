@@ -6,8 +6,10 @@ model-paths: ["models"]
 vars:
   # Mês de referência do RMA CRAS ('AAAA-MM'); vazio = mês corrente.
   competencia: ''
-  # Corte de extrema pobreza per capita (R$) para o item B.1.
+  # Regras operacionais do Bloco B. Confirmar os valores com a SMAS antes
+  # de alterá-los; ficam centralizados aqui para não ficarem hardcoded na mart.
   corte_extrema_pobreza: 218
+  id_vulnerabilidade_descumprimento_condicionalidades: 1
 
 models:
   queries:

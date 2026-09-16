@@ -8,3 +8,8 @@ date_trunc(current_date(), month)
 date('{{ competencia }}-01')
 {% endif %}
 {% endmacro %}
+
+{% macro fim_mes_referencia() %}
+-- Último dia do mês de referência dos RMAs.
+last_day({{ mes_referencia() }})
+{% endmacro %}

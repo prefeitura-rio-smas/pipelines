@@ -6,7 +6,7 @@
     {% if data_referencia is none %}
         {% set ref = "current_date()" %}
     {% elif data_referencia == 'fim_do_mes' %}
-        {% set ref = "last_day(" ~ mes_referencia() ~ ")" %}
+        {% set ref = fim_mes_referencia() %}
     {% else %}
         {% set ref = data_referencia %}
     {% endif %}
