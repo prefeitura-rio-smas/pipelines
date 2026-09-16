@@ -1,4 +1,4 @@
-{{ config(tags = ['monthly']) }}
+{{ config(tags = ['daily']) }}
 
 -- RMA CRAS: indicadores do mês de referência por unidade CRAS (nova arquitetura).
 -- Bloco I  (A1, A2, B1-B6): famílias em acompanhamento PAIF.
