@@ -12,18 +12,19 @@ sources:
 models:
   - name: raw_survey_primeira_infancia
     description: >
-      Survey de entrega do Cartão Primeira Infância Carioca.
-      Dedup por CPF pela PRIMEIRA entrega registrada no ArcGIS (created_date ASC
-      — o registro mais antigo; data_entrega é preenchida pelo operador e pode
-      ter erro de semântica). Converte datas epoch_ms para TIMESTAMP e
+      Survey de entrega do Cartão Primeira Infância Carioca (limpeza técnica).
+      Um CPF pode ter múltiplos registros (retiradas/edições); o dedup de
+      negócio (primeira entrega registrada no ArcGIS, por created_date ASC)
+      é aplicado na int_status. Converte datas epoch_ms para TIMESTAMP e
       data_nascimento para DATE.
     tags: [weekly]
     columns:
       - name: cpf_sem_formatacao
-        description: "CPF sem máscara (últimos 11 dígitos). A fonte pode ter registro sem CPF (raw preserva)."
-        tests: [unique]
+        description: "CPF sem máscara (últimos 11 dígitos). Pode repetir (raw preserva todos os registros) e a fonte pode ter registro sem CPF."
       - name: data_entrega
-        description: "Data da entrega (epoch_ms → TIMESTAMP)."
+        description: "Data da entrega (epoch_ms → TIMESTAMP), preenchida pelo operador."
+      - name: created_date
+        description: "Momento em que o registro foi criado no ArcGIS (epoch_ms → TIMESTAMP)."
       - name: data_nascimento
         description: "Data de nascimento do RF."
       - name: local_entrega

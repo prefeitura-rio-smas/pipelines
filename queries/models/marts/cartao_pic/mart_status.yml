@@ -3,11 +3,9 @@ version: 2
 models:
   - name: mart_status
     description: >
-      Status final do Cartão PIC (produto único empilhado). Incremental
-      insert_overwrite particionada por data_particao. Consome int_status
-      (estáticos) + Survey/Controle CAS/Eventos (dinâmicos).
-      Recorte de eventos: alerta IN (retirar_cartao, retirar_cartao_apos_atualizacao,
-      retirar_cartao_regularizacao_documento).
+      Status final do Cartão PIC (produto único empilhado). Apresentação final
+      sobre a int_status: cases de status/entrega + carimbo de atualização.
+      Incremental insert_overwrite particionada por data_particao.
     config:
       tags: ["cartao_pic_status"]
     columns:

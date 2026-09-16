@@ -16,10 +16,17 @@ sources:
 models:
   - name: int_status
     description: >
-      Base empilhada da status do Cartão PIC (atributos estáticos por folha).
-      Incremental por data_particao: cada execução processa a folha corrente
-      (cartao_pic.beneficiarios) e preserva as partições históricas. No bootstrap,
-      herda as partições anteriores da própria base oficial (cartao_pic.status).
-      Colunas novas das partições antigas = NULL.
-      Acao_smas, alerta, cohort, ativo/inativo, filtro_email_cas, flags.
+      Base empilhada do Cartão PIC: folha corrente (cartao_pic.beneficiarios)
+      enriquecida com Controle CAS (CRAS/doc), Survey de entregas (dedup de
+      negócio: primeira entrega registrada no ArcGIS) e Eventos (capacidade
+      acumulada por bairro, recorte alerta IN retirar_*).
+      Incremental por data_particao: preserva as partições históricas; no
+      bootstrap herda as anteriores da própria base oficial (cartao_pic.status).
+      A mart_status aplica apenas a apresentação final (cases).
     tags: [cartao_pic_status]
+    tests:
+      - dbt_utils.unique_combination_of_columns:
+          combination_of_columns:
+            - data_particao
+            - cod_familiar_fam
+          name: unique_int_status_data_particao_familia

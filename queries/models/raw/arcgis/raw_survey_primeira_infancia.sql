@@ -1,7 +1,7 @@
 -- Camada Raw: Survey Primeira Infância Carioca (entregas de cartão)
 -- Fonte: ArcGIS (primeira_infancia_carioca_raw)
--- Limpeza: arquivar_registro NULL, cpf sem máscara, datas epoch -> DATE,
--- dedup por CPF (primeira entrega registrada no ArcGIS: created_date ASC)
+-- Limpeza técnica: arquivar_registro NULL, cpf sem máscara, datas epoch -> DATE.
+-- O dedup de negócio (primeira entrega registrada no ArcGIS) é feito na int_status.
 with source as (
     select
         * except (data_entrega, created_date, last_edited_date, data_nascimento),
@@ -15,16 +15,6 @@ with source as (
         regexp_replace(cpf, r'[.-]', '') as cpf_sem_formatacao
     from {{ source('arcgis_raw', 'primeira_infancia_carioca_raw') }}
     where arquivar_registro is null
-),
-
-dedup as (
-    select
-        *,
-        row_number() over (
-            partition by cpf_sem_formatacao order by created_date asc
-        ) as id_atualizacao
-    from source
 )
 
-select * from dedup
-where id_atualizacao = 1
+select * from source
