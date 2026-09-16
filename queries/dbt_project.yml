@@ -41,6 +41,12 @@ models:
       atividades:
         +tags: ["daily"]
 
+      rma_cras:
+        +tags: ["monthly"]
+
+      centro_pop:
+        +tags: ["monthly"]
+
       poc_paif:
         +materialized: table
         +schema: "{{ 'marts' if target.name == 'prod' else 'relatorio' }}"
@@ -93,6 +99,7 @@ models:
         +enabled: true  # Pipeline ArcGIS PIC (1/1h)
         +materialized: table
         +schema: pic
+        +tags: ["hourly"]
 
         controle_cas:
           +tags: ["controle_cas"]
