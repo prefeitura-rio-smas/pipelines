@@ -13,8 +13,10 @@ models:
   - name: raw_survey_primeira_infancia
     description: >
       Survey de entrega do Cartão Primeira Infância Carioca.
-      Dedup por CPF (última versão por timestamp_captura). Converte datas
-      epoch_ms para TIMESTAMP e data_nascimento para DATE.
+      Dedup por CPF pela PRIMEIRA entrega registrada no ArcGIS (created_date ASC
+      — o registro mais antigo; data_entrega é preenchida pelo operador e pode
+      ter erro de semântica). Converte datas epoch_ms para TIMESTAMP e
+      data_nascimento para DATE.
     tags: [weekly]
     columns:
       - name: cpf_sem_formatacao

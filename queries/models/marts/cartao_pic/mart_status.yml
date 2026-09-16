@@ -29,3 +29,9 @@ models:
       - name: data_atualizacao
         description: "Data da atualização (partição atual = CURRENT_DATE; antigas = data_particao)."
         tests: [not_null]
+    tests:
+      - dbt_utils.unique_combination_of_columns:
+          combination_of_columns:
+            - data_particao
+            - cod_familiar_fam
+          name: unique_mart_status_data_particao_familia

@@ -43,6 +43,11 @@ controle_cas as (
         on c.cras = trim(upper(regexp_replace(normalize(u.nome_popular, nfd), r'\pM', '')))
 ),
 
+-- Survey: entregas reais (dedup por CPF no raw: primeira entrega registrada no ArcGIS)
+survey as (
+    select * from {{ ref('raw_survey_primeira_infancia') }}
+),
+
 -- Eventos: capacidade acumulada por bairro (quebras de bairro)
 eventos_com_faixa as (
     select
@@ -79,11 +84,6 @@ beneficiario_enriquecido as (
         on
             s.num_cpf_responsavel = c.cpf_sem_formatacao
             and s.data_particao = c.data_particao
-),
-
--- Survey: entregas reais (dedup por CPF)
-survey as (
-    select * from {{ ref('raw_survey_primeira_infancia') }}
 ),
 
 -- Junção final: base + eventos (recorte alerta IN retirar_*) + survey
