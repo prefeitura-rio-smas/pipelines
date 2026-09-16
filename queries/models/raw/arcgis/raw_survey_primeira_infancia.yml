@@ -18,8 +18,8 @@ models:
     tags: [weekly]
     columns:
       - name: cpf_sem_formatacao
-        description: "CPF sem máscara (últimos 11 dígitos)."
-        tests: [not_null, unique]
+        description: "CPF sem máscara (últimos 11 dígitos). A fonte pode ter registro sem CPF (raw preserva)."
+        tests: [unique]
       - name: data_entrega
         description: "Data da entrega (epoch_ms → TIMESTAMP)."
       - name: data_nascimento

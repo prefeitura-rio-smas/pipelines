@@ -23,12 +23,22 @@ def flow_extract_primeira_infancia():
         layer_idx=0
     )
 
-@flow(name="Transformação | dbt (PIC)")
+@flow(name="Transformação | dbt (Controle CAS)")
 def flow_transform_dbt():
-    """Executa os modelos dbt do projeto PIC usando a integração nativa."""
+    """Executa os modelos dbt do Controle CAS usando a integração nativa."""
     dbt_target = os.getenv("MODE", "staging")
     return trigger_dbt_cli_command(
-        command=f"dbt run --select tag:controle_cas tag:cartao_pic_status --target {dbt_target}",
+        command=f"dbt run --select tag:controle_cas --target {dbt_target}",
+        project_dir="queries",
+        profiles_dir="queries"
+    )
+
+@flow(name="Transformação | Status Cartão PIC")
+def flow_transform_status_cartao_pic():
+    """Roda a status do Cartão PIC com upstream (+): raw -> int -> mart."""
+    dbt_target = os.getenv("MODE", "staging")
+    return trigger_dbt_cli_command(
+        command=f"dbt run --select +tag:cartao_pic_status --target {dbt_target}",
         project_dir="queries",
         profiles_dir="queries"
     )
@@ -71,6 +81,7 @@ def primeira_infancia_carioca_flow() -> None:
     flow_extract_controle_cas()
     flow_extract_primeira_infancia()
     flow_transform_dbt()
+    flow_transform_status_cartao_pic()
     flow_feedback_arcgis()
 
 if __name__ == "__main__":

@@ -5,8 +5,9 @@
 -- ATRIBUTOS DINÂMICOS: Survey (entregas), Controle CAS (CRAS/doc) e Eventos
 -- (previsão de entrega + disparos WhatsApp).
 --
--- Incremental insert_overwrite particionado por data_particao: só a partição
--- atual é sobrescrita a cada execução (1h). As partições antigas ficam intactas.
+-- Incremental insert_overwrite particionado por data_particao: a cada execução
+-- (1h) sobrescreve apenas as partições >= última materializada (a atual é
+-- reprocessada; partições novas entram sozinhas). As antigas ficam intactas.
 --
 -- Recorte de eventos (join com eventos_com_faixa) = alerta IN (retirar_*):
 -- quem vai ao evento físico retirar cartão. Reconcessão (aviso) e mantidos
@@ -104,7 +105,7 @@ final as (
         s.nom_unidade_territorial_fam,
         s.endereco_fam,
         s.des_complemento_fam,
-        s.desc_complemento_adic_fam,
+        s.des_complemento_adic_fam,
         s.txt_referencia_local_fam,
         s.num_tel_contato_1_fam,
         s.num_tel_contato_2_fam,
@@ -118,8 +119,6 @@ final as (
         s.endereco_cras_previsto,
         b.data_retirada_cras as data_retirada_cras_prevista,
         b.hora_retirada_cras as hora_retirada_cras_prevista,
-        b.aprovacao_disparo_cras,
-        b.data_disparo_cras,
         e.local_entrega as tipo_entrega,
         e.responsavel_retirada as responsavel_pela_retirada,
         e.nome_procurador,
@@ -161,7 +160,6 @@ final as (
         date(e.created_date, 'America/Sao_Paulo') as survey_data_criacao,
         date(e.last_edited_date, 'America/Sao_Paulo') as survey_ultima_edicao_data,
         date(safe_cast(e.timestamp_captura as timestamp), 'America/Sao_Paulo') as survey_data_extracao,
-        concat('55', e.contato_telefonico_1) as num_tel_contato_1_declarado,
         -- Status de entrega do cartão (dinâmico por hora)
         case
             when date(e.data_entrega, 'America/Sao_Paulo') is not null then 'retirado'
@@ -200,5 +198,5 @@ final as (
 select * from final as f
 
 {% if is_incremental() %}
-    where f.data_particao = (select max(t.data_particao) from {{ this }} as t)
+    where f.data_particao >= (select max(t.data_particao) from {{ this }} as t)
 {% endif %}

@@ -23,7 +23,6 @@ models:
       cartao_pic:
         +materialized: table
         +schema: "{{ 'core' if target.name == 'prod' else 'gerenciamento__dbt' }}"
-        +tags: ["cartao_pic_status"]
     
     marts:
       +materialized: table
@@ -37,7 +36,6 @@ models:
 
       cartao_pic:
         +schema: "{{ 'cartao_pic' if target.name == 'prod' else 'relatorio' }}"
-        +tags: ["cartao_pic_status"]
 
         operacao:
           +schema: pic
