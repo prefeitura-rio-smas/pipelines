@@ -63,6 +63,8 @@ models:
         description: "A2 — novas famílias inseridas no PAIF no mês de referência."
       - name: total_famil_paif_extrema_pobreza_b1
         description: "B1 — famílias PAIF do mês com renda per capita CadÚnico <= corte (var corte_extrema_pobreza)."
+      - name: total_famil_paif_extrema_pobreza_prontuario_b1
+        description: "B1 — famílias PAIF do mês com renda per capita declarada no Prontuário <= corte (var corte_extrema_pobreza). Renda do membro = renda_ativa + renda_beneficio de Aposentadoria, BPC, Pensão por morte ou Aposentadoria por invalidez; NULL quando nenhum membro informou renda."
       - name: total_famil_paif_bf_b2
         description: "B2 — famílias PAIF do mês com membro beneficiário Bolsa Família (fonte: módulo Saúde Mental; cobertura parcial, maioria dos membros sem registro)."
       - name: total_famil_paif_descumprimento_b3

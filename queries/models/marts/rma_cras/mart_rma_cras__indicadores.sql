@@ -202,11 +202,12 @@ agg_paif_novas as (
     group by 1
 ),
 
--- B1: famílias novas com renda per capita CadÚnico <= corte
+-- B1: famílias novas com renda per capita <= corte (CadÚnico e Prontuário)
 agg_extrema_pobreza as (
     select
         p.id_unidade,
-        {{ contar('p.id_familia', 'ep.renda_media_pc <= ' ~ corte_ep) }} as total_famil_paif_extrema_pobreza_b1
+        {{ contar('p.id_familia', 'ep.renda_media_pc <= ' ~ corte_ep) }} as total_famil_paif_extrema_pobreza_b1,
+        {{ contar('p.id_familia', 'ep.renda_media_pc_prontuario <= ' ~ corte_ep) }} as total_famil_paif_extrema_pobreza_prontuario_b1
     from paif_novas as p
     inner join {{ ref('int_familias_extrema_pobreza') }} as ep on p.id_familia = ep.id_familia
     group by 1
@@ -501,6 +502,7 @@ final as (
         coalesce(tp.total_famil_paif_sistema_a1, 0) as total_famil_paif_sistema_a1,
         coalesce(pn.total_famil_paif_mes_atual_a2, 0) as total_famil_paif_mes_atual_a2,
         coalesce(ep.total_famil_paif_extrema_pobreza_b1, 0) as total_famil_paif_extrema_pobreza_b1,
+        coalesce(ep.total_famil_paif_extrema_pobreza_prontuario_b1, 0) as total_famil_paif_extrema_pobreza_prontuario_b1,
         coalesce(bf.total_famil_paif_bf_b2, 0) as total_famil_paif_bf_b2,
         coalesce(bf.total_famil_paif_descumprimento_b3, 0) as total_famil_paif_descumprimento_b3,
         coalesce(bf.total_famil_paif_bpc_b4, 0) as total_famil_paif_bpc_b4,
