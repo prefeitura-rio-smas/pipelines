@@ -1,0 +1,8 @@
+version: 2
+
+models:
+  - name: delta_feedback_controle
+    description: >
+      Deltas para atualizar o ArcGIS do Controle CAS.
+      Compara o estado calculado (controle_cas) com o estado atual no ArcGIS (controle_cas_raw).
+    tags: [controle_cas]

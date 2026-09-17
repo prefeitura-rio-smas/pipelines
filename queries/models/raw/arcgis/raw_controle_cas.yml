@@ -1,0 +1,25 @@
+version: 2
+
+sources:
+  - name: arcgis_raw
+    description: "Controle CAS — ArcGIS (SIURB)."
+    database: rj-smas
+    schema: arcgis_raw
+    tables:
+      - name: controle_cas_raw
+        description: "Folhas de beneficiários, CRAS, documentação verificada e justificativas."
+
+models:
+  - name: raw_controle_cas
+    description: >
+      Controle CAS do Cartão PIC. Limpeza robusta de data_particao
+      (ISO e BR), cpf sem máscara.
+    tags: [weekly]
+    columns:
+      - name: cpf_sem_formatacao
+        description: "CPF sem máscara."
+        tests: [not_null]
+      - name: data_particao
+        description: "Data da partição (folha) — parseada de ISO/BR."
+      - name: data_entrega_text
+        description: "Texto bruto da data de entrega (NULL quando 'None')."

@@ -1,0 +1,32 @@
+version: 2
+
+sources:
+  - name: pic_eventos
+    description: "Eventos de entrega do Cartão PIC — Google Sheets."
+    database: rj-smas-dev
+    schema: pic
+    tables:
+      - name: raw_cartao_primeira_infancia_carioca_bairros_entrega
+        description: >
+          Eventos de entrega por bairro: capacidade (QUANTIDADE), previsão
+          e disparos WhatsApp (aviso/lembrete/CRAS). Fonte de dados do
+          sheet "Cartão PIC — Entregas".
+
+models:
+  - name: raw_bairros_entrega
+    description: >
+      Eventos de entrega do Cartão PIC (planilha externa). Capacidade por
+      bairro/slot, previsão de entrega e disparos WhatsApp (aviso/lembrete).
+    columns:
+      - name: bairro
+        description: "Bairro do evento (normalizado UPPER+TRIM)."
+      - name: quantidade
+        description: "Quantidade máxima de famílias no slot."
+      - name: data_entrega
+        description: "Data prevista para a entrega."
+      - name: hora_entrega
+        description: "Horário previsto para a entrega."
+      - name: data_disparo_aviso
+        description: "Data do disparo de aviso via WhatsApp."
+      - name: data_disparo_lembrete
+        description: "Data do disparo de lembrete via WhatsApp."
