@@ -177,9 +177,11 @@ beneficiario_enriquecido as (
         c.categoria_justificativa,
         c.obs,
         c.endereco_completo as endereco_cras_previsto,
+        -- rank de entrega: só quem vai ao evento (recorte acao_smas) disputa os
+        -- slots do bairro, por envelope; os demais ficam fora do rank.
         ROW_NUMBER() over (
             partition by s.bairro
-            order by s.envelope asc
+            order by IF(s.acao_smas in ('novos_beneficiarios', 'retorno_apos_atualizacao', 'ausencia_documentacao_obrigatoria'), s.envelope, '999999999') asc
         ) as rank_alfabetico
     from folha_corrente as s
     left join controle_cas as c
