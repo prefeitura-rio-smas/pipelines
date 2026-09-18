@@ -70,8 +70,8 @@ renda_cadunico as (
         on f.id_familia_cad = c.id_familia
     where
         c.valor_renda_media is not null
-        and c.id_estado_cadastro = 3
-        and c.id_cadastro_valido = 1
+        and safe_cast(c.id_estado_cadastro as int64) = 3
+        and safe_cast(c.id_cadastro_valido as int64) = 1
     group by 1
 ),
 
