@@ -16,17 +16,28 @@
 -- é NULL (não informado), nunca 0.
 -- O corte de extrema pobreza é aplicado no mart (var corte_extrema_pobreza).
 
-with membros as (
+with detalhes as (
+    select
+        id_paciente,
+        any_value(renda_ativa) as renda_ativa,
+        any_value(renda_beneficio) as renda_beneficio
+    from {{ ref('raw_usuarios_detalhes') }}
+    group by 1
+),
+
+membros as (
     select distinct
         m.id_familia,
         m.id_paciente,
         u.cpf,
-        u.renda_ativa,
-        u.renda_beneficio,
-        u.beneficio
+        u.beneficio,
+        d.renda_ativa,
+        d.renda_beneficio
     from {{ ref('raw_membros_familia') }} as m
     inner join {{ ref('dim_usuarios') }} as u
         on m.id_paciente = u.id_usuario
+    left join detalhes as d
+        on m.id_paciente = d.id_paciente
     where m.data_saida is null
 ),
 
