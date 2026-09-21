@@ -1,3 +1,4 @@
+{{ config(tags = ['daily']) }}
 -- Mart: Planilha Unificada Centro POP
 -- Granularidade: 1 linha por usuário × mês de referência × Centro POP.
 -- Base: usuários com pelo menos um atendimento (não cancelado) em unidade

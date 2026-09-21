@@ -218,6 +218,49 @@ deployments:
     tags: ["prod", "primeira_infancia_carioca"]
 
   # ---------------------------------------------------------------------------
+  # Status Cartão PIC — Snapshot diário (versiona a partição corrente)
+  # ---------------------------------------------------------------------------
+  - name: snapshot-status-cartao-pic-staging
+    entrypoint: pipelines/arcgis/primeira_infancia_carioca/flows.py:flow_snapshot_status_cartao_pic
+    work_pool:
+      name: docker-pool
+      job_variables:
+        networks: ["prefect_prefect-stack"]
+        image: "{{ $PREFECT_DEPLOYMENT_IMAGE }}"
+        env:
+          PREFECT_API_URL: http://prefect-api:4200/api
+          MODE: staging
+          GCP_CREDENTIALS: "{{ $GCP_CREDENTIALS }}"
+          SIURB_URL: "{{ $SIURB_URL }}"
+          SIURB_USER: "{{ $SIURB_USER }}"
+          SIURB_PWD: "{{ $SIURB_PWD }}"
+    tags: ["staging", "primeira_infancia_carioca"]
+
+  - name: snapshot-status-cartao-pic-prod
+    entrypoint: pipelines/arcgis/primeira_infancia_carioca/flows.py:flow_snapshot_status_cartao_pic
+    schedule:
+      cron: "0 7 * * *"
+      timezone: "America/Sao_Paulo"
+    work_pool:
+      name: docker-pool
+      job_variables:
+        networks: ["prefect_prefect-stack"]
+        image: "{{ $PREFECT_DEPLOYMENT_IMAGE }}"
+        env:
+          MODE: prod
+          PREFECT_EVENTS_ENABLED: "false"
+          PREFECT_SERVER_EVENTS_ENABLED: "false"
+          PREFECT_EVENTS_MESSAGING_ENABLED: "false"
+          PREFECT_SERVER_SERVICES_EVENT_PERSISTER_ENABLED: "false"
+          PREFECT_SERVER_SERVICES_EVENT_LOGGER_ENABLED: "false"
+          PREFECT_SERVER_EVENTS_STREAM_OUT_ENABLED: "false"
+          GCP_CREDENTIALS: "{{ $GCP_CREDENTIALS }}"
+          SIURB_URL: "{{ $SIURB_URL }}"
+          SIURB_USER: "{{ $SIURB_USER }}"
+          SIURB_PWD: "{{ $SIURB_PWD }}"
+    tags: ["prod", "primeira_infancia_carioca"]
+
+  # ---------------------------------------------------------------------------
   # meta_ar_cpf — Operador Sync (extract only)
   # ---------------------------------------------------------------------------
   - name: meta-ar-cpf-operador-sync-staging
@@ -376,3 +419,63 @@ deployments:
           SIURB_USER: "{{ $SIURB_USER }}"
           SIURB_PWD: "{{ $SIURB_PWD }}"
     tags: ["prod", "dbt", "weekly"]
+
+  # ---------------------------------------------------------------------------
+  # Transformação — dbt horária
+  # ---------------------------------------------------------------------------
+  - name: dbt-transform-hourly-prod
+    entrypoint: pipelines/datalake/transform/dbt/flows.py:dbt_transform_flow
+    parameters:
+      select: "+tag:hourly"
+    schedule:
+      cron: "0 * * * *"
+      timezone: "America/Sao_Paulo"
+    work_pool:
+      name: docker-pool
+      job_variables:
+        networks: ["prefect_prefect-stack"]
+        image: "{{ $PREFECT_DEPLOYMENT_IMAGE }}"
+        env:
+          PREFECT_API_URL: http://prefect-api:4200/api
+          MODE: prod
+          PREFECT_EVENTS_ENABLED: "false"
+          PREFECT_SERVER_EVENTS_ENABLED: "false"
+          PREFECT_EVENTS_MESSAGING_ENABLED: "false"
+          PREFECT_SERVER_SERVICES_EVENT_PERSISTER_ENABLED: "false"
+          PREFECT_SERVER_SERVICES_EVENT_LOGGER_ENABLED: "false"
+          PREFECT_SERVER_EVENTS_STREAM_OUT_ENABLED: "false"
+          GCP_CREDENTIALS: "{{ $GCP_CREDENTIALS }}"
+          SIURB_URL: "{{ $SIURB_URL }}"
+          SIURB_USER: "{{ $SIURB_USER }}"
+          SIURB_PWD: "{{ $SIURB_PWD }}"
+    tags: ["prod", "dbt", "hourly"]
+
+  # ---------------------------------------------------------------------------
+  # Transformação — dbt mensal
+  # ---------------------------------------------------------------------------
+  - name: dbt-transform-monthly-prod
+    entrypoint: pipelines/datalake/transform/dbt/flows.py:dbt_transform_flow
+    parameters:
+      select: "+tag:monthly"
+    schedule:
+      cron: "0 10 1 * *"
+      timezone: "America/Sao_Paulo"
+    work_pool:
+      name: docker-pool
+      job_variables:
+        networks: ["prefect_prefect-stack"]
+        image: "{{ $PREFECT_DEPLOYMENT_IMAGE }}"
+        env:
+          PREFECT_API_URL: http://prefect-api:4200/api
+          MODE: prod
+          PREFECT_EVENTS_ENABLED: "false"
+          PREFECT_SERVER_EVENTS_ENABLED: "false"
+          PREFECT_EVENTS_MESSAGING_ENABLED: "false"
+          PREFECT_SERVER_SERVICES_EVENT_PERSISTER_ENABLED: "false"
+          PREFECT_SERVER_SERVICES_EVENT_LOGGER_ENABLED: "false"
+          PREFECT_SERVER_EVENTS_STREAM_OUT_ENABLED: "false"
+          GCP_CREDENTIALS: "{{ $GCP_CREDENTIALS }}"
+          SIURB_URL: "{{ $SIURB_URL }}"
+          SIURB_USER: "{{ $SIURB_USER }}"
+          SIURB_PWD: "{{ $SIURB_PWD }}"
+    tags: ["prod", "dbt", "monthly"]

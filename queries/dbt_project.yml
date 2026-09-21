@@ -27,6 +27,10 @@ models:
       core:
         +materialized: table
         +schema: "{{ 'core' if target.name == 'prod' else 'gerenciamento__dbt' }}"
+
+      cartao_pic:
+        +materialized: table
+        +schema: "{{ 'core' if target.name == 'prod' else 'gerenciamento__dbt' }}"
     
     marts:
       +materialized: table
@@ -38,11 +42,28 @@ models:
         facts:
           +schema: "{{ 'core' if target.name == 'prod' else 'gerenciamento__dbt' }}"
 
+      cartao_pic:
+        +schema: "{{ 'cartao_pic' if target.name == 'prod' else 'relatorio' }}"
+
+        operacao:
+          +schema: pic
+          +tags: ["controle_cas"]
+
+        meta_ar_cpf:
+          +schema: "{{ 'pequenos_cariocas' if target.name == 'prod' else 'pic' }}"
+          +tags: ["meta_ar_cpf"]
+
       atividades:
         +tags: ["daily"]
 
       bolsa_familia:
         +schema: "{{ 'bolsa_familia' if target.name == 'prod' else 'gerenciamento__dbt' }}"
+
+      rma_cras:
+        +tags: ["monthly"]
+
+      centro_pop:
+        +tags: ["daily"]
 
       poc_paif:
         +materialized: table
@@ -91,15 +112,3 @@ models:
         +enabled: true  # Mantido ativo durante a comparação com a nova arquitetura.
         +materialized: table
         +schema: "{{ 'bolsa_familia' if target.name == 'prod' else 'gerenciamento__dbt' }}"
-
-      pic:
-        +enabled: true  # Pipeline ArcGIS PIC (1/1h)
-        +materialized: table
-        +schema: pic
-
-        controle_cas:
-          +tags: ["controle_cas"]
-
-        meta_ar_cpf:
-          +tags: ["meta_ar_cpf"]
-          +schema: "{{ 'pequenos_cariocas' if target.name == 'prod' else 'pic' }}"
