@@ -1,0 +1,33 @@
+version: 2
+
+models:
+  - name: int_bolsa_familia_parsed_medallion
+    description: |
+      Camada Silver que transforma a linha bruta da folha do Bolsa Família
+      em colunas estruturadas. Suporta os layouts de 34 e 35 colunas.
+    columns:
+      - name: qtd_colunas_brutas
+        description: "Quantidade de colunas detectadas no layout bruto."
+        data_tests:
+          - accepted_values:
+              arguments:
+                values: [34, 35]
+                quote: false
+      - name: COD_FAMILIAR
+        description: "Código de identificação familiar."
+        tests:
+          - not_null
+      - name: REF_FOLHA
+        description: "Mês de referência da folha."
+        tests:
+          - not_null:
+              config:
+                where: "MARCA_RF = 'S'"
+                severity: warn
+      - name: COMPET_PARCELA
+        description: "Mês de competência da parcela."
+        tests:
+          - not_null:
+              config:
+                where: "MARCA_RF = 'S'"
+                severity: warn

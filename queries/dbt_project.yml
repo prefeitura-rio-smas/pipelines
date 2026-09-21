@@ -41,6 +41,9 @@ models:
       atividades:
         +tags: ["daily"]
 
+      bolsa_familia:
+        +schema: "{{ 'bolsa_familia' if target.name == 'prod' else 'gerenciamento__dbt' }}"
+
       poc_paif:
         +materialized: table
         +schema: "{{ 'marts' if target.name == 'prod' else 'relatorio' }}"
@@ -85,7 +88,7 @@ models:
               +schema: "{{ 'dashboard_arcgis' if target.name == 'prod' else 'relatorio' }}"
 
       bolsa_familia:
-        +enabled: true  # Pipeline Bolsa Família (manual/event-driven)
+        +enabled: true  # Mantido ativo durante a comparação com a nova arquitetura.
         +materialized: table
         +schema: "{{ 'bolsa_familia' if target.name == 'prod' else 'gerenciamento__dbt' }}"
 

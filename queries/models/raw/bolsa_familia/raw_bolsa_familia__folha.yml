@@ -1,0 +1,17 @@
+version: 2
+
+models:
+  - name: raw_bolsa_familia__folha
+    description: |
+      Camada Bronze da folha do Bolsa Família.
+      Mantém a linha bruta e os metadados de ingestão sem aplicar regras
+      de parsing ou agregação.
+    columns:
+      - name: linha_bruta
+        description: "Linha original do arquivo da folha."
+      - name: timestamp_captura
+        description: "Timestamp da captura da linha pelo pipeline."
+      - name: data_particao
+        description: "Partição mensal da carga."
+        tests:
+          - not_null
