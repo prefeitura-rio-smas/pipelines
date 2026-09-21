@@ -1,0 +1,17 @@
+version: 2
+
+sources:
+  - name: bolsa_familia_staging
+    description: "Dados brutos do Bolsa Família carregados pelo pipeline Python."
+    database: "{{ target.project }}"
+    schema: bolsa_familia_staging
+    tables:
+      - name: folha
+        description: "Tabela com as linhas brutas dos arquivos da folha e sua partição de ingestão."
+        columns:
+          - name: linha_bruta
+            description: "Linha original do arquivo de folha, ainda não estruturada."
+          - name: timestamp_captura
+            description: "Timestamp da captura da linha pelo pipeline."
+          - name: data_particao
+            description: "Partição mensal da carga."
