@@ -14,10 +14,10 @@ models:
         tests:
           - not_null
       - name: qtd_membros_informaram
-        description: "Quantidade de membros ativos com renda informada (renda_ativa ou renda_beneficio de benefício de renda permanente)."
+        description: "Quantidade de membros ativos com renda informada (renda_ativa ou renda_beneficio de benefício considerado no cálculo)."
       - name: renda_media_pc
         description: "Menor renda média per capita (identificacao_controle.valor_renda_media) entre as famílias CadÚnico cadastradas e válidas vinculadas aos CPFs dos membros. NULL quando a família não possui vínculo CadÚnico com renda registrada."
       - name: renda_familiar_prontuario
-        description: "Soma das rendas declaradas no Prontuário pelos membros ativos (renda_ativa + renda_beneficio de Aposentadoria, BPC, Pensão por morte ou Aposentadoria por invalidez — códigos 1, 9, 20 e 32). Membros sem renda informada são ignorados; NULL quando nenhum membro informou renda."
+        description: "Soma das rendas declaradas no Prontuário pelos membros ativos (renda_ativa + renda_beneficio de Aposentadoria, BPC, Pensão por morte, Pensão Alimentícia, Outro tipo de Pensão, Aposentadoria por invalidez e Seguro desemprego — códigos 1, 9, 19, 20, 22, 32 e 43). Membros sem renda informada são ignorados; NULL quando nenhum membro informou renda."
       - name: renda_media_pc_prontuario
         description: "Renda per capita declarada no Prontuário (renda_familiar_prontuario / qtd_membros_ativos). NULL quando nenhum membro informou renda."
