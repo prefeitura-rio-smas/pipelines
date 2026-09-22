@@ -9,8 +9,9 @@
 -- vínculo CadÚnico com renda registrada.
 -- renda_media_pc_prontuario: soma das rendas declaradas no próprio Prontuário
 -- (renda_ativa de todos os membros ativos + renda_beneficio somente para
--- benefícios de renda permanente: Aposentadoria, BPC, Pensão por morte e
--- Aposentadoria por invalidez — códigos 1, 9, 20 e 32 do domínio
+-- benefícios informados: Aposentadoria, BPC, Pensão por morte, Pensão
+-- Alimentícia, Outro tipo de Pensão, Aposentadoria por invalidez e Seguro
+-- desemprego — códigos 1, 9, 19, 20, 22, 32 e 43 do domínio
 -- map_coluna_beneficio) dividida pelo número de membros ativos. Membros sem
 -- renda informada são ignorados; se nenhum membro informou renda, o resultado
 -- é NULL (não informado), nunca 0.
@@ -83,9 +84,9 @@ membros_renda as (
         case
             when exists (
                 select 1 from unnest(m.beneficio) as b
-                where b.codigo in ('1', '9', '20', '32')
+                where b.codigo in ('1', '9', '19', '20', '22', '32', '43')
             ) then safe_cast(m.renda_beneficio as float64)
-        end as renda_beneficio_permanente
+        end as renda_beneficio_calculo
     from membros as m
 ),
 
@@ -94,10 +95,10 @@ renda_prontuario as (
         id_familia,
         count(distinct id_paciente) as qtd_membros_ativos,
         countif(
-            renda_ativa is not null or renda_beneficio_permanente is not null
+            renda_ativa is not null or renda_beneficio_calculo is not null
         ) as qtd_membros_informaram,
         sum(
-            coalesce(renda_ativa, 0) + coalesce(renda_beneficio_permanente, 0)
+            coalesce(renda_ativa, 0) + coalesce(renda_beneficio_calculo, 0)
         ) as renda_familiar_prontuario
     from membros_renda
     group by 1
