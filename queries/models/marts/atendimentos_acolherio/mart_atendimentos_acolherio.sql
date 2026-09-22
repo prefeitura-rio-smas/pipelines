@@ -2,10 +2,6 @@ with fct_atendimentos as (
     select * from {{ ref('fct_atendimentos') }}
 ),
 
-filtro_email_dev as (
-    select * from {{ source('dashboard_acolherio', 'filtro_email_dev') }}
-),
-
 -- Restaura os atributos dimensionais que o fct_atendimentos deixou de expor (ver cda9167).
 base_enriquecida as (
     select
@@ -20,13 +16,11 @@ base_enriquecida as (
         a.data_atendimento as data_cadastro_atendimento,
         a.hora_atendimento as hora_de_atendimento,
         a.id_profissional as profissional_id,
-        concat(dun.email_filtro, ',', dun.email_unidade, ',', z.email) as email
+        {{ filtro_email(['dun.email_filtro']) }} as email
     from fct_atendimentos as a
     left join {{ ref('dim_usuarios') }} as du on a.id_usuario_sk = du.id_usuario_sk
     left join {{ ref('dim_profissionais') }} as dp on a.id_profissional_sk = dp.id_profissional_sk
     left join {{ ref('dim_unidades') }} as dun on a.id_unidade_sk = dun.id_unidade_sk
-    left join filtro_email_dev as z
-        on dun.nome_unidade = z.unidade_atendimento
 ),
 
 base_preparada as (

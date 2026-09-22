@@ -23,3 +23,7 @@ models:
         description: "Data do atendimento."
         data_tests:
           - not_null
+
+      - name: email
+        description: "E-mails da unidade de atendimento, para filtro de BI = macro filtro_email([dim_unidades.email_filtro]) (split por [,;\\n\\r\\t], trim, lower, descarta vazio, DISTINCT, ordenado asc, unido por ', '; NULL quando não há e-mail, nunca ',,'). Antes era concat(email_filtro, email_unidade, planilha) — duplicava token em ~99,9% das linhas — e a mart lia a planilha crua via source('dashboard_acolherio','filtro_email_dev'), violando a camada. Filtro aplicado no Looker (contains)."
+        data_type: string

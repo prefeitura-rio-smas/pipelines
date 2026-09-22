@@ -16,9 +16,11 @@ models:
       - name: esfera
         description: "Esfera da unidade (Estadual, Municipal, Conveniada)."
       - name: email_unidade
-        description: "E-mail de contato da unidade cadastrado no prontuário (fonte 1)."
+        description: "E-mail de contato da unidade cadastrado no prontuário (gh_us.emailprof, fonte 1), normalizado pela macro filtro_email (trim + lower + dedup; NULL quando vazio)."
       - name: email_filtro
-        description: "E-mail único consolidado da unidade usado para filtrar relatórios de BI. Unifica as 3 fontes de email em uma coluna: fonte 3 (território/área programática — CASE sobre cas, cobre CAS 01-10 → casN@prefeitura.rio; NULL para GE/sem AP), fonte 2 (email_planilha — planilha externa raw_sheets_filtro_email_prontuario, agregada por unidade via string_agg) e fonte 1 (email_unidade — prontuário). Formato: concat(coalesce(territorio,''), ',', coalesce(planilha,''), ', ', coalesce(unidade,''))."
+        description: "E-mail consolidado da unidade usado para filtrar relatórios de BI. Unifica as 3 fontes: fonte 3 (território/área programática — macro filtro_email_cas sobre cas, cobre CAS 01-10 → casN@prefeitura.rio; NULL para GE/sem AP), fonte 2 (email_planilha — planilha externa raw_sheets_filtro_email_prontuario, agregada por unidade) e fonte 1 (email_unidade — prontuário). Normalizado pela macro filtro_email: split por [,;\n\r\t], trim, lower, descarta vazio, DISTINCT, ordenado asc, unido por ', '; NULL quando não sobra nenhum e-mail (nunca ',,'). Token malformado (ex.: espaço dentro do domínio) é PRESERVADO com trim: e-mail é endereço, não se descarta em silêncio. Substitui o antigo concat(coalesce(territorio,''), ',', coalesce(planilha,''), ', ', coalesce(unidade,''))."
+      - name: email_planilha
+        description: "E-mails da planilha externa raw_sheets_filtro_email_prontuario para a unidade (fonte 2), normalizados pela macro filtro_email. Coluna adicionada para as marts que consumiam a planilha crua (mart_presenca_usuarios, mart_presenca_profissionais, mart_acolhimento_diaria)."
       - name: flag_unidade_ativa
         description: "Indica se a unidade está ativa (Sim/Não)."
       - name: nome_tipo

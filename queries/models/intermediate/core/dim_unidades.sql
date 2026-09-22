@@ -13,7 +13,7 @@ capacidade as (
 planilha_email as (
     select
         lower(trim(unidade_atendimento)) as nome_unidade,
-        string_agg(email, ', ') as email_planilha
+        string_agg(email, ', ' order by lower(trim(email))) as email_planilha
     from {{ ref('raw_sheets_filtro_email_prontuario') }}
     group by 1
 ),
@@ -25,26 +25,9 @@ final as (
         b.nome_unidade,
         b.cas,
         b.esfera,
-        b.email_unidade,
-        concat(
-            coalesce(
-                case
-                    when lower(trim(b.cas)) = '10' then 'cas10@prefeitura.rio'
-                    when lower(trim(b.cas)) = '09' then 'cas9@prefeitura.rio'
-                    when lower(trim(b.cas)) = '08' then 'cas8@prefeitura.rio'
-                    when lower(trim(b.cas)) = '07' then 'cas7@prefeitura.rio'
-                    when lower(trim(b.cas)) = '06' then 'cas6@prefeitura.rio'
-                    when lower(trim(b.cas)) = '05' then 'cas5@prefeitura.rio'
-                    when lower(trim(b.cas)) = '04' then 'cas4@prefeitura.rio'
-                    when lower(trim(b.cas)) = '03' then 'cas3@prefeitura.rio'
-                    when lower(trim(b.cas)) = '02' then 'cas2@prefeitura.rio'
-                    when lower(trim(b.cas)) = '01' then 'cas1@prefeitura.rio'
-                end,
-                ''
-            ), ',',
-            coalesce(pe.email_planilha, ''), ', ',
-            coalesce(b.email_unidade, '')
-        ) as email_filtro,
+        {{ filtro_email(['b.email_unidade']) }} as email_unidade,
+        {{ filtro_email([filtro_email_cas('b.cas'), 'pe.email_planilha', 'b.email_unidade']) }} as email_filtro,
+        {{ filtro_email(['pe.email_planilha']) }} as email_planilha,
         b.flag_unidade_ativa,
         t.id_tipo_unidade,
         t.nome_tipo,

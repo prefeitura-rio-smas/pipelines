@@ -38,7 +38,48 @@ models:
       unificando as 3 fontes (território/CAS, planilha externa
       raw_sheets_filtro_email_prontuario e cadastro do prontuário). A mart
       apenas referencia unid.email_filtro — não faz concat nem consulta a
-      planilha diretamente.
+      planilha diretamente. Comparação com as marts de BI que expõem coluna de
+      email — três casos distintos, NÃO equivalentes entre si:
+      - mart_acolhimento_diaria: a coluna `email` reproduz a MESMA
+        concatenação (CAS, planilha, cadastro do prontuário);
+      - mart_atendimentos_acolherio: a coluna `email` é concat de
+        email_filtro + email_unidade + planilha — SUPERSET (concatena de novo
+        o que já vem consolidado), não a mesma expressão;
+      - mart_presenca_usuarios / mart_presenca_profissionais: a coluna
+        `email_unidade` expõe APENAS o email da planilha
+        raw_sheets_filtro_email_prontuario — NÃO é o consolidado.
+      Em todas elas a mart expõe a coluna; o filtro por usuário é aplicado na
+      ferramenta de BI — não há WHERE de email no SQL.
+
+      Origem legada / equivalência (contas_associadas): esta mart substitui o
+      model `contas_associadas` do prod legado
+      (dashboard_acolherio/contas_associadas.sql, aposentado em
+      old_architecture/), que tinha o mesmo conceito — conta de login
+      (GH_CONTAS) × operador/profissional × unidade, com perfil de acesso e
+      status da conta — e as MESMAS 6 sources
+      (gh_contas, gh_contas_us, gh_prof, gh_profocup, gh_cbo, gh_us).
+      Mapeamento de colunas: unidade → nome_unidade/unidades_atuacao;
+      seqlogin → id_login; operador → nome_operador; nivel → perfil_acesso;
+      status_conta → status_conta (+ status_conta_codigo); cpf e telefone
+      mantidos; o `email` legado (gh_contas.dscemail) corresponde a
+      email_operador — a mart não tem coluna chamada `email` e expõe também
+      email_profissional (origem gh_prof.emailprof).
+      Lacunas conhecidas da substituição (medidas em [2026-09-16]):
+      (1) data_nascimento — a coluna gh_prof.dtnasc não é mapeada em
+      raw_profissionais e portanto não existe nesta mart (perda);
+      (2) contas de login sem profissional em gh_prof (162 de 1.986 logins =
+      8,2%) ficam FORA desta mart. CAUSA: a mart parte de dim_profissionais —
+      só profissionais são candidatos (o legado partia das contas, com LEFT
+      JOIN para gh_prof, por isso essas contas apareciam com profissional
+      nulo). O `where not flag_sem_conta` é verdadeiro nesse cenário
+      (profissional sem conta é excluído), mas NÃO é a causa da ausência
+      dessas contas, que já não entram na origem;
+      (3) profissional (gh_cbo.dsccbo, string única no legado) passou a
+      ARRAY<STRING> em descricoes_cbo (grão por profissional, sem fan-out por
+      CBO); o consumidor que usava valor escalar precisa expandir o array.
+      Premissa adicional: a mart exige vínculo profissional × unidade
+      (UNNEST de ids_unidade) e exclui unidades/nomes "TESTE" por design,
+      enquanto o legado não filtrava nada.
     columns:
       - name: id_profissional_unidade_sk
         description: "Surrogate key única da associação (hash de id_profissional + id_unidade)."

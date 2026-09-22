@@ -62,6 +62,10 @@ models:
       - name: hora_presenca
         description: "Hora da presença."
         data_type: string
+      - name: email_unidade
+        description: "E-mails da unidade da atividade, para filtro de BI. Origem: dim_unidades.email_planilha (planilha externa raw_sheets_filtro_email_prontuario), normalizado pela macro filtro_email (split por [,;\\n\\r\\t], trim, lower, descarta vazio, DISTINCT, ordenado asc, unido por ', '; NULL quando não há e-mail). A mart deixou de ler a planilha crua e passou a consumir a dim. Filtro aplicado no Looker (contains)."
+        data_type: string
+
       - name: ultima_atualizacao
         description: "Timestamp da última sincronização do Airbyte (heartbeat da pipeline via raw_configuracoes_sistema)."
         data_type: timestamp

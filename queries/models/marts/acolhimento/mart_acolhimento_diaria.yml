@@ -113,12 +113,13 @@ models:
       - name: cas_nome
         description: "Rótulo 'NNª CAS'."
       - name: email_cas
-        description: "E-mail 'casN@prefeitura.rio' derivado do código CAS."
+        description: "E-mail 'casN@prefeitura.rio' derivado do código CAS. Macro filtro_email_cas (variante canônica lower(trim(cas)); cobre caixa alta e string vazia; NULL para GE/sem AP)."
       - name: email_unidade
+        description: "E-mail de contato cadastrado da unidade (dim_unidades.email_unidade), normalizado pela macro filtro_email."
       - name: email_planilha
-        description: "E-mail curatorial vindo de raw_sheets_filtro_email_prontuario."
+        description: "E-mails da planilha externa da unidade (dim_unidades.email_planilha, origem raw_sheets_filtro_email_prontuario), normalizados pela macro filtro_email. A mart NÃO lê a planilha crua (era join direto em raw_sheets)."
       - name: email
-        description: "Concatenação de email_cas, email_planilha e email_unidade (compat com legado)."
+        description: "E-mail consolidado da unidade (filtro de BI) = macro filtro_email([email_cas, email_planilha, email_unidade]): split por [,;\\n\\r\\t], trim, lower, descarta vazio, DISTINCT, ordenado asc, unido por ', '; NULL quando não sobra nenhum e-mail (nunca ',,'). Substitui a antiga concatenação manual. O filtro por e-mail é aplicado no Looker (contains) — não há WHERE de e-mail no SQL."
       - name: eixo
         description: "Combinação dos eixos adulto/idoso/família em um rótulo."
       - name: faixa_etaria

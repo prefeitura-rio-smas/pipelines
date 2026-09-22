@@ -14,8 +14,8 @@ atividades as (
     select * from {{ ref('dim_atividades_grupo') }}
 ),
 
-filtro_email as (
-    select * from {{ ref('raw_sheets_filtro_email_prontuario') }}
+unidades as (
+    select * from {{ ref('dim_unidades') }}
 ),
 
 membros_atuais as (
@@ -104,7 +104,7 @@ select
       then substr(lpad(p.hora_presenca, 4, '0'), 1, 2) || ':' || substr(lpad(p.hora_presenca, 4, '0'), 3, 2)
       else p.hora_presenca
     end as hora_presenca,
-    fe.email as email_unidade,
+    {{ filtro_email(['d.email_planilha']) }} as email_unidade,
     coalesce(indicadores.flag_desligamento, 'Não') as flag_desligamento,
     indicadores.motivo_desligamento,
     coalesce(indicadores.flag_cancelamento_atividades, 'Não') as flag_cancelamento_atividades,
@@ -115,7 +115,7 @@ select
 from presencas p
 left join usuarios u on p.id_usuario = u.id_usuario
 left join atividades a on p.id_atividade = a.id_atividade
-left join filtro_email fe on a.nome_unidade = upper(fe.unidade_atendimento)
+left join unidades d on a.nome_unidade = upper(d.nome_unidade)
 left join membros_atuais ma on p.id_usuario = ma.id_paciente
 left join familia_responsavel mr on ma.id_familia = mr.id_familia
 left join indicadores_agregados indicadores on p.id_usuario = indicadores.id_usuario and p.id_atividade = indicadores.id_atividade

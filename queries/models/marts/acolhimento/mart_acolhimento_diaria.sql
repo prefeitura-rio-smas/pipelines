@@ -27,10 +27,6 @@ unidades as (
     select * from {{ ref('dim_unidades') }}
 ),
 
-emails_planilha as (
-    select * from {{ ref('raw_sheets_filtro_email_prontuario') }}
-),
-
 final as (
     select
         a.id_usuario    as seqpac,
@@ -262,21 +258,10 @@ final as (
             when '09' then '09ª CAS'
             when '10' then '10ª CAS'
         end                                   as cas_nome,
-        case un.cas
-            when '01' then 'cas1@prefeitura.rio'
-            when '02' then 'cas2@prefeitura.rio'
-            when '03' then 'cas3@prefeitura.rio'
-            when '04' then 'cas4@prefeitura.rio'
-            when '05' then 'cas5@prefeitura.rio'
-            when '06' then 'cas6@prefeitura.rio'
-            when '07' then 'cas7@prefeitura.rio'
-            when '08' then 'cas8@prefeitura.rio'
-            when '09' then 'cas9@prefeitura.rio'
-            when '10' then 'cas10@prefeitura.rio'
-        end                                   as email_cas,
-        un.email_unidade,
+        {{ filtro_email_cas('un.cas') }} as email_cas,
+        {{ filtro_email(['un.email_unidade']) }} as email_unidade,
 
-        em.email                              as email_planilha,
+        un.email_planilha                     as email_planilha,
 
         case
             when un.flag_eixo_adulto = 'Não'  and un.flag_eixo_idoso = 'Não'  and un.flag_eixo_familia = 'Não' then 'Outra unidade SMAS'
@@ -293,7 +278,6 @@ final as (
     from diaria a
     left join usuarios usr   on a.id_usuario_sk = usr.id_usuario_sk
     left join unidades un    on a.id_unidade_sk = un.id_unidade_sk
-    left join emails_planilha em on lower(trim(em.unidade_atendimento)) = lower(trim(un.nome_unidade))
     where usr.nome is not null
 )
 
@@ -312,10 +296,6 @@ select
         else 'Não informada'
     end                                   as faixa_etaria,
 
-    concat(
-        coalesce(email_cas, ''), ',',
-        coalesce(email_planilha, ''), ', ',
-        coalesce(email_unidade, '')
-    )                                     as email
+    {{ filtro_email(['email_cas', 'email_planilha', 'email_unidade']) }} as email
 
 from final
