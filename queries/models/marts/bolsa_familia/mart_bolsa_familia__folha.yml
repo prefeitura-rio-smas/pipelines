@@ -1,0 +1,32 @@
+version: 2
+
+models:
+  - name: mart_bolsa_familia__folha
+    description: |
+      Camada Gold da folha do Bolsa Família.
+      Consolida o valor total de benefício por família, competência e
+      partição e classifica a faixa do benefício familiar.
+      A tabela física usa temporariamente o alias `folha_medallion` para
+      permitir a comparação com o modelo legado `folha`.
+    tests:
+      - dbt_utils.unique_combination_of_columns:
+          arguments:
+            combination_of_columns:
+              - COD_FAMILIAR
+              - COMPET_PARCELA
+              - data_particao
+          config:
+            where: "MARCA_RF = 'S'"
+    columns:
+      - name: data_particao
+        description: "Partição da carga."
+        tests:
+          - not_null
+      - name: COD_FAMILIAR
+        description: "Código de identificação familiar."
+        tests:
+          - not_null
+      - name: beneficio_familiar_valor
+        description: "Soma dos valores de benefício da família na partição."
+      - name: beneficio_familiar_faixa
+        description: "Faixa categorizada do valor total do benefício familiar."

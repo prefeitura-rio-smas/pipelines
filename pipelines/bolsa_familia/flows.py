@@ -92,10 +92,10 @@ def bolsa_familia_flow() -> None:
 
     logger.info(
         f"Running dbt build | target={dbt_target} "
-        f"select=int_bolsa_familia_parsed+"
+        f"select=+folha+,+mart_bolsa_familia__folha+"
     )
     trigger_dbt_cli_command(
-        command=f"dbt build --select int_bolsa_familia_parsed+ --target {dbt_target}",
+        command=f"dbt build --select +folha+ +mart_bolsa_familia__folha+ --target {dbt_target}",
         project_dir="queries",
         profiles_dir="queries",
     )

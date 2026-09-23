@@ -1,13 +1,8 @@
 version: 2
 
-sources:
-  - name: bolsa_familia_staging
-    description: "Dados brutos do Bolsa Família carregados via pipeline Python"
-    schema: "bolsa_familia_staging"
-    tables:
-      - name: folha
-        description: "Tabela contendo a linha bruta do arquivo, timestamp e partição"
-
+# A definição do source foi centralizada em
+# models/raw/bolsa_familia/_sources.yml. Os modelos legados permanecem
+# preservados e continuam resolvendo o mesmo source quando habilitados.
 models:
   - name: int_bolsa_familia_parsed
     description: "Camada intermediária que faz o parsing da linha bruta para colunas estruturadas, resiliente a mudanças de layout (34/35 colunas)."
@@ -39,12 +34,12 @@ models:
               config:
                 where: "MARCA_RF = 'S'"
                 severity: warn
-
   - name: folha
     description: "Tabela final (Mart) com dados consolidados e faixas de benefício."
     data_tests:
       - dbt_utils.unique_combination_of_columns:
-          combination_of_columns: [COD_FAMILIAR, COMPET_PARCELA, data_particao]
+          arguments:
+            combination_of_columns: [COD_FAMILIAR, COMPET_PARCELA, data_particao]
           config:
             where: "MARCA_RF = 'S'"
           description: "Garante que cada família (RF) tenha apenas um registro por competência por partição. data_particao é necessária porque o mesmo benefício aparece em múltiplas extrações mensais."
