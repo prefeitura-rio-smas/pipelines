@@ -666,14 +666,14 @@ final as (
             else 'Não Informado'
         end as flag_acompanhamento_saude,
         {{ map_flag_boolean('asf.flag_possui_referencias_familiares') }} as flag_possui_vinculo_familiar,
-        null as territorio_referencia_familia,
-        null as flag_possibilidade_reinsercao_familiar,
+        cast('Não Informado' as string) as territorio_referencia_familia,
+        cast('Não Informado' as string) as flag_possibilidade_reinsercao_familiar,
         u.atvd_remunerada as flag_exerce_atividade_renda,
         u.profissao as atividade_renda_qual,
         u.renda_ativa as valor_renda,
-        null as flag_empregabilidade_imediata,
-        null as capacidade_habilidades,
-        null as flag_interesse_curso,
+        cast('Não Informado' as string) as flag_empregabilidade_imediata,
+        cast('Não Informado' as string) as capacidade_habilidades,
+        cast('Não Informado' as string) as flag_interesse_curso,
         case u.flag_recebe_beneficio
             when 'S' then 'Sim'
             when 'N' then 'Não'
@@ -731,8 +731,8 @@ final as (
             ),
             ', '
         ), '') as encaminhamentos,
-        null as resultado_acesso,
-        null as resultado_descricao,
+        cast('Não Informado' as string) as resultado_acesso,
+        cast('Não Informado' as string) as resultado_descricao,
         df.data_desligamento,
         array_to_string(
             [
@@ -741,7 +741,7 @@ final as (
             ],
             '; '
         ) as motivo_desligamento,
-        null as observacoes,
+        cast('Não Informado' as string) as observacoes,
         u.flag_situacao_rua,
         {{ extrair_ultima_atualizacao('raw_configuracoes_sistema') }} as ultima_atualizacao
     from atendimentos as a
@@ -780,5 +780,65 @@ final as (
     -- Preserva atendimentos sem cadastro dimensional; remove usuários de teste
     -- quando o nome cadastral está disponível.
     where u.nome is null or lower(u.nome) not like '%teste%'
+),
+
+-- Normaliza ausências textuais para facilitar filtros no Looker. Campos DATE,
+-- numéricos e identificadores permanecem tipados e continuam NULL quando a
+-- fonte não fornece valor.
+final_com_nao_informado as (
+    select * replace (
+        coalesce(nome_centro_pop, 'Não Informado') as nome_centro_pop,
+        coalesce(nome_atendimento, 'Não Informado') as nome_atendimento,
+        coalesce(tipo_atendimento, 'Não Informado') as tipo_atendimento,
+        coalesce(profissionais_atendimento, 'Não Informado') as profissionais_atendimento,
+        coalesce(nome_usuario, 'Não Informado') as nome_usuario,
+        coalesce(nome_social, 'Não Informado') as nome_social,
+        coalesce(flag_atendido_pontualmente, 'Não Informado') as flag_atendido_pontualmente,
+        coalesce(flag_inserido_acompanhamento, 'Não Informado') as flag_inserido_acompanhamento,
+        coalesce(flag_possui_plano_individual, 'Não Informado') as flag_possui_plano_individual,
+        coalesce(motivo_principal_permanencia_rua, 'Não Informado') as motivo_principal_permanencia_rua,
+        coalesce(motivo_secundario_permanencia_rua, 'Não Informado') as motivo_secundario_permanencia_rua,
+        coalesce(filiacao_mae, 'Não Informado') as filiacao_mae,
+        coalesce(flag_registro_formulario_documentacao_civil, 'Não Informado') as flag_registro_formulario_documentacao_civil,
+        coalesce(flag_possui_cpf, 'Não Informado') as flag_possui_cpf,
+        coalesce(numero_cpf, 'Não Informado') as numero_cpf,
+        coalesce(flag_possui_rg, 'Não Informado') as flag_possui_rg,
+        coalesce(numero_rg, 'Não Informado') as numero_rg,
+        coalesce(flag_possui_certidao_nascimento, 'Não Informado') as flag_possui_certidao_nascimento,
+        coalesce(numero_certidao_nascimento, 'Não Informado') as numero_certidao_nascimento,
+        coalesce(genero, 'Não Informado') as genero,
+        coalesce(orientacao_sexual, 'Não Informado') as orientacao_sexual,
+        coalesce(raca_cor, 'Não Informado') as raca_cor,
+        coalesce(naturalidade, 'Não Informado') as naturalidade,
+        coalesce(flag_estuda, 'Não Informado') as flag_estuda,
+        coalesce(ano_cursando, 'Não Informado') as ano_cursando,
+        coalesce(nivel_escolaridade, 'Não Informado') as nivel_escolaridade,
+        coalesce(flag_deficiencia, 'Não Informado') as flag_deficiencia,
+        coalesce(tipo_deficiencia, 'Não Informado') as tipo_deficiencia,
+        coalesce(flag_uso_substancias_psicoativas, 'Não Informado') as flag_uso_substancias_psicoativas,
+        coalesce(flag_problema_saude, 'Não Informado') as flag_problema_saude,
+        coalesce(flag_acompanhamento_saude, 'Não Informado') as flag_acompanhamento_saude,
+        coalesce(flag_possui_vinculo_familiar, 'Não Informado') as flag_possui_vinculo_familiar,
+        coalesce(territorio_referencia_familia, 'Não Informado') as territorio_referencia_familia,
+        coalesce(flag_possibilidade_reinsercao_familiar, 'Não Informado') as flag_possibilidade_reinsercao_familiar,
+        coalesce(flag_exerce_atividade_renda, 'Não Informado') as flag_exerce_atividade_renda,
+        coalesce(atividade_renda_qual, 'Não Informado') as atividade_renda_qual,
+        coalesce(flag_empregabilidade_imediata, 'Não Informado') as flag_empregabilidade_imediata,
+        coalesce(capacidade_habilidades, 'Não Informado') as capacidade_habilidades,
+        coalesce(flag_interesse_curso, 'Não Informado') as flag_interesse_curso,
+        coalesce(flag_possui_beneficio, 'Não Informado') as flag_possui_beneficio,
+        coalesce(tipo_beneficio, 'Não Informado') as tipo_beneficio,
+        coalesce(beneficio, 'Não Informado') as beneficio,
+        coalesce(nis_usuario, 'Não Informado') as nis_usuario,
+        coalesce(flag_participacao_oficinas, 'Não Informado') as flag_participacao_oficinas,
+        coalesce(demandas, 'Não Informado') as demandas,
+        coalesce(encaminhamentos, 'Não Informado') as encaminhamentos,
+        coalesce(resultado_acesso, 'Não Informado') as resultado_acesso,
+        coalesce(resultado_descricao, 'Não Informado') as resultado_descricao,
+        coalesce(motivo_desligamento, 'Não Informado') as motivo_desligamento,
+        coalesce(observacoes, 'Não Informado') as observacoes,
+        coalesce(flag_situacao_rua, 'Não Informado') as flag_situacao_rua
+    )
+    from final
 )
-select * from final
+select * from final_com_nao_informado
