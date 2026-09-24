@@ -5,9 +5,9 @@ models:
     description: |
       Planilha Unificada Centro POP — 1 linha por id_atendimento não cancelado
       realizado em unidade Centro POP. Usuário, unidade e mês de referência são
-      atributos do atendimento. Contagens e estados PAI de fim de mês continuam
-      mensais e são repetidos em cada atendimento do mês; as contagens com sufixo
-      '_mes' não devem ser somadas entre as linhas da mart.
+      atributos do atendimento. Contagens mensais e campos PAI com sufixo
+      '_fim_mes' são repetidos em cada atendimento do mês; não some contagens
+      com sufixo '_mes' entre as linhas da mart.
 
       Semântica temporal e limitações:
       - O profissional é uma lista dos profissionais ligados ao atendimento, não uma
@@ -25,17 +25,24 @@ models:
       - CPF vem do cadastro do prontuário (raw_usuarios.cpf); RG e certidão vêm do
         snapshot atual de raw_documento_pessoa do CadÚnico, associado por CPF. Os
         números permanecem texto; zeros excedentes à esquerda do RG são removidos.
-        Não há
-        histórico desses documentos para reconstituir posse na data do atendimento.
+        Não há histórico desses documentos para reconstituir posse na data do atendimento.
+      - A dimensão de unidades é reduzida a uma linha por id_unidade. Nomes distintos
+        são ordenados alfabeticamente e apresentados separados por ' | ', preservando
+        divergências sem multiplicar atendimentos.
+      - As flags de PAI sem sufixo são observadas na data do atendimento. As flags
+        mensais usam '_fim_mes'. A semântica de 'atendido pontualmente' preserva a
+        regra mensal histórica, mas sua interpretação ainda depende de confirmação
+        da área de negócio.
       - Cadastro Único: data de atualização usa CPF → documento_pessoa.id_familia →
         identificacao_controle.id_familia. A família do prontuário não é a família
         CadÚnico; CPFs com vínculo ambíguo ficam sem data. A ausência de documento não
         é convertida em 'Não' quando a fonte não informa explicitamente essa ausência.
       - 'Documentação Civil' indica formulário registrado e extraível; não comprova
         posse de documento nem necessariamente uma demanda.
-      - Campos sem fonte são apresentados como 'Não Informado': território de referência, reinserção familiar,
-        empregabilidade imediata, capacidade/habilidades, interesse em curso,
-        resultado/acesso, resultado/descrição e observações.
+      - Campos sem fonte são apresentados como 'Não Informado': território de
+        referência, reinserção familiar, empregabilidade imediata, capacidade/
+        habilidades, interesse em curso, resultado/acesso, resultado/descrição e
+        observações.
     columns:
       - name: id_usuario
         description: Identificador do usuário no prontuário (id_paciente).
@@ -44,7 +51,7 @@ models:
       - name: id_unidade
         description: Identificador da unidade Centro POP.
       - name: nome_centro_pop
-        description: Nome da unidade Centro POP.
+        description: Nome da unidade Centro POP; se a dimensão tiver nomes divergentes, são apresentados em ordem alfabética separados por ' | '.
       - name: mes_referencia
         description: Mês de referência (primeiro dia do mês do atendimento).
       - name: id_atendimento
@@ -62,16 +69,14 @@ models:
         description: Nome do usuário do serviço (cadastro).
       - name: nome_social
         description: Nome social do usuário (cadastro).
-      - name: flag_atendido_pontualmente
+      - name: flag_inserido_acompanhamento
         description: |
-          Sim/Não — regra documentada na versão original: Sim quando não havia inclusão
-          PAI conhecida até o fim do mês de referência. O valor é repetido no mês. A
-          interpretação do termo 'pontualmente' ainda depende de confirmação da área.
+          Sim/Não — havia inclusão PAI conhecida até a data deste atendimento.
         data_tests:
           - accepted_values:
               values: ['Sim', 'Não']
-      - name: flag_inserido_acompanhamento
-        description: Sim/Não — havia inclusão PAI conhecida até o fim do mês de referência; contexto mensal repetido por atendimento.
+      - name: flag_possui_plano_individual
+        description: Sim/Não — havia inclusão PAI conhecida até a data deste atendimento.
         data_tests:
           - accepted_values:
               values: ['Sim', 'Não']
@@ -81,11 +86,26 @@ models:
           Usa o campo 'Data do atendimento:' do formulário; fallback para a data da
           evolução. Ambos os ramos são convertidos para DATE. Evoluções posteriores
           ao atendimento não são associadas.
-      - name: flag_possui_plano_individual
-        description: Sim/Não — havia inclusão PAI conhecida até o fim do mês de referência; contexto mensal repetido por atendimento.
+      - name: flag_atendido_pontualmente_fim_mes
+        description: |
+          Sim/Não — preserva a implementação histórica: Sim quando não havia inclusão
+          PAI conhecida até o fim do mês de referência. A interpretação de
+          'pontualmente' ainda depende de confirmação da área de negócio.
         data_tests:
           - accepted_values:
               values: ['Sim', 'Não']
+      - name: flag_inserido_acompanhamento_fim_mes
+        description: Sim/Não — havia inclusão PAI conhecida até o fim do mês; contexto mensal repetido por atendimento.
+        data_tests:
+          - accepted_values:
+              values: ['Sim', 'Não']
+      - name: flag_possui_plano_individual_fim_mes
+        description: Sim/Não — havia inclusão PAI conhecida até o fim do mês; contexto mensal repetido por atendimento.
+        data_tests:
+          - accepted_values:
+              values: ['Sim', 'Não']
+      - name: data_inclusao_acompanhamento_fim_mes
+        description: Primeira data de inclusão PAI conhecida até o fim do mês de referência; contexto mensal repetido por atendimento.
       - name: data_ultimo_atendimento_mes
         description: Data do último atendimento do usuário/unidade no mês; contexto mensal repetido nas linhas do mês.
       - name: qtd_atendimentos_total_mes
@@ -128,7 +148,7 @@ models:
           - accepted_values:
               values: ['Sim', 'Não Informado']
       - name: numero_rg
-        description: Número RG textual de raw_documento_pessoa.rg, associado por CPF; remove zeros excedentes à esquerda e só é informado quando há um único valor distinto.
+        description: Número RG textual de raw_documento_pessoa.rg, associado por CPF; remove padding de zeros à esquerda, mantém '0' se a fonte só contém zeros e só informa um valor quando resta um único RG distinto após a normalização.
       - name: flag_possui_certidao_nascimento
         description: Sim/Não Informado — Sim quando raw_documento_pessoa registra tipo de certidão 1 (nascimento); ausência de vínculo ou de evidência não presume ausência do documento.
         data_tests:

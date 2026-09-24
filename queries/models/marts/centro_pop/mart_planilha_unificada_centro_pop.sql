@@ -21,11 +21,14 @@
 --   - fct_presencas_usuarios: oficinas/atividades coletivas no mês.
 
 with centro_pop as (
-    select distinct
+    -- Uma linha por unidade. Agrega nomes distintos em ordem estável para
+    -- não multiplicar atendimentos nem descartar eventuais divergências.
+    select
         id_unidade,
-        nome_unidade
+        string_agg(distinct nome_unidade, ' | ' order by nome_unidade) as nome_unidade
     from {{ ref('dim_unidades') }}
     where tipo_unidade = 'Centro POP'
+    group by id_unidade
 ),
 
 -- O fato tem uma linha por atendimento × profissional compartilhado.
@@ -154,40 +157,8 @@ usuarios as (
     left join {{ ref('raw_usuarios_saude_mental') }} as sm on du.id_usuario = sm.id_paciente
 ),
 
--- Formulários do prontuário (codigo_abrangencia = 29, módulos família e usuário)
-evolucoes_pai as (
-    select
-        e.id_evolucao,
-        e.id_unidade,
-        e.codigo_abrangencia,
-        e.descricao_evolucao,
-        e.data_evolucao,
-        coalesce(du.id_usuario, e.id_paciente_familia) as id_paciente
-    from {{ ref('fct_evolucoes') }} as e
-    left join {{ ref('dim_usuarios') }} as du on e.id_usuario_sk = du.id_usuario_sk
-    where
-        e.codigo_abrangencia = 29
-        and e.data_cancelamento is null
-        and coalesce(du.id_usuario, e.id_paciente_familia) is not null
-),
-
-evolucoes_atendimento_social as (
-    select
-        e.id_evolucao,
-        e.id_unidade,
-        e.codigo_abrangencia,
-        e.descricao_evolucao,
-        e.data_evolucao,
-        coalesce(du.id_usuario, e.id_paciente_familia) as id_paciente
-    from {{ ref('fct_evolucoes') }} as e
-    left join {{ ref('dim_usuarios') }} as du on e.id_usuario_sk = du.id_usuario_sk
-    where
-        e.codigo_abrangencia = 29
-        and e.data_cancelamento is null
-        and coalesce(du.id_usuario, e.id_paciente_familia) is not null
-),
-
-evolucoes_desligamento as (
+-- Base comum para formulários da abrangência 29 (módulos família e usuário).
+evolucoes_centro_pop as (
     select
         e.id_evolucao,
         e.id_unidade,
@@ -205,21 +176,30 @@ evolucoes_desligamento as (
 
 -- Motivo de permanência na rua: formulário 'Acolhimento' (não existe o campo
 -- 'Motivo da ida às ruas' na fonte; usa 'Motivo do acolhimento' como fallback).
-evolucoes_acolhimento as (
+evolucoes_abrangencia_usuario as (
     select
         e.id_evolucao,
         e.codigo_abrangencia,
         e.descricao_evolucao,
         e.data_evolucao,
+        e.origem_modulo,
         du.id_usuario as id_paciente
     from {{ ref('fct_evolucoes') }} as e
     inner join {{ ref('dim_usuarios') }} as du on e.id_usuario_sk = du.id_usuario_sk
     where
         e.codigo_abrangencia = 1
         and e.data_cancelamento is null
-        and e.origem_modulo = 'usuario'
 ),
 
+evolucoes_acolhimento as (
+    select *
+    from evolucoes_abrangencia_usuario
+    where origem_modulo = 'usuario'
+),
+
+-- Situação de Saúde: formulário do prontuário (codigo_abrangencia = 1),
+-- registrado no módulo do usuário; join por usuário sem filtro de unidade,
+-- pois o formulário pode ter sido preenchido em outra unidade.
 evolucoes_documentacao as (
     select
         e.id_evolucao,
@@ -235,21 +215,9 @@ evolucoes_documentacao as (
         and coalesce(du.id_usuario, e.id_paciente_familia) is not null
 ),
 
--- Situação de Saúde: formulário do prontuário (codigo_abrangencia = 1),
--- registrado no módulo do usuário; join por usuário sem filtro de unidade,
--- pois o formulário pode ter sido preenchido em outra unidade.
 evolucoes_saude as (
-    select
-        e.id_evolucao,
-        e.codigo_abrangencia,
-        e.descricao_evolucao,
-        e.data_evolucao,
-        du.id_usuario as id_paciente
-    from {{ ref('fct_evolucoes') }} as e
-    inner join {{ ref('dim_usuarios') }} as du on e.id_usuario_sk = du.id_usuario_sk
-    where
-        e.codigo_abrangencia = 1
-        and e.data_cancelamento is null
+    select *
+    from evolucoes_abrangencia_usuario
 ),
 
 -- Campo 'Data do atendimento:' do formulário PAI, por evolução
@@ -260,7 +228,7 @@ pai_data_atendimento as (
         id_evolucao,
         max(case when label like 'Data do atendimento' then valor end) as data_atendimento
     from {{ extrair_campos_html_evolucao(
-        source_relation = 'evolucoes_pai',
+        source_relation = 'evolucoes_centro_pop',
         id_cols = ['id_paciente', 'id_unidade', 'id_evolucao'],
         extra_where = 'codigo_abrangencia = 29'
     ) }}
@@ -278,7 +246,7 @@ pai_inclusao_atendimento as (
             min(safe_cast(e.data_evolucao as date))
         ) as data_inclusao_acompanhamento
     from atendimentos as a
-    inner join evolucoes_pai as e
+    inner join evolucoes_centro_pop as e
         on
             a.id_usuario = e.id_paciente
             and a.id_unidade = e.id_unidade
@@ -304,7 +272,7 @@ pai_inclusao_mes as (
             min(safe_cast(e.data_evolucao as date))
         ) as data_inclusao_acompanhamento_mes
     from atendimentos_mes as am
-    inner join evolucoes_pai as e
+    inner join evolucoes_centro_pop as e
         on
             am.id_usuario = e.id_paciente
             and am.id_unidade = e.id_unidade
@@ -323,7 +291,7 @@ pai_inclusao_mes as (
 
 pai_form as (
     {{ extrair_formulario(
-        source_relation = 'evolucoes_pai',
+        source_relation = 'evolucoes_centro_pop',
         group_cols = ['id_paciente', 'id_unidade', 'id_evolucao', 'data_evolucao'],
         codigo_abrangencia = 29,
         titulo_formulario = 'Centro POP - Plano de Atendimento Individual (PAI)',
@@ -337,7 +305,7 @@ pai_form as (
 
 atendimento_social_form as (
     {{ extrair_formulario(
-        source_relation = 'evolucoes_atendimento_social',
+        source_relation = 'evolucoes_centro_pop',
         group_cols = ['id_paciente', 'id_unidade', 'id_evolucao', 'data_evolucao'],
         codigo_abrangencia = 29,
         titulo_formulario = 'Centro POP - Atendimento Social',
@@ -356,7 +324,7 @@ atendimento_social_form as (
 
 desligamento_form as (
     {{ extrair_formulario(
-        source_relation = 'evolucoes_desligamento',
+        source_relation = 'evolucoes_centro_pop',
         group_cols = ['id_paciente', 'id_unidade', 'id_evolucao', 'data_evolucao'],
         codigo_abrangencia = 29,
         titulo_formulario = 'Centro POP - Desligamento PAI',
@@ -426,145 +394,141 @@ questionario_situacao_usuario as (
         and ql.id_questao = 18
 ),
 
--- Seleciona o formulário mais recente registrado até cada atendimento. Formulários
--- posteriores não retroagem para atendimentos anteriores.
+-- Seleciona o formulário mais recente até cada atendimento; a macro recebe as
+-- chaves e colunas por chamada, e nunca associa registros posteriores.
 pai_form_atendimento as (
-    select a.id_atendimento, pf.demandas_pai, pf.encaminhamentos_pai
-    from atendimentos as a
-    inner join pai_form as pf
-        on
-            a.id_usuario = pf.id_paciente
-            and a.id_unidade = pf.id_unidade
-            and safe_cast(pf.data_evolucao as date) <= a.data_atendimento
-    qualify row_number() over (
-        partition by a.id_atendimento
-        order by pf.data_evolucao desc, pf.id_evolucao desc
-    ) = 1
+    {{ latest_record_as_of(
+        event_relation = 'atendimentos', record_relation = 'pai_form',
+        key_pairs = [
+            {'event': 'id_usuario', 'record': 'id_paciente'},
+            {'event': 'id_unidade', 'record': 'id_unidade'}
+        ],
+        event_id = 'id_atendimento', event_date = 'data_atendimento',
+        record_date = 'data_evolucao', record_id = 'id_evolucao',
+        select_columns = ['demandas_pai', 'encaminhamentos_pai']
+    ) }}
 ),
 
 atendimento_social_form_atendimento as (
-    select a.id_atendimento, asf.demanda_inicial, asf.flag_possui_referencias_familiares, asf.encaminhamentos_as
-    from atendimentos as a
-    inner join atendimento_social_form as asf
-        on
-            a.id_usuario = asf.id_paciente
-            and a.id_unidade = asf.id_unidade
-            and safe_cast(asf.data_evolucao as date) <= a.data_atendimento
-    qualify row_number() over (
-        partition by a.id_atendimento
-        order by asf.data_evolucao desc, asf.id_evolucao desc
-    ) = 1
+    {{ latest_record_as_of(
+        event_relation = 'atendimentos', record_relation = 'atendimento_social_form',
+        key_pairs = [
+            {'event': 'id_usuario', 'record': 'id_paciente'},
+            {'event': 'id_unidade', 'record': 'id_unidade'}
+        ],
+        event_id = 'id_atendimento', event_date = 'data_atendimento',
+        record_date = 'data_evolucao', record_id = 'id_evolucao',
+        select_columns = ['demanda_inicial', 'flag_possui_referencias_familiares', 'encaminhamentos_as']
+    ) }}
 ),
 
 desligamento_form_atendimento as (
-    select a.id_atendimento, df.data_desligamento, df.motivo_desligamento, df.motivo_desligamento_outros
-    from atendimentos as a
-    inner join desligamento_form as df
-        on
-            a.id_usuario = df.id_paciente
-            and a.id_unidade = df.id_unidade
-            and safe_cast(df.data_evolucao as date) <= a.data_atendimento
-    qualify row_number() over (
-        partition by a.id_atendimento
-        order by df.data_evolucao desc, df.id_evolucao desc
-    ) = 1
+    {{ latest_record_as_of(
+        event_relation = 'atendimentos', record_relation = 'desligamento_form',
+        key_pairs = [
+            {'event': 'id_usuario', 'record': 'id_paciente'},
+            {'event': 'id_unidade', 'record': 'id_unidade'}
+        ],
+        event_id = 'id_atendimento', event_date = 'data_atendimento',
+        record_date = 'data_evolucao', record_id = 'id_evolucao',
+        select_columns = ['data_desligamento', 'motivo_desligamento', 'motivo_desligamento_outros']
+    ) }}
 ),
 
 acolhimento_form_atendimento as (
-    select a.id_atendimento, acf.motivo_ida_ruas, acf.motivo_acolhimento, acf.motivo_outros
-    from atendimentos as a
-    inner join acolhimento_form as acf
-        on a.id_usuario = acf.id_paciente and safe_cast(acf.data_evolucao as date) <= a.data_atendimento
-    qualify row_number() over (
-        partition by a.id_atendimento
-        order by acf.data_evolucao desc, acf.id_evolucao desc
-    ) = 1
+    {{ latest_record_as_of(
+        event_relation = 'atendimentos', record_relation = 'acolhimento_form',
+        key_pairs = [{'event': 'id_usuario', 'record': 'id_paciente'}],
+        event_id = 'id_atendimento', event_date = 'data_atendimento',
+        record_date = 'data_evolucao', record_id = 'id_evolucao',
+        select_columns = ['motivo_ida_ruas', 'motivo_acolhimento', 'motivo_outros']
+    ) }}
 ),
 
 documentacao_form_atendimento as (
-    select a.id_atendimento, doc.flag_registro_formulario_documentacao_civil
-    from atendimentos as a
-    inner join documentacao_form as doc
-        on a.id_usuario = doc.id_paciente and safe_cast(doc.data_evolucao as date) <= a.data_atendimento
-    qualify row_number() over (
-        partition by a.id_atendimento
-        order by doc.data_evolucao desc, doc.id_evolucao desc
-    ) = 1
+    {{ latest_record_as_of(
+        event_relation = 'atendimentos', record_relation = 'documentacao_form',
+        key_pairs = [{'event': 'id_usuario', 'record': 'id_paciente'}],
+        event_id = 'id_atendimento', event_date = 'data_atendimento',
+        record_date = 'data_evolucao', record_id = 'id_evolucao',
+        select_columns = ['flag_registro_formulario_documentacao_civil']
+    ) }}
 ),
 
 situacao_saude_atendimento as (
-    select a.id_atendimento, ss.uso_substancias, ss.situacao_saude, ss.local_tratamento
-    from atendimentos as a
-    inner join situacao_saude as ss
-        on a.id_usuario = ss.id_paciente and safe_cast(ss.data_evolucao as date) <= a.data_atendimento
-    qualify row_number() over (
-        partition by a.id_atendimento
-        order by ss.data_evolucao desc, ss.id_evolucao desc
-    ) = 1
+    {{ latest_record_as_of(
+        event_relation = 'atendimentos', record_relation = 'situacao_saude',
+        key_pairs = [{'event': 'id_usuario', 'record': 'id_paciente'}],
+        event_id = 'id_atendimento', event_date = 'data_atendimento',
+        record_date = 'data_evolucao', record_id = 'id_evolucao',
+        select_columns = ['uso_substancias', 'situacao_saude', 'local_tratamento']
+    ) }}
 ),
 
 questionario_situacao_usuario_atendimento as (
-    select a.id_atendimento, q.motivo_ida_ruas
-    from atendimentos as a
-    inner join questionario_situacao_usuario as q
-        on a.id_usuario = q.id_usuario and safe_cast(q.data_resposta as date) <= a.data_atendimento
-    qualify row_number() over (
-        partition by a.id_atendimento
-        order by q.data_resposta desc, q.id_evolucao desc
-    ) = 1
-),
-
--- NIS via CadÚnico. A dimensão de membro expõe apenas id_membro_familia,
--- portanto o vínculo segue essa chave e a saída é reduzida a uma linha/CPF.
-nis_cadunico as (
-    select
-        nullif(regexp_replace(coalesce(d.cpf, ''), r'[^0-9]', ''), '') as cpf_normalizado,
-        any_value(m.nis) as nis
-    from {{ ref('raw_documento_pessoa') }} as d
-    left join {{ ref('raw_identificacao_membro') }} as m on d.id_membro_familia = m.id_membro_familia
-    where nullif(regexp_replace(coalesce(d.cpf, ''), r'[^0-9]', ''), '') is not null
-    group by cpf_normalizado
+    {{ latest_record_as_of(
+        event_relation = 'atendimentos', record_relation = 'questionario_situacao_usuario',
+        key_pairs = [{'event': 'id_usuario', 'record': 'id_usuario'}],
+        event_id = 'id_atendimento', event_date = 'data_atendimento',
+        record_date = 'data_resposta',
+        record_id = 'id_evolucao',
+        select_columns = ['motivo_ida_ruas']
+    ) }}
 ),
 
 -- Documentos do CadÚnico ligados ao prontuário por CPF normalizado. A família
--- do CadÚnico é uma chave distinta da família do prontuário; só é usada para
--- data de atualização quando o CPF aponta para uma única família CadÚnico.
+-- do CadÚnico é distinta da família do prontuário. NIS vem da dimensão de membro
+-- pela chave id_membro_familia; a agregação reduz o resultado a uma linha/CPF.
 documentos_cadunico as (
     select
-        nullif(regexp_replace(coalesce(cpf, ''), r'[^0-9]', ''), '') as cpf_normalizado,
-        count(distinct safe_cast(trim(id_familia) as int64)) as qtd_familias_cadunico,
+        s.cpf_normalizado,
+        any_value(s.nis) as nis,
         if(
-            count(distinct safe_cast(trim(id_familia) as int64)) = 1,
-            max(safe_cast(trim(id_familia) as int64)),
+            count(distinct safe_cast(trim(s.id_familia) as int64)) = 1,
+            max(safe_cast(trim(s.id_familia) as int64)),
             null
         ) as id_familia_cadunico,
         if(
-            count(distinct nullif(trim(rg), '')) = 1,
-            max(nullif(trim(rg), '')),
+            count(distinct s.numero_rg_normalizado) = 1,
+            max(s.numero_rg_normalizado),
             null
         ) as numero_rg,
         if(
-            count(distinct nullif(trim(rg), '')) = 1,
+            count(distinct s.numero_rg_normalizado) = 1,
             'Sim',
             'Não Informado'
         ) as flag_possui_rg,
-        if(logical_or(safe_cast(id_certidao_civil as int64) = 1), 'Sim', 'Não Informado') as flag_possui_certidao_nascimento,
+        if(logical_or(safe_cast(s.id_certidao_civil as int64) = 1), 'Sim', 'Não Informado') as flag_possui_certidao_nascimento,
         if(
             count(distinct if(
-                safe_cast(id_certidao_civil as int64) = 1,
-                nullif(trim(id_termi_matricula_certidao), ''),
+                safe_cast(s.id_certidao_civil as int64) = 1,
+                nullif(trim(s.id_termi_matricula_certidao), ''),
                 null
             )) = 1,
             max(if(
-                safe_cast(id_certidao_civil as int64) = 1,
-                nullif(trim(id_termi_matricula_certidao), ''),
+                safe_cast(s.id_certidao_civil as int64) = 1,
+                nullif(trim(s.id_termi_matricula_certidao), ''),
                 null
             )),
             null
         ) as numero_certidao_nascimento
-    from {{ ref('raw_documento_pessoa') }}
-    where nullif(regexp_replace(coalesce(cpf, ''), r'[^0-9]', ''), '') is not null
-    group by cpf_normalizado
+    from (
+        select
+            d.id_familia,
+            d.id_certidao_civil,
+            d.id_termi_matricula_certidao,
+            nullif(regexp_replace(coalesce(d.cpf, ''), r'[^0-9]', ''), '') as cpf_normalizado,
+            m.nis,
+            case
+                when nullif(trim(d.rg), '') is null then null
+                when regexp_replace(trim(d.rg), r'^0+', '') = '' then '0'
+                else regexp_replace(trim(d.rg), r'^0+', '')
+            end as numero_rg_normalizado
+        from {{ ref('raw_documento_pessoa') }} as d
+        left join {{ ref('raw_identificacao_membro') }} as m on d.id_membro_familia = m.id_membro_familia
+        where nullif(regexp_replace(coalesce(d.cpf, ''), r'[^0-9]', ''), '') is not null
+    ) as s
+    group by s.cpf_normalizado
 ),
 
 -- Oficinas/atividades coletivas do mês na unidade
@@ -604,10 +568,15 @@ final as (
         array_to_string(a.profissionais_atendimento, ', ') as profissionais_atendimento,
         u.nome as nome_usuario,
         u.nome_social,
-        {{ map_flag_boolean('pim.data_inclusao_acompanhamento_mes is null') }} as flag_atendido_pontualmente,
-        {{ map_flag_boolean('pim.data_inclusao_acompanhamento_mes is not null') }} as flag_inserido_acompanhamento,
+        -- Flags sem sufixo descrevem o estado conhecido na data do atendimento.
+        {{ map_flag_boolean('pi.data_inclusao_acompanhamento is not null') }} as flag_inserido_acompanhamento,
         pi.data_inclusao_acompanhamento,
-        {{ map_flag_boolean('pim.data_inclusao_acompanhamento_mes is not null') }} as flag_possui_plano_individual,
+        {{ map_flag_boolean('pi.data_inclusao_acompanhamento is not null') }} as flag_possui_plano_individual,
+        -- O fechamento mensal preserva a regra histórica em colunas explícitas.
+        {{ map_flag_boolean('pim.data_inclusao_acompanhamento_mes is null') }} as flag_atendido_pontualmente_fim_mes,
+        {{ map_flag_boolean('pim.data_inclusao_acompanhamento_mes is not null') }} as flag_inserido_acompanhamento_fim_mes,
+        {{ map_flag_boolean('pim.data_inclusao_acompanhamento_mes is not null') }} as flag_possui_plano_individual_fim_mes,
+        pim.data_inclusao_acompanhamento_mes as data_inclusao_acompanhamento_fim_mes,
         am.data_ultimo_atendimento_mes,
         am.qtd_atendimentos_total_mes,
         am.qtd_atendimentos_tecnico_mes,
@@ -629,11 +598,7 @@ final as (
         end as flag_possui_cpf,
         nullif(trim(u.cpf), '') as numero_cpf,
         coalesce(dc.flag_possui_rg, 'Não Informado') as flag_possui_rg,
-        case
-            when dc.numero_rg is null then null
-            when regexp_replace(dc.numero_rg, r'^0+', '') = '' then '0'
-            else regexp_replace(dc.numero_rg, r'^0+', '')
-        end as numero_rg,
+        dc.numero_rg,
         coalesce(dc.flag_possui_certidao_nascimento, 'Não Informado') as flag_possui_certidao_nascimento,
         dc.numero_certidao_nascimento,
         u.genero,
@@ -700,7 +665,7 @@ final as (
             )
         end as beneficio,
         ic.data_atualizacao as data_atualizacao_cadunico,
-        n.nis as nis_usuario,
+        dc.nis as nis_usuario,
         {{ map_flag_boolean('coalesce(ofc.qtd_oficinas > 0, false)') }} as flag_participacao_oficinas,
         coalesce(ofc.qtd_oficinas, 0) as qtd_oficinas_participadas_mes,
         nullif(array_to_string(
@@ -772,8 +737,6 @@ final as (
     left join documentacao_form_atendimento as doc on a.id_atendimento = doc.id_atendimento
     left join documentos_cadunico as dc
         on nullif(regexp_replace(coalesce(u.cpf, ''), r'[^0-9]', ''), '') = dc.cpf_normalizado
-    left join nis_cadunico as n
-        on nullif(regexp_replace(coalesce(u.cpf, ''), r'[^0-9]', ''), '') = n.cpf_normalizado
     left join cadunico_atualizacao as ic
         on dc.id_familia_cadunico = ic.id_familia_cadunico
     left join oficinas as ofc
@@ -797,9 +760,11 @@ final_com_nao_informado as (
         coalesce(profissionais_atendimento, 'Não Informado') as profissionais_atendimento,
         coalesce(nome_usuario, 'Não Informado') as nome_usuario,
         coalesce(nome_social, 'Não Informado') as nome_social,
-        coalesce(flag_atendido_pontualmente, 'Não Informado') as flag_atendido_pontualmente,
         coalesce(flag_inserido_acompanhamento, 'Não Informado') as flag_inserido_acompanhamento,
         coalesce(flag_possui_plano_individual, 'Não Informado') as flag_possui_plano_individual,
+        coalesce(flag_atendido_pontualmente_fim_mes, 'Não Informado') as flag_atendido_pontualmente_fim_mes,
+        coalesce(flag_inserido_acompanhamento_fim_mes, 'Não Informado') as flag_inserido_acompanhamento_fim_mes,
+        coalesce(flag_possui_plano_individual_fim_mes, 'Não Informado') as flag_possui_plano_individual_fim_mes,
         coalesce(motivo_principal_permanencia_rua, 'Não Informado') as motivo_principal_permanencia_rua,
         coalesce(motivo_secundario_permanencia_rua, 'Não Informado') as motivo_secundario_permanencia_rua,
         coalesce(filiacao_mae, 'Não Informado') as filiacao_mae,
