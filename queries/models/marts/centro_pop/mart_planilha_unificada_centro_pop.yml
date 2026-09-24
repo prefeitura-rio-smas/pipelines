@@ -24,7 +24,8 @@ models:
         há valor disponível.
       - CPF vem do cadastro do prontuário (raw_usuarios.cpf); RG e certidão vêm do
         snapshot atual de raw_documento_pessoa do CadÚnico, associado por CPF. Os
-        números permanecem texto e os zeros à esquerda são preservados. Não há
+        números permanecem texto; zeros excedentes à esquerda do RG são removidos.
+        Não há
         histórico desses documentos para reconstituir posse na data do atendimento.
       - Cadastro Único: data de atualização usa CPF → documento_pessoa.id_familia →
         identificacao_controle.id_familia. A família do prontuário não é a família
@@ -127,7 +128,7 @@ models:
           - accepted_values:
               values: ['Sim', 'Não Informado']
       - name: numero_rg
-        description: Número RG textual de raw_documento_pessoa.rg, associado por CPF; preserva zeros à esquerda e só é informado quando há um único valor distinto.
+        description: Número RG textual de raw_documento_pessoa.rg, associado por CPF; remove zeros excedentes à esquerda e só é informado quando há um único valor distinto.
       - name: flag_possui_certidao_nascimento
         description: Sim/Não Informado — Sim quando raw_documento_pessoa registra tipo de certidão 1 (nascimento); ausência de vínculo ou de evidência não presume ausência do documento.
         data_tests:
