@@ -21,12 +21,11 @@
 --   - fct_presencas_usuarios: oficinas/atividades coletivas no mês.
 
 with centro_pop as (
-    select
+    select distinct
         id_unidade,
-        max(nome_unidade) as nome_unidade
+        nome_unidade
     from {{ ref('dim_unidades') }}
     where tipo_unidade = 'Centro POP'
-    group by id_unidade
 ),
 
 -- O fato tem uma linha por atendimento × profissional compartilhado.
@@ -35,12 +34,9 @@ atendimentos_candidatos as (
         a.id_usuario,
         a.id_unidade,
         a.id_atendimento,
-        a.id_atendimento_modulo,
-        a.id_profissional,
         safe_cast(a.data_atendimento as date) as data_atendimento,
         a.tipo_atendimento_descricao as nome_atendimento,
         dp.nome as profissional,
-        dp.cbo_principal_descricao as profissional_cbo,
         case
             -- Profissional de nível superior = grupo CBO 2 (descrições da fonte têm sufixo " CENTRO POP")
             when substr(trim(cast(dp.cbo_principal_codigo as string)), 1, 1) = '2' then 'Atendimento Técnico'
@@ -58,15 +54,24 @@ atendimentos_candidatos as (
     where (a.flag_cancelado is null or a.flag_cancelado != 'S')
 ),
 
--- Reagrega profissionais compartilhados para manter uma linha por atendimento.
--- A classificação conserva a precedência: técnico, recepção e outros.
-atendimentos as (
+-- Deduplica apenas cópias idênticas dos atributos do fato. Se um ID tiver
+-- usuários, unidades, datas ou nomes divergentes, as linhas continuam distintas
+-- e os testes de chave falham; não escolhemos MIN/MAX para esconder o conflito.
+atendimentos_eventos as (
     select
         id_atendimento,
-        min(id_usuario) as id_usuario,
-        min(id_unidade) as id_unidade,
-        min(data_atendimento) as data_atendimento,
-        max(nome_atendimento) as nome_atendimento,
+        id_usuario,
+        id_unidade,
+        data_atendimento,
+        nome_atendimento
+    from atendimentos_candidatos
+    group by id_atendimento, id_usuario, id_unidade, data_atendimento, nome_atendimento
+),
+
+-- Profissionais compartilhados são agregados separadamente dos atributos do fato.
+atendimentos_profissionais as (
+    select
+        id_atendimento,
         array_agg(distinct profissional ignore nulls order by profissional) as profissionais_atendimento,
         case
             when countif(tipo_atendimento = 'Atendimento Técnico') > 0 then 'Atendimento Técnico'
@@ -77,15 +82,28 @@ atendimentos as (
     group by id_atendimento
 ),
 
+atendimentos as (
+    select
+        e.id_atendimento,
+        e.id_usuario,
+        e.id_unidade,
+        e.data_atendimento,
+        e.nome_atendimento,
+        p.profissionais_atendimento,
+        p.tipo_atendimento
+    from atendimentos_eventos as e
+    left join atendimentos_profissionais as p using (id_atendimento)
+),
+
 atendimentos_mes as (
     select
         id_usuario,
         id_unidade,
         date_trunc(data_atendimento, month) as mes_referencia,
-        count(*) as qtd_atendimentos_total,
-        countif(tipo_atendimento = 'Atendimento Técnico') as qtd_atendimentos_tecnico,
-        countif(tipo_atendimento = 'Atendimento Recepção') as qtd_atendimentos_recepcao,
-        countif(tipo_atendimento = 'Outros Atendimentos') as qtd_atendimentos_outros,
+        count(*) as qtd_atendimentos_total_mes,
+        countif(tipo_atendimento = 'Atendimento Técnico') as qtd_atendimentos_tecnico_mes,
+        countif(tipo_atendimento = 'Atendimento Recepção') as qtd_atendimentos_recepcao_mes,
+        countif(tipo_atendimento = 'Outros Atendimentos') as qtd_atendimentos_outros_mes,
         max(data_atendimento) as data_ultimo_atendimento_mes
     from atendimentos
     group by id_usuario, id_unidade, mes_referencia
@@ -272,6 +290,35 @@ pai_inclusao_atendimento as (
             and e.id_evolucao = pv.id_evolucao
     where coalesce(safe.parse_date('%d/%m/%Y', pv.data_atendimento), safe_cast(e.data_evolucao as date)) <= a.data_atendimento
     group by a.id_atendimento
+),
+
+-- A regra histórica de pontualidade é mensal: a situação é observada no fim
+-- do mês, usando somente evoluções PAI registradas até esse limite.
+pai_inclusao_mes as (
+    select
+        am.id_usuario,
+        am.id_unidade,
+        am.mes_referencia,
+        coalesce(
+            min(safe.parse_date('%d/%m/%Y', pv.data_atendimento)),
+            min(safe_cast(e.data_evolucao as date))
+        ) as data_inclusao_acompanhamento_mes
+    from atendimentos_mes as am
+    inner join evolucoes_pai as e
+        on
+            am.id_usuario = e.id_paciente
+            and am.id_unidade = e.id_unidade
+            and safe_cast(e.data_evolucao as date) < date_add(am.mes_referencia, interval 1 month)
+    left join pai_data_atendimento as pv
+        on
+            e.id_paciente = pv.id_paciente
+            and e.id_unidade = pv.id_unidade
+            and e.id_evolucao = pv.id_evolucao
+    where coalesce(
+        safe.parse_date('%d/%m/%Y', pv.data_atendimento),
+        safe_cast(e.data_evolucao as date)
+    ) < date_add(am.mes_referencia, interval 1 month)
+    group by am.id_usuario, am.id_unidade, am.mes_referencia
 ),
 
 pai_form as (
@@ -492,12 +539,12 @@ documentos_cadunico as (
             null
         ) as id_familia_cadunico,
         if(
-            count(distinct nullif(regexp_replace(trim(rg), r'^0+', ''), '')) = 1,
-            max(nullif(regexp_replace(trim(rg), r'^0+', ''), '')),
+            count(distinct nullif(trim(rg), '')) = 1,
+            max(nullif(trim(rg), '')),
             null
         ) as numero_rg,
         if(
-            count(distinct nullif(regexp_replace(trim(rg), r'^0+', ''), '')) = 1,
+            count(distinct nullif(trim(rg), '')) = 1,
             'Sim',
             'Não Informado'
         ) as flag_possui_rg,
@@ -557,27 +604,15 @@ final as (
         array_to_string(a.profissionais_atendimento, ', ') as profissionais_atendimento,
         u.nome as nome_usuario,
         u.nome_social,
-        {{ map_flag_boolean('not coalesce(
-            pi.data_inclusao_acompanhamento is not null
-            and pi.data_inclusao_acompanhamento <= a.data_atendimento,
-            false
-        )') }} as flag_atendido_pontualmente,
-        {{ map_flag_boolean('coalesce(
-            pi.data_inclusao_acompanhamento is not null
-            and pi.data_inclusao_acompanhamento <= a.data_atendimento,
-            false
-        )') }} as flag_inserido_acompanhamento,
+        {{ map_flag_boolean('pim.data_inclusao_acompanhamento_mes is null') }} as flag_atendido_pontualmente,
+        {{ map_flag_boolean('pim.data_inclusao_acompanhamento_mes is not null') }} as flag_inserido_acompanhamento,
         pi.data_inclusao_acompanhamento,
-        {{ map_flag_boolean('coalesce(
-            pi.data_inclusao_acompanhamento is not null
-            and pi.data_inclusao_acompanhamento <= a.data_atendimento,
-            false
-        )') }} as flag_possui_plano_individual,
+        {{ map_flag_boolean('pim.data_inclusao_acompanhamento_mes is not null') }} as flag_possui_plano_individual,
         am.data_ultimo_atendimento_mes,
-        am.qtd_atendimentos_total,
-        am.qtd_atendimentos_tecnico,
-        am.qtd_atendimentos_recepcao,
-        am.qtd_atendimentos_outros,
+        am.qtd_atendimentos_total_mes,
+        am.qtd_atendimentos_tecnico_mes,
+        am.qtd_atendimentos_recepcao_mes,
+        am.qtd_atendimentos_outros_mes,
         coalesce(
             nullif(q.motivo_ida_ruas, 'undefined'),
             nullif(acf.motivo_ida_ruas, 'undefined'),
@@ -719,6 +754,11 @@ final as (
     left join usuarios as u on a.id_usuario = u.id_usuario
     left join familia_usuario as fam on a.id_usuario = fam.id_usuario
     left join pai_inclusao_atendimento as pi on a.id_atendimento = pi.id_atendimento
+    left join pai_inclusao_mes as pim
+        on
+            a.id_usuario = pim.id_usuario
+            and a.id_unidade = pim.id_unidade
+            and date_trunc(a.data_atendimento, month) = pim.mes_referencia
     left join pai_form_atendimento as pf on a.id_atendimento = pf.id_atendimento
     left join atendimento_social_form_atendimento as asf on a.id_atendimento = asf.id_atendimento
     left join desligamento_form_atendimento as df on a.id_atendimento = df.id_atendimento
