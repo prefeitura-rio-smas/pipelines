@@ -1,4 +1,7 @@
-{{ config(tags = ['daily']) }}
+{{ config(
+    tags = ['daily'],
+    alias = var('centro_pop_mart_alias', 'mart_planilha_unificada_centro_pop')
+) }}
 -- Mart: Planilha Unificada Centro POP
 -- Granularidade: 1 linha por id_atendimento não cancelado em unidade Centro POP.
 -- Contagens de atendimentos e oficinas são contextos mensais repetidos em cada
@@ -551,7 +554,7 @@ final as (
         a.data_atendimento,
         a.nome_atendimento,
         a.tipo_atendimento,
-        a.profissionais_atendimento,
+        array_to_string(a.profissionais_atendimento, ', ') as profissionais_atendimento,
         u.nome as nome_usuario,
         u.nome_social,
         {{ map_flag_boolean('not coalesce(
@@ -642,37 +645,57 @@ final as (
             else 'Não Informado'
         end as flag_possui_beneficio,
         u.tipo_beneficio,
-        u.beneficio,
+        case
+            when u.beneficio is null then null
+            else array_to_string(
+                array(
+                    select
+                        case
+                            when b.descricao is null then b.codigo
+                            else concat(b.codigo, ' - ', b.descricao)
+                        end
+                    from unnest(u.beneficio) as b
+                    order by b.codigo
+                ),
+                ', '
+            )
+        end as beneficio,
         ic.data_atualizacao as data_atualizacao_cadunico,
         n.nis as nis_usuario,
         {{ map_flag_boolean('coalesce(ofc.qtd_oficinas > 0, false)') }} as flag_participacao_oficinas,
         coalesce(ofc.qtd_oficinas, 0) as qtd_oficinas_participadas_mes,
-        array(
-            select x
-            from
-                unnest([
-                    struct('Centro POP - Plano de Atendimento Individual (PAI)' as origem, nullif(pf.demandas_pai, 'undefined') as demanda),
-                    struct('Centro POP - Atendimento Social' as origem, nullif(asf.demanda_inicial, 'undefined') as demanda)
-                ]) as x
-            where x.demanda is not null
-        ) as demandas,
-        array(
-            select as struct
-                x.origem,
-                e as encaminhamento
-            from
-                unnest([
-                    struct(
-                        'Centro POP - Plano de Atendimento Individual (PAI)' as origem,
-                        pf.encaminhamentos_pai as encaminhamento
-                    ),
-                    struct(
-                        'Centro POP - Atendimento Social' as origem,
-                        asf.encaminhamentos_as as encaminhamento
-                    )
-                ]) as x
-            cross join unnest(coalesce(x.encaminhamento, [])) as e
-        ) as encaminhamentos,
+        nullif(array_to_string(
+            array(
+                select concat(x.origem, ': ', x.demanda)
+                from
+                    unnest([
+                        struct('Centro POP - Plano de Atendimento Individual (PAI)' as origem, nullif(pf.demandas_pai, 'undefined') as demanda),
+                        struct('Centro POP - Atendimento Social' as origem, nullif(asf.demanda_inicial, 'undefined') as demanda)
+                    ]) as x
+                where x.demanda is not null
+                order by x.origem
+            ),
+            ', '
+        ), '') as demandas,
+        nullif(array_to_string(
+            array(
+                select concat(x.origem, ': ', e)
+                from
+                    unnest([
+                        struct(
+                            'Centro POP - Plano de Atendimento Individual (PAI)' as origem,
+                            pf.encaminhamentos_pai as encaminhamento
+                        ),
+                        struct(
+                            'Centro POP - Atendimento Social' as origem,
+                            asf.encaminhamentos_as as encaminhamento
+                        )
+                    ]) as x
+                cross join unnest(coalesce(x.encaminhamento, [])) as e
+                order by x.origem, e
+            ),
+            ', '
+        ), '') as encaminhamentos,
         null as resultado_acesso,
         null as resultado_descricao,
         df.data_desligamento,
