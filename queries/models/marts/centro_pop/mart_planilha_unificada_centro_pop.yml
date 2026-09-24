@@ -48,7 +48,7 @@ models:
       - name: tipo_atendimento
         description: Classificação daquele atendimento (Técnico, Recepção ou Outros).
       - name: profissionais_atendimento
-        description: Lista sem duplicatas dos profissionais associados àquele atendimento.
+        description: Nomes dos profissionais associados ao atendimento, sem duplicatas e separados por vírgula.
       - name: nome_usuario
         description: Nome do usuário do serviço (cadastro).
       - name: nome_social
@@ -168,7 +168,7 @@ models:
       - name: tipo_beneficio
         description: Tipo(s) de benefício (códigos do cadastro).
       - name: beneficio
-        description: Detalhamento dos benefícios (estrutura agregada).
+        description: Códigos e descrições dos benefícios separados por vírgula.
       - name: data_atualizacao_cadunico
         description: |
           Data DATE da atualização da família CadÚnico ligada ao usuário por CPF →
@@ -182,13 +182,13 @@ models:
       - name: qtd_oficinas_participadas_mes
         description: Quantidade de oficinas participadas no mês de referência; zero quando não há registro agregado de participação.
       - name: demandas
-        description: Demandas identificadas (ARRAY<STRUCT<origem, demanda>>) dos formulários PAI e Atendimento Social.
+        description: Demandas dos formulários PAI e Atendimento Social, separadas por vírgula e prefixadas pela origem.
       - name: encaminhamentos
         description: |
-          Encaminhamentos (ARRAY<STRUCT<origem, encaminhamento>>) dos formulários
-          PAI e Atendimento Social — inclui os tópicos 'Encaminhamentos – Saúde',
-          '– Órgãos', '– Rede Socioassistencial' e '– Benefícios'; valores
-          'undefined' são ignorados.
+          Encaminhamentos dos formulários PAI e Atendimento Social, separados por
+          vírgula e prefixados pela origem — inclui os tópicos 'Encaminhamentos – Saúde',
+          '– Órgãos', '– Rede Socioassistencial' e '– Benefícios'; valores 'undefined'
+          são ignorados.
       - name: resultado_acesso
         description: NULL — campo ainda não disponível na fonte.
       - name: resultado_descricao
