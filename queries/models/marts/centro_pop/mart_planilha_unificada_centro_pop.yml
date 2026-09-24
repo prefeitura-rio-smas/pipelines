@@ -19,6 +19,9 @@ models:
         mês e se repetem nas linhas do mesmo usuário/unidade/mês.
       - Campos cadastrais e documentos representam o snapshot atual das fontes, não um
         histórico cadastral reconstituído na data do atendimento.
+      - Campos textuais sem valor são apresentados como 'Não Informado'. Campos DATE,
+        numéricos e identificadores preservam seus tipos e continuam NULL quando não
+        há valor disponível.
       - CPF vem do cadastro do prontuário (raw_usuarios.cpf); RG e certidão vêm do
         snapshot atual de raw_documento_pessoa do CadÚnico, associado por CPF. Os
         números permanecem texto e os zeros à esquerda são preservados. Não há
@@ -29,7 +32,7 @@ models:
         é convertida em 'Não' quando a fonte não informa explicitamente essa ausência.
       - 'Documentação Civil' indica formulário registrado e extraível; não comprova
         posse de documento nem necessariamente uma demanda.
-      - Campos sem fonte permanecem NULL: território de referência, reinserção familiar,
+      - Campos sem fonte são apresentados como 'Não Informado': território de referência, reinserção familiar,
         empregabilidade imediata, capacidade/habilidades, interesse em curso,
         resultado/acesso, resultado/descrição e observações.
     columns:
@@ -185,9 +188,9 @@ models:
           - accepted_values:
               values: ['Sim', 'Não', 'Não Informado']
       - name: territorio_referencia_familia
-        description: NULL — campo ainda não disponível na fonte.
+        description: Não Informado — campo ainda não disponível na fonte.
       - name: flag_possibilidade_reinsercao_familiar
-        description: NULL — campo ainda não disponível na fonte.
+        description: Não Informado — campo ainda não disponível na fonte.
       - name: flag_exerce_atividade_renda
         description: Exerce atividade que gera renda (cadastro).
         data_tests:
@@ -198,11 +201,11 @@ models:
       - name: valor_renda
         description: Valor da renda obtida através da atividade (cadastro).
       - name: flag_empregabilidade_imediata
-        description: NULL — campo ainda não disponível na fonte.
+        description: Não Informado — campo ainda não disponível na fonte.
       - name: capacidade_habilidades
-        description: NULL — campo ainda não disponível na fonte.
+        description: Não Informado — campo ainda não disponível na fonte.
       - name: flag_interesse_curso
-        description: NULL — campo ainda não disponível na fonte.
+        description: Não Informado — campo ainda não disponível na fonte.
       - name: flag_possui_beneficio
         description: Sim/Não/Não Informado — possui benefício (cadastro).
         data_tests:
@@ -236,15 +239,15 @@ models:
           '– Órgãos', '– Rede Socioassistencial' e '– Benefícios'; valores 'undefined'
           são ignorados.
       - name: resultado_acesso
-        description: NULL — campo ainda não disponível na fonte.
+        description: Não Informado — campo ainda não disponível na fonte.
       - name: resultado_descricao
-        description: NULL — campo ainda não disponível na fonte.
+        description: Não Informado — campo ainda não disponível na fonte.
       - name: data_desligamento
         description: Data de desligamento do acompanhamento (formulário Centro POP - Desligamento PAI).
       - name: motivo_desligamento
         description: Motivo do desligamento (inclui campo Outros, concatenado).
       - name: observacoes
-        description: NULL — campo ainda não disponível na fonte.
+        description: Não Informado — campo ainda não disponível na fonte.
       - name: flag_situacao_rua
         description: Situação de rua do usuário (cadastro saúde mental).
         data_tests:
