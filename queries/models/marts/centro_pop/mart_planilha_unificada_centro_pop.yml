@@ -3,38 +3,30 @@ version: 2
 models:
   - name: mart_planilha_unificada_centro_pop
     description: |
-      Planilha Unificada Centro POP — 1 linha por usuário × mês de referência × Centro POP.
-      Base: usuários com pelo menos um atendimento (não cancelado) em unidade Centro POP
-      (dim_unidades.tipo_unidade = 'Centro POP') no mês de referência. Acompanha as 50 colunas
-      da planilha (1me-dxFcE-SZ_WgZ75_sq1t92Se1zwxk9YPgZ_YYMKu8), com fontes indicadas nas
-      linhas 5/6 da própria planilha.
+      Planilha Unificada Centro POP — 1 linha por id_atendimento não cancelado
+      realizado em unidade Centro POP. Usuário, unidade e mês de referência são
+      atributos do atendimento. Contagens de atendimentos e oficinas continuam
+      mensais e são repetidas em cada linha daquele mês.
 
-      Premissas/limitações documentadas:
-      - 'Profissional de referência': profissional do último atendimento TÉCNICO do mês
-        (fallback: último atendimento do mês, qualquer tipo).
-      - 'Atendido pontualmente' / 'Inserido no acompanhamento' / 'Tem PAI': derivados do
-        formulário 'Centro POP - Plano de Atendimento Individual (PAI)' (codigo_abrangencia=29).
-        Se a primeira inclusão acontece após o fim do mês de referência, o usuário é
-        considerado atendido pontualmente no mês.
-      - 'Motivo de permanência na rua': extraído do questionário estruturado
-        'Situação do Usuário' (módulo HIST_PAC; raw_evolucoes_questionario +
-        raw_evolucoes_questionario_lista, id_template=3/id_questao=18). A pergunta
-        está INATIVA na fonte e sem respostas gravadas hoje; mantém fallback para o
-        formulário 'Acolhimento' (codigo_abrangencia=1) — 'Motivo do acolhimento'.
-        Vínculo seqprontuario → id_usuario é premissa do modelo.
-      - Colunas sem fonte nos dados hoje (aguardando inclusão nos formulários do prontuário):
-        'Território de referência da família', 'Reinserção familiar', 'Empregabilidade
-        imediata', 'Capacidade/habilidades', 'Interesse em curso', 'Cadastro atualizado',
-        'Resultado/Acesso', 'Resultado/Descrição' e 'Observações'.
-      - 'Saúde': formulário 'Situação de Saúde' (codigo_abrangencia=1) como fonte
-        primária, com fallback no cadastro (grau_dependencia e
-        flag_saude_mental_comprometida) quando o usuário não tem formulário.
-      - 'Possui referências familiares?' do formulário 'Centro POP - Atendimento Social':
-        extraído por label; quando não há formulário preenchido fica NULL.
-      - 'Motivo de permanência na rua': o campo 'Motivo da ida às ruas' não existe no
-        cadastro; fonte real é o formulário 'Acolhimento' (codigo_abrangencia=1).
-      - 'NIS': via CadÚnico (documento_pessoa → identificacao_membro pelo CPF); ~96% de
-        cobertura esperada.
+      Semântica temporal e limitações:
+      - O profissional é uma lista dos profissionais ligados ao atendimento, não uma
+        referência mensal. Profissionais compartilhados são agregados em uma linha.
+      - Formulários PAI, Atendimento Social, Desligamento PAI, Acolhimento, Documentação
+        Civil, Situação de Saúde e respostas do questionário são selecionados até a data
+        do atendimento. Registros posteriores não são associados retroativamente.
+      - Contagens de atendimento, último dia de atendimento e oficinas são contextos do
+        mês e se repetem nas linhas do mesmo usuário/unidade/mês.
+      - Campos cadastrais e documentos representam o snapshot atual das fontes, não um
+        histórico cadastral reconstituído na data do atendimento.
+      - Cadastro Único: data de atualização usa CPF → documento_pessoa.id_familia →
+        identificacao_controle.id_familia. A família do prontuário não é a família
+        CadÚnico; CPFs com vínculo ambíguo ficam sem data. A ausência de documento não
+        é convertida em 'Não' quando a fonte não informa explicitamente essa ausência.
+      - 'Documentação Civil' indica formulário registrado e extraível; não comprova
+        posse de documento nem necessariamente uma demanda.
+      - Campos sem fonte permanecem NULL: território de referência, reinserção familiar,
+        empregabilidade imediata, capacidade/habilidades, interesse em curso,
+        resultado/acesso, resultado/descrição e observações.
     columns:
       - name: id_usuario
         description: Identificador do usuário no prontuário (id_paciente).
@@ -45,36 +37,43 @@ models:
       - name: nome_centro_pop
         description: Nome da unidade Centro POP.
       - name: mes_referencia
-        description: Mês de referência (primeiro dia do mês), derivado dos atendimentos.
-      - name: profissional_referencia
-        description: Profissional de referência (último atendimento técnico do mês).
+        description: Mês de referência (primeiro dia do mês do atendimento).
+      - name: id_atendimento
+        description: Identificador do atendimento na fato; grão e chave única da mart.
+        data_tests: [not_null, unique]
+      - name: data_atendimento
+        description: Data daquele atendimento, convertida para DATE.
+      - name: nome_atendimento
+        description: Descrição do tipo de atendimento realizado na linha.
+      - name: tipo_atendimento
+        description: Classificação daquele atendimento (Técnico, Recepção ou Outros).
+      - name: profissionais_atendimento
+        description: Lista sem duplicatas dos profissionais associados àquele atendimento.
       - name: nome_usuario
         description: Nome do usuário do serviço (cadastro).
       - name: nome_social
         description: Nome social do usuário (cadastro).
       - name: flag_atendido_pontualmente
-        description: Sim/Não — o usuário NÃO entrou no acompanhamento (PAI) até o fim do mês.
+        description: Sim/Não — não havia inclusão PAI conhecida até a data daquele atendimento.
       - name: flag_inserido_acompanhamento
-        description: Sim/Não — o usuário foi inserido no acompanhamento (primeira evolução PAI).
+        description: Sim/Não — havia inclusão PAI conhecida até a data daquele atendimento.
       - name: data_inclusao_acompanhamento
         description: |
-          Data da inclusão no acompanhamento — campo 'Data do atendimento:' do
-          formulário PAI (primeira data preenchida pelo profissional, por usuário
-          e unidade). Fallback: data da evolução quando o campo não foi preenchido.
+          Primeira data de inclusão PAI conhecida até a data do atendimento da linha.
+          Usa o campo 'Data do atendimento:' do formulário; fallback para a data da
+          evolução. Ambos os ramos são convertidos para DATE.
       - name: flag_possui_plano_individual
-        description: Sim/Não — o usuário possui Plano de Atendimento Individual (PAI).
-      - name: data_ultimo_atendimento
-        description: 'Data do último atendimento do mês (qualquer tipo: técnico, recepção ou outros).'
-      - name: tipo_ultimo_atendimento
-        description: 'Tipo do último atendimento do mês (Atendimento Técnico, Atendimento Recepção ou Outros Atendimentos).'
+        description: Sim/Não — havia inclusão PAI conhecida até a data daquele atendimento.
+      - name: data_ultimo_atendimento_mes
+        description: Data do último atendimento daquele usuário/unidade no mês; contexto mensal repetido nas linhas do mês.
       - name: qtd_atendimentos_total
-        description: Quantidade de atendimentos do usuário no mês (não cancelados).
+        description: Quantidade de atendimentos do usuário/unidade no mês; contexto mensal repetido em cada linha do mês.
       - name: qtd_atendimentos_tecnico
-        description: Quantidade de atendimentos do mês realizados por profissional de nível superior (grupo CBO 2).
+        description: Quantidade mensal de atendimentos realizados por profissional de nível superior (grupo CBO 2); repetida em cada linha do mês.
       - name: qtd_atendimentos_recepcao
-        description: Quantidade de atendimentos de recepção no mês.
+        description: Quantidade mensal de atendimentos de recepção; repetida em cada linha do mês.
       - name: qtd_atendimentos_outros
-        description: Quantidade de atendimentos de outros tipos no mês.
+        description: Quantidade mensal de outros atendimentos; repetida em cada linha do mês.
       - name: motivo_principal_permanencia_rua
         description: Motivo principal de permanência na rua — questionário estruturado 'Situação do Usuário' (HIST_PAC, id_template=3/id_questao=18, campo inativo/sem dados hoje) com fallback no formulário Acolhimento.
       - name: motivo_secundario_permanencia_rua
@@ -82,11 +81,35 @@ models:
       - name: data_nascimento
         description: Data de nascimento (cadastro).
       - name: idade
-        description: Idade calculada no fim do mês de referência.
+        description: Idade na data do atendimento da linha.
       - name: filiacao_mae
         description: Nome da mãe (cadastro).
-      - name: flag_registro_documentacao_civil
-        description: Sim/Não/Não Informado — há registro de demanda de documentação civil (formulário Documentação Civil).
+      - name: flag_registro_formulario_documentacao_civil
+        description: |
+          Sim/Não Informado — foi extraído um registro do formulário 'Documentação Civil'
+          até a data do atendimento. Indica formulário registrado, não posse de documento
+          nem necessariamente uma demanda.
+      - name: flag_possui_cpf
+        description: Sim/Não Informado — Sim quando o CPF está informado no cadastro do usuário; a fonte não fornece um indicador confiável de ausência.
+        data_tests:
+          - accepted_values:
+              values: ['Sim', 'Não Informado']
+      - name: numero_cpf
+        description: CPF informado no cadastro do prontuário; não é inferido de outro documento.
+      - name: flag_possui_rg
+        description: Sim/Não Informado — Sim quando há um único número de RG no registro CadÚnico associado pelo CPF; conflitos/ausências ficam Não Informado.
+        data_tests:
+          - accepted_values:
+              values: ['Sim', 'Não Informado']
+      - name: numero_rg
+        description: Número de RG de raw_documento_pessoa; somente quando o CPF mapeia um único número.
+      - name: flag_possui_certidao_nascimento
+        description: Sim/Não Informado — Sim quando raw_documento_pessoa registra tipo de certidão 1 (nascimento); não presume ausência.
+        data_tests:
+          - accepted_values:
+              values: ['Sim', 'Não Informado']
+      - name: numero_certidao_nascimento
+        description: Campo id_termi_matricula_certidao para certidão tipo 1, somente quando há um único número registrado.
       - name: genero
         description: Gênero informado no cadastro.
       - name: orientacao_sexual
@@ -103,6 +126,9 @@ models:
         description: Nível de escolaridade (cadastro).
       - name: flag_deficiencia
         description: Sim/Não/Não Informado — possui deficiência (cadastro).
+        data_tests:
+          - accepted_values:
+              values: ['Sim', 'Não', 'Não Informado']
       - name: tipo_deficiencia
         description: Tipo de deficiência traduzido (Deficiência auditiva total/parcial, visual parcial/total, motora, mental ou intelectual).
       - name: flag_uso_substancias_psicoativas
@@ -143,13 +169,12 @@ models:
         description: Tipo(s) de benefício (códigos do cadastro).
       - name: beneficio
         description: Detalhamento dos benefícios (estrutura agregada).
-      - name: flag_possui_cadunico
-        description: Sim/Não/Não Informado — possui CadÚnico (cadastro).
-        tests:
-          - accepted_values:
-              values: ['Sim', 'Não', 'Não Informado']
       - name: data_atualizacao_cadunico
-        description: Última data de atualização do CadÚnico da família (raw_identificacao_controle, por id_familia).
+        description: |
+          Data DATE da atualização da família CadÚnico ligada ao usuário por CPF →
+          raw_documento_pessoa.id_familia → raw_identificacao_controle.id_familia.
+          Só preenchida quando o CPF identifica uma única família CadÚnico; não usa
+          dim_familias.id_familia, que pertence ao prontuário.
       - name: nis_usuario
         description: NIS do usuário (CadÚnico, via CPF).
       - name: flag_participacao_oficinas
