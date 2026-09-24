@@ -102,7 +102,7 @@ models:
           - accepted_values:
               values: ['Sim', 'Não Informado']
       - name: numero_rg
-        description: Número de RG de raw_documento_pessoa; somente quando o CPF mapeia um único número.
+        description: Número de RG de raw_documento_pessoa, sem zeros à esquerda; somente quando o CPF mapeia um único número após a normalização.
       - name: flag_possui_certidao_nascimento
         description: Sim/Não Informado — Sim quando raw_documento_pessoa registra tipo de certidão 1 (nascimento); não presume ausência.
         data_tests:

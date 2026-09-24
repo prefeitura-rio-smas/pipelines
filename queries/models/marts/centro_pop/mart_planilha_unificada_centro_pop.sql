@@ -489,11 +489,15 @@ documentos_cadunico as (
             null
         ) as id_familia_cadunico,
         if(
-            count(distinct nullif(trim(rg), '')) = 1,
-            max(nullif(trim(rg), '')),
+            count(distinct nullif(regexp_replace(trim(rg), r'^0+', ''), '')) = 1,
+            max(nullif(regexp_replace(trim(rg), r'^0+', ''), '')),
             null
         ) as numero_rg,
-        if(count(distinct nullif(trim(rg), '')) = 1, 'Sim', 'Não Informado') as flag_possui_rg,
+        if(
+            count(distinct nullif(regexp_replace(trim(rg), r'^0+', ''), '')) = 1,
+            'Sim',
+            'Não Informado'
+        ) as flag_possui_rg,
         if(logical_or(safe_cast(id_certidao_civil as int64) = 1), 'Sim', 'Não Informado') as flag_possui_certidao_nascimento,
         if(
             count(distinct if(
