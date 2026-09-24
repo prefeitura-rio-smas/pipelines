@@ -590,9 +590,9 @@ final as (
             else 'Não Informado'
         end as flag_possui_cpf,
         nullif(trim(u.cpf), '') as numero_cpf,
-        dc.flag_possui_rg,
+        coalesce(dc.flag_possui_rg, 'Não Informado') as flag_possui_rg,
         dc.numero_rg,
-        dc.flag_possui_certidao_nascimento,
+        coalesce(dc.flag_possui_certidao_nascimento, 'Não Informado') as flag_possui_certidao_nascimento,
         dc.numero_certidao_nascimento,
         u.genero,
         u.orientacao_sexual,
@@ -646,7 +646,7 @@ final as (
         ic.data_atualizacao as data_atualizacao_cadunico,
         n.nis as nis_usuario,
         {{ map_flag_boolean('coalesce(ofc.qtd_oficinas > 0, false)') }} as flag_participacao_oficinas,
-        ofc.qtd_oficinas as qtd_oficinas_participadas_mes,
+        coalesce(ofc.qtd_oficinas, 0) as qtd_oficinas_participadas_mes,
         array(
             select x
             from
