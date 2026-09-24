@@ -397,82 +397,82 @@ questionario_situacao_usuario as (
 -- Seleciona o formulário mais recente até cada atendimento; a macro recebe as
 -- chaves e colunas por chamada, e nunca associa registros posteriores.
 pai_form_atendimento as (
-    {{ latest_record_as_of(
-        event_relation = 'atendimentos', record_relation = 'pai_form',
-        key_pairs = [
-            {'event': 'id_usuario', 'record': 'id_paciente'},
-            {'event': 'id_unidade', 'record': 'id_unidade'}
+    {{ ultimo_registro_ate_evento(
+        relacao_evento = 'atendimentos', relacao_registros = 'pai_form',
+        pares_chave = [
+            {'evento': 'id_usuario', 'registro': 'id_paciente'},
+            {'evento': 'id_unidade', 'registro': 'id_unidade'}
         ],
-        event_id = 'id_atendimento', event_date = 'data_atendimento',
-        record_date = 'data_evolucao', record_id = 'id_evolucao',
-        select_columns = ['demandas_pai', 'encaminhamentos_pai']
+        id_evento = 'id_atendimento', data_evento = 'data_atendimento',
+        data_registro = 'data_evolucao', id_registro = 'id_evolucao',
+        colunas_saida = ['demandas_pai', 'encaminhamentos_pai']
     ) }}
 ),
 
 atendimento_social_form_atendimento as (
-    {{ latest_record_as_of(
-        event_relation = 'atendimentos', record_relation = 'atendimento_social_form',
-        key_pairs = [
-            {'event': 'id_usuario', 'record': 'id_paciente'},
-            {'event': 'id_unidade', 'record': 'id_unidade'}
+    {{ ultimo_registro_ate_evento(
+        relacao_evento = 'atendimentos', relacao_registros = 'atendimento_social_form',
+        pares_chave = [
+            {'evento': 'id_usuario', 'registro': 'id_paciente'},
+            {'evento': 'id_unidade', 'registro': 'id_unidade'}
         ],
-        event_id = 'id_atendimento', event_date = 'data_atendimento',
-        record_date = 'data_evolucao', record_id = 'id_evolucao',
-        select_columns = ['demanda_inicial', 'flag_possui_referencias_familiares', 'encaminhamentos_as']
+        id_evento = 'id_atendimento', data_evento = 'data_atendimento',
+        data_registro = 'data_evolucao', id_registro = 'id_evolucao',
+        colunas_saida = ['demanda_inicial', 'flag_possui_referencias_familiares', 'encaminhamentos_as']
     ) }}
 ),
 
 desligamento_form_atendimento as (
-    {{ latest_record_as_of(
-        event_relation = 'atendimentos', record_relation = 'desligamento_form',
-        key_pairs = [
-            {'event': 'id_usuario', 'record': 'id_paciente'},
-            {'event': 'id_unidade', 'record': 'id_unidade'}
+    {{ ultimo_registro_ate_evento(
+        relacao_evento = 'atendimentos', relacao_registros = 'desligamento_form',
+        pares_chave = [
+            {'evento': 'id_usuario', 'registro': 'id_paciente'},
+            {'evento': 'id_unidade', 'registro': 'id_unidade'}
         ],
-        event_id = 'id_atendimento', event_date = 'data_atendimento',
-        record_date = 'data_evolucao', record_id = 'id_evolucao',
-        select_columns = ['data_desligamento', 'motivo_desligamento', 'motivo_desligamento_outros']
+        id_evento = 'id_atendimento', data_evento = 'data_atendimento',
+        data_registro = 'data_evolucao', id_registro = 'id_evolucao',
+        colunas_saida = ['data_desligamento', 'motivo_desligamento', 'motivo_desligamento_outros']
     ) }}
 ),
 
 acolhimento_form_atendimento as (
-    {{ latest_record_as_of(
-        event_relation = 'atendimentos', record_relation = 'acolhimento_form',
-        key_pairs = [{'event': 'id_usuario', 'record': 'id_paciente'}],
-        event_id = 'id_atendimento', event_date = 'data_atendimento',
-        record_date = 'data_evolucao', record_id = 'id_evolucao',
-        select_columns = ['motivo_ida_ruas', 'motivo_acolhimento', 'motivo_outros']
+    {{ ultimo_registro_ate_evento(
+        relacao_evento = 'atendimentos', relacao_registros = 'acolhimento_form',
+        pares_chave = [{'evento': 'id_usuario', 'registro': 'id_paciente'}],
+        id_evento = 'id_atendimento', data_evento = 'data_atendimento',
+        data_registro = 'data_evolucao', id_registro = 'id_evolucao',
+        colunas_saida = ['motivo_ida_ruas', 'motivo_acolhimento', 'motivo_outros']
     ) }}
 ),
 
 documentacao_form_atendimento as (
-    {{ latest_record_as_of(
-        event_relation = 'atendimentos', record_relation = 'documentacao_form',
-        key_pairs = [{'event': 'id_usuario', 'record': 'id_paciente'}],
-        event_id = 'id_atendimento', event_date = 'data_atendimento',
-        record_date = 'data_evolucao', record_id = 'id_evolucao',
-        select_columns = ['flag_registro_formulario_documentacao_civil']
+    {{ ultimo_registro_ate_evento(
+        relacao_evento = 'atendimentos', relacao_registros = 'documentacao_form',
+        pares_chave = [{'evento': 'id_usuario', 'registro': 'id_paciente'}],
+        id_evento = 'id_atendimento', data_evento = 'data_atendimento',
+        data_registro = 'data_evolucao', id_registro = 'id_evolucao',
+        colunas_saida = ['flag_registro_formulario_documentacao_civil']
     ) }}
 ),
 
 situacao_saude_atendimento as (
-    {{ latest_record_as_of(
-        event_relation = 'atendimentos', record_relation = 'situacao_saude',
-        key_pairs = [{'event': 'id_usuario', 'record': 'id_paciente'}],
-        event_id = 'id_atendimento', event_date = 'data_atendimento',
-        record_date = 'data_evolucao', record_id = 'id_evolucao',
-        select_columns = ['uso_substancias', 'situacao_saude', 'local_tratamento']
+    {{ ultimo_registro_ate_evento(
+        relacao_evento = 'atendimentos', relacao_registros = 'situacao_saude',
+        pares_chave = [{'evento': 'id_usuario', 'registro': 'id_paciente'}],
+        id_evento = 'id_atendimento', data_evento = 'data_atendimento',
+        data_registro = 'data_evolucao', id_registro = 'id_evolucao',
+        colunas_saida = ['uso_substancias', 'situacao_saude', 'local_tratamento']
     ) }}
 ),
 
 questionario_situacao_usuario_atendimento as (
-    {{ latest_record_as_of(
-        event_relation = 'atendimentos', record_relation = 'questionario_situacao_usuario',
-        key_pairs = [{'event': 'id_usuario', 'record': 'id_usuario'}],
-        event_id = 'id_atendimento', event_date = 'data_atendimento',
-        record_date = 'data_resposta',
-        record_id = 'id_evolucao',
-        select_columns = ['motivo_ida_ruas']
+    {{ ultimo_registro_ate_evento(
+        relacao_evento = 'atendimentos', relacao_registros = 'questionario_situacao_usuario',
+        pares_chave = [{'evento': 'id_usuario', 'registro': 'id_usuario'}],
+        id_evento = 'id_atendimento', data_evento = 'data_atendimento',
+        data_registro = 'data_resposta',
+        id_registro = 'id_evolucao',
+        colunas_saida = ['motivo_ida_ruas']
     ) }}
 ),
 
