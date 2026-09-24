@@ -97,14 +97,14 @@ models:
       - name: numero_cpf
         description: CPF informado no cadastro do prontuário; não é inferido de outro documento.
       - name: flag_possui_rg
-        description: Sim/Não Informado — Sim quando há um único número de RG no registro CadÚnico associado pelo CPF; conflitos/ausências ficam Não Informado.
+        description: Sim/Não Informado — Sim quando há um único número de RG no registro CadÚnico associado pelo CPF; ausência de vínculo, conflito ou ausência do número ficam Não Informado.
         data_tests:
           - accepted_values:
               values: ['Sim', 'Não Informado']
       - name: numero_rg
         description: Número de RG de raw_documento_pessoa, sem zeros à esquerda; somente quando o CPF mapeia um único número após a normalização.
       - name: flag_possui_certidao_nascimento
-        description: Sim/Não Informado — Sim quando raw_documento_pessoa registra tipo de certidão 1 (nascimento); não presume ausência.
+        description: Sim/Não Informado — Sim quando raw_documento_pessoa registra tipo de certidão 1 (nascimento); ausência de vínculo ou de evidência não presume ausência do documento.
         data_tests:
           - accepted_values:
               values: ['Sim', 'Não Informado']
@@ -180,7 +180,7 @@ models:
       - name: flag_participacao_oficinas
         description: Sim/Não — o usuário participou de oficina/atividade coletiva no mês na unidade.
       - name: qtd_oficinas_participadas_mes
-        description: Quantidade de oficinas participadas no mês de referência.
+        description: Quantidade de oficinas participadas no mês de referência; zero quando não há registro agregado de participação.
       - name: demandas
         description: Demandas identificadas (ARRAY<STRUCT<origem, demanda>>) dos formulários PAI e Atendimento Social.
       - name: encaminhamentos
