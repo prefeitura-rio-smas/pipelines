@@ -629,7 +629,11 @@ final as (
         end as flag_possui_cpf,
         nullif(trim(u.cpf), '') as numero_cpf,
         coalesce(dc.flag_possui_rg, 'Não Informado') as flag_possui_rg,
-        dc.numero_rg,
+        case
+            when dc.numero_rg is null then null
+            when regexp_replace(dc.numero_rg, r'^0+', '') = '' then '0'
+            else regexp_replace(dc.numero_rg, r'^0+', '')
+        end as numero_rg,
         coalesce(dc.flag_possui_certidao_nascimento, 'Não Informado') as flag_possui_certidao_nascimento,
         dc.numero_certidao_nascimento,
         u.genero,
