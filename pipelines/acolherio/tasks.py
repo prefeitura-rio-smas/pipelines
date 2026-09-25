@@ -10,7 +10,6 @@ from prefect import get_run_logger, task
 
 from pipelines.utils.settings import BaseSettings
 
-
 PROJETO_DESTINO = "rj-smas-dev"
 TABELA_DESTINO = f"{PROJETO_DESTINO}.dashboard_acolherio.dev_atendimentos"
 TABELAS_FONTE = ("gh_atendimentos", "gh_atend_familia")
@@ -27,11 +26,11 @@ FROM `rj-smas.brutos_acolherio_staging.__TABLES__`
 WHERE table_id IN ('gh_atendimentos', 'gh_atend_familia')
 """
 
-CONSULTA_VALIDACAO = f"""
+CONSULTA_VALIDACAO = """
 SELECT
   COUNT(*) AS linhas,
   MAX(SAFE_CAST(data_de_atendimento AS DATE)) AS data_maxima
-FROM `{TABELA_DESTINO}`
+FROM `rj-smas-dev.dashboard_acolherio.dev_atendimentos`
 """
 
 
