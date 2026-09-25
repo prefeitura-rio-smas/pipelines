@@ -20,4 +20,3 @@ def atualizar_dev_atendimentos_flow() -> dict[str, str | int]:
         "job_id": job_id,
         **validacao,
     }
-

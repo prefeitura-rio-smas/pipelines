@@ -1,2 +1,1 @@
 """Pipelines operacionais do AcolheRio."""
-

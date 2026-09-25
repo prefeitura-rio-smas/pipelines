@@ -307,4 +307,3 @@ CREATE OR REPLACE TABLE `rj-smas-dev.dashboard_acolherio.dev_atendimentos` AS (
   QUALIFY cbo_unico_rank = 1
     AND atendimento_unico_rank = 1
 );
-
