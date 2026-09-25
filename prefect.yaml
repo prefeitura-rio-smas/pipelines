@@ -391,6 +391,31 @@ deployments:
     tags: ["prod", "dbt"]
 
   # ---------------------------------------------------------------------------
+  # Atualização AcolheRio — fonte do Looker
+  # ---------------------------------------------------------------------------
+  - name: acolherio-dev-atendimentos-prod
+    entrypoint: pipelines/acolherio/flows.py:atualizar_dev_atendimentos_flow
+    schedule:
+      cron: "45 0,6,12,18 * * *"
+      timezone: "America/Sao_Paulo"
+    work_pool:
+      name: docker-pool
+      job_variables:
+        networks: ["prefect_prefect-stack"]
+        image: "{{ $PREFECT_DEPLOYMENT_IMAGE }}"
+        env:
+          PREFECT_API_URL: http://prefect-api:4200/api
+          MODE: prod
+          PREFECT_EVENTS_ENABLED: "false"
+          PREFECT_SERVER_EVENTS_ENABLED: "false"
+          PREFECT_EVENTS_MESSAGING_ENABLED: "false"
+          PREFECT_SERVER_SERVICES_EVENT_PERSISTER_ENABLED: "false"
+          PREFECT_SERVER_SERVICES_EVENT_LOGGER_ENABLED: "false"
+          PREFECT_SERVER_EVENTS_STREAM_OUT_ENABLED: "false"
+          GCP_CREDENTIALS: "{{ $GCP_CREDENTIALS }}"
+    tags: ["prod", "acolherio"]
+
+  # ---------------------------------------------------------------------------
   # Transformação — dbt semanal 
   # ---------------------------------------------------------------------------
   - name: dbt-transform-weekly-prod
