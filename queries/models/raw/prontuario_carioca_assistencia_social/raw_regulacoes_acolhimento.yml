@@ -1,0 +1,12 @@
+version: 2
+models:
+  - name: raw_regulacoes_acolhimento
+    description: "Regulações de acolhimento e datas de entrada prevista, regulação e cancelamento."
+    columns:
+      - name: id_regulacao
+        description: "Chave original seqregul da regulação."
+      - name: id_usuario
+      - name: data_regulacao
+        description: "Data registrada para a regulação."
+      - name: data_entrada_prevista
+        description: "Data prevista na regulação, usada para relacioná-la à entrada do ciclo."

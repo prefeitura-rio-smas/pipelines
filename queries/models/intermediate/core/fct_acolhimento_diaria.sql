@@ -1,8 +1,7 @@
 -- Fato de acolhimentos no grao (id_ciclo x data_referencia).
 -- Faz a explosao temporal via GENERATE_DATE_ARRAY (cada dia = 1 linha por ciclo).
--- JOINs com dim_usuarios/dim_unidades para expor cpf e tipo_publico,
---   que sao os unicos campos downstream (mart_acolhimento_diaria e mart_meta_acolhimento)
---   precisam alem das chaves de ciclo/datas.
+-- Inclui datas do ciclo enriquecidas em fct_acolhimento_ciclos e JOINs com
+-- dim_usuarios/dim_unidades para expor cpf e tipo_publico.
 -- Filtro: data_referencia <= current_date() (descarta datas futuras de ciclos em aberto
 --   e ciclos corrompidos com data_entrada ~0202).
 
@@ -28,6 +27,8 @@ explodido as (
         c.id_unidade,
         c.data_entrada,
         c.data_saida,
+        c.data_solicitacao,
+        c.data_regulacao,
         c.dias_acolhimento,
         c.flag_em_acolhimento,
         c.indicador_ciclo,

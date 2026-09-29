@@ -24,6 +24,10 @@ models:
         description: "Data de entrada no acolhimento."
       - name: data_saida
         description: "Data de saída do acolhimento (null se ainda acolhido)."
+      - name: data_solicitacao
+        description: "Data da solicitação de vaga associada ao ciclo."
+      - name: data_regulacao
+        description: "Data da notificação/regulação associada ao ciclo."
       - name: data_referencia
         description: "Data da explosão temporal (um dia por linha)."
       - name: cpf
