@@ -10,6 +10,12 @@ sources:
         description: "Cadastro base das famílias."
       - name: gh_pac_ciclos
         description: "Ciclos de acolhimento institucional dos usuários."
+      - name: gh_solic_vagas
+        description: "Solicitações de vagas para acolhimento, com datas e unidades de solicitação e atendimento."
+      - name: gh_pac_regul
+        description: "Registros de regulação de acolhimento, incluindo datas de regulação, entrada prevista e cancelamento."
+      - name: gh_notif_acolhe
+        description: "Notificações de acolhimento relacionadas às regulações por seqregul."
       - name: gh_famil_projsociais
         description: "Projetos sociais vinculados às famílias."
       - name: gh_famil_servassist

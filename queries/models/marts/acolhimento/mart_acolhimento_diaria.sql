@@ -160,6 +160,8 @@ final as (
         -- ===== CICLO / FATO =====
         a.data_entrada,
         a.data_saida                           as data_desligamento,
+        a.data_solicitacao,
+        a.data_regulacao,
         case
             when a.data_saida is null then 'Acolhido'
             else 'Desligado'

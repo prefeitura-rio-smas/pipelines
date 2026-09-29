@@ -22,6 +22,10 @@ models:
       - name: hora_entrada
       - name: data_saida
         description: "Data de saida do acolhimento (null se ainda acolhido)."
+      - name: data_solicitacao
+        description: "Data da solicitação de vaga associada ao ciclo pela data de atendimento e unidade."
+      - name: data_regulacao
+        description: "Data da notificação associada à regulação do ciclo; usa a data de regulação quando não há notificação."
       - name: hora_saida
       - name: id_usuario_origem
       - name: id_login_entrada

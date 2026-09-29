@@ -1,0 +1,14 @@
+version: 2
+models:
+  - name: raw_solicitacoes_vagas
+    description: "Solicitações de vagas com datas e unidades de solicitação e atendimento."
+    columns:
+      - name: id_solicitacao
+        description: "Chave original seqsolic da solicitação."
+      - name: id_usuario
+      - name: data_solicitacao
+        description: "Data em que a solicitação de vaga foi registrada."
+      - name: data_solicitacao_atendida
+        description: "Data de atendimento da solicitação; usada para relacioná-la à entrada do ciclo."
+      - name: id_unidade_atendimento
+        description: "Unidade que atendeu a solicitação."

@@ -1,0 +1,10 @@
+version: 2
+models:
+  - name: raw_notificacoes_acolhimento
+    description: "Notificações de acolhimento, relacionadas às regulações por id_regulacao."
+    columns:
+      - name: id_notificacao
+        description: "Chave original seqnotif da notificação."
+      - name: id_regulacao
+      - name: data_notificacao
+        description: "Data em que a notificação foi registrada."
