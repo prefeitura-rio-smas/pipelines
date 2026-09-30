@@ -17,6 +17,7 @@ dependencies = [
     "python-dotenv>=1.0.0",
     "pydantic-settings>=2.0.0",
     "requests>=2.30.0",
+    "oauthlib>=4.0.0",
     "shapely>=2.0.0",
     "prefect-dbt>=0.6.0",
     "dbt-bigquery>=1.8.0",
