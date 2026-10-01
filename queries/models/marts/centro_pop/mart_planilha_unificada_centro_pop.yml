@@ -10,7 +10,7 @@ models:
 
       Cadastro, documentos e CadÚnico representam snapshots atuais: não há reconstrução retroativa desses atributos. CPF vem do prontuário; RG, certidão e NIS vêm do CadÚnico por CPF. CPF com família/documento/NIS ambíguo não recebe valor arbitrário. Ausência de evidência documental não é convertida em Não. Números ausentes são apresentados como traço; flags desconhecidas usam Não Informado; datas, valores e IDs preservam tipos e NULL.
 
-      Cobertura da planilha: todas as 50 colunas estão mapeadas em columns.meta.colunas_planilha. Campos sem coleta: empregabilidade, habilidades, interesse em curso, resultado/acesso e resultado/descrição dependem de inclusão no sistema. Motivo principal tem pergunta estruturada, porém sem respostas; observações têm extrator, porém o bloco não é exportado nos formulários atuais. Território familiar e reinserção têm campos reais e são extraídos. Oficinas usam presenças reais disponíveis. Quantidades de atendimento são mantidas como apoio, respeitando a nota pode ignorar da planilha.
+      Cobertura da planilha: todas as 50 colunas estão mapeadas em columns.meta.colunas_planilha. Campos sem coleta: empregabilidade, habilidades, interesse em curso, resultado/acesso e resultado/descrição dependem de inclusão no sistema. Motivo principal tem pergunta estruturada, porém sem respostas; observações têm extrator, porém o bloco não é exportado nos formulários atuais. Território familiar e reinserção têm campos reais e são extraídos. Oficinas usam presenças registradas; não há registros de Centro POP nas fontes auditadas. Sem evidência de participação, flag e quantidade permanecem desconhecidas, sem inventar Não ou zero. A coleta deve ser disponibilizada/preenchida nas atividades de grupo ou atendimentos, conforme a planilha. Quantidades de atendimento são mantidas como apoio, respeitando a nota pode ignorar da planilha.
 
       Decisões de consolidação: profissional de referência é a lista de profissionais dos atendimentos, conforme origem Login. Idade informada é derivada do nascimento cadastral no fim do mês. Atualização do CadÚnico usa o prazo oficial do snapshot; data declarada no prontuário é exposta separadamente, sem supor equivalência com atualização oficial.
     meta:
@@ -309,15 +309,19 @@ models:
           Não Informado.'
         meta: {colunas_planilha: [41], situacao_planilha: disponivel}
       - name: flag_participacao_oficinas
-        description: Sim/Não — o usuário participou de oficina/atividade coletiva no mês na unidade.
+        description: 'Sim quando há registro de participação em oficina/atividade coletiva na unidade e mês. Não
+          Informado quando não há evidência. Não há presenças de Centro POP na raw/fato auditadas em 01/10/2026:
+          depende de disponibilizar/preencher a coleta em atividades de grupo ou atendimentos. Falta de registro
+          não significa Não.'
         data_tests:
           - accepted_values:
-              values: [Sim, Não]
-        meta: {colunas_planilha: [42], situacao_planilha: disponivel}
+              values: [Sim, Não, Não Informado]
+        meta: {colunas_planilha: [42], situacao_planilha: coleta_indisponivel}
       - name: qtd_oficinas_participadas_mes
-        description: Quantidade de oficinas participadas no mês de referência; zero quando não há registro agregado
-          de participação.
-        meta: {colunas_planilha: [43], situacao_planilha: disponivel}
+        description: Quantidade de atividades distintas com participação registrada no mês. NULL quando não há evidência,
+          sem inventar zero participações. Não há registros de Centro POP na fonte atual; depende de disponibilizar/preencher
+          a coleta.
+        meta: {colunas_planilha: [43], situacao_planilha: coleta_indisponivel}
       - name: demandas
         description: Todas as demandas registradas em formulários PAI e Atendimento Social no mês, deduplicadas,
           ordenadas e prefixadas pela origem. Separadas dos tipos de atendimento realizados.

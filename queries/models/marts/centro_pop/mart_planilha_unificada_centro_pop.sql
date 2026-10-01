@@ -576,8 +576,8 @@ final as (
             else 'Não'
         end as flag_cadunico_atualizado,
         coalesce(nullif(dc.nis, ''), 'Não Informado') as nis_usuario,
-        {{ map_flag_boolean('coalesce(ofc.qtd_oficinas > 0, false)') }} as flag_participacao_oficinas,
-        coalesce(ofc.qtd_oficinas, 0) as qtd_oficinas_participadas_mes,
+        {{ map_flag_boolean('nullif(ofc.qtd_oficinas, 0) > 0') }} as flag_participacao_oficinas,
+        nullif(ofc.qtd_oficinas, 0) as qtd_oficinas_participadas_mes,
         coalesce(fm.demandas, 'Não Informado') as demandas,
         coalesce(fm.encaminhamentos, 'Não Informado') as encaminhamentos,
         cast('Não Informado' as string) as resultado_acesso,
