@@ -71,21 +71,24 @@ models:
         description: Nome social do usuário (cadastro).
       - name: flag_inserido_acompanhamento
         description: |
-          Sim/Não — havia inclusão PAI conhecida até a data deste atendimento.
+          Sim/Não — havia formulário 'Centro POP - Plano de Atendimento Individual (PAI)'
+          registrado até a data deste atendimento. Outros formulários da abrangência 29
+          não indicam inclusão no acompanhamento.
         data_tests:
           - accepted_values:
               values: ['Sim', 'Não']
       - name: flag_possui_plano_individual
-        description: Sim/Não — havia inclusão PAI conhecida até a data deste atendimento.
+        description: Sim/Não — havia formulário PAI registrado até a data deste atendimento.
         data_tests:
           - accepted_values:
               values: ['Sim', 'Não']
       - name: data_inclusao_acompanhamento
         description: |
           Primeira data de inclusão PAI conhecida até a data do atendimento da linha.
-          Usa o campo 'Data do atendimento:' do formulário; fallback para a data da
-          evolução. Ambos os ramos são convertidos para DATE. Evoluções posteriores
-          ao atendimento não são associadas.
+          Considera somente o formulário 'Centro POP - Plano de Atendimento Individual
+          (PAI)'. Usa o campo 'Data do atendimento:' do formulário; fallback para a data
+          da evolução quando o campo está ausente ou inválido. Evoluções/formulários
+          posteriores ao atendimento não são associados.
       - name: flag_atendido_pontualmente_fim_mes
         description: |
           Sim/Não — preserva a implementação histórica: Sim quando não havia inclusão
@@ -95,17 +98,17 @@ models:
           - accepted_values:
               values: ['Sim', 'Não']
       - name: flag_inserido_acompanhamento_fim_mes
-        description: Sim/Não — havia inclusão PAI conhecida até o fim do mês; contexto mensal repetido por atendimento.
+        description: Sim/Não — havia formulário PAI registrado até o fim do mês; contexto mensal repetido por atendimento.
         data_tests:
           - accepted_values:
               values: ['Sim', 'Não']
       - name: flag_possui_plano_individual_fim_mes
-        description: Sim/Não — havia inclusão PAI conhecida até o fim do mês; contexto mensal repetido por atendimento.
+        description: Sim/Não — havia formulário PAI registrado até o fim do mês; contexto mensal repetido por atendimento.
         data_tests:
           - accepted_values:
               values: ['Sim', 'Não']
       - name: data_inclusao_acompanhamento_fim_mes
-        description: Primeira data de inclusão PAI conhecida até o fim do mês de referência; contexto mensal repetido por atendimento.
+        description: Primeira data de formulário PAI até o fim do mês de referência; contexto mensal repetido por atendimento.
       - name: data_ultimo_atendimento_mes
         description: Data do último atendimento do usuário/unidade no mês; contexto mensal repetido nas linhas do mês.
       - name: qtd_atendimentos_total_mes

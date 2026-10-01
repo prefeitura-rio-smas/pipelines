@@ -220,7 +220,7 @@ evolucoes_saude as (
     from evolucoes_abrangencia_usuario
 ),
 
--- Campo 'Data do atendimento:' do formulário PAI, por evolução
+-- Campo 'Data do atendimento:' somente do formulário PAI, por evolução.
 pai_data_atendimento as (
     select
         id_paciente,
@@ -236,22 +236,23 @@ pai_data_atendimento as (
     group by id_paciente, id_unidade, id_evolucao
 ),
 
--- Primeira inclusão PAI conhecida até a data de cada atendimento. A data
--- informada no formulário tem precedência; a data da evolução é fallback.
+-- Primeira inclusão registrada em um formulário PAI real até a data do
+-- atendimento. A data informada no formulário tem precedência; a data da
+-- evolução é fallback quando o campo está ausente ou inválido.
 pai_inclusao_atendimento as (
     select
         a.id_atendimento,
-        coalesce(
-            min(safe.parse_date('%d/%m/%Y', pv.data_atendimento)),
-            min(safe_cast(e.data_evolucao as date))
-        ) as data_inclusao_acompanhamento
+        min(coalesce(
+            safe.parse_date('%d/%m/%Y', pv.data_atendimento),
+            safe_cast(e.data_evolucao as date)
+        )) as data_inclusao_acompanhamento
     from atendimentos as a
     inner join evolucoes_centro_pop as e
         on
             a.id_usuario = e.id_paciente
             and a.id_unidade = e.id_unidade
             and safe_cast(e.data_evolucao as date) <= a.data_atendimento
-    left join pai_data_atendimento as pv
+    inner join pai_data_atendimento as pv
         on
             e.id_paciente = pv.id_paciente
             and e.id_unidade = pv.id_unidade
@@ -261,23 +262,23 @@ pai_inclusao_atendimento as (
 ),
 
 -- A regra histórica de pontualidade é mensal: a situação é observada no fim
--- do mês, usando somente evoluções PAI registradas até esse limite.
+-- do mês, usando somente formulários PAI reais registrados até esse limite.
 pai_inclusao_mes as (
     select
         am.id_usuario,
         am.id_unidade,
         am.mes_referencia,
-        coalesce(
-            min(safe.parse_date('%d/%m/%Y', pv.data_atendimento)),
-            min(safe_cast(e.data_evolucao as date))
-        ) as data_inclusao_acompanhamento_mes
+        min(coalesce(
+            safe.parse_date('%d/%m/%Y', pv.data_atendimento),
+            safe_cast(e.data_evolucao as date)
+        )) as data_inclusao_acompanhamento_mes
     from atendimentos_mes as am
     inner join evolucoes_centro_pop as e
         on
             am.id_usuario = e.id_paciente
             and am.id_unidade = e.id_unidade
             and safe_cast(e.data_evolucao as date) < date_add(am.mes_referencia, interval 1 month)
-    left join pai_data_atendimento as pv
+    inner join pai_data_atendimento as pv
         on
             e.id_paciente = pv.id_paciente
             and e.id_unidade = pv.id_unidade
@@ -589,7 +590,7 @@ final as (
         ) as motivo_principal_permanencia_rua,
         nullif(acf.motivo_outros, 'undefined') as motivo_secundario_permanencia_rua,
         u.data_nascimento,
-        safe_cast(date_diff(a.data_atendimento, u.data_nascimento, year) as int64) as idade,
+        safe_cast({{ calc_idade('u.data_nascimento', 'a.data_atendimento') }} as int64) as idade,
         u.filiacao_mae,
         {{ map_flag_boolean('doc.flag_registro_formulario_documentacao_civil') }} as flag_registro_formulario_documentacao_civil,
         case
