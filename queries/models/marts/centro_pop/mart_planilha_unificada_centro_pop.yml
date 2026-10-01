@@ -194,7 +194,7 @@ models:
               values: [Sim, Não, Não Informado]
         meta: {colunas_planilha: [23], situacao_planilha: disponivel}
       - name: ano_cursando
-        description: Ano cursando (cadastro).
+        description: Série informada no cadastro somente quando o usuário estuda (S/Sim); demais casos são Não Informado.
         meta: {colunas_planilha: [24], situacao_planilha: disponivel}
       - name: nivel_escolaridade
         description: Nível de escolaridade (cadastro).

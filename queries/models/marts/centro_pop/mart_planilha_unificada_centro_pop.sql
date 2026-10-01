@@ -500,7 +500,10 @@ final as (
             when lower(trim(u.flag_frequenta_escola)) in ('n', 'nao', 'não') then 'Não'
             else 'Não Informado'
         end as flag_estuda,
-        coalesce(u.serie_escolar, 'Não Informado') as ano_cursando,
+        case
+            when lower(trim(u.flag_frequenta_escola)) in ('s', 'sim') then coalesce(u.serie_escolar, 'Não Informado')
+            else 'Não Informado'
+        end as ano_cursando,
         coalesce(u.escolaridade_indice, 'Não Informado') as nivel_escolaridade,
         case
             when lower(trim(u.flag_deficiencia)) in ('s', 'sim') then 'Sim'
