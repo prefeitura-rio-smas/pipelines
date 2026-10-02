@@ -2,9 +2,9 @@
     tags = ['daily'],
     alias = var('centro_pop_mart_alias', 'mart_planilha_unificada_centro_pop')
 ) }}
--- Planilha Unificada Centro POP: uma linha por usuário × unidade × mês.
--- Atendimentos permanecem detalhados no array atendimentos; as contagens mensais
--- aparecem uma única vez. Formulários são observados até o fechamento do mês.
+-- Planilha Unificada Centro POP: uma linha por atendimento, identificado pelo módulo.
+-- Contagens por pessoa, unidade, mês e tipo são calculadas no Looker.
+-- Formulários são observados até o fechamento do mês do atendimento.
 -- Campos cadastrais e CadÚnico são snapshots atuais, sem reconstrução histórica.
 
 with centro_pop as (
@@ -93,26 +93,9 @@ atendimentos_mes as (
         id_usuario,
         id_unidade,
         date_trunc(data_atendimento, month) as mes_referencia,
-        count(*) as qtd_atendimentos_total_mes,
-        countif(tipo_atendimento = 'Atendimento Técnico') as qtd_atendimentos_tecnico_mes,
-        countif(tipo_atendimento = 'Atendimento Recepção') as qtd_atendimentos_recepcao_mes,
-        countif(tipo_atendimento = 'Outros Atendimentos') as qtd_atendimentos_outros_mes,
-        countif(nome_atendimento is not null and lower(trim(nome_atendimento)) not in (
-            'centro pop - plano de acompanhamento indiv. (pai)',
-            'centro pop - plano de atendimento individual (pai)'
-        )) as qtd_atendimentos_pontuais_mes,
-        countif(nome_atendimento is null) as qtd_atendimentos_sem_tipo_mes,
         min(data_atendimento) as data_primeiro_atendimento_mes,
         max(data_atendimento) as data_ultimo_atendimento_mes,
-        max(if(tipo_atendimento = 'Atendimento Técnico', data_atendimento, null)) as data_ultimo_atendimento_tecnico_mes,
-        array_agg(struct(
-            id_atendimento_modulo,
-            id_atendimento,
-            data_atendimento,
-            nome_atendimento,
-            tipo_atendimento,
-            profissionais_atendimento
-        ) order by data_atendimento, id_atendimento_modulo) as atendimentos
+        max(if(tipo_atendimento = 'Atendimento Técnico', data_atendimento, null)) as data_ultimo_atendimento_tecnico_mes
     from atendimentos
     group by id_usuario, id_unidade, mes_referencia
 ),
@@ -435,6 +418,10 @@ cadunico_atualizacao as (
 
 final as (
     select
+        e.id_atendimento_modulo,
+        e.id_atendimento,
+        e.data_atendimento,
+        e.tipo_atendimento,
         a.id_usuario_unidade_mes,
         a.id_usuario,
         fam.id_familia,
@@ -445,41 +432,21 @@ final as (
         a.data_primeiro_atendimento_mes,
         a.data_ultimo_atendimento_mes,
         a.data_ultimo_atendimento_tecnico_mes,
-        a.atendimentos,
-        array(
-            select as struct
-                t.nome_atendimento,
-                t.tipo_atendimento,
-                count(*) as quantidade
-            from unnest(a.atendimentos) as t
-            group by t.nome_atendimento, t.tipo_atendimento
-            order by t.nome_atendimento, t.tipo_atendimento
-        ) as atendimentos_por_tipo,
-        coalesce(nullif(array_to_string(array(
-            select distinct t.nome_atendimento from unnest(a.atendimentos) as t
-            where t.nome_atendimento is not null
-            order by t.nome_atendimento
-        ), ' | '), ''), 'Não Informado') as nome_atendimento,
-        coalesce(nullif(array_to_string(array(
-            select distinct p from unnest(a.atendimentos) as t
-            cross join unnest(t.profissionais_atendimento) as p
-            order by p
-        ), ', '), ''), 'Não Informado') as profissionais_atendimento,
+        coalesce(e.nome_atendimento, 'Não Informado') as nome_atendimento,
+        coalesce(nullif(array_to_string(e.profissionais_atendimento, ', '), ''), 'Não Informado') as profissionais_atendimento,
         coalesce(nullif(trim(u.nome), ''), 'Não Informado') as nome_usuario,
         coalesce(nullif(trim(u.nome_social), ''), 'Não Informado') as nome_social,
         case
-            when a.qtd_atendimentos_pontuais_mes > 0 then 'Sim'
-            when a.qtd_atendimentos_sem_tipo_mes > 0 then 'Não Informado'
-            else 'Não'
+            when e.nome_atendimento is null then 'Não Informado'
+            when lower(trim(e.nome_atendimento)) in (
+                'centro pop - plano de acompanhamento indiv. (pai)',
+                'centro pop - plano de atendimento individual (pai)'
+            ) then 'Não'
+            else 'Sim'
         end as flag_atendido_pontualmente,
         {{ map_flag_boolean('pim.data_inclusao_acompanhamento is not null') }} as flag_inserido_acompanhamento,
         {{ map_flag_boolean('pim.data_inclusao_acompanhamento is not null') }} as flag_possui_plano_individual,
         pim.data_inclusao_acompanhamento,
-        a.qtd_atendimentos_total_mes,
-        a.qtd_atendimentos_tecnico_mes,
-        a.qtd_atendimentos_recepcao_mes,
-        a.qtd_atendimentos_outros_mes,
-        a.qtd_atendimentos_pontuais_mes,
         coalesce(nullif(q.motivo_ida_ruas, 'undefined'), 'Não Informado') as motivo_principal_permanencia_rua,
         coalesce(nullif(asf.motivo_secundario_permanencia_rua, ''), 'Não Informado') as motivo_secundario_permanencia_rua,
         u.data_nascimento,
@@ -592,7 +559,12 @@ final as (
         coalesce(fm.observacoes, 'Não Informado') as observacoes,
         coalesce(u.flag_situacao_rua, 'Não Informado') as flag_situacao_rua,
         {{ extrair_ultima_atualizacao('raw_configuracoes_sistema') }} as ultima_atualizacao
-    from usuarios_mes as a
+    from atendimentos as e
+    inner join usuarios_mes as a
+        on
+            e.id_usuario is not distinct from a.id_usuario
+            and e.id_unidade is not distinct from a.id_unidade
+            and date_trunc(e.data_atendimento, month) is not distinct from a.mes_referencia
     inner join centro_pop as c on a.id_unidade = c.id_unidade
     left join usuarios as u on a.id_usuario = u.id_usuario
     left join familia_usuario as fam on a.id_usuario = fam.id_usuario
@@ -612,5 +584,5 @@ final as (
 
 select
     *,
-    row_number() over (order by mes_referencia, id_unidade, id_usuario) as numero
+    row_number() over (order by mes_referencia, id_unidade, id_usuario, data_atendimento, id_atendimento_modulo) as numero
 from final

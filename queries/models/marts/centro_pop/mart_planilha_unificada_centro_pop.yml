@@ -2,35 +2,43 @@ version: 2
 models:
   - name: mart_planilha_unificada_centro_pop
     description: |-
-      Planilha Unificada Centro POP: uma linha por usuário × unidade × mês com atendimento não cancelado. Chave: id_usuario_unidade_mes. Nº é apenas sequência de apresentação. Atendimentos individuais e contagens por tipo ficam nos arrays atendimentos e atendimentos_por_tipo; totais mensais não são repetidos e podem ser somados entre linhas.
+      Planilha Unificada Centro POP: uma linha por atendimento não cancelado, com profissionais compartilhados agregados. Chave: id_atendimento_modulo, que distingue os módulos usuário e família. Nº é apenas sequência de apresentação. Pessoas, unidades, meses e tipos podem ser agrupados no Looker. Para contar atendimentos, use COUNT(DISTINCT id_atendimento_modulo); para contar pessoas, use COUNT(DISTINCT id_usuario).
 
-      Mudança de contrato: id_atendimento/data_atendimento/tipo_atendimento escalares passaram para o array atendimentos; flags e datas redundantes com sufixo _fim_mes foram consolidadas em campos mensais. Data do último atendimento técnico é separada da data do último atendimento geral. Nome do atendimento e profissionais mostram listas distintas do mês.
+      Dados do evento são escalares: id_atendimento, data_atendimento, nome_atendimento e tipo_atendimento. Profissionais são uma lista textual distinta do próprio evento. id_usuario_unidade_mes é uma chave de agrupamento repetida, não a chave da mart. Os totais mensais de atendimentos e os arrays atendimentos/atendimentos_por_tipo foram removidos; as contagens são calculadas no Looker.
 
-      Regras temporais: PAI e último perfil social/saúde/desligamento são selecionados até o fim do mês; demandas, encaminhamentos e observações são agregados de todos os formulários do mês. Idade é calculada no fechamento. Presença de PAI não equivale a acompanhamento ativo. Pontual significa atendimento de tipo diferente de PAI; a pessoa pode ter as duas condições no mesmo mês.
+      Regras temporais: PAI e último perfil social/saúde/desligamento são selecionados até o fim do mês; demandas, encaminhamentos e observações são agregados de todos os formulários do mês. Idade é calculada no fechamento. Presença de PAI não equivale a acompanhamento ativo. Pontual significa atendimento de tipo diferente de PAI; a pessoa pode ter as duas condições no mesmo mês. Perfil, demandas, encaminhamentos, observações, datas mensais e quantidade de oficinas são contexto do usuário/unidade/mês repetido em cada evento. Não representam necessariamente o conteúdo daquele atendimento. No Looker, a quantidade mensal de oficinas requer MAX por id_usuario_unidade_mes, nunca SUM entre atendimentos; renda também é atributo cadastral, não medida aditiva de atendimento.
 
       Cadastro, documentos e CadÚnico representam snapshots atuais: não há reconstrução retroativa desses atributos. CPF vem do prontuário; RG, certidão e NIS vêm do CadÚnico por CPF. CPF com família/documento/NIS ambíguo não recebe valor arbitrário. Ausência de evidência documental não é convertida em Não. Números ausentes são apresentados como traço; flags desconhecidas usam Não Informado; datas, valores e IDs preservam tipos e NULL.
 
-      Cobertura da planilha: todas as 50 colunas estão mapeadas em columns.meta.colunas_planilha. Campos sem coleta: empregabilidade, habilidades, interesse em curso, resultado/acesso e resultado/descrição dependem de inclusão no sistema. Motivo principal tem pergunta estruturada, porém sem respostas; observações têm extrator, porém o bloco não é exportado nos formulários atuais. Território familiar e reinserção têm campos reais e são extraídos. Oficinas usam presenças registradas; não há registros de Centro POP nas fontes auditadas. Sem evidência de participação, flag e quantidade permanecem desconhecidas, sem inventar Não ou zero. A coleta deve ser disponibilizada/preenchida nas atividades de grupo ou atendimentos, conforme a planilha. Quantidades de atendimento são mantidas como apoio, respeitando a nota pode ignorar da planilha.
+      Cobertura da planilha: todas as 50 colunas estão mapeadas em columns.meta.colunas_planilha. Campos sem coleta: empregabilidade, habilidades, interesse em curso, resultado/acesso e resultado/descrição dependem de inclusão no sistema. Motivo principal tem pergunta estruturada, porém sem respostas; observações têm extrator, porém o bloco não é exportado nos formulários atuais. Território familiar e reinserção têm campos reais e são extraídos. Oficinas usam presenças registradas; não há registros de Centro POP nas fontes auditadas. Sem evidência de participação, flag e quantidade permanecem desconhecidas, sem inventar Não ou zero. A coleta deve ser disponibilizada/preenchida nas atividades de grupo ou atendimentos, conforme a planilha. A classificação do evento permite calcular no Looker as quantidades opcionais por tipo da coluna 12.
 
-      Decisões de consolidação: profissional de referência é a lista de profissionais dos atendimentos, conforme origem Login. Idade informada é derivada do nascimento cadastral no fim do mês. Atualização do CadÚnico usa o prazo oficial do snapshot; data declarada no prontuário é exposta separadamente, sem supor equivalência com atualização oficial.
+      Decisões de consolidação: profissional de referência é a lista de profissionais do atendimento, conforme origem Login. Idade informada é derivada do nascimento cadastral no fim do mês. Atualização do CadÚnico usa o prazo oficial do snapshot; data declarada no prontuário é exposta separadamente, sem supor equivalência com atualização oficial.
     meta:
       planilha_url: https://docs.google.com/spreadsheets/d/1me-dxFcE-SZ_WgZ75_sq1t92Se1zwxk9YPgZ_YYMKu8/edit
-      granularidade:
-        - id_usuario
-        - id_unidade
-        - mes_referencia
+      granularidade: [id_atendimento_modulo]
       auditoria_fontes: '2026-10-01'
     columns:
       - name: numero
-        description: Número sequencial para apresentação, ordenado por mês/unidade/usuário. Não é um identificador
-          persistente; use id_usuario_unidade_mes como chave.
+        description: Número sequencial para apresentação, ordenado por mês/unidade/usuário/data/atendimento. Não
+          é um identificador persistente; use id_atendimento_modulo como chave.
         meta: {colunas_planilha: [1], situacao_planilha: disponivel}
+      - name: id_atendimento_modulo
+        description: Chave única do atendimento, qualificada pelo módulo usuário/família. Usar COUNT(DISTINCT id_atendimento_modulo)
+          para contar eventos no Looker.
+        data_tests: [not_null, unique]
+      - name: id_atendimento
+        description: Identificador numérico do atendimento na origem; pode se repetir entre módulos. Use id_atendimento_modulo
+          como chave.
+      - name: data_atendimento
+        description: Data do próprio atendimento; determina o mês de referência.
+      - name: tipo_atendimento
+        description: 'Classificação do evento: Atendimento Técnico quando possui profissional de nível superior
+          (grupo CBO 2); senão Atendimento Recepção conforme tipo/profissional; demais são Outros Atendimentos.
+          Permite calcular as contagens opcionais por tipo no Looker.'
+        meta: {colunas_planilha: [12], situacao_planilha: opcional_conforme_observacao}
       - name: id_usuario_unidade_mes
-        description: Chave estável do agrupamento usuário × unidade × mês. Substitui id_atendimento como chave da
-          mart; não é um identificador de atendimento.
-        data_tests:
-          - not_null
-          - unique
+        description: Chave estável de agrupamento usuário × unidade × mês, repetida nos atendimentos desse grupo.
+          Não é única na mart; serve para agrupar o contexto mensal no Looker.
       - name: id_usuario
         description: Identificador do usuário no prontuário (id_paciente).
       - name: id_familia
@@ -43,7 +51,7 @@ models:
           alfabética separados por ' | '.
         meta: {colunas_planilha: [3], situacao_planilha: disponivel}
       - name: mes_referencia
-        description: Primeiro dia do mês dos atendimentos. A mart possui uma única linha por usuário/unidade/mês.
+        description: Primeiro dia do mês do atendimento. Use para agrupar os eventos mensalmente no Looker.
         meta: {colunas_planilha: [2], situacao_planilha: disponivel}
       - name: data_referencia
         description: Último dia do mês de referência; limite para seleção de formulários e referência do cálculo
@@ -56,22 +64,13 @@ models:
         description: Última data de atendimento com ao menos um profissional de nível superior (grupo CBO 2). Não
           inclui recepção sem profissional de nível superior.
         meta: {colunas_planilha: [11], situacao_planilha: disponivel}
-      - name: atendimentos
-        description: Array dos atendimentos que compõem a linha mensal, com id_atendimento_modulo, id_atendimento,
-          data_atendimento, nome_atendimento, tipo_atendimento e profissionais_atendimento. Identificadores modulares
-          evitam colisões entre módulos usuário e família. Para abrir detalhes, use UNNEST(atendimentos).
-      - name: atendimentos_por_tipo
-        description: Contagens mensais por nome e classificação do atendimento. A soma das quantidades equivale
-          a qtd_atendimentos_total_mes.
-        meta: {colunas_planilha: [12], situacao_planilha: opcional_conforme_observacao}
       - name: nome_atendimento
-        description: Nomes distintos dos tipos de atendimento registrados no mês, separados por |. Os nomes por
-          evento permanecem no array atendimentos.
+        description: Nome do tipo de atendimento do evento na fonte. Não Informado quando ausente.
         meta: {colunas_planilha: [44], situacao_planilha: disponivel}
       - name: profissionais_atendimento
-        description: Profissionais dos atendimentos do mês, sem duplicatas, separados por vírgula. Atende à origem
-          Login da coluna Profissional de referência; não identifica um profissional de referência designado, que
-          não está definido na fonte.
+        description: Profissionais do próprio atendimento, sem duplicatas, em ordem alfabética e separados por vírgula.
+          Atende à origem Login da coluna Profissional de referência; a fonte não define um profissional de referência
+          designado. Profissionais compartilhados não multiplicam linhas.
         meta: {colunas_planilha: [4], situacao_planilha: disponivel}
       - name: nome_usuario
         description: Nome do usuário do serviço (cadastro).
@@ -80,9 +79,9 @@ models:
         description: Nome social do usuário (cadastro).
         meta: {colunas_planilha: [6], situacao_planilha: disponivel}
       - name: flag_atendido_pontualmente
-        description: Sim quando houve no mês algum atendimento cujo tipo não é PAI. Os tipos PAI reconhecidos são
-          CENTRO POP - Plano de acompanhamento indiv. (PAI) e Centro POP - Plano de Atendimento Individual (PAI).
-          Não quando todos são PAI; Não Informado se só há PAI e registros sem tipo. Pode ser Sim junto com flag_possui_plano_individual.
+        description: Sim quando o tipo deste atendimento é diferente de PAI. Não para CENTRO POP - Plano de acompanhamento
+          indiv. (PAI) e Centro POP - Plano de Atendimento Individual (PAI); Não Informado quando o tipo está ausente.
+          Pode ser Sim junto com flag_possui_plano_individual, pois este indica evidência mensal de formulário PAI.
         data_tests:
           - accepted_values:
               values: [Sim, Não, Não Informado]
@@ -106,22 +105,6 @@ models:
           do mês. Aceita DD/MM/AAAA e AAAA-MM-DD, com ou sem horário. Quando ausente ou inválida, usa a data da
           evolução como fallback documentado. Datas de inclusão e registros posteriores ao fechamento não entram.
         meta: {colunas_planilha: [9], situacao_planilha: disponivel}
-      - name: qtd_atendimentos_total_mes
-        description: Total mensal dos eventos após deduplicação de profissionais compartilhados. Aparece uma vez
-          por usuário/unidade/mês e pode ser somado entre linhas da mart.
-        meta: {colunas_planilha: [12], situacao_planilha: opcional_conforme_observacao}
-      - name: qtd_atendimentos_tecnico_mes
-        description: Total mensal de eventos com ao menos um profissional de nível superior (grupo CBO 2).
-        meta: {colunas_planilha: [12], situacao_planilha: opcional_conforme_observacao}
-      - name: qtd_atendimentos_recepcao_mes
-        description: Total mensal de recepção, após priorizar eventos com profissional de nível superior como técnicos.
-        meta: {colunas_planilha: [12], situacao_planilha: opcional_conforme_observacao}
-      - name: qtd_atendimentos_outros_mes
-        description: Total mensal de eventos classificados como Outros Atendimentos.
-        meta: {colunas_planilha: [12], situacao_planilha: opcional_conforme_observacao}
-      - name: qtd_atendimentos_pontuais_mes
-        description: Total mensal de eventos com tipo informado diferente dos tipos PAI. Não corresponde à quantidade
-          de usuários sem PAI.
       - name: motivo_principal_permanencia_rua
         description: Campo Motivo da ida às ruas do questionário cadastral Situação do Usuário (template 3, questão
           18), última resposta até o fechamento. Fonte sem respostas na auditoria de 01/10/2026; depende de disponibilizar/preencher
@@ -318,9 +301,10 @@ models:
               values: [Sim, Não, Não Informado]
         meta: {colunas_planilha: [42], situacao_planilha: coleta_indisponivel}
       - name: qtd_oficinas_participadas_mes
-        description: Quantidade de atividades distintas com participação registrada no mês. NULL quando não há evidência,
-          sem inventar zero participações. Não há registros de Centro POP na fonte atual; depende de disponibilizar/preencher
-          a coleta.
+        description: 'Quantidade de atividades distintas com participação registrada no mês. NULL quando não há
+          evidência, sem inventar zero participações. Não há registros de Centro POP na fonte atual; depende de
+          disponibilizar/preencher a coleta. Contexto mensal repetido em cada atendimento: usar MAX por id_usuario_unidade_mes
+          no Looker, sem somar entre eventos.'
         meta: {colunas_planilha: [43], situacao_planilha: coleta_indisponivel}
       - name: demandas
         description: Todas as demandas registradas em formulários PAI e Atendimento Social no mês, deduplicadas,
