@@ -215,7 +215,7 @@ desligamento_form as (
 ),
 
 atendimento_social_mes as (
-    {{ ultimo_registro_ate_evento(
+    {{ registro_ate_evento(
         relacao_evento = 'usuarios_mes', relacao_registros = 'atendimento_social_form',
         pares_chave = [
             {'evento': 'id_usuario', 'registro': 'id_paciente'},
@@ -229,7 +229,7 @@ atendimento_social_mes as (
 ),
 
 desligamento_mes as (
-    {{ ultimo_registro_ate_evento(
+    {{ registro_ate_evento(
         relacao_evento = 'usuarios_mes', relacao_registros = 'desligamento_form',
         pares_chave = [
             {'evento': 'id_usuario', 'registro': 'id_paciente'},
@@ -306,7 +306,7 @@ situacao_saude as (
 ),
 
 situacao_saude_mes as (
-    {{ ultimo_registro_ate_evento(
+    {{ registro_ate_evento(
         relacao_evento = 'usuarios_mes', relacao_registros = 'situacao_saude',
         pares_chave = [{'evento': 'id_usuario', 'registro': 'id_paciente'}],
         id_evento = 'id_usuario_unidade_mes', data_evento = 'data_referencia',
@@ -327,7 +327,7 @@ questionario_situacao_usuario as (
 ),
 
 questionario_situacao_usuario_mes as (
-    {{ ultimo_registro_ate_evento(
+    {{ registro_ate_evento(
         relacao_evento = 'usuarios_mes', relacao_registros = 'questionario_situacao_usuario',
         pares_chave = [{'evento': 'id_usuario', 'registro': 'id_usuario'}],
         id_evento = 'id_usuario_unidade_mes', data_evento = 'data_referencia',
