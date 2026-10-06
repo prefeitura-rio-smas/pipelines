@@ -2,7 +2,7 @@
     tags = ['daily'],
     alias = var('centro_pop_mart_alias', 'mart_planilha_unificada_centro_pop')
 ) }}
--- Planilha Unificada Centro POP: uma linha por atendimento, identificado pelo módulo.
+-- Planilha Unificada Centro POP: uma linha por id_atendimento.
 -- Contagens por pessoa, unidade, mês e tipo são calculadas no Looker.
 -- Formulários são observados até o fechamento do mês do atendimento.
 -- Campos cadastrais e CadÚnico são snapshots atuais, sem reconstrução histórica.
@@ -23,7 +23,6 @@ atendimentos_candidatos as (
     select
         a.id_usuario,
         a.id_unidade,
-        a.id_atendimento_modulo,
         a.id_atendimento,
         a.tipo_atendimento_descricao as nome_atendimento,
         dp.nome as profissional,
@@ -50,20 +49,19 @@ atendimentos_candidatos as (
 -- para que a auditoria dos detalhes identifique o conflito.
 atendimentos_eventos as (
     select
-        id_atendimento_modulo,
         id_atendimento,
         id_usuario,
         id_unidade,
         data_atendimento,
         nome_atendimento
     from atendimentos_candidatos
-    group by id_atendimento_modulo, id_atendimento, id_usuario, id_unidade, data_atendimento, nome_atendimento
+    group by id_atendimento, id_usuario, id_unidade, data_atendimento, nome_atendimento
 ),
 
 -- Profissionais compartilhados são agregados separadamente dos atributos do fato.
 atendimentos_profissionais as (
     select
-        id_atendimento_modulo,
+        id_atendimento,
         array_agg(distinct profissional ignore nulls order by profissional) as profissionais_atendimento,
         case
             when countif(tipo_atendimento = 'Atendimento Técnico') > 0 then 'Atendimento Técnico'
@@ -71,12 +69,11 @@ atendimentos_profissionais as (
             else 'Outros Atendimentos'
         end as tipo_atendimento
     from atendimentos_candidatos
-    group by id_atendimento_modulo
+    group by id_atendimento
 ),
 
 atendimentos as (
     select
-        e.id_atendimento_modulo,
         e.id_atendimento,
         e.id_usuario,
         e.id_unidade,
@@ -85,7 +82,7 @@ atendimentos as (
         p.profissionais_atendimento,
         p.tipo_atendimento
     from atendimentos_eventos as e
-    left join atendimentos_profissionais as p on e.id_atendimento_modulo = p.id_atendimento_modulo
+    left join atendimentos_profissionais as p on e.id_atendimento = p.id_atendimento
 ),
 
 atendimentos_mes as (
@@ -418,7 +415,6 @@ cadunico_atualizacao as (
 
 final as (
     select
-        e.id_atendimento_modulo,
         e.id_atendimento,
         e.data_atendimento,
         e.tipo_atendimento,
@@ -584,5 +580,5 @@ final as (
 
 select
     *,
-    row_number() over (order by mes_referencia, id_unidade, id_usuario, data_atendimento, id_atendimento_modulo) as numero
+    row_number() over (order by mes_referencia, id_unidade, id_usuario, data_atendimento, id_atendimento) as numero
 from final
