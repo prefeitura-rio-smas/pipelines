@@ -2,7 +2,7 @@ version: 2
 models:
   - name: mart_planilha_unificada_centro_pop
     description: |-
-      Planilha Unificada Centro POP: uma linha por atendimento não cancelado, com profissionais compartilhados agregados. Chave: id_atendimento_modulo, que distingue os módulos usuário e família. Nº é apenas sequência de apresentação. Pessoas, unidades, meses e tipos podem ser agrupados no Looker. Para contar atendimentos, use COUNT(DISTINCT id_atendimento_modulo); para contar pessoas, use COUNT(DISTINCT id_usuario).
+      Planilha Unificada Centro POP: uma linha por atendimento não cancelado, com profissionais compartilhados agregados. Chave: id_atendimento. A mart utiliza o número original como identificador único no recorte Centro POP. Nº é apenas sequência de apresentação. Pessoas, unidades, meses e tipos podem ser agrupados no Looker. Para contar atendimentos, use COUNT(DISTINCT id_atendimento); para contar pessoas, use COUNT(DISTINCT id_usuario).
 
       Dados do evento são escalares: id_atendimento, data_atendimento, nome_atendimento e tipo_atendimento. Profissionais são uma lista textual distinta do próprio evento. id_usuario_unidade_mes é uma chave de agrupamento repetida, não a chave da mart. Os totais mensais de atendimentos e os arrays atendimentos/atendimentos_por_tipo foram removidos; as contagens são calculadas no Looker.
 
@@ -15,20 +15,17 @@ models:
       Decisões de consolidação: profissional de referência é a lista de profissionais do atendimento, conforme origem Login. Idade informada é derivada do nascimento cadastral no fim do mês. Atualização do CadÚnico usa o prazo oficial do snapshot; data declarada no prontuário é exposta separadamente, sem supor equivalência com atualização oficial.
     meta:
       planilha_url: https://docs.google.com/spreadsheets/d/1me-dxFcE-SZ_WgZ75_sq1t92Se1zwxk9YPgZ_YYMKu8/edit
-      granularidade: [id_atendimento_modulo]
+      granularidade: [id_atendimento]
       auditoria_fontes: '2026-10-01'
     columns:
       - name: numero
         description: Número sequencial para apresentação, ordenado por mês/unidade/usuário/data/atendimento. Não
-          é um identificador persistente; use id_atendimento_modulo como chave.
+          é um identificador persistente; use id_atendimento como chave.
         meta: {colunas_planilha: [1], situacao_planilha: disponivel}
-      - name: id_atendimento_modulo
-        description: Chave única do atendimento, qualificada pelo módulo usuário/família. Usar COUNT(DISTINCT id_atendimento_modulo)
-          para contar eventos no Looker.
-        data_tests: [not_null, unique]
       - name: id_atendimento
-        description: Identificador numérico do atendimento na origem; pode se repetir entre módulos. Use id_atendimento_modulo
-          como chave.
+        description: Número original do atendimento, usado como chave única nesta mart Centro POP. Usar COUNT(DISTINCT id_atendimento)
+          para contar eventos no Looker. A unicidade é verificada pelo teste; a numeração não é garantida como única entre módulos fora deste recorte.
+        data_tests: [not_null, unique]
       - name: data_atendimento
         description: Data do próprio atendimento; determina o mês de referência.
       - name: tipo_atendimento
