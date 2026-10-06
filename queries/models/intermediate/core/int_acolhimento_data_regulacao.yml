@@ -1,0 +1,17 @@
+version: 2
+models:
+  - name: int_acolhimento_data_regulacao
+    description: |
+      Data de regulação associada aos ciclos de acolhimento.
+      Grão: uma linha por id_ciclo. Regulações são relacionadas por paciente,
+      data de entrada prevista e unidade. A primeira data de notificação é
+      priorizada quando existe notificação ligada à regulação por id_regulacao;
+      caso contrário, usa a data da regulação. Seleciona a data resultante mais
+      recente, com desempate pelo maior id_regulacao. Ciclos sem regulação são
+      mantidos com data_regulacao nula.
+    columns:
+      - name: id_ciclo
+        description: "Chave do ciclo de acolhimento."
+        data_tests: [unique, not_null]
+      - name: data_regulacao
+        description: "Data da primeira notificação da regulação; fallback para a data de regulação."

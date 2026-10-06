@@ -12,7 +12,7 @@ Parâmetros:
 A macro é genérica para relações de evento e histórico. As chamadas informam as
 chaves e colunas do domínio; a macro não fixa fonte ou regra de negócio.
 #}
-{% macro ultimo_registro_ate_evento(
+{% macro registro_ate_evento(
     relacao_evento,
     relacao_registros,
     pares_chave,

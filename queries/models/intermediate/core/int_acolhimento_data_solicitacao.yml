@@ -1,0 +1,15 @@
+version: 2
+models:
+  - name: int_acolhimento_data_solicitacao
+    description: |
+      Data de solicitação de vaga associada aos ciclos de acolhimento.
+      Grão: uma linha por id_ciclo. Solicitações são relacionadas por paciente,
+      data de atendimento e unidade. Seleciona a data de solicitação mais recente,
+      com desempate pelo maior id_solicitacao. Ciclos sem solicitação são mantidos
+      com data_solicitacao nula.
+    columns:
+      - name: id_ciclo
+        description: "Chave do ciclo de acolhimento."
+        data_tests: [unique, not_null]
+      - name: data_solicitacao
+        description: "Data da solicitação de vaga correspondente ao atendimento do ciclo."
