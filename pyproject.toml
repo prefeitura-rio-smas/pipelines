@@ -75,3 +75,7 @@ target-version = "py313"
 [tool.ruff.isort]
 known-first-party = ["pipelines", "tests"]
 force-sort-within-sections = true
+
+[tool.ruff.lint.per-file-ignores]
+# Testes usam `assert` (S101) por design.
+"tests/**" = ["S101"]

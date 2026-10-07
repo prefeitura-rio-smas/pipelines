@@ -10,7 +10,14 @@ from prefect import task
 import requests
 from shapely.geometry import LineString, MultiPoint, Point, Polygon
 
-from .utils import _get_arcgis_token, add_timestamp, bq_client, dataset_ref, resolve_arcgis_url
+from .utils import (
+    _get_arcgis_token,
+    _raise_for_arcgis_error,
+    add_timestamp,
+    bq_client,
+    dataset_ref,
+    resolve_arcgis_url,
+)
 
 
 @task
@@ -32,9 +39,13 @@ def get_layer_metadata(service_url: str):
         response = requests.get(url, params=params, timeout=30)
         response.raise_for_status()
         data = response.json()
+        # Erro do ArcGIS vem no corpo com HTTP 200; NÃO tratar como count=0.
+        _raise_for_arcgis_error(data, f"count {service_url}")
         total_records = data.get("count")
         if total_records is None:
-            total_records = 0
+            raise ValueError(
+                f"Resposta de contagem sem 'count' para {service_url}: {data}"
+            )
 
     except requests.exceptions.RequestException as e:
         logger.error(f"Erro ao conectar com o servidor: {e}")
@@ -125,8 +136,15 @@ def get_layer_info(service_url: str) -> dict:
         response = requests.get(service_url, params=params, timeout=30)
         response.raise_for_status()
         data = response.json()
+        # Erro do ArcGIS vem no corpo com HTTP 200 (ex.: LLS_0002).
+        _raise_for_arcgis_error(data, f"layer info {service_url}")
+        fields = data.get("fields")
+        if not fields:
+            raise ValueError(
+                f"Resposta sem 'fields' para {service_url}: {data}"
+            )
         return {
-            "fields": data.get("fields", []),
+            "fields": fields,
             "crs": data.get("spatialReference", {})
         }
     except requests.exceptions.RequestException as e:
@@ -186,6 +204,15 @@ def load_arcgis_to_bigquery(
     bq_schema = arcgis_to_bq_schema(layer_info["fields"], return_geometry)
     source_crs_wkid = layer_info.get("crs", {}).get("wkid")
 
+    if not bq_schema:
+        # Nunca (re)criar tabela sem schema. Um bq_schema vazio indica resposta
+        # degradada do ArcGIS (erro absorvido em HTTP 200), não layer vazio:
+        # falha explicitamente e preserva a tabela anterior.
+        raise ValueError(
+            f"Schema vazio para '{final_table}' (service {base_url}): "
+            "ArcGIS não retornou 'fields'. Abortando para preservar a tabela existente."
+        )
+
     if total_records == 0:
         logger.info("Nenhum registro encontrado. Criando ou limpando a tabela final.")
         client = bq_client()
@@ -218,6 +245,8 @@ def load_arcgis_to_bigquery(
                     response = requests.post(url, data=params, timeout=120)
                     response.raise_for_status()
                     data = response.json()
+                    # Erro do ArcGIS no corpo (HTTP 200) = falha, não vazio.
+                    _raise_for_arcgis_error(data, f"query batch {batch_index} ({base_url})")
                     break
                 except (requests.exceptions.RequestException, requests.exceptions.ConnectionError) as e:
                     if attempt < max_retries - 1:
