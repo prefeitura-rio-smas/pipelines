@@ -92,4 +92,5 @@ diferencas as (
 select 'campos divergentes' as falha from diferencas
 union all
 select 'quantidade divergente' as falha
+from (select 1)
 where (select count(*) from extraido) != (select count(*) from esperado)
