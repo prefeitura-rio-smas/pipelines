@@ -361,7 +361,16 @@ situacao_saude_mes as (
 situacao_saude_historico_mes as (
     select
         e.id_usuario_unidade_mes,
-        logical_or({{ evidencia_saude('r.situacao_saude') }}) as possui_historico_problema_saude
+        logical_or(case
+            when r.situacao_saude is null or lower(trim(r.situacao_saude)) in (
+                '', 'undefined', 'null', 'não informado', 'nao informado',
+                'não informada', 'nao informada', 'não sabe', 'nao sabe',
+                'não soube informar', 'nao soube informar',
+                'sem informação', 'sem informacao', '-', 'não se aplica', 'nao se aplica'
+            ) then null
+            when lower(trim(r.situacao_saude)) in ('n', 'nao', 'não') then false
+            else true
+        end) as possui_historico_problema_saude
     from usuarios_mes as e
     inner join situacao_saude as r
         on
@@ -557,9 +566,14 @@ final as (
             else 'Não Informado'
         end as flag_problema_saude,
         case
-            when {{ evidencia_saude('ss.local_tratamento') }} then 'Sim'
-            when {{ evidencia_saude('ss.local_tratamento') }} = false then 'Não'
-            else 'Não Informado'
+            when ss.local_tratamento is null or lower(trim(ss.local_tratamento)) in (
+                '', 'undefined', 'null', 'não informado', 'nao informado',
+                'não informada', 'nao informada', 'não sabe', 'nao sabe',
+                'não soube informar', 'nao soube informar',
+                'sem informação', 'sem informacao', '-', 'não se aplica', 'nao se aplica'
+            ) then 'Não Informado'
+            when lower(trim(ss.local_tratamento)) in ('n', 'nao', 'não') then 'Não'
+            else 'Sim'
         end as flag_acompanhamento_saude,
         case
             when lower(trim(asf.possui_referencias_familiares)) in ('s', 'sim') then 'Sim'
