@@ -4,8 +4,6 @@ on:
   pull_request:
     paths:
       - 'pipelines/**'
-      - 'queries/**'
-      - 'tests/**'
       - 'pyproject.toml'
       - 'uv.lock'
 
