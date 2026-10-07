@@ -42,7 +42,7 @@ models:
       - name: prontuario
         description: "Número do prontuário físico."
       - name: flag_cadunico
-        description: "Indica se possui Cadastro Único (Sim/Não)."
+        description: "Indica se possui Cadastro Único (Sim/Não); ausência ou resposta inválida é NULL."
       - name: violacao_direito_bruto
         description: "Código(s) de violação de direito separados por vírgula."
       - name: pontuacao
@@ -74,7 +74,7 @@ models:
       - name: flag_frequenta_escola
         description: "Indica se frequenta escola (Sim/Não)."
       - name: escolaridade_indice
-        description: "Nível de escolaridade (Não Alfabetizado, Fundamental completo, etc.)."
+        description: "Nível de escolaridade traduzido de indescolari, separado da série escolar indserie."
       - name: flag_recebe_beneficio
         description: "Indica se recebe benefício (Sim/Não)."
       - name: tipo_beneficio
@@ -88,7 +88,7 @@ models:
       - name: tipo_deficiencia
         description: "Código(s) da(s) deficiência(s) separados por vírgula."
       - name: flag_situacao_rua
-        description: "Indica se está em situação de rua (Sim/Não)."
+        description: "Indica se está em situação de rua (Sim/Não); ausência ou texto inválido é NULL."
       - name: codigo_origem
         description: "Código da origem do paciente (FK para gh_origens)."
       - name: origem_demanda
