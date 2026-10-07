@@ -7,6 +7,8 @@ models:
       É a fonte única de evoluções para a fct_evolucoes (que adiciona os SKs de
       dimensões) e para a int_usuarios_violacoes (extração de campos de
       formulários HTML). Evoluções canceladas do módulo grupo são excluídas.
+      Evoluções administrativas são deduplicadas por id_evolucao antes da união;
+      a raw preserva todas as linhas da fonte.
     columns:
       - name: id_usuario
         description: "ID do usuário (seqpac). NULL para evoluções de família sem paciente vinculado."
