@@ -13,6 +13,31 @@ from .constants import settings
 
 
 # ---------- ArcGIS ----------
+def _raise_for_arcgis_error(data, context: str) -> None:
+    """Falha explícita para erro do ArcGIS devolvido DENTRO de HTTP 200.
+
+    O SIURB/ArcGIS responde HTTP 200 com o corpo {"error": {...}} (ex.: senha
+    expirada, ``LLS_0002``). Sem esta checagem o erro é absorvido por
+    ``.get("fields", [])`` / ``.get("count")`` e o pipeline segue em silêncio
+    com dados vazios. Recebe o corpo já parseado (dict).
+    """
+    if not isinstance(data, dict):
+        return
+    error = data.get("error")
+    if not error:
+        return
+    if isinstance(error, dict):
+        detail = (
+            f"code={error.get('code')} "
+            f"messageCode={error.get('messageCode')} "
+            f"message={error.get('message')} "
+            f"details={error.get('details')}"
+        )
+    else:
+        detail = str(error)
+    raise ValueError(f"ArcGIS API error [{context}]: {detail}")
+
+
 @lru_cache(maxsize=1)
 def _get_arcgis_token() -> str:
     """Gets an ArcGIS token for the SIURB account."""
@@ -37,9 +62,13 @@ def _get_arcgis_token() -> str:
     try:
         response = requests.post(token_url, data=params, timeout=30)
         response.raise_for_status()
-        token = response.json().get("token")
+        data = response.json()
+        # O portal devolve o erro no corpo (HTTP 200); propaga a causa real
+        # (ex.: LLS_0002 / senha expirada) em vez da ValueError genérica.
+        _raise_for_arcgis_error(data, "generateToken")
+        token = data.get("token")
         if not token:
-            raise ValueError("Token não encontrado na resposta.")
+            raise ValueError(f"Token não encontrado na resposta: {data}")
         logger.info("Token gerado com sucesso.")
         return token
     except requests.exceptions.RequestException as e:
@@ -65,10 +94,7 @@ def resolve_arcgis_url(item_id: str, layer_idx: int = None) -> str:
         response = requests.get(item_url, params=params, timeout=30)
         response.raise_for_status()
         data = response.json()
-
-        if "error" in data:
-            msg = data["error"].get("message", str(data["error"]))
-            raise ValueError(f"ArcGIS API error para item {item_id}: {msg}")
+        _raise_for_arcgis_error(data, f"content/items/{item_id}")
 
         service_url = data.get("url")
         item_type = data.get("type")
