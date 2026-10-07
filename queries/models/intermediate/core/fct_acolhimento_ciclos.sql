@@ -16,11 +16,11 @@ unidades as (
 ),
 
 datas_solicitacao as (
-    select * from {{ ref('int_acolhimento_data_solicitacao') }}
+    select * from {{ ref('int_solicitacao') }}
 ),
 
 datas_regulacao as (
-    select * from {{ ref('int_acolhimento_data_regulacao') }}
+    select * from {{ ref('int_regulacao') }}
 ),
 
 final as (
