@@ -39,6 +39,16 @@ macros:
         type: string
         description: "Expressão SQL opcional; quando omitida, usa mes_referencia()."
 
+  - name: registro_ate_evento
+    description: "Gera uma condição para verificar se a data de um registro é anterior ou igual à referência definida pelo modelo consumidor."
+    arguments:
+      - name: data_registro
+        type: string
+        description: "Expressão SQL da data do registro, convertida para DATE com SAFE_CAST."
+      - name: data_referencia
+        type: string
+        description: "Expressão SQL da data limite inclusiva. No Centro POP, usa o último dia do mês."
+
   - name: nao_cancelado
     description: "Gera o predicado de registro não cancelado para uma flag ou uma coluna de data de cancelamento."
     arguments:
