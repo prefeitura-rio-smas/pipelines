@@ -416,8 +416,11 @@
 -- Coluna flag_situacao_rua do model stg_pacientes_sm_acolherio
 {% macro map_flag_situacao_rua (coluna) %}
   case
-    when {{ coluna }} = '5' then 'Sim'
-    else 'Não'
+    when safe_cast(trim(cast({{ coluna }} as string)) as int64) = 5 then 'Sim'
+    -- Preserva a regra existente para outros códigos numéricos de moradia.
+    -- Ausência e texto inválido não são evidência de uma resposta negativa.
+    when regexp_contains(trim(cast({{ coluna }} as string)), r'^\d+$') then 'Não'
+    else null
   end 
 {% endmacro %}
 
@@ -425,8 +428,9 @@
 -- Coluna flag_cadunico do model stg_pac_dados_acolherio
 {% macro map_flag_cadunico (coluna) %}
   case
-    when {{ coluna }} = 'S' then 'Sim'
-    else 'Não'
+    when upper(trim(cast({{ coluna }} as string))) = 'S' then 'Sim'
+    when upper(trim(cast({{ coluna }} as string))) = 'N' then 'Não'
+    else null
   end 
 {% endmacro %}
 

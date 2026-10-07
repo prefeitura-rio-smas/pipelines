@@ -2,3 +2,6 @@ version: 2
 models:
   - name: raw_usuarios_detalhes
     description: "Detalhes dos pacientes."
+    columns:
+      - name: flag_cadunico
+        description: "S = Sim, N = Não; ausência ou resposta inválida é NULL."
