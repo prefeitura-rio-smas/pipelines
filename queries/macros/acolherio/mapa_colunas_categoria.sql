@@ -92,6 +92,10 @@
     WHEN {{ coluna }} = '06' THEN 'Nível médio completo'
     WHEN {{ coluna }} = '07' THEN 'Superior incompleto'
     WHEN {{ coluna }} = '08' THEN 'Superior completo'
+    -- Catálogo indescolari: escolaridade.ini e escolaridade_bc26.ini.
+    WHEN {{ coluna }} = '09' THEN 'Especialização'
+    WHEN {{ coluna }} = '10' THEN 'Mestrado'
+    WHEN {{ coluna }} = '11' THEN 'Doutorado'
     WHEN {{ coluna }} = '12' THEN 'Nunca estudou'
     WHEN {{ coluna }} = '13' THEN 'Nível fundamental incompleto (cursando)'
     WHEN {{ coluna }} = '14' THEN 'Nível médio incompleto (cursando)'
@@ -112,8 +116,10 @@
 
 -- Coluna DECISAO_APOIADA do models relatorio_geral
 {% macro map_coluna_decisao_apoiada (coluna) %}
+  -- Indica preenchimento cadastral do campo do processo.
   CASE
-    WHEN {{ coluna }} IS NULL THEN 'N'
+    WHEN nullif(trim(cast({{ coluna }} as string)), '') IS NULL THEN 'N'
+    ELSE 'S'
   END
 {% endmacro %}
 
@@ -417,9 +423,10 @@
 {% macro map_flag_situacao_rua (coluna) %}
   case
     when safe_cast(trim(cast({{ coluna }} as string)) as int64) = 5 then 'Sim'
-    -- Preserva a regra existente para outros códigos numéricos de moradia.
-    -- Ausência e texto inválido não são evidência de uma resposta negativa.
-    when regexp_contains(trim(cast({{ coluna }} as string)), r'^\d+$') then 'Não'
+    -- Domínio indmoradi (moradia.ini): demais moradias conhecidas.
+    when safe_cast(trim(cast({{ coluna }} as string)) as int64) in (1, 2, 3, 4, 6, 7, 8, 9) then 'Não'
+    when upper(trim(cast({{ coluna }} as string))) in ('A', 'B', 'C', 'D') then 'Não'
+    -- E = Desconhecido; ausência e códigos fora do domínio permanecem desconhecidos.
     else null
   end 
 {% endmacro %}

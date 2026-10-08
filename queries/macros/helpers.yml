@@ -1,6 +1,27 @@
 version: 2
 
 macros:
+  - name: map_flag_situacao_rua
+    description: "Traduz indmoradi: código 5 = Sim; códigos 1–4, 6–9 e A–D = Não; E, ausência e códigos fora do domínio = NULL. Normaliza espaços, caixa e representações inteiras dos códigos numéricos."
+    arguments:
+      - name: coluna
+        type: string
+        description: "Expressão SQL do código de moradia."
+
+  - name: map_coluna_decisao_apoiada
+    description: "Indica preenchimento cadastral do campo do processo de decisão apoiada: N para NULL, vazio ou somente espaços; S para valor preenchido."
+    arguments:
+      - name: coluna
+        type: string
+        description: "Expressão SQL do campo do processo de decisão apoiada."
+
+  - name: map_coluna_escolaridade
+    description: "Traduz códigos de indescolari, incluindo 09 = Especialização, 10 = Mestrado e 11 = Doutorado. Códigos sem tradução retornam NULL."
+    arguments:
+      - name: coluna
+        type: string
+        description: "Expressão SQL do código de escolaridade; separado do código de série indserie."
+
   - name: inicio_mes
     description: "Retorna o primeiro dia do mês de qualquer expressão SQL de data, datetime ou timestamp."
     arguments:
