@@ -660,9 +660,37 @@ final as (
     left join oficinas as ofc
         on a.id_usuario = ofc.id_usuario and a.id_unidade = ofc.id_unidade and a.mes_referencia = ofc.mes_referencia
     where u.nome is null or lower(u.nome) not like '%teste%'
+),
+
+flags_normalizadas as (
+    select
+        * replace (
+            coalesce(flag_atendido_pontualmente, 'Não informado') as flag_atendido_pontualmente,
+            coalesce(flag_inserido_acompanhamento, 'Não informado') as flag_inserido_acompanhamento,
+            coalesce(flag_possui_plano_individual, 'Não informado') as flag_possui_plano_individual,
+            coalesce(flag_possui_cpf, 'Não informado') as flag_possui_cpf,
+            coalesce(flag_possui_rg, 'Não informado') as flag_possui_rg,
+            coalesce(flag_possui_certidao_nascimento, 'Não informado') as flag_possui_certidao_nascimento,
+            coalesce(flag_estuda, 'Não informado') as flag_estuda,
+            coalesce(flag_deficiencia, 'Não informado') as flag_deficiencia,
+            coalesce(flag_uso_substancias_psicoativas, 'Não informado') as flag_uso_substancias_psicoativas,
+            coalesce(flag_problema_saude, 'Não informado') as flag_problema_saude,
+            coalesce(flag_acompanhamento_saude, 'Não informado') as flag_acompanhamento_saude,
+            coalesce(flag_possui_vinculo_familiar, 'Não informado') as flag_possui_vinculo_familiar,
+            coalesce(flag_possibilidade_reinsercao_familiar, 'Não informado') as flag_possibilidade_reinsercao_familiar,
+            coalesce(flag_exerce_atividade_renda, 'Não informado') as flag_exerce_atividade_renda,
+            coalesce(flag_empregabilidade_imediata, 'Não informado') as flag_empregabilidade_imediata,
+            coalesce(flag_interesse_curso, 'Não informado') as flag_interesse_curso,
+            coalesce(flag_possui_beneficio, 'Não informado') as flag_possui_beneficio,
+            coalesce(flag_possui_cadunico, 'Não informado') as flag_possui_cadunico,
+            coalesce(flag_cadunico_atualizado, 'Não informado') as flag_cadunico_atualizado,
+            coalesce(flag_participacao_oficinas, 'Não informado') as flag_participacao_oficinas,
+            coalesce(flag_situacao_rua, 'Não informado') as flag_situacao_rua
+        )
+    from final
 )
 
 select
     *,
     row_number() over (order by mes_referencia, id_unidade, id_usuario, data_atendimento, id_atendimento) as numero
-from final
+from flags_normalizadas
