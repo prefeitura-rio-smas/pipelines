@@ -4,4 +4,4 @@ models:
     description: "Dados de saúde mental dos pacientes."
     columns:
       - name: flag_situacao_rua
-        description: "Código 5 = Sim; demais códigos numéricos preservam Não. Ausência ou texto inválido é NULL."
+        description: "Código 5 = Sim; códigos 1–4, 6–9 e A–D = Não; E (Desconhecido), ausência ou código fora do domínio = NULL."

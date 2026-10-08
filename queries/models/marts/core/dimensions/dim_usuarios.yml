@@ -51,7 +51,7 @@ models:
       - name: numero_processo_decisao_apoiada
         description: "Número do processo de tomada de decisão apoiada."
       - name: flag_decisao_apoiada
-        description: "Indicador de decisão apoiada (N quando não há processo)."
+        description: "Preenchimento cadastral do campo do processo de decisão apoiada: S para valor preenchido; N para NULL, vazio ou somente espaços."
       - name: flag_saude_mental_comprometida
         description: "Indica se há comprometimento de saúde mental."
       - name: motivo_acolhimento
@@ -81,7 +81,7 @@ models:
       - name: tipo_deficiencia
         description: "Código(s) da(s) deficiência(s) separados por vírgula."
       - name: flag_situacao_rua
-        description: "Indica se está em situação de rua (Sim/Não); ausência ou texto inválido é NULL."
+        description: "Moradia cadastrada: código 5 = Sim; códigos 1–4, 6–9 e A–D = Não; E (Desconhecido), ausência ou código fora do domínio = NULL."
       - name: codigo_origem
         description: "Código da origem do paciente (FK para gh_origens)."
       - name: flag_possui_violacao_direito
