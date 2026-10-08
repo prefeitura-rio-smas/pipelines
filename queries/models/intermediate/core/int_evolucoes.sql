@@ -3,6 +3,8 @@ with adm as (
         *,
         'administrativa' as origem_modulo
     from {{ ref('raw_evolucoes_administrativas') }}
+    -- A fonte administrativa pode repetir o mesmo id_evolucao com linhas idênticas.
+    qualify row_number() over (partition by id_evolucao) = 1
 ),
 
 fam as (
