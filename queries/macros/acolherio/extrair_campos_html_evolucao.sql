@@ -15,9 +15,12 @@
             replace(regexp_extract(field, r'(?is)^(.*?)<b\b[^>]*>'), '&nbsp;', ' '),
             r':\s*$', ''
         )) as label,
+        -- Quebras e limites de blocos separam palavras; tags inline só formatam.
         trim(replace(replace(regexp_replace(
-            regexp_extract(field, r'(?is)<b\b[^>]*>(.*?)</b\s*>'),
-            r'<[^>]*>', ''
+            regexp_replace(
+                regexp_extract(field, r'(?is)<b\b[^>]*>(.*?)</b\s*>'),
+                r'(?is)</?(?:br|p|div|li)\b[^>]*>', ' '
+            ), r'<[^>]*>', ''
         ), '&nbsp;', ' '), '&amp;', '&')) as valor,
         observacoes
     from (
@@ -28,8 +31,10 @@
             )) as titulo_formulario,
             regexp_replace(secao, r'(?is)^.*?</h3\s*>', '') as bloco_campos,
             case
-                when upper(trim(regexp_extract(
-                    secoes[safe_offset(posicao + 1)], r'(?is)^(.*?)</h3\s*>'
+                when upper(trim(regexp_replace(
+                    regexp_extract(
+                        secoes[safe_offset(posicao + 1)], r'(?is)^(.*?)</h3\s*>'
+                    ), r'<[^>]*>', ''
                 ))) in ('OBSERVAÇÕES', 'CONTEÚDO E DESCRIÇÃO')
                     then regexp_replace(
                         secoes[safe_offset(posicao + 1)], r'(?is)^.*?</h3\s*>', ''
@@ -51,7 +56,10 @@
         where posicao > 0
     ) as formularios,
     unnest(regexp_extract_all(
-        bloco_campos, r'(?is)([^<>]+?:?\s*<b\b[^>]*>.*?</b\s*>)'
+        -- Remove formatação inline dos rótulos, preservando <b> e os limites dos campos.
+        regexp_replace(
+            bloco_campos, r'(?is)</?(?:span|em|i|u|font|small|s|strike|mark|a)\b[^>]*>', ''
+        ), r'(?is)([^<>]+?:?\s*<b\b[^>]*>.*?</b\s*>)'
     )) as field
     where upper(titulo_formulario) not in ('OBSERVAÇÕES', 'CONTEÚDO E DESCRIÇÃO')
 )
