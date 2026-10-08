@@ -336,6 +336,6 @@ models:
         description: Situação de rua do usuário (cadastro saúde mental).
         data_tests:
           - accepted_values:
-              values: [Sim, Não]
+              values: [Sim, Não, Não Informado]
       - name: ultima_atualizacao
         description: Última atualização da origem (sys_config).
