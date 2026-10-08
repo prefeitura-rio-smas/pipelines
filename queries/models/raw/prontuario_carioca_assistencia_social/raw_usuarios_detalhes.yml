@@ -2,3 +2,8 @@ version: 2
 models:
   - name: raw_usuarios_detalhes
     description: "Detalhes dos pacientes."
+    columns:
+      - name: numero_processo_decisao_apoiada
+        description: "Conteúdo cadastral de dsctomdecproces, preservado como informado. O flag em int_usuarios indica se este campo está preenchido."
+      - name: flag_cadunico
+        description: "S = Sim, N = Não; ausência ou resposta inválida é NULL."

@@ -6,7 +6,7 @@ models:
 
       Dados do evento são escalares: id_atendimento, data_atendimento, nome_atendimento e tipo_atendimento. Profissionais são uma lista textual distinta do próprio evento. id_usuario_unidade_mes é uma chave de agrupamento repetida, não a chave da mart. Os totais mensais de atendimentos e os arrays atendimentos/atendimentos_por_tipo foram removidos; as contagens são calculadas no Looker.
 
-      Regras temporais: PAI e último perfil social/saúde/desligamento são selecionados até o fim do mês; demandas, encaminhamentos e observações são agregados de todos os formulários do mês. Idade é calculada no fechamento. Presença de PAI não equivale a acompanhamento ativo. Pontual significa atendimento de tipo diferente de PAI; a pessoa pode ter as duas condições no mesmo mês. Perfil, demandas, encaminhamentos, observações, datas mensais e quantidade de oficinas são contexto do usuário/unidade/mês repetido em cada evento. Não representam necessariamente o conteúdo daquele atendimento. No Looker, a quantidade mensal de oficinas requer MAX por id_usuario_unidade_mes, nunca SUM entre atendimentos; renda também é atributo cadastral, não medida aditiva de atendimento.
+      Regras temporais: PAI e último perfil social/saúde/desligamento são selecionados até o fim do mês; a pergunta tem ou teve problema de saúde considera evidências positivas de todo o histórico até esse corte; demandas, encaminhamentos e observações são agregados de todos os formulários do mês. Idade é calculada no fechamento. Presença de PAI não equivale a acompanhamento ativo. Pontual significa atendimento de tipo diferente de PAI; a pessoa pode ter as duas condições no mesmo mês. Perfil, demandas, encaminhamentos, observações, datas mensais e quantidade de oficinas são contexto do usuário/unidade/mês repetido em cada evento. Não representam necessariamente o conteúdo daquele atendimento. No Looker, a quantidade mensal de oficinas requer MAX por id_usuario_unidade_mes, nunca SUM entre atendimentos; renda também é atributo cadastral, não medida aditiva de atendimento.
 
       Cadastro, documentos e CadÚnico representam snapshots atuais: não há reconstrução retroativa desses atributos. CPF vem do prontuário; RG, certidão e NIS vêm do CadÚnico por CPF. CPF com família/documento/NIS ambíguo não recebe valor arbitrário. Ausência de evidência documental não é convertida em Não. Números ausentes são apresentados como traço; flags desconhecidas usam Não Informado; datas, valores e IDs preservam tipos e NULL.
 
@@ -58,8 +58,9 @@ models:
       - name: data_ultimo_atendimento_mes
         description: Última data de qualquer atendimento do usuário/unidade no mês.
       - name: data_ultimo_atendimento_tecnico_mes
-        description: Última data de atendimento com ao menos um profissional de nível superior (grupo CBO 2). Não
-          inclui recepção sem profissional de nível superior.
+        description: Última data de atendimento técnico do usuário na unidade até o fechamento do mês, incluindo meses
+          anteriores. Técnico significa ao menos um profissional com algum CBO do grupo 2. O nome da coluna
+          é preservado por compatibilidade; a busca não se limita ao mês de referência.
         meta: {colunas_planilha: [11], situacao_planilha: disponivel}
       - name: nome_atendimento
         description: Nome do tipo de atendimento do evento na fonte. Não Informado quando ausente.
@@ -81,21 +82,21 @@ models:
           Pode ser Sim junto com flag_possui_plano_individual, pois este indica evidência mensal de formulário PAI.
         data_tests:
           - accepted_values:
-              values: [Sim, Não, Não Informado]
+              values: [Sim, Não, Não Informado, "Não informado"]
         meta: {colunas_planilha: [7], situacao_planilha: disponivel}
       - name: flag_inserido_acompanhamento
         description: Sim/Não — existe formulário Centro POP - Plano de Atendimento Individual (PAI) conhecido até
           o fechamento do mês. Não indica acompanhamento ativo e não é revertida automaticamente por desligamento.
         data_tests:
           - accepted_values:
-              values: [Sim, Não]
+              values: [Sim, Não, "Não informado"]
         meta: {colunas_planilha: [8], situacao_planilha: disponivel}
       - name: flag_possui_plano_individual
         description: Sim/Não — existe formulário PAI conhecido até o fechamento do mês. Outros formulários da abrangência
           29 não contam como evidência de PAI.
         data_tests:
           - accepted_values:
-              values: [Sim, Não]
+              values: [Sim, Não, "Não informado"]
         meta: {colunas_planilha: [10], situacao_planilha: disponivel}
       - name: data_inclusao_acompanhamento
         description: Primeira data do campo Data do atendimento dos formulários PAI conhecidos até o fechamento
@@ -127,7 +128,7 @@ models:
           um indicador confiável de ausência.
         data_tests:
           - accepted_values:
-              values: [Sim, Não Informado]
+              values: [Sim, Não Informado, "Não informado"]
         meta: {colunas_planilha: [18], situacao_planilha: disponivel_com_limitacoes_da_fonte}
       - name: numero_cpf
         description: CPF textual de raw_usuarios.cpf, preservando zeros à esquerda. Traço quando ausente, conforme
@@ -138,7 +139,7 @@ models:
           CPF; ausência de vínculo, conflito ou ausência do número ficam Não Informado.
         data_tests:
           - accepted_values:
-              values: [Sim, Não Informado]
+              values: [Sim, Não Informado, "Não informado"]
         meta: {colunas_planilha: [18], situacao_planilha: disponivel_com_limitacoes_da_fonte}
       - name: numero_rg
         description: RG do CadÚnico associado por CPF; remove padding de zeros à esquerda. Só apresenta um número
@@ -149,7 +150,7 @@ models:
           ausência de vínculo ou de evidência não presume ausência do documento.
         data_tests:
           - accepted_values:
-              values: [Sim, Não Informado]
+              values: [Sim, Não Informado, "Não informado"]
         meta: {colunas_planilha: [18], situacao_planilha: disponivel_com_limitacoes_da_fonte}
       - name: numero_certidao_nascimento
         description: Matrícula da certidão de nascimento (id_certidao_civil=1), preservando zeros à esquerda. Só
@@ -171,52 +172,55 @@ models:
         description: Sim/Não/Não Informado — estuda (cadastro).
         data_tests:
           - accepted_values:
-              values: [Sim, Não, Não Informado]
+              values: [Sim, Não, Não Informado, "Não informado"]
         meta: {colunas_planilha: [23], situacao_planilha: disponivel}
       - name: ano_cursando
-        description: Série informada no cadastro somente quando o usuário estuda (S/Sim); demais casos são Não Informado.
+        description: Série do cadastro traduzida pelo domínio de série escolar, somente quando o usuário estuda (S/Sim);
+          código não mapeado ou demais casos são Não Informado.
         meta: {colunas_planilha: [24], situacao_planilha: disponivel}
       - name: nivel_escolaridade
-        description: Nível de escolaridade (cadastro).
+        description: Nível de escolaridade traduzido de indescolari (cadastro), separado da série escolar indserie.
         meta: {colunas_planilha: [25], situacao_planilha: disponivel}
       - name: flag_deficiencia
         description: Sim/Não/Não Informado — possui deficiência (cadastro).
         data_tests:
           - accepted_values:
-              values: [Sim, Não, Não Informado]
+              values: [Sim, Não, Não Informado, "Não informado"]
         meta: {colunas_planilha: [26], situacao_planilha: disponivel}
       - name: tipo_deficiencia
-        description: Tipo de deficiência traduzido (Deficiência auditiva total/parcial, visual parcial/total, motora,
-          mental ou intelectual).
+        description: Todos os tipos de deficiência informados, traduzidos e distintos, separados por vírgula em ordem
+          alfabética. Código desconhecido é preservado; ausência permanece Não Informado.
         meta: {colunas_planilha: [26], situacao_planilha: disponivel}
       - name: flag_uso_substancias_psicoativas
         description: Sim/Não/Não Informado — resposta explícita do formulário Situação de Saúde conhecido até o
           fechamento. Não usa grau_dependencia, que descreve dependência em atividades diárias.
         data_tests:
           - accepted_values:
-              values: [Sim, Não, Não Informado]
+              values: [Sim, Não, Não Informado, "Não informado"]
         meta: {colunas_planilha: [27], situacao_planilha: disponivel}
       - name: flag_problema_saude
-        description: 'Sim quando há situação de saúde registrada ou evidência explícita de agravo/diagnóstico de
-          saúde mental. Não somente por resposta negativa explícita da situação de saúde; ausência de agravo mental
-          não prova ausência de outros problemas. Demais casos: Não Informado.'
+        description: 'Sim quando há evidência descritiva em qualquer formulário de saúde até o fechamento, mesmo se
+          posteriormente há resposta Não, ou evidência cadastral atual de agravo/diagnóstico de saúde mental.
+          A resposta Não exige registro negativo explícito sem evidência positiva. Marcadores como Não Informado e Não sabe
+          são desconhecidos. O cadastro mental é snapshot atual, sem reconstrução histórica.'
         data_tests:
           - accepted_values:
-              values: [Sim, Não, Não Informado]
+              values: [Sim, Não, Não Informado, "Não informado"]
         meta: {colunas_planilha: [28], situacao_planilha: disponivel}
       - name: flag_acompanhamento_saude
         description: Sim quando o último formulário Situação de Saúde informa local de tratamento até o fechamento.
-          Não por resposta negativa explícita; ausência de informação permanece Não Informado.
+          Não por resposta negativa explícita; ausência e marcadores como Não Informado ou Não sabe permanecem
+          Não Informado.
         data_tests:
           - accepted_values:
-              values: [Sim, Não, Não Informado]
+              values: [Sim, Não, Não Informado, "Não informado"]
         meta: {colunas_planilha: [29], situacao_planilha: disponivel}
       - name: flag_possui_vinculo_familiar
         description: Sim/Não/Não Informado — campo Possui referências familiares? do último Atendimento Social até
           o fechamento.
         data_tests:
           - accepted_values:
-              values: [Sim, Não, Não Informado]
+              values: [Sim, Não, Não Informado, "Não informado"]
         meta: {colunas_planilha: [30], situacao_planilha: disponivel}
       - name: territorio_referencia_familia
         description: Campo Território da referência familiar do último Atendimento Social até o fechamento. Confirmado
@@ -231,7 +235,7 @@ models:
           de renda diferente de zero.
         data_tests:
           - accepted_values:
-              values: [Sim, Não, Não Informado]
+              values: [Sim, Não, Não Informado, "Não informado"]
         meta: {colunas_planilha: [33], situacao_planilha: disponivel}
       - name: atividade_renda_qual
         description: Qual atividade que gera renda (cadastro).
@@ -255,7 +259,7 @@ models:
         description: Sim/Não/Não Informado — possui benefício (cadastro).
         data_tests:
           - accepted_values:
-              values: [Sim, Não, Não Informado]
+              values: [Sim, Não, Não Informado, "Não informado"]
         meta: {colunas_planilha: [38], situacao_planilha: disponivel}
       - name: tipo_beneficio
         description: Tipo(s) de benefício (códigos do cadastro).
@@ -295,7 +299,7 @@ models:
           não significa Não.'
         data_tests:
           - accepted_values:
-              values: [Sim, Não, Não Informado]
+              values: [Sim, Não, Não Informado, "Não informado"]
         meta: {colunas_planilha: [42], situacao_planilha: coleta_indisponivel}
       - name: qtd_oficinas_participadas_mes
         description: 'Quantidade de atividades distintas com participação registrada no mês. NULL quando não há
@@ -333,9 +337,11 @@ models:
           coleta/exportação do campo depende do sistema. Não usa texto arbitrário de evolução como substituto.
         meta: {colunas_planilha: [50], situacao_planilha: coleta_indisponivel}
       - name: flag_situacao_rua
-        description: Situação de rua do usuário (cadastro saúde mental).
+        description: Situação de rua do usuário (cadastro saúde mental). O código 5 indica Sim;
+          os códigos 1–4, 6–9 e A–D indicam Não. E (Desconhecido), ausência ou código fora
+          do domínio são apresentados como Não Informado.
         data_tests:
           - accepted_values:
-              values: [Sim, Não, Não Informado]
+              values: [Sim, Não, Não Informado, "Não informado"]
       - name: ultima_atualizacao
         description: Última atualização da origem (sys_config).

@@ -1,0 +1,66 @@
+-- Uma linha por atendimento. As primeiras 50 colunas seguem a ordem da planilha.
+-- Nome e tipo do atendimento ficam separados das demandas nas colunas adicionais.
+-- A quantidade mensal se repete nos atendimentos da mesma pessoa/unidade/mês.
+select
+    numero,
+    mes_referencia,
+    nome_centro_pop,
+    profissionais_atendimento as profissional_de_referencia,
+    nome_usuario,
+    nome_social,
+    flag_atendido_pontualmente,
+    flag_inserido_acompanhamento,
+    data_inclusao_acompanhamento,
+    flag_possui_plano_individual,
+    -- Último técnico na unidade até o fechamento, incluindo meses anteriores.
+    data_ultimo_atendimento_tecnico_mes,
+    count(distinct id_atendimento) over (
+        partition by id_usuario_unidade_mes
+    ) as quantidade_atendimentos_realizados_no_mes,
+    motivo_principal_permanencia_rua,
+    motivo_secundario_permanencia_rua,
+    data_nascimento,
+    idade as idade_informada,
+    filiacao_mae as nome_mae,
+    concat(
+        'CPF: ', flag_possui_cpf, ' (', numero_cpf, ')',
+        ' | RG: ', flag_possui_rg, ' (', numero_rg, ')',
+        ' | Certidão de nascimento: ', flag_possui_certidao_nascimento,
+        ' (', numero_certidao_nascimento, ')'
+    ) as rcn_e_documentacao,
+    genero,
+    orientacao_sexual,
+    raca_cor as cor_etnia,
+    naturalidade,
+    flag_estuda,
+    ano_cursando,
+    nivel_escolaridade,
+    concat(flag_deficiencia, ' | ', tipo_deficiencia) as possui_deficiencia_qual,
+    flag_uso_substancias_psicoativas,
+    flag_problema_saude,
+    flag_acompanhamento_saude,
+    flag_possui_vinculo_familiar,
+    territorio_referencia_familia,
+    flag_possibilidade_reinsercao_familiar,
+    concat(flag_exerce_atividade_renda, ' | ', atividade_renda_qual) as exerce_atividade_renda_qual,
+    valor_renda,
+    flag_empregabilidade_imediata,
+    capacidade_habilidades,
+    flag_interesse_curso,
+    concat(flag_possui_beneficio, ' | ', beneficio) as possui_beneficio_qual,
+    flag_possui_cadunico,
+    flag_cadunico_atualizado,
+    nis_usuario,
+    flag_participacao_oficinas,
+    qtd_oficinas_participadas_mes,
+    demandas as procedimento_1,
+    encaminhamentos as encaminhamento_1,
+    resultado_acesso as resultado_1_acesso,
+    resultado_descricao as resultado_1_descricao,
+    data_desligamento,
+    motivo_desligamento,
+    observacoes,
+    nome_atendimento,
+    tipo_atendimento
+from `rj-smas-dev.relatorio.mart_planilha_unificada_centro_pop`
+order by mes_referencia, nome_centro_pop, nome_usuario, data_atendimento, id_atendimento;
