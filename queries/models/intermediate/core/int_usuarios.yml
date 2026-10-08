@@ -74,7 +74,7 @@ models:
       - name: flag_frequenta_escola
         description: "Indica se frequenta escola (Sim/Não)."
       - name: escolaridade_indice
-        description: "Nível de escolaridade (Não Alfabetizado, Fundamental completo, etc.)."
+        description: "Nível de escolaridade traduzido de indescolari, separado da série escolar indserie."
       - name: flag_recebe_beneficio
         description: "Indica se recebe benefício (Sim/Não)."
       - name: tipo_beneficio
