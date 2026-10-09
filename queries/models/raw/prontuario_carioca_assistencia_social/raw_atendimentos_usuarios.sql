@@ -14,6 +14,7 @@ with source as (
         dsclstprof as id_profissional_compartilhado,
         indlocalatend as local_atendimento,
         dtentrada as data_atendimento,
+        datcadast as data_cadastro_atendimento,
         horaent as hora_atendimento,
         dtsaida as data_saida,
         horasai as hora_saida,

@@ -9,7 +9,8 @@ filtro_email_dev as (
 -- Restaura os atributos dimensionais que o fct_atendimentos deixou de expor (ver cda9167).
 base_enriquecida as (
     select
-        a.*,
+        -- Preserva o contrato deste mart apesar dos novos atributos do fato.
+        a.* except (id_familia, data_cadastro_atendimento, data_saida, id_login_cadastro),
         dp.nome as profissional,
         dp.cbo_principal_descricao as profissional_cbo,
         dun.tipo_unidade,
