@@ -279,7 +279,16 @@ def _process_single_zip(blob: Blob, output_root: Path):
                     final_file = partition_dir / f"{extracted_file.stem}.csv"
 
                     try:
-                        df = pd.read_csv(
+                        # Processa o CSV em chunks para manter o pico de memoria
+                        # constante e baixo (~centenas de MB), independente do
+                        # tamanho do arquivo descomprimido (pode passar de 1.5GB).
+                        chunk_size = 500_000
+                        timestamp_captura = datetime.now(tz=UTC)
+                        total_filtered = 0
+                        rows_written = 0
+                        first_chunk = True
+
+                        reader = pd.read_csv(
                             extracted_file,
                             sep='\0',
                             header=None,
@@ -287,32 +296,41 @@ def _process_single_zip(blob: Blob, output_root: Path):
                             dtype=str,
                             quoting=3,
                             encoding='utf-8',
-                            on_bad_lines='skip'
+                            on_bad_lines='skip',
+                            chunksize=chunk_size,
                         )
 
-                        # Log e filtra linhas vazias
-                        empty_rows = df['linha_bruta'].str.strip() == ''
-                        empty_count = int(empty_rows.sum())
-                        if empty_count > 0:
-                            logger.warning(
-                                f"_process_single_zip | {empty_count} empty row(s) found in "
-                                f"{extracted_file.name} (partition={partition}) — filtering out"
+                        for chunk in reader:
+                            # Uma unica passada de regex: mantem apenas linhas
+                            # cujo primeiro campo (antes do ";") e numerico e
+                            # descarta vazias/em branco, header e footer.
+                            valid_mask = chunk['linha_bruta'].str.match(
+                                r'^\d+(?:;|$)', na=False
                             )
-                        df = df[~empty_rows]
+                            total_filtered += int((~valid_mask).sum())
+                            chunk = chunk[valid_mask]
 
-                        header_mask = df['linha_bruta'].str.split(';').str[0].str.match(r'^\d+$')
-                        header_count = int((~header_mask).sum())
-                        if header_count > 0:
-                            logger.warning(
-                                f"_process_single_zip | {header_count} non-data row(s) (header/footer) "
-                                f"found in {extracted_file.name} (partition={partition}) — filtering out"
+                            if first_chunk or not chunk.empty:
+                                chunk = chunk.copy()
+                                chunk['timestamp_captura'] = timestamp_captura
+                                chunk['data_particao'] = partition
+                                chunk.to_csv(
+                                    final_file,
+                                    mode='w' if first_chunk else 'a',
+                                    header=first_chunk,
+                                    index=False,
+                                    encoding='utf-8',
                                 )
-                        df = df[header_mask]
+                                first_chunk = False
+                                rows_written += len(chunk)
 
-                        df['timestamp_captura'] = datetime.now(tz=UTC)
-                        df['data_particao'] = partition
+                        if total_filtered > 0:
+                            logger.warning(
+                                f"_process_single_zip | {total_filtered} non-data row(s) "
+                                f"(empty/header/footer) found in {extracted_file.name} "
+                                f"(partition={partition}) — filtering out"
+                            )
 
-                        df.to_csv(final_file, index=False, encoding='utf-8')
                         with open(final_file, 'rb+') as f:
                             f.seek(0, 2)
                             while f.tell() > 0:
@@ -324,11 +342,11 @@ def _process_single_zip(blob: Blob, output_root: Path):
                                 else:
                                     break
 
-                        total_rows += len(df)
+                        total_rows += rows_written
                         total_csvs += 1
                         logger.info(
                             f"_process_single_zip | {extracted_file.name} → "
-                            f"{len(df)} rows | partition={partition}"
+                            f"{rows_written} rows | partition={partition}"
                         )
 
                     except Exception as e:
