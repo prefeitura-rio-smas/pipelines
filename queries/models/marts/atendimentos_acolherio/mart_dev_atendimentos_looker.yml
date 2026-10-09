@@ -1,0 +1,21 @@
+version: 2
+models:
+  - name: mart_dev_atendimentos_looker
+    description: >
+      Contrato de atendimentos do Looker AcolheRio (39 colunas), em grão
+      atendimento × profissional. Publicado no endereço legado pelo Prefect
+      somente após build e validação.
+    columns:
+      - name: ID_ATENDIMENTO
+        description: Identificador natural composto por atendimento e profissional.
+        data_tests:
+          - unique
+          - not_null
+      - name: DATA_DE_ATENDIMENTO
+        data_tests:
+          - not_null
+      - name: modulo
+        data_tests:
+          - accepted_values:
+              arguments:
+                values: ['u', 'f']
