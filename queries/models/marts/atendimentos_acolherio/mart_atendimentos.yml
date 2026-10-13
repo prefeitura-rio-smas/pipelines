@@ -2,8 +2,8 @@ version: 2
 models:
   - name: mart_atendimentos
     description: >
-      Base ampla de atendimentos do Looker AcolheRio, em grão atendimento
-      do módulo × profissional. Preserva as 39 colunas legadas e acrescenta
+      Base ampla de atendimentos do Looker AcolheRio, com uma linha por
+      atendimento do módulo. Preserva os nomes das colunas legadas e acrescenta
       atributos de auditoria e filtro. Inclui cancelados, registros TESTE,
       vínculos familiares encerrados e atendimentos sem cadastros associados.
       Os ranks são atributos para filtros opcionais no Looker; não excluem
@@ -11,11 +11,10 @@ models:
     columns:
       - name: ID_ATENDIMENTO
         description: >
-          Identificador legado composto por atendimento e profissional.
-          Pode ser NULL quando não há profissional; não distingue os módulos.
-          Para identificação única, usar ID_ATENDIMENTO_SK.
+          Identificador do atendimento incluindo o módulo, igual a ID_ATENDIMENTO_MODULO.
+          Não inclui o profissional.
       - name: ID_ATENDIMENTO_SK
-        description: Hash de ID_ATENDIMENTO_MODULO e PROFISSIONAL_ID, incluindo profissional ausente.
+        description: Hash de ID_ATENDIMENTO_MODULO, independente dos profissionais.
         data_tests:
           - unique
           - not_null
@@ -40,9 +39,9 @@ models:
           incluindo entrada, saída, motivo de saída e família de destino.
           O vínculo resumido não representa uma reconstrução na data do atendimento.
       - name: PROFISSIONAL_CBOS
-        description: Todos os códigos e descrições de CBO do profissional em ARRAY de STRUCT.
+        description: Todos os códigos e descrições de CBO do profissional principal em ARRAY de STRUCT.
       - name: PROFISSIONAL_NOME_CADASTRAL
-        description: Nome original do profissional, antes da substituição pelo nome do operador.
+        description: Nome original do profissional principal, antes da substituição pelo nome do operador.
       - name: EMAIL
         description: >
           Concatena e-mail da CAS, da unidade e todos os e-mails distintos da planilha.
@@ -56,7 +55,7 @@ models:
       - name: FLAG_OPERADOR_CADASTRADO
         description: Indica correspondência com o cadastro do operador cadastrante.
       - name: FLAG_PROFISSIONAL_CADASTRADO
-        description: Indica correspondência com o cadastro de profissional.
+        description: Indica correspondência com o cadastro do profissional principal.
       - name: FLAG_USUARIO_TESTE
         description: Nome cadastral do usuário contém TESTE, sem distinguir maiúsculas e minúsculas.
       - name: FLAG_UNIDADE_TESTE
@@ -64,13 +63,13 @@ models:
       - name: FLAG_OPERADOR_TESTE
         description: Nome cadastral do operador contém TESTE, sem distinguir maiúsculas e minúsculas.
       - name: FLAG_PROFISSIONAL_TESTE
-        description: Nome cadastral do profissional contém TESTE, sem distinguir maiúsculas e minúsculas.
+        description: Nome cadastral do profissional principal contém TESTE, sem distinguir caixa.
       - name: cbo_unico_rank
-        description: Rank por atendimento do módulo × profissional; mantido para filtros opcionais no Looker.
+        description: Sempre 1 no grão atendimento; mantido por compatibilidade de nomes.
       - name: atendimento_unico_rank
         description: >
-          Rank de atendimentos com profissional, hora, data, nome de atendimento,
-          usuário e unidade iguais. Todas as posições são mantidas.
+          Rank de atendimentos com usuário, unidade, data, hora e nome de atendimento
+          iguais, independente dos profissionais. Todas as posições são mantidas.
       - name: PROJETOS_SOCIAIS
         description: Nomes distintos dos projetos atualmente ativos e não cancelados da família selecionada.
       - name: PROJETOS_SOCIAIS_HISTORICO
@@ -78,3 +77,28 @@ models:
           Todos os vínculos de projetos da família selecionada em ARRAY de STRUCT,
           incluindo inativos/cancelados e datas da origem. Snapshot do cadastro;
           não reconstrói o estado na data do atendimento.
+      - name: ID_ATENDIMENTO_MODULO
+        description: Identificador natural do atendimento incluindo o módulo (família ou usuário).
+        data_tests:
+          - unique
+          - not_null
+      - name: PROFISSIONAL_ID
+        description: ID do profissional principal da origem; permanece NULL se não houver principal.
+      - name: PROFISSIONAL
+        description: Nome resumido do profissional principal, com a regra existente para profissionais genéricos.
+      - name: PROFISSIONAIS
+        description: >
+          Todos os profissionais principais e compartilhados em ARRAY de STRUCT,
+          com IDs, nomes, indicação de principal, CBOs, classificação e flags cadastrais.
+          Preserva também a posição do principal ausente, com ID NULL.
+      - name: QUANTIDADE_PROFISSIONAIS
+        description: Quantidade de profissionais com ID informado; não conta a posição do principal ausente.
+      - name: FLAG_ALGUM_PROFISSIONAL_TESTE
+        description: Indica se qualquer profissional, principal ou compartilhado, tem nome cadastral contendo TESTE.
+      - name: TIPO_ATENDIMENTO
+        description: >
+          Classificação consolidada de todos os profissionais: Técnico se algum for
+          técnico; senão Recepção se algum for recepção; senão Outros Atendimentos.
+          A classificação individual fica em PROFISSIONAIS.
+      - name: NOME_ATENDIMENTO
+        description: Nome resumido com as regras do profissional principal; nomes por profissional ficam em PROFISSIONAIS.

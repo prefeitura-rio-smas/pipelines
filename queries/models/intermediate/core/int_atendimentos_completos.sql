@@ -63,7 +63,8 @@ atendimentos_explodidos as (
         p.origem_modulo,
         p.flag_cancelado,
         p.id_login_cadastro,
-        profissional_normalizado as id_profissional
+        profissional_normalizado as id_profissional,
+        true as flag_profissional_principal
     from profissionais_por_atendimento as p
 
     union all
@@ -82,7 +83,8 @@ atendimentos_explodidos as (
         p.origem_modulo,
         p.flag_cancelado,
         p.id_login_cadastro,
-        profissional_compartilhado as id_profissional
+        profissional_compartilhado as id_profissional,
+        false as flag_profissional_principal
     from profissionais_por_atendimento as p,
         unnest(array(
             select distinct safe_cast(trim(codigo) as int64)

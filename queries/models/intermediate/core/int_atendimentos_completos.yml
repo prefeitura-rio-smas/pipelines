@@ -8,3 +8,6 @@ models:
       Normaliza os IDs compartilhados, eliminando códigos inválidos, zero,
       repetição na lista e repetição do profissional principal.
       Base ephemeral compartilhada pelo fato legado e pelo mart amplo do Looker.
+    columns:
+      - name: flag_profissional_principal
+        description: Distingue a posição principal da origem dos profissionais compartilhados, inclusive principal ausente.

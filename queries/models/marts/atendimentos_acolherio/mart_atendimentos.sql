@@ -3,7 +3,7 @@
 -- noqa: disable=CP02,AL09,ST06,RF02
 -- As primeiras colunas preservam a ordem e a grafia dos aliases legados.
 -- Preserva as 39 colunas legadas e acrescenta atributos para filtros no Looker.
--- Grão: atendimento do módulo × profissional, inclusive sem cadastro associado.
+-- Grão final: um atendimento do módulo, com todos os profissionais em um array.
 -- Filtros de análise e de deduplicação são aplicados no Looker.
 with atendimentos as (
     select
@@ -20,7 +20,8 @@ with atendimentos as (
         hora_atendimento,
         origem_modulo,
         data_saida,
-        flag_cancelado
+        flag_cancelado,
+        flag_profissional_principal
     from {{ ref('int_atendimentos_completos') }}
 ),
 
@@ -156,6 +157,7 @@ base as (
         a.data_atendimento as data_de_atendimento,
         safe_cast(a.hora_atendimento as int64) as hora_de_atendimento_original,
         a.id_usuario,
+        a.flag_profissional_principal,
         a.id_atendimento_modulo,
         {{ dbt_utils.generate_surrogate_key(['a.id_atendimento_modulo', 'a.id_profissional']) }} as id_atendimento_sk,
         a.id_unidade,
@@ -304,83 +306,124 @@ classificados as (
     from base as b
 ),
 
+detalhes_profissionais as (
+    select
+        modulo,
+        cas as CAS,
+        tipo_unidade as TIPO_UNIDADE,
+        unidade_atendimento as UNIDADE_ATENDIMENTO,
+        email_unidade as EMAIL_UNIDADE,
+        email_cas as EMAIL_CAS,
+        seq_atendimento as SEQ_ATENDIMENTO,
+        data_de_atendimento as DATA_DE_ATENDIMENTO,
+        hora_de_atendimento_original as HORA_DE_ATENDIMENTO_ORIGINAL,
+        hora_de_atendimento as HORA_DE_ATENDIMENTO,
+        id_usuario as ID_USUARIO,
+        n.id_familia as ID_FAMILIA,
+        nome_usuario as NOME_USUARIO,
+        documentacao as DOCUMENTACAO,
+        numero_documento as NUMERO_DOCUMENTO,
+        trim(regexp_replace(logradouro, r'[,\s;]+', ' ')) as ENDERECO,
+        trim(regexp_replace(numero_endereco, r'[,\s;]+', ' ')) as ENDERECO_NUMERO,
+        trim(regexp_replace(complemento_endereco, r'[,\s;]+', ' ')) as ENDERECO_COMPLEMENTO,
+        case when bairro = '' then 'NAO INFORMADO' else bairro end as BAIRRO,
+        trim(regexp_replace(ponto_referencia, r'[,\s;]+', ' ')) as REFERENCIA_OU_COMUNIDADE,
+        nome_atendimento_original as NOME_ATENDIMENTO_ORIGINAL,
+        data_nascimento as DATA_NASCIMENTO,
+        cast(idade as int64) as IDADE,
+        raca_cor_descricao as RACA_COR,
+        sexo as SEXO,
+        profissional_id as PROFISSIONAL_ID,
+        profissional as PROFISSIONAL,
+        profissional_cbo_original as PROFISSIONAL_CBO_ORIGINAL,
+        profissional_cbo as PROFISSIONAL_CBO,
+        cadastrante as CADASTRANTE,
+        data_cadastro_atendimento as DATA_CADASTRO_ATENDIMENTO,
+        tipo_atendimento as TIPO_ATENDIMENTO,
+        nome_atendimento as NOME_ATENDIMENTO,
+        idade_faixa as IDADE_FAIXA,
+        id_atendimento as ID_ATENDIMENTO,
+        email as EMAIL,
+        1 as cbo_unico_rank,
+        1 as atendimento_unico_rank,
+        projetos.projetos_sociais as PROJETOS_SOCIAIS,
+        id_atendimento_sk as ID_ATENDIMENTO_SK,
+        id_atendimento_modulo as ID_ATENDIMENTO_MODULO,
+        id_unidade as ID_UNIDADE,
+        id_login_cadastro as ID_LOGIN_CADASTRO,
+        id_tipo_atendimento as ID_TIPO_ATENDIMENTO,
+        flag_cancelado as FLAG_CANCELADO,
+        data_saida_atendimento as DATA_SAIDA_ATENDIMENTO,
+        data_saida_vinculo_familiar as DATA_SAIDA_VINCULO_FAMILIAR,
+        vinculos_familiares as VINCULOS_FAMILIARES,
+        profissional_cbos as PROFISSIONAL_CBOS,
+        profissional_nome_cadastral as PROFISSIONAL_NOME_CADASTRAL,
+        email_filtro as EMAIL_PLANILHA,
+        flag_usuario_cadastrado as FLAG_USUARIO_CADASTRADO,
+        flag_unidade_cadastrada as FLAG_UNIDADE_CADASTRADA,
+        flag_operador_cadastrado as FLAG_OPERADOR_CADASTRADO,
+        flag_profissional_cadastrado as FLAG_PROFISSIONAL_CADASTRADO,
+        flag_usuario_teste as FLAG_USUARIO_TESTE,
+        flag_unidade_teste as FLAG_UNIDADE_TESTE,
+        flag_operador_teste as FLAG_OPERADOR_TESTE,
+        flag_profissional_teste as FLAG_PROFISSIONAL_TESTE,
+        projetos.projetos_sociais_historico as PROJETOS_SOCIAIS_HISTORICO,
+        flag_profissional_principal
+    from classificados as n
+    left join projetos_familia as projetos on n.id_familia = projetos.id_familia
+),
+
+por_atendimento as (
+    select
+        ID_ATENDIMENTO_MODULO,
+        -- O registro principal sempre é preservado, inclusive quando seu ID é NULL.
+        array_agg(d order by flag_profissional_principal desc, ID_ATENDIMENTO_SK asc limit 1)[offset(0)] as principal,
+        array_agg(struct(
+            PROFISSIONAL_ID as id_profissional,
+            PROFISSIONAL as nome,
+            PROFISSIONAL_NOME_CADASTRAL as nome_cadastral,
+            flag_profissional_principal as flag_principal,
+            PROFISSIONAL_CBOS as cbos,
+            PROFISSIONAL_CBO_ORIGINAL as cbo_original,
+            PROFISSIONAL_CBO as cbo,
+            TIPO_ATENDIMENTO as tipo_atendimento,
+            NOME_ATENDIMENTO as nome_atendimento,
+            FLAG_PROFISSIONAL_CADASTRADO as flag_cadastrado,
+            FLAG_PROFISSIONAL_TESTE as flag_teste
+        ) order by flag_profissional_principal desc, PROFISSIONAL_ID asc) as profissionais,
+        countif(PROFISSIONAL_ID is not null) as quantidade_profissionais,
+        logical_or(FLAG_PROFISSIONAL_TESTE) as flag_algum_profissional_teste,
+        case
+            when countif(TIPO_ATENDIMENTO = 'Atendimento Técnico') > 0 then 'Atendimento Técnico'
+            when countif(TIPO_ATENDIMENTO = 'Atendimento Recepção') > 0 then 'Atendimento Recepção'
+            else 'Outros Atendimentos'
+        end as tipo_atendimento_consolidado
+    from detalhes_profissionais as d
+    group by ID_ATENDIMENTO_MODULO
+),
+
 numerados as (
     select
-        c.*,
-        row_number() over (
-            partition by c.id_atendimento_sk
-            order by c.data_cadastro_atendimento, c.id_familia
-        ) as cbo_unico_rank,
+        a.*,
         row_number() over (
             partition by
-                c.profissional_id, c.hora_de_atendimento,
-                c.data_de_atendimento, c.nome_atendimento_original,
-                c.id_usuario, c.unidade_atendimento
-            order by c.data_cadastro_atendimento, c.id_atendimento_sk
-        ) as atendimento_unico_rank
-    from classificados as c
+                a.principal.ID_USUARIO, a.principal.ID_UNIDADE,
+                a.principal.DATA_DE_ATENDIMENTO, a.principal.HORA_DE_ATENDIMENTO,
+                a.principal.NOME_ATENDIMENTO_ORIGINAL
+            order by a.principal.DATA_CADASTRO_ATENDIMENTO, a.ID_ATENDIMENTO_MODULO
+        ) as rank_atendimento
+    from por_atendimento as a
 )
 
 select
-    modulo,
-    cas as CAS,
-    tipo_unidade as TIPO_UNIDADE,
-    unidade_atendimento as UNIDADE_ATENDIMENTO,
-    email_unidade as EMAIL_UNIDADE,
-    email_cas as EMAIL_CAS,
-    seq_atendimento as SEQ_ATENDIMENTO,
-    data_de_atendimento as DATA_DE_ATENDIMENTO,
-    hora_de_atendimento_original as HORA_DE_ATENDIMENTO_ORIGINAL,
-    hora_de_atendimento as HORA_DE_ATENDIMENTO,
-    id_usuario as ID_USUARIO,
-    n.id_familia as ID_FAMILIA,
-    nome_usuario as NOME_USUARIO,
-    documentacao as DOCUMENTACAO,
-    numero_documento as NUMERO_DOCUMENTO,
-    trim(regexp_replace(logradouro, r'[,\s;]+', ' ')) as ENDERECO,
-    trim(regexp_replace(numero_endereco, r'[,\s;]+', ' ')) as ENDERECO_NUMERO,
-    trim(regexp_replace(complemento_endereco, r'[,\s;]+', ' ')) as ENDERECO_COMPLEMENTO,
-    case when bairro = '' then 'NAO INFORMADO' else bairro end as BAIRRO,
-    trim(regexp_replace(ponto_referencia, r'[,\s;]+', ' ')) as REFERENCIA_OU_COMUNIDADE,
-    nome_atendimento_original as NOME_ATENDIMENTO_ORIGINAL,
-    data_nascimento as DATA_NASCIMENTO,
-    cast(idade as int64) as IDADE,
-    raca_cor_descricao as RACA_COR,
-    sexo as SEXO,
-    profissional_id as PROFISSIONAL_ID,
-    profissional as PROFISSIONAL,
-    profissional_cbo_original as PROFISSIONAL_CBO_ORIGINAL,
-    profissional_cbo as PROFISSIONAL_CBO,
-    cadastrante as CADASTRANTE,
-    data_cadastro_atendimento as DATA_CADASTRO_ATENDIMENTO,
-    tipo_atendimento as TIPO_ATENDIMENTO,
-    nome_atendimento as NOME_ATENDIMENTO,
-    idade_faixa as IDADE_FAIXA,
-    id_atendimento as ID_ATENDIMENTO,
-    email as EMAIL,
-    cbo_unico_rank,
-    atendimento_unico_rank,
-    projetos.projetos_sociais as PROJETOS_SOCIAIS,
-    id_atendimento_sk as ID_ATENDIMENTO_SK,
-    id_atendimento_modulo as ID_ATENDIMENTO_MODULO,
-    id_unidade as ID_UNIDADE,
-    id_login_cadastro as ID_LOGIN_CADASTRO,
-    id_tipo_atendimento as ID_TIPO_ATENDIMENTO,
-    flag_cancelado as FLAG_CANCELADO,
-    data_saida_atendimento as DATA_SAIDA_ATENDIMENTO,
-    data_saida_vinculo_familiar as DATA_SAIDA_VINCULO_FAMILIAR,
-    vinculos_familiares as VINCULOS_FAMILIARES,
-    profissional_cbos as PROFISSIONAL_CBOS,
-    profissional_nome_cadastral as PROFISSIONAL_NOME_CADASTRAL,
-    email_filtro as EMAIL_PLANILHA,
-    flag_usuario_cadastrado as FLAG_USUARIO_CADASTRADO,
-    flag_unidade_cadastrada as FLAG_UNIDADE_CADASTRADA,
-    flag_operador_cadastrado as FLAG_OPERADOR_CADASTRADO,
-    flag_profissional_cadastrado as FLAG_PROFISSIONAL_CADASTRADO,
-    flag_usuario_teste as FLAG_USUARIO_TESTE,
-    flag_unidade_teste as FLAG_UNIDADE_TESTE,
-    flag_operador_teste as FLAG_OPERADOR_TESTE,
-    flag_profissional_teste as FLAG_PROFISSIONAL_TESTE,
-    projetos.projetos_sociais_historico as PROJETOS_SOCIAIS_HISTORICO
-from numerados as n
-left join projetos_familia as projetos on n.id_familia = projetos.id_familia
+    a.principal.* except (flag_profissional_principal) replace (
+        a.ID_ATENDIMENTO_MODULO as ID_ATENDIMENTO,
+        {{ dbt_utils.generate_surrogate_key(['a.ID_ATENDIMENTO_MODULO']) }} as ID_ATENDIMENTO_SK,
+        a.tipo_atendimento_consolidado as TIPO_ATENDIMENTO,
+        1 as cbo_unico_rank,
+        a.rank_atendimento as atendimento_unico_rank
+    ),
+    a.profissionais as PROFISSIONAIS,
+    a.quantidade_profissionais as QUANTIDADE_PROFISSIONAIS,
+    a.flag_algum_profissional_teste as FLAG_ALGUM_PROFISSIONAL_TESTE
+from numerados as a
