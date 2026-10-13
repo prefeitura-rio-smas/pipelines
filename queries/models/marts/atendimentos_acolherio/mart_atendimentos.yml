@@ -97,8 +97,17 @@ models:
         description: Indica se qualquer profissional, principal ou compartilhado, tem nome cadastral contendo TESTE.
       - name: TIPO_ATENDIMENTO
         description: >
-          Classificação consolidada de todos os profissionais: Técnico se algum for
-          técnico; senão Recepção se algum for recepção; senão Outros Atendimentos.
+          Classificação com todos os CBOs de todos os profissionais, mantendo a indicação
+          explícita de Recepção da origem. Nos demais casos, Técnico (Advogado, Assistente
+          social, Pedagogo ou Psicólogo) tem prioridade sobre CBO de recepção com CadÚnico.
+          Consolida Técnico se algum profissional for técnico; senão Recepção se algum
+          for recepção; senão Outros Atendimentos.
           A classificação individual fica em PROFISSIONAIS.
       - name: NOME_ATENDIMENTO
         description: Nome resumido com as regras do profissional principal; nomes por profissional ficam em PROFISSIONAIS.
+      - name: PROFISSIONAIS_NOMES
+        description: Nomes distintos e não vazios dos profissionais, em ordem alfabética e separados por vírgula.
+      - name: FLAG_ATENDIMENTO_COMPARTILHADO
+        description: Indica presença de qualquer profissional compartilhado, mesmo quando o principal estiver ausente.
+      - name: FLAG_REGISTRO_TESTE
+        description: Indica TESTE no nome cadastral do usuário, unidade, operador ou qualquer profissional.

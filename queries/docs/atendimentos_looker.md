@@ -30,8 +30,21 @@ A posição do principal ausente é preservada com ID NULL. `QUANTIDADE_PROFISSI
 conta somente profissionais com ID preenchido. Códigos compartilhados inválidos,
 zero, repetidos na lista ou iguais ao principal não geram posições adicionais.
 
-`TIPO_ATENDIMENTO` consolida todos os profissionais: Técnico quando algum for
-Técnico; senão Recepção quando algum for Recepção; senão Outros Atendimentos.
+A classificação de cada profissional preserva a indicação explícita de Recepção
+no nome do atendimento ou do profissional. Nos demais casos, avalia todos os CBOs:
+
+1. Técnico: qualquer CBO de Advogado, Assistente social, Pedagogo ou Psicólogo.
+2. Recepção: qualquer CBO de recepção com atendimento CadÚnico.
+3. Outros Atendimentos.
+
+Os CBOs de recepção são Administrador, Articulador Comunitário, Assistente
+administrativo, Educador social, Orientador social e Recepcionista. Entre CBOs,
+Técnico tem prioridade sobre Recepção. As descrições preservam a normalização
+por prefixos da origem; o valor original permanece disponível.
+
+`TIPO_ATENDIMENTO` consolida os profissionais: Técnico se algum for Técnico;
+senão Recepção se algum for Recepção; senão Outros Atendimentos. O primeiro CBO
+continua exposto nos campos resumidos e não limita a classificação.
 `NOME_ATENDIMENTO` mantém o resumo pelas regras do principal; a classificação e
 os nomes individuais estão disponíveis dentro de `PROFISSIONAIS`.
 
@@ -42,6 +55,8 @@ os nomes individuais estão disponíveis dentro de `PROFISSIONAIS`.
 | `FLAG_CANCELADO` | Excluir `S` para considerar apenas não cancelados; decidir explicitamente como tratar ausência. |
 | `FLAG_USUARIO_TESTE`, `FLAG_UNIDADE_TESTE`, `FLAG_OPERADOR_TESTE`, `FLAG_PROFISSIONAL_TESTE` | Excluir registros de teste quando necessário. Identificação por nome, sem distinguir caixa. |
 | `FLAG_*_CADASTRADO` | Identificar ausência de correspondência cadastral sem perder os IDs da origem. |
+| `FLAG_REGISTRO_TESTE` | Identificar TESTE em usuário, unidade, operador ou qualquer profissional com um único filtro. |
+| `FLAG_ATENDIMENTO_COMPARTILHADO` | Identificar presença de profissional compartilhado, inclusive com principal ausente. |
 | `FLAG_ALGUM_PROFISSIONAL_TESTE` | Identificar teste em qualquer profissional, incluindo compartilhados. |
 | `DATA_SAIDA_VINCULO_FAMILIAR` | Identificar vínculo resumido encerrado no módulo usuário. |
 | `DATA_SAIDA_ATENDIMENTO` | Saída do próprio atendimento, diferente da saída familiar. |
@@ -52,9 +67,13 @@ Os filtros anteriores não representam uma configuração obrigatória do dashbo
 Cada análise escolhe a população adequada. Os ranks são calculados sobre a base
 ampla; filtrá-los depois de outros atributos não recalcula sua numeração.
 
+`PROFISSIONAIS_NOMES` permite exibir todos os nomes sem abrir o array. Contém
+nomes distintos e não vazios, separados por vírgula e em ordem alfabética.
+Os IDs, CBOs e demais detalhes permanecem em `PROFISSIONAIS`.
+
 ## Informações adicionais
 
-As primeiras 39 colunas preservam os nomes e a ordem legados; o modelo tem 63 colunas e acrescenta
+As primeiras 39 colunas preservam os nomes e a ordem legados; o modelo tem 66 colunas e acrescenta
 IDs da origem, indicadores de cobertura e teste, datas de saída e atributos completos.
 O grão atendimento altera os totais e o significado dos IDs e ranks. A data pode permanecer ausente.
 
