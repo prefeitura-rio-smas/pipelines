@@ -1,6 +1,9 @@
 -- Uma linha por atendimento. As primeiras 50 colunas seguem a ordem da planilha.
 -- Nome e tipo do atendimento ficam separados das demandas nas colunas adicionais.
 -- A quantidade mensal se repete nos atendimentos da mesma pessoa/unidade/mês.
+-- Produção: os dados refletem a última materialização da mart pelo dbt.
+-- Para revisar um PR, substitua a tabela no FROM pela tabela no dataset
+-- ci_<PR>__<SHA> informado no resumo do workflow CI - Recce Data Review.
 select
     numero,
     mes_referencia,
@@ -62,5 +65,5 @@ select
     observacoes,
     nome_atendimento,
     tipo_atendimento
-from `rj-smas-dev.relatorio.mart_planilha_unificada_centro_pop`
+from `rj-smas.marts.mart_planilha_unificada_centro_pop`
 order by mes_referencia, nome_centro_pop, nome_usuario, data_atendimento, id_atendimento;
