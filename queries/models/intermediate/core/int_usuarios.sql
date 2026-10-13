@@ -75,7 +75,7 @@ final as (
         sm.flag_trabalha,
         sm.profissao,
         sm.flag_frequenta_escola,
-        {{ map_coluna_escolaridade('sm.serie_escolar') }} as escolaridade_indice,
+        {{ map_coluna_escolaridade('sm.escolaridade') }} as escolaridade_indice,
         sm.flag_recebe_beneficio,
         sm.tipo_beneficio,
         sm.flag_curatela,

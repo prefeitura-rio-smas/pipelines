@@ -214,31 +214,43 @@ desligamento_form as (
     where titulo_formulario = 'Centro POP - Desligamento PAI'
 ),
 
+-- O corte temporal usa o fechamento do mês; a janela escolhe o último registro
+-- de cada agrupamento usuário/unidade/mês, com desempate pelo ID da evolução.
 atendimento_social_mes as (
-    {{ registro_ate_evento(
-        relacao_evento = 'usuarios_mes', relacao_registros = 'atendimento_social_form',
-        pares_chave = [
-            {'evento': 'id_usuario', 'registro': 'id_paciente'},
-            {'evento': 'id_unidade', 'registro': 'id_unidade'}
-        ],
-        id_evento = 'id_usuario_unidade_mes', data_evento = 'data_referencia',
-        data_registro = 'data_evolucao', id_registro = 'id_evolucao',
-        colunas_saida = ['possui_referencias_familiares', 'territorio_referencia_familia',
-                        'possibilidade_reinsercao_familiar', 'motivo_secundario_permanencia_rua']
-    ) }}
+    select
+        e.id_usuario_unidade_mes,
+        r.possui_referencias_familiares,
+        r.territorio_referencia_familia,
+        r.possibilidade_reinsercao_familiar,
+        r.motivo_secundario_permanencia_rua
+    from usuarios_mes as e
+    inner join atendimento_social_form as r
+        on
+            e.id_usuario = r.id_paciente
+            and e.id_unidade = r.id_unidade
+            and {{ registro_ate_evento('r.data_evolucao', 'e.data_referencia') }}
+    qualify row_number() over (
+        partition by e.id_usuario_unidade_mes
+        order by r.data_evolucao desc, r.id_evolucao desc
+    ) = 1
 ),
 
 desligamento_mes as (
-    {{ registro_ate_evento(
-        relacao_evento = 'usuarios_mes', relacao_registros = 'desligamento_form',
-        pares_chave = [
-            {'evento': 'id_usuario', 'registro': 'id_paciente'},
-            {'evento': 'id_unidade', 'registro': 'id_unidade'}
-        ],
-        id_evento = 'id_usuario_unidade_mes', data_evento = 'data_referencia',
-        data_registro = 'data_evolucao', id_registro = 'id_evolucao',
-        colunas_saida = ['data_desligamento_formulario', 'motivo_desligamento', 'motivo_desligamento_outros']
-    ) }}
+    select
+        e.id_usuario_unidade_mes,
+        r.data_desligamento_formulario,
+        r.motivo_desligamento,
+        r.motivo_desligamento_outros
+    from usuarios_mes as e
+    inner join desligamento_form as r
+        on
+            e.id_usuario = r.id_paciente
+            and e.id_unidade = r.id_unidade
+            and {{ registro_ate_evento('r.data_evolucao', 'e.data_referencia') }}
+    qualify row_number() over (
+        partition by e.id_usuario_unidade_mes
+        order by r.data_evolucao desc, r.id_evolucao desc
+    ) = 1
 ),
 
 -- Demandas e encaminhamentos são registros do mês, e não apenas os campos
@@ -306,13 +318,20 @@ situacao_saude as (
 ),
 
 situacao_saude_mes as (
-    {{ registro_ate_evento(
-        relacao_evento = 'usuarios_mes', relacao_registros = 'situacao_saude',
-        pares_chave = [{'evento': 'id_usuario', 'registro': 'id_paciente'}],
-        id_evento = 'id_usuario_unidade_mes', data_evento = 'data_referencia',
-        data_registro = 'data_evolucao', id_registro = 'id_evolucao',
-        colunas_saida = ['uso_substancias', 'situacao_saude', 'local_tratamento']
-    ) }}
+    select
+        e.id_usuario_unidade_mes,
+        r.uso_substancias,
+        r.situacao_saude,
+        r.local_tratamento
+    from usuarios_mes as e
+    inner join situacao_saude as r
+        on
+            e.id_usuario = r.id_paciente
+            and {{ registro_ate_evento('r.data_evolucao', 'e.data_referencia') }}
+    qualify row_number() over (
+        partition by e.id_usuario_unidade_mes
+        order by r.data_evolucao desc, r.id_evolucao desc
+    ) = 1
 ),
 
 questionario_situacao_usuario as (
@@ -327,13 +346,18 @@ questionario_situacao_usuario as (
 ),
 
 questionario_situacao_usuario_mes as (
-    {{ registro_ate_evento(
-        relacao_evento = 'usuarios_mes', relacao_registros = 'questionario_situacao_usuario',
-        pares_chave = [{'evento': 'id_usuario', 'registro': 'id_usuario'}],
-        id_evento = 'id_usuario_unidade_mes', data_evento = 'data_referencia',
-        data_registro = 'data_resposta', id_registro = 'id_evolucao',
-        colunas_saida = ['motivo_ida_ruas']
-    ) }}
+    select
+        e.id_usuario_unidade_mes,
+        r.motivo_ida_ruas
+    from usuarios_mes as e
+    inner join questionario_situacao_usuario as r
+        on
+            e.id_usuario = r.id_usuario
+            and {{ registro_ate_evento('r.data_resposta', 'e.data_referencia') }}
+    qualify row_number() over (
+        partition by e.id_usuario_unidade_mes
+        order by r.data_resposta desc, r.id_evolucao desc
+    ) = 1
 ),
 
 -- CadÚnico é associado por CPF, sem confundir sua família com a do prontuário.
