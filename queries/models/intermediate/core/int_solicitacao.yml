@@ -1,6 +1,6 @@
 version: 2
 models:
-  - name: int_acolhimento_data_solicitacao
+  - name: int_solicitacao
     description: |
       Data de solicitação de vaga associada aos ciclos de acolhimento.
       Grão: uma linha por id_ciclo. Solicitações são relacionadas por paciente,
