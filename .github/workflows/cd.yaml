@@ -204,15 +204,67 @@ jobs:
         id: upload
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          RECCE_API_TOKEN: ${{ secrets.RECCE_API_TOKEN }}
         run: |
-          # O conflito não prova que a sessão está presa. Nunca excluir o baseline.
-          # pipefail preserva o exit code do CLI e tee torna o erro visível nos logs.
           set -o pipefail
-          if ! uv run recce-cloud upload --type prod --target-path queries/target 2>&1 | tee "$RUNNER_TEMP/recce-prod-upload.log"; then
+
+          upload_args=(--type prod)
+          if [[ -n "$RECCE_API_TOKEN" ]]; then
+            # Descobrir a base vinculada ao repositório, sem hardcode de ID e sem
+            # create/touch. O endpoint de leitura usa o GITHUB_TOKEN existente.
+            prod_session_id=$(uv run python - <<'PYTHON'
+          import os
+          import uuid
+
+          from recce_cloud.api.github import GitHubRecceCloudClient
+
+          client = GitHubRecceCloudClient(
+              os.environ["GITHUB_TOKEN"], os.environ["GITHUB_REPOSITORY"]
+          )
+          try:
+              response = client.get_session_download_urls(session_type="prod")
+              session_id = response.get("session_id")
+              if response.get("success") is False or not session_id:
+                  raise ValueError("sessão base não encontrada")
+              # Validar somente o ID; nunca imprimir URLs assinadas/credenciais.
+              print(uuid.UUID(session_id))
+          except Exception:
+              raise SystemExit("Falha ao localizar a sessão base do repositório; upload abortado.")
+          PYTHON
+            )
+            upload_args+=(--session-id "$prod_session_id")
+            echo "route=existing-session" >> "$GITHUB_OUTPUT"
+            echo "Atualizando a sessão base existente por ID (sem create/touch ou exclusão)."
+          else
+            echo "route=github" >> "$GITHUB_OUTPUT"
+            echo "RECCE_API_TOKEN ausente; usando o upload padrão com GITHUB_TOKEN."
+          fi
+
+          # Concorrência serializa os uploads, mas não ordena commits/eventos.
+          # Reexecuções usam o SHA original: rejeitar um commit ultrapassado
+          # imediatamente antes da publicação, inclusive após esperar na fila.
+          if ! main_sha=$(git ls-remote --exit-code origin refs/heads/main | cut -f1); then
+            echo "::error::Falha ao consultar o HEAD atual de main. Upload abortado para evitar publicar um commit ultrapassado."
+            exit 1
+          fi
+          artifact_sha=$(git rev-parse HEAD)
+          if [[ -z "$main_sha" || "$artifact_sha" != "$GITHUB_SHA" ]]; then
+            echo "::error::Não foi possível confirmar o commit dos artefatos e o HEAD de main. Upload abortado."
+            exit 1
+          fi
+          if [[ "$artifact_sha" != "$main_sha" ]]; then
+            echo "::notice::Commit ultrapassado ($artifact_sha); main está em $main_sha. Baseline não publicado."
+            echo "stale=true" >> "$GITHUB_OUTPUT"
+            echo "main_sha=$main_sha" >> "$GITHUB_OUTPUT"
+            exit 0
+          fi
+
+          # pipefail preserva o exit code do CLI; tee expõe os erros nos logs.
+          if ! uv run recce-cloud upload "${upload_args[@]}" --target-path queries/target 2>&1 | tee "$RUNNER_TEMP/recce-prod-upload.log"; then
             echo "::error::Upload do baseline falhou. Revisar a resposta do Recce nos logs; nenhuma sessão foi excluída."
             if grep -qiE '409|already exists' "$RUNNER_TEMP/recce-prod-upload.log"; then
-              echo "::error::Conflito no Recce Cloud: verificar a sessão base e a integração do projeto antes de executar novamente."
-              echo "- **Diagnóstico**: conflito (409/already exists); verificar sessão base/integração no Recce Cloud. Nenhuma exclusão automática." >> "$GITHUB_STEP_SUMMARY"
+              echo "::error::Conflito no Recce Cloud. Configurar RECCE_API_TOKEN para atualizar a base existente por ID, sem recriar a sessão."
+              echo "- **Diagnóstico**: conflito (409/already exists); configurar o Secret RECCE_API_TOKEN com acesso de escrita ao projeto para upload direto na sessão base existente." >> "$GITHUB_STEP_SUMMARY"
             fi
             exit 1
           fi
@@ -235,6 +287,9 @@ jobs:
           VALIDATE_STATUS: ${{ steps.validate.outcome }}
           UPLOAD_STATUS: ${{ steps.upload.outcome }}
           UPDATED_AT: ${{ steps.upload.outputs.updated_at }}
+          UPLOAD_ROUTE: ${{ steps.upload.outputs.route }}
+          STALE_COMMIT: ${{ steps.upload.outputs.stale }}
+          MAIN_SHA: ${{ steps.upload.outputs.main_sha }}
         run: |
           {
             echo "## Recce baseline de produção"
@@ -242,7 +297,9 @@ jobs:
             echo "- **Commit utilizado**: $GITHUB_SHA"
             echo "- **Evento**: $GITHUB_EVENT_NAME"
             echo "- **Horário UTC do resumo**: $(date -u +'%Y-%m-%dT%H:%M:%SZ')"
-            if [[ "$UPLOAD_STATUS" == 'success' ]]; then
+            if [[ "$STALE_COMMIT" == 'true' ]]; then
+              echo "- **Atualização**: ignorada; commit ultrapassado. HEAD de main: $MAIN_SHA. Executar um novo workflow_dispatch em main para atualizar."
+            elif [[ "$UPLOAD_STATUS" == 'success' ]]; then
               echo "- **Atualização**: upload e finalização concluídos em $UPDATED_AT. Conferir Production Metadata no Recce Cloud."
             elif [[ "$AUTH_STATUS" != 'success' ]]; then
               echo "- **Falha**: preparação/autenticação GCP não concluída; upload não executado. Revisar GCP_CREDENTIALS e os logs."
@@ -253,6 +310,7 @@ jobs:
             else
               echo "- **Falha**: upload/finalização não concluído; baseline pode continuar desatualizado. Revisar a resposta do Recce nos logs."
             fi
+            echo "- **Rota de upload**: ${UPLOAD_ROUTE:-não executada}"
             echo "- **Segurança**: nenhuma sessão de produção é excluída automaticamente."
             echo "- **Prefect**: job independente; atualização manual/agendada não executa deploy. Uma falha aqui deixa o workflow vermelho, mas não altera o resultado de deploy-flows."
           } >> "$GITHUB_STEP_SUMMARY"
