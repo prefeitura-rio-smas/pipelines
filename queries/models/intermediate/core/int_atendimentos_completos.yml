@@ -1,0 +1,10 @@
+version: 2
+models:
+  - name: int_atendimentos_completos
+    description: >
+      União dos atendimentos dos módulos família e usuário, em grão
+      atendimento do módulo × profissional principal ou compartilhado.
+      Inclui cancelados, registros TESTE e profissionais principais ausentes.
+      Normaliza os IDs compartilhados, eliminando códigos inválidos, zero,
+      repetição na lista e repetição do profissional principal.
+      Base ephemeral compartilhada pelo fato legado e pelo mart amplo do Looker.

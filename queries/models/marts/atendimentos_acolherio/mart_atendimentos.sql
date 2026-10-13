@@ -1,9 +1,10 @@
-{{ config(tags=['acolherio_atendimentos_refresh']) }}
+{{ config(alias='atendimentos', tags=['acolherio_atendimentos_refresh']) }}
 
 -- noqa: disable=CP02,AL09,ST06,RF02
--- A ordem e a grafia dos aliases finais seguem o contrato externo do Looker.
--- Contrato de 39 colunas do Looker. Grão final: atendimento × profissional.
--- Este mart é um candidato isolado; não grava diretamente na tabela do Looker.
+-- As primeiras colunas preservam a ordem e a grafia dos aliases legados.
+-- Preserva as 39 colunas legadas e acrescenta atributos para filtros no Looker.
+-- Grão: atendimento do módulo × profissional, inclusive sem cadastro associado.
+-- Filtros de análise e de deduplicação são aplicados no Looker.
 with atendimentos as (
     select
         id_atendimento_modulo,
@@ -17,8 +18,10 @@ with atendimentos as (
         data_atendimento,
         data_cadastro_atendimento,
         hora_atendimento,
-        origem_modulo
-    from {{ ref('fct_atendimentos') }}
+        origem_modulo,
+        data_saida,
+        flag_cancelado
+    from {{ ref('int_atendimentos_completos') }}
 ),
 
 familia_usuario as (
@@ -33,10 +36,30 @@ familia_usuario as (
     ) = 1
 ),
 
+vinculos_familia_usuario as (
+    select
+        id_paciente,
+        array_agg(struct(
+            id_membro, id_familia, data_entrada, data_saida,
+            id_familia_nova, id_motivo_saida, parentesco_responsavel
+        ) order by data_entrada, id_membro) as vinculos_familiares
+    from {{ ref('raw_membros_familia') }}
+    group by id_paciente
+),
+
+filtro_emails as (
+    select
+        unidade_atendimento,
+        string_agg(distinct email, ',' order by email) as email
+    from {{ ref('raw_sheets_filtro_email_prontuario') }}
+    group by unidade_atendimento
+),
+
 profissionais_cbo as (
     select
         ocupacao.id_profissional,
-        array_agg(cbo.descricao ignore nulls order by ocupacao.codigo_cbo)[safe_offset(0)] as cbo_original
+        array_agg(cbo.descricao ignore nulls order by ocupacao.codigo_cbo)[safe_offset(0)] as cbo_original,
+        array_agg(struct(ocupacao.codigo_cbo, cbo.descricao) order by ocupacao.codigo_cbo) as cbos
     from {{ ref('raw_profissionais_ocupacoes') }} as ocupacao
     left join {{ ref('raw_cbo') }} as cbo on ocupacao.codigo_cbo = cbo.codigo_cbo
     group by ocupacao.id_profissional
@@ -86,19 +109,35 @@ projetos_familia as (
     select
         vinculo.id_familia,
         string_agg(
-            distinct coalesce(
-                catalogo.nome_projeto_social,
-                format('Projeto não mapeado (ID %d)', vinculo.id_projeto_social)
+            distinct if(
+                vinculo.indicador_ativo = 'S' and vinculo.data_cancelamento is null,
+                coalesce(
+                    catalogo.nome_projeto_social,
+                    format('Projeto não mapeado (ID %d)', vinculo.id_projeto_social)
+                ),
+                null
             ),
-            ', ' order by coalesce(
+            ', ' order by if(
+                vinculo.indicador_ativo = 'S' and vinculo.data_cancelamento is null,
+                coalesce(
+                    catalogo.nome_projeto_social,
+                    format('Projeto não mapeado (ID %d)', vinculo.id_projeto_social)
+                ),
+                null
+            )
+        ) as projetos_sociais,
+        array_agg(struct(
+            vinculo.id_projeto_social,
+            coalesce(
                 catalogo.nome_projeto_social,
                 format('Projeto não mapeado (ID %d)', vinculo.id_projeto_social)
-            )
-        ) as projetos_sociais
+            ) as nome_projeto_social,
+            vinculo.id_unidade, vinculo.id_login_cadastro,
+            vinculo.data_cadastro, vinculo.data_cancelamento, vinculo.indicador_ativo
+        ) order by vinculo.id_projeto_social, vinculo.data_cadastro) as projetos_sociais_historico
     from {{ ref('raw_familias_projetos_sociais') }} as vinculo
     left join catalogo_projetos_sociais as catalogo
         on vinculo.id_projeto_social = catalogo.id_projeto_social
-    where vinculo.indicador_ativo = 'S' and vinculo.data_cancelamento is null
     group by vinculo.id_familia
 ),
 
@@ -117,6 +156,25 @@ base as (
         a.data_atendimento as data_de_atendimento,
         safe_cast(a.hora_atendimento as int64) as hora_de_atendimento_original,
         a.id_usuario,
+        a.id_atendimento_modulo,
+        {{ dbt_utils.generate_surrogate_key(['a.id_atendimento_modulo', 'a.id_profissional']) }} as id_atendimento_sk,
+        a.id_unidade,
+        a.id_login_cadastro,
+        a.id_tipo_atendimento,
+        a.flag_cancelado,
+        a.data_saida as data_saida_atendimento,
+        familia.data_saida as data_saida_vinculo_familiar,
+        vinculos.vinculos_familiares,
+        cbo.cbos as profissional_cbos,
+        profissional.nome as profissional_nome_cadastral,
+        usuario.id_paciente is not null as flag_usuario_cadastrado,
+        unidade.id_unidade is not null as flag_unidade_cadastrada,
+        operador.id_login is not null as flag_operador_cadastrado,
+        profissional.id_profissional is not null as flag_profissional_cadastrado,
+        coalesce(upper(usuario.nome) like '%TESTE%', false) as flag_usuario_teste,
+        coalesce(upper(unidade.nome_unidade) like '%TESTE%', false) as flag_unidade_teste,
+        coalesce(upper(operador.nome_operador) like '%TESTE%', false) as flag_operador_teste,
+        coalesce(upper(profissional.nome) like '%TESTE%', false) as flag_profissional_teste,
         coalesce(a.id_familia, familia.id_familia) as id_familia,
         usuario.nome as nome_usuario,
         usuario.cpf,
@@ -156,9 +214,9 @@ base as (
         a.data_cadastro_atendimento,
         filtro.email as email_filtro
     from atendimentos as a
-    inner join {{ ref('raw_usuarios') }} as usuario on a.id_usuario = usuario.id_paciente
-    inner join {{ ref('raw_unidades') }} as unidade on a.id_unidade = unidade.id_unidade
-    inner join {{ ref('raw_operadores') }} as operador on a.id_login_cadastro = operador.id_login
+    left join {{ ref('raw_usuarios') }} as usuario on a.id_usuario = usuario.id_paciente
+    left join {{ ref('raw_unidades') }} as unidade on a.id_unidade = unidade.id_unidade
+    left join {{ ref('raw_operadores') }} as operador on a.id_login_cadastro = operador.id_login
     left join familia_usuario as familia
         on a.origem_modulo = 'usuario' and a.id_usuario = familia.id_paciente
     left join {{ ref('raw_tipos_atendimento') }} as tipo
@@ -166,15 +224,9 @@ base as (
     left join {{ ref('raw_profissionais') }} as profissional
         on a.id_profissional = profissional.id_profissional
     left join profissionais_cbo as cbo on a.id_profissional = cbo.id_profissional
-    left join {{ ref('raw_sheets_filtro_email_prontuario') }} as filtro
+    left join vinculos_familia_usuario as vinculos on a.id_usuario = vinculos.id_paciente
+    left join filtro_emails as filtro
         on unidade.nome_unidade = filtro.unidade_atendimento
-    where
-        operador.nome_operador not like '%TESTE%'
-        and usuario.nome not like '%TESTE%'
-        and unidade.nome_unidade not like '%TESTE%'
-        -- No SQL vigente, `datsaida` pertence ao vínculo familiar; a data
-        -- de saída do atendimento tem o nome distinto `dtsaida`.
-        and (a.origem_modulo = 'familia' or familia.data_saida is null)
 ),
 
 classificados as (
@@ -248,7 +300,7 @@ classificados as (
             else 'Não Informado'
         end as idade_faixa,
         concat(b.seq_atendimento, '-', b.profissional_id) as id_atendimento,
-        concat(b.email_cas, ',', b.email_unidade, ',', b.email_filtro) as email
+        concat(coalesce(b.email_cas, ''), ',', coalesce(b.email_unidade, ''), ',', coalesce(b.email_filtro, '')) as email
     from base as b
 ),
 
@@ -256,7 +308,7 @@ numerados as (
     select
         c.*,
         row_number() over (
-            partition by c.id_atendimento
+            partition by c.id_atendimento_sk
             order by c.data_cadastro_atendimento, c.id_familia
         ) as cbo_unico_rank,
         row_number() over (
@@ -264,7 +316,7 @@ numerados as (
                 c.profissional_id, c.hora_de_atendimento,
                 c.data_de_atendimento, c.nome_atendimento_original,
                 c.id_usuario, c.unidade_atendimento
-            order by c.data_cadastro_atendimento, c.id_atendimento
+            order by c.data_cadastro_atendimento, c.id_atendimento_sk
         ) as atendimento_unico_rank
     from classificados as c
 )
@@ -308,7 +360,27 @@ select
     email as EMAIL,
     cbo_unico_rank,
     atendimento_unico_rank,
-    projetos.projetos_sociais as PROJETOS_SOCIAIS
+    projetos.projetos_sociais as PROJETOS_SOCIAIS,
+    id_atendimento_sk as ID_ATENDIMENTO_SK,
+    id_atendimento_modulo as ID_ATENDIMENTO_MODULO,
+    id_unidade as ID_UNIDADE,
+    id_login_cadastro as ID_LOGIN_CADASTRO,
+    id_tipo_atendimento as ID_TIPO_ATENDIMENTO,
+    flag_cancelado as FLAG_CANCELADO,
+    data_saida_atendimento as DATA_SAIDA_ATENDIMENTO,
+    data_saida_vinculo_familiar as DATA_SAIDA_VINCULO_FAMILIAR,
+    vinculos_familiares as VINCULOS_FAMILIARES,
+    profissional_cbos as PROFISSIONAL_CBOS,
+    profissional_nome_cadastral as PROFISSIONAL_NOME_CADASTRAL,
+    email_filtro as EMAIL_PLANILHA,
+    flag_usuario_cadastrado as FLAG_USUARIO_CADASTRADO,
+    flag_unidade_cadastrada as FLAG_UNIDADE_CADASTRADA,
+    flag_operador_cadastrado as FLAG_OPERADOR_CADASTRADO,
+    flag_profissional_cadastrado as FLAG_PROFISSIONAL_CADASTRADO,
+    flag_usuario_teste as FLAG_USUARIO_TESTE,
+    flag_unidade_teste as FLAG_UNIDADE_TESTE,
+    flag_operador_teste as FLAG_OPERADOR_TESTE,
+    flag_profissional_teste as FLAG_PROFISSIONAL_TESTE,
+    projetos.projetos_sociais_historico as PROJETOS_SOCIAIS_HISTORICO
 from numerados as n
 left join projetos_familia as projetos on n.id_familia = projetos.id_familia
-where cbo_unico_rank = 1 and atendimento_unico_rank = 1

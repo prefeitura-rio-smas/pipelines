@@ -1,0 +1,80 @@
+version: 2
+models:
+  - name: mart_atendimentos
+    description: >
+      Base ampla de atendimentos do Looker AcolheRio, em grão atendimento
+      do módulo × profissional. Preserva as 39 colunas legadas e acrescenta
+      atributos de auditoria e filtro. Inclui cancelados, registros TESTE,
+      vínculos familiares encerrados e atendimentos sem cadastros associados.
+      Os ranks são atributos para filtros opcionais no Looker; não excluem
+      linhas. Materializado como atendimentos, sem substituir a tabela legada dev_atendimentos.
+    columns:
+      - name: ID_ATENDIMENTO
+        description: >
+          Identificador legado composto por atendimento e profissional.
+          Pode ser NULL quando não há profissional; não distingue os módulos.
+          Para identificação única, usar ID_ATENDIMENTO_SK.
+      - name: ID_ATENDIMENTO_SK
+        description: Hash de ID_ATENDIMENTO_MODULO e PROFISSIONAL_ID, incluindo profissional ausente.
+        data_tests:
+          - unique
+          - not_null
+      - name: DATA_DE_ATENDIMENTO
+        description: Data da origem, preservada mesmo quando ausente.
+      - name: modulo
+        data_tests:
+          - accepted_values:
+              arguments:
+                values: ['u', 'f']
+      - name: FLAG_CANCELADO
+        description: Indicador de cancelamento da origem; não é aplicado como filtro no dbt.
+      - name: DATA_SAIDA_ATENDIMENTO
+        description: Data de saída do atendimento (dtsaida), distinta da saída do vínculo familiar.
+      - name: DATA_SAIDA_VINCULO_FAMILIAR
+        description: >
+          Saída do vínculo familiar selecionado para o módulo usuário.
+          Prioriza vínculo aberto; quando só há encerrados, seleciona o de saída mais recente.
+      - name: VINCULOS_FAMILIARES
+        description: >
+          Todos os vínculos familiares do usuário em ARRAY de STRUCT,
+          incluindo entrada, saída, motivo de saída e família de destino.
+          O vínculo resumido não representa uma reconstrução na data do atendimento.
+      - name: PROFISSIONAL_CBOS
+        description: Todos os códigos e descrições de CBO do profissional em ARRAY de STRUCT.
+      - name: PROFISSIONAL_NOME_CADASTRAL
+        description: Nome original do profissional, antes da substituição pelo nome do operador.
+      - name: EMAIL
+        description: >
+          Concatena e-mail da CAS, da unidade e todos os e-mails distintos da planilha.
+          Componentes ausentes não anulam os demais e-mails.
+      - name: EMAIL_PLANILHA
+        description: Todos os e-mails distintos da planilha para a unidade, em ordem alfabética.
+      - name: FLAG_USUARIO_CADASTRADO
+        description: Indica correspondência com o cadastro de usuário; ausência não exclui atendimento.
+      - name: FLAG_UNIDADE_CADASTRADA
+        description: Indica correspondência com o cadastro de unidade.
+      - name: FLAG_OPERADOR_CADASTRADO
+        description: Indica correspondência com o cadastro do operador cadastrante.
+      - name: FLAG_PROFISSIONAL_CADASTRADO
+        description: Indica correspondência com o cadastro de profissional.
+      - name: FLAG_USUARIO_TESTE
+        description: Nome cadastral do usuário contém TESTE, sem distinguir maiúsculas e minúsculas.
+      - name: FLAG_UNIDADE_TESTE
+        description: Nome cadastral da unidade contém TESTE, sem distinguir maiúsculas e minúsculas.
+      - name: FLAG_OPERADOR_TESTE
+        description: Nome cadastral do operador contém TESTE, sem distinguir maiúsculas e minúsculas.
+      - name: FLAG_PROFISSIONAL_TESTE
+        description: Nome cadastral do profissional contém TESTE, sem distinguir maiúsculas e minúsculas.
+      - name: cbo_unico_rank
+        description: Rank por atendimento do módulo × profissional; mantido para filtros opcionais no Looker.
+      - name: atendimento_unico_rank
+        description: >
+          Rank de atendimentos com profissional, hora, data, nome de atendimento,
+          usuário e unidade iguais. Todas as posições são mantidas.
+      - name: PROJETOS_SOCIAIS
+        description: Nomes distintos dos projetos atualmente ativos e não cancelados da família selecionada.
+      - name: PROJETOS_SOCIAIS_HISTORICO
+        description: >
+          Todos os vínculos de projetos da família selecionada em ARRAY de STRUCT,
+          incluindo inativos/cancelados e datas da origem. Snapshot do cadastro;
+          não reconstrói o estado na data do atendimento.
