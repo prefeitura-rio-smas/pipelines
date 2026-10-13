@@ -5,9 +5,12 @@ on:
     branches:
       - main
       - 'staging/**'
+  schedule:
+    - cron: '17 8 * * *' # 08:17 UTC / 05:17 Brasília
+  workflow_dispatch:
 
 concurrency:
-  group: cd-${{ github.ref }}
+  group: cd-${{ github.ref }}-${{ github.event_name }}
   cancel-in-progress: false
 
 permissions:
@@ -19,6 +22,7 @@ env:
 
 jobs:
   deploy-flows:
+    if: github.event_name == 'push' && (github.ref == 'refs/heads/main' || startsWith(github.ref, 'refs/heads/staging/'))
     runs-on: ubuntu-latest
     timeout-minutes: 60
     environment: ${{ github.ref == 'refs/heads/main' && 'production' || 'staging' }}
@@ -112,7 +116,12 @@ jobs:
   recce-prod-baseline:
     runs-on: ubuntu-latest
     timeout-minutes: 30
-    if: github.ref == 'refs/heads/main'
+    if: github.ref == 'refs/heads/main' && (github.event_name == 'push' || github.event_name == 'schedule' || github.event_name == 'workflow_dispatch')
+    permissions:
+      contents: read
+    concurrency:
+      group: recce-prod-baseline
+      cancel-in-progress: false
 
     steps:
       - uses: actions/checkout@v4
@@ -125,6 +134,7 @@ jobs:
       # Necessário: `dbt docs generate --target prod` introspecta o catálogo no
       # BigQuery (profiles.yml usa keyfile via GOOGLE_APPLICATION_CREDENTIALS).
       - name: Authenticate to Google Cloud
+        id: auth
         uses: google-github-actions/auth@v2
         with:
           credentials_json: ${{ secrets.GCP_CREDENTIALS }}
@@ -149,60 +159,158 @@ jobs:
           fi
           echo "Recce Cloud telemetry: anonymous_tracking=false em $profile"
 
-      - name: Generate and upload Prod dbt artifacts (Recce baseline)
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      - name: Install Recce baseline dependencies
+        id: dependencies
         run: |
           pip install uv
           uv sync --all-extras --dev
 
-          run_dbt_artifacts() {
-            uv run dbt deps --project-dir queries --profiles-dir queries
-            uv run dbt docs generate --target prod --project-dir queries --profiles-dir queries
-          }
+      # Steps separados: uma falha em deps não pode ser mascarada por docs.
+      - name: Install dbt packages
+        id: dbt-deps
+        run: uv run dbt deps --project-dir queries --profiles-dir queries
 
-          run_upload() {
-            uv run recce-cloud upload --type prod --target-path queries/target
-          }
+      - name: Generate Prod dbt artifacts
+        id: generate
+        run: uv run dbt docs generate --target prod --project-dir queries --profiles-dir queries
 
-          delete_stuck_base() {
-            uv run python - <<'EOF'
-          from recce_cloud.api.factory import create_platform_client
-          from recce_cloud.ci_providers import CIDetector
-
-          ci = CIDetector.detect()
-          client = create_platform_client(ci.access_token, ci)
-          client.delete_session(session_type="prod")
-          EOF
-          }
-
-          # Passo 1 — geração dos artifacts dbt deps/docs.
-          if ! run_dbt_artifacts; then
-            echo "::error::Recce baseline de prod não gerado (dbt deps/docs) — sessão base NÃO alterada"
-            echo "## ⚠️ Recce baseline de prod NÃO gerado — sessão base PRESERVADA (revisar logs do dbt deps/docs)" >> "$GITHUB_STEP_SUMMARY"
-            exit 1
-          fi
-
-          # Passo 2 — upload do baseline; self-healing só no 409/"already exists".
-          if ! upload_log=$(run_upload 2>&1); then
-            if grep -qiE '409|already exists' <<< "$upload_log"; then
-              echo "## ⚠️ Recce baseline de prod com sessão presa (409) — recriando sessão base e retentando 1x" >> "$GITHUB_STEP_SUMMARY"
-
-              # 404 (sem sessão) não é erro.
-              if ! delete_stuck_base; then
-                echo "::error::Falha ao deletar a sessão base presa do Recce Cloud"
-              fi
-
-              if ! upload_log=$(run_upload 2>&1); then
-                echo "::error::Recce baseline de prod falhou (stale) — upload de artifacts não atualizou o baseline mesmo após recriar a sessão base"
-                echo "## ⚠️ Recce baseline de prod NÃO atualizado (stale) — próximo data review compara contra baseline desatualizado" >> "$GITHUB_STEP_SUMMARY"
-                exit 1
-              fi
-            else
-              echo "::error::Recce upload de prod falhou (sem 409) — sessão base PRESERVADA"
-              echo "## ⚠️ Recce baseline de prod NÃO atualizado (upload falhou sem 409) — sessão base PRESERVADA" >> "$GITHUB_STEP_SUMMARY"
+      - name: Validate Prod dbt artifacts
+        id: validate
+        run: |
+          for artifact in queries/target/manifest.json queries/target/catalog.json; do
+            if [[ ! -s "$artifact" ]]; then
+              echo "::error::Artefato dbt ausente ou vazio: $artifact. Upload do baseline abortado."
               exit 1
             fi
+          done
+          python - <<'PYTHON'
+          import json
+          from pathlib import Path
+
+          for name in ("manifest.json", "catalog.json"):
+              path = Path("queries/target") / name
+              try:
+                  data = json.loads(path.read_text())
+                  if not isinstance(data, dict) or not data.get("metadata") or not data.get("nodes"):
+                      raise ValueError("metadata ou nodes ausentes/vazios")
+                  if name == "catalog.json" and data.get("errors"):
+                      raise ValueError("catálogo contém erros de introspecção; revisar logs do dbt")
+              except (OSError, ValueError) as error:
+                  print(f"::error::Artefato dbt inválido: {path}: {error}. Upload abortado.")
+                  raise SystemExit(1)
+          PYTHON
+
+      - name: Upload Prod dbt artifacts to Recce Cloud
+        id: upload
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          RECCE_API_TOKEN: ${{ secrets.RECCE_API_TOKEN }}
+        run: |
+          set -o pipefail
+
+          upload_args=(--type prod)
+          if [[ -n "$RECCE_API_TOKEN" ]]; then
+            # Descobrir a base vinculada ao repositório, sem hardcode de ID e sem
+            # create/touch. O endpoint de leitura usa o GITHUB_TOKEN existente.
+            prod_session_id=$(uv run python - <<'PYTHON'
+          import os
+          import uuid
+
+          from recce_cloud.api.github import GitHubRecceCloudClient
+
+          client = GitHubRecceCloudClient(
+              os.environ["GITHUB_TOKEN"], os.environ["GITHUB_REPOSITORY"]
+          )
+          try:
+              response = client.get_session_download_urls(session_type="prod")
+              session_id = response.get("session_id")
+              if response.get("success") is False or not session_id:
+                  raise ValueError("sessão base não encontrada")
+              # Validar somente o ID; nunca imprimir URLs assinadas/credenciais.
+              print(uuid.UUID(session_id))
+          except Exception:
+              raise SystemExit("Falha ao localizar a sessão base do repositório; upload abortado.")
+          PYTHON
+            )
+            upload_args+=(--session-id "$prod_session_id")
+            echo "route=existing-session" >> "$GITHUB_OUTPUT"
+            echo "Atualizando a sessão base existente por ID (sem create/touch ou exclusão)."
+          else
+            echo "route=github" >> "$GITHUB_OUTPUT"
+            echo "RECCE_API_TOKEN ausente; usando o upload padrão com GITHUB_TOKEN."
           fi
 
-          echo "✅ Recce baseline de prod atualizado (upload --type prod)." >> "$GITHUB_STEP_SUMMARY"
+          # Concorrência serializa os uploads, mas não ordena commits/eventos.
+          # Reexecuções usam o SHA original: rejeitar um commit ultrapassado
+          # imediatamente antes da publicação, inclusive após esperar na fila.
+          if ! main_sha=$(git ls-remote --exit-code origin refs/heads/main | cut -f1); then
+            echo "::error::Falha ao consultar o HEAD atual de main. Upload abortado para evitar publicar um commit ultrapassado."
+            exit 1
+          fi
+          artifact_sha=$(git rev-parse HEAD)
+          if [[ -z "$main_sha" || "$artifact_sha" != "$GITHUB_SHA" ]]; then
+            echo "::error::Não foi possível confirmar o commit dos artefatos e o HEAD de main. Upload abortado."
+            exit 1
+          fi
+          if [[ "$artifact_sha" != "$main_sha" ]]; then
+            echo "::notice::Commit ultrapassado ($artifact_sha); main está em $main_sha. Baseline não publicado."
+            echo "stale=true" >> "$GITHUB_OUTPUT"
+            echo "main_sha=$main_sha" >> "$GITHUB_OUTPUT"
+            exit 0
+          fi
+
+          # pipefail preserva o exit code do CLI; tee expõe os erros nos logs.
+          if ! uv run recce-cloud upload "${upload_args[@]}" --target-path queries/target 2>&1 | tee "$RUNNER_TEMP/recce-prod-upload.log"; then
+            echo "::error::Upload do baseline falhou. Revisar a resposta do Recce nos logs; nenhuma sessão foi excluída."
+            if grep -qiE '409|already exists' "$RUNNER_TEMP/recce-prod-upload.log"; then
+              echo "::error::Conflito no Recce Cloud. Configurar RECCE_API_TOKEN para atualizar a base existente por ID, sem recriar a sessão."
+              echo "- **Diagnóstico**: conflito (409/already exists); configurar o Secret RECCE_API_TOKEN com acesso de escrita ao projeto para upload direto na sessão base existente." >> "$GITHUB_STEP_SUMMARY"
+            fi
+            exit 1
+          fi
+          # recce-cloud 1.61.0 trata falhas de upload-completed como não fatais.
+          # Uma resposta de sucesso do CLI sozinha não confirma a finalização.
+          if grep -qiE 'Warning:|Error:' "$RUNNER_TEMP/recce-prod-upload.log"; then
+            echo "::error::Recce reportou erro/aviso durante o upload ou sua finalização. Atualização não confirmada; revisar logs."
+            exit 1
+          fi
+          echo "updated_at=$(date -u +'%Y-%m-%dT%H:%M:%SZ')" >> "$GITHUB_OUTPUT"
+
+      - name: Write Recce baseline summary
+        if: always()
+        env:
+          JOB_STATUS: ${{ job.status }}
+          AUTH_STATUS: ${{ steps.auth.outcome }}
+          DEPENDENCIES_STATUS: ${{ steps.dependencies.outcome }}
+          DBT_DEPS_STATUS: ${{ steps.dbt-deps.outcome }}
+          GENERATE_STATUS: ${{ steps.generate.outcome }}
+          VALIDATE_STATUS: ${{ steps.validate.outcome }}
+          UPLOAD_STATUS: ${{ steps.upload.outcome }}
+          UPDATED_AT: ${{ steps.upload.outputs.updated_at }}
+          UPLOAD_ROUTE: ${{ steps.upload.outputs.route }}
+          STALE_COMMIT: ${{ steps.upload.outputs.stale }}
+          MAIN_SHA: ${{ steps.upload.outputs.main_sha }}
+        run: |
+          {
+            echo "## Recce baseline de produção"
+            echo "- **Status do job**: $JOB_STATUS"
+            echo "- **Commit utilizado**: $GITHUB_SHA"
+            echo "- **Evento**: $GITHUB_EVENT_NAME"
+            echo "- **Horário UTC do resumo**: $(date -u +'%Y-%m-%dT%H:%M:%SZ')"
+            if [[ "$STALE_COMMIT" == 'true' ]]; then
+              echo "- **Atualização**: ignorada; commit ultrapassado. HEAD de main: $MAIN_SHA. Executar um novo workflow_dispatch em main para atualizar."
+            elif [[ "$UPLOAD_STATUS" == 'success' ]]; then
+              echo "- **Atualização**: upload e finalização concluídos em $UPDATED_AT. Conferir Production Metadata no Recce Cloud."
+            elif [[ "$AUTH_STATUS" != 'success' ]]; then
+              echo "- **Falha**: preparação/autenticação GCP não concluída; upload não executado. Revisar GCP_CREDENTIALS e os logs."
+            elif [[ "$DEPENDENCIES_STATUS" != 'success' || "$DBT_DEPS_STATUS" != 'success' ]]; then
+              echo "- **Falha**: preparação das dependências não concluída; upload não executado. Revisar logs de uv/dbt deps e telemetria."
+            elif [[ "$GENERATE_STATUS" != 'success' || "$VALIDATE_STATUS" != 'success' ]]; then
+              echo "- **Falha**: geração/validação de manifest.json e catalog.json não concluída; upload não executado. Revisar logs do dbt e permissões BigQuery."
+            else
+              echo "- **Falha**: upload/finalização não concluído; baseline pode continuar desatualizado. Revisar a resposta do Recce nos logs."
+            fi
+            echo "- **Rota de upload**: ${UPLOAD_ROUTE:-não executada}"
+            echo "- **Segurança**: nenhuma sessão de produção é excluída automaticamente."
+            echo "- **Prefect**: job independente; atualização manual/agendada não executa deploy. Uma falha aqui deixa o workflow vermelho, mas não altera o resultado de deploy-flows."
+          } >> "$GITHUB_STEP_SUMMARY"

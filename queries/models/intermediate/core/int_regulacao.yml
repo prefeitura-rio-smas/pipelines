@@ -1,6 +1,6 @@
 version: 2
 models:
-  - name: int_acolhimento_data_regulacao
+  - name: int_regulacao
     description: |
       Data de regulação associada aos ciclos de acolhimento.
       Grão: uma linha por id_ciclo. Regulações são relacionadas por paciente,

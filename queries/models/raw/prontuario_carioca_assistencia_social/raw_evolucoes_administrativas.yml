@@ -1,4 +1,6 @@
 version: 2
 models:
   - name: raw_evolucoes_administrativas
-    description: "Evoluções administrativas."
+    description: >
+      Evoluções administrativas, preservando todas as linhas da fonte.
+      A deduplicação por id_evolucao é feita em int_evolucoes.
