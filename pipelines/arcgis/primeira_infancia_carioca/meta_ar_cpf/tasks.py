@@ -6,7 +6,10 @@ from prefect import task
 import requests
 
 from pipelines.arcgis.constants import settings
-from pipelines.arcgis.primeira_infancia_carioca.tasks import _to_arcgis_value
+from pipelines.arcgis.primeira_infancia_carioca.tasks import (
+    _DATE_CLASSIC_COLUMNS,
+    _to_arcgis_value,
+)
 from pipelines.arcgis.utils import _get_arcgis_token, bq_client, resolve_arcgis_url
 
 # Resolve dataset e nomes de tabela por ambiente (MODE)
@@ -87,6 +90,16 @@ def apply_arcgis_adds(item_id: str, layer_idx: int = 0):
             # bairro desativado [2026-08-25] — redundante com bairro_cadun; campo
             # removido do layer. Reversível: tirar da lista + recriar campo no layer.
             if col.lower() in ("objectid", "data_particao", "bairro"):
+                continue
+            # Campos Date clássicos (esriFieldTypeDate) rejeitam string ISO e
+            # esperam epoch ms — mesma conversão do apply_arcgis_feedback.
+            if col in _DATE_CLASSIC_COLUMNS:
+                if value is None or pd.isna(value):
+                    attrs[col] = None
+                else:
+                    attrs[col] = _to_arcgis_value(
+                        col, pd.Timestamp(value).strftime("%Y-%m-%d")
+                    )
                 continue
             # Converte date/datetime para string ISO (json.dumps não serializa date nativo)
             if hasattr(value, 'isoformat'):
