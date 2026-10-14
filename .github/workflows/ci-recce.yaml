@@ -6,7 +6,6 @@ on:
       - 'queries/models/**/*.sql'
       - 'queries/models/**/*.yml'
       - 'queries/macros/**'
-      - 'queries/tests/**'
 
 concurrency:
   group: ci-recce-${{ github.ref }}
@@ -68,7 +67,7 @@ jobs:
           mapfile -t files < <(
             git diff --name-only "$BASE_SHA...HEAD" -- \
               'queries/models/**/*.sql' 'queries/models/**/*.yml' \
-              queries/macros/ queries/tests/
+              queries/macros/
           )
 
           if ((${#files[@]} == 0)); then
