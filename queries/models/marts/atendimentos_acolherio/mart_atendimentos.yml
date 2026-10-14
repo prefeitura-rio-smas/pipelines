@@ -7,7 +7,9 @@ models:
       atributos de auditoria e filtro. Inclui cancelados, registros TESTE,
       vínculos familiares encerrados e atendimentos sem cadastros associados.
       Os ranks são atributos para filtros opcionais no Looker; não excluem
-      linhas. Materializado como atendimentos, sem substituir a tabela legada dev_atendimentos.
+      linhas. Inclui perfil social atual do usuário, serviços da família e
+      comorbidades declaradas em gh_pac_info_med, sem reconstrução histórica.
+      Materializado como atendimentos, sem substituir a tabela legada dev_atendimentos.
     columns:
       - name: ID_ATENDIMENTO
         description: >
@@ -111,3 +113,83 @@ models:
         description: Indica presença de qualquer profissional compartilhado, mesmo quando o principal estiver ausente.
       - name: FLAG_REGISTRO_TESTE
         description: Indica TESTE no nome cadastral do usuário, unidade, operador ou qualquer profissional.
+      - name: SERVICOS_SOCIOASSISTENCIAIS
+        description: >
+          Nomes distintos dos serviços não cancelados da mesma ID_FAMILIA usada
+          para projetos. PAIF (1) e PAEFI (6) são mapeados; demais códigos são
+          exibidos como Serviço não mapeado (ID ...). Ausência permanece NULL.
+      - name: SERVICOS_SOCIOASSISTENCIAIS_HISTORICO
+        description: >
+          Todos os vínculos de serviços da família selecionada em ARRAY de STRUCT,
+          incluindo ID, nome, unidade, operador, cadastro e cancelamento.
+          Preserva vínculos cancelados e multiplicidade da origem.
+      - name: FLAG_POSSUI_VIOLACAO_DIREITO
+        description: >
+          Sim quando há violação no cadastro ou nas evoluções; Não somente com
+          N explícito no cadastro e sem violações identificadas; demais casos
+          são Não Informado. Perfil atual, não limitado à data do atendimento.
+        data_tests:
+          - not_null
+          - accepted_values:
+              arguments:
+                values: ['Sim', 'Não', 'Não Informado']
+      - name: VIOLACOES
+        description: Descrições distintas das violações do usuário, separadas por vírgula.
+      - name: VIOLACOES_DETALHES
+        description: ARRAY de STRUCT com código, descrição e origem (cadastro, evolucao ou ambas).
+      - name: FLAG_RECEBE_BENEFICIO
+        description: >
+          Sim/Não/Não Informado a partir da resposta explícita indrecbenef.
+          Não é inferido da lista de benefícios, que pode divergir do indicador.
+        data_tests:
+          - not_null
+          - accepted_values:
+              arguments:
+                values: ['Sim', 'Não', 'Não Informado']
+      - name: BENEFICIOS
+        description: Descrições distintas dos benefícios cadastrais, incluindo códigos não mapeados.
+      - name: BENEFICIOS_DETALHES
+        description: ARRAY de STRUCT com código e descrição, deduplicado por item e sem marcadores N/vazios.
+      - name: FLAG_DEFICIENCIA
+        description: >
+          Sim/Não/Não Informado a partir da resposta explícita indpresdefi.
+          Não é inferido da lista de deficiências.
+        data_tests:
+          - not_null
+          - accepted_values:
+              arguments:
+                values: ['Sim', 'Não', 'Não Informado']
+      - name: DEFICIENCIAS
+        description: Descrições distintas das deficiências cadastrais, incluindo códigos não mapeados.
+      - name: DEFICIENCIAS_DETALHES
+        description: ARRAY de STRUCT com código e descrição, deduplicado por item e sem marcadores N/vazios.
+      - name: FLAG_SITUACAO_RUA
+        description: >
+          Sim para indmoradi=5; Não para outras moradias conhecidas (1–4, 6–9,
+          A–D); Não Informado para E, ausência ou código desconhecido. Não usa
+          o tipo da unidade nem a flag legada que converte ausência em Não.
+        data_tests:
+          - not_null
+          - accepted_values:
+              arguments:
+                values: ['Sim', 'Não', 'Não Informado']
+      - name: FLAG_POSSUI_COMORBIDADE
+        description: >
+          Sim/Não/Não Informado a partir de indcomorb em gh_pac_info_med.
+          Preserva a resposta explícita, mesmo com descrição divergente ou ausente.
+        data_tests:
+          - not_null
+          - accepted_values:
+              arguments:
+                values: ['Sim', 'Não', 'Não Informado']
+      - name: COMORBIDADES
+        description: Texto livre dsccomorb, com espaços das pontas removidos e vazio convertido em NULL; sem classificação clínica.
+      - name: DATA_INFORMACAO_COMORBIDADES
+        description: Data datcomorbinfo da informação cadastral; não representa início da condição nem data do atendimento.
+      - name: LOCAL_TRATAMENTO_COMORBIDADES
+        description: Texto livre dsclocaltratcomorb, com espaços das pontas removidos e vazio convertido em NULL.
+      - name: COMORBIDADES_DETALHES
+        description: >
+          ARRAY com o registro médico cadastral original: origem, indicador,
+          descrição, data da informação, local de tratamento, data e unidade de
+          cadastro. Permite distinguir cadastro vazio de cadastro médico ausente.

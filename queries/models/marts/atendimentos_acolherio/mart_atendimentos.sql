@@ -372,7 +372,26 @@ select
     p.nomes_profissionais as PROFISSIONAIS_NOMES,
     p.flag_atendimento_compartilhado as FLAG_ATENDIMENTO_COMPARTILHADO,
     b.flag_usuario_teste or b.flag_unidade_teste or b.flag_operador_teste
-    or p.flag_algum_profissional_teste as FLAG_REGISTRO_TESTE
+    or p.flag_algum_profissional_teste as FLAG_REGISTRO_TESTE,
+    servicos.servicos_socioassistenciais as SERVICOS_SOCIOASSISTENCIAIS,
+    servicos.servicos_socioassistenciais_historico as SERVICOS_SOCIOASSISTENCIAIS_HISTORICO,
+    coalesce(perfil.flag_possui_violacao_direito, 'Não Informado') as FLAG_POSSUI_VIOLACAO_DIREITO,
+    perfil.violacoes as VIOLACOES,
+    perfil.violacoes_detalhes as VIOLACOES_DETALHES,
+    coalesce(perfil.flag_recebe_beneficio, 'Não Informado') as FLAG_RECEBE_BENEFICIO,
+    perfil.beneficios as BENEFICIOS,
+    perfil.beneficios_detalhes as BENEFICIOS_DETALHES,
+    coalesce(perfil.flag_deficiencia, 'Não Informado') as FLAG_DEFICIENCIA,
+    perfil.deficiencias as DEFICIENCIAS,
+    perfil.deficiencias_detalhes as DEFICIENCIAS_DETALHES,
+    coalesce(perfil.flag_situacao_rua, 'Não Informado') as FLAG_SITUACAO_RUA,
+    coalesce(perfil.flag_possui_comorbidade, 'Não Informado') as FLAG_POSSUI_COMORBIDADE,
+    perfil.comorbidades as COMORBIDADES,
+    perfil.data_informacao_comorbidades as DATA_INFORMACAO_COMORBIDADES,
+    perfil.local_tratamento_comorbidades as LOCAL_TRATAMENTO_COMORBIDADES,
+    perfil.comorbidades_detalhes as COMORBIDADES_DETALHES
 from numerados as b
 left join profissionais_por_atendimento as p on b.id_atendimento_modulo = p.id_atendimento_modulo
 left join projetos_familia as projetos on b.id_familia = projetos.id_familia
+left join {{ ref('int_servicos_familia_completos') }} as servicos on b.id_familia = servicos.id_familia
+left join {{ ref('int_perfil_social_usuarios') }} as perfil on b.id_usuario = perfil.id_usuario

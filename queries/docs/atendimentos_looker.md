@@ -73,7 +73,7 @@ Os IDs, CBOs e demais detalhes permanecem em `PROFISSIONAIS`.
 
 ## Informações adicionais
 
-As primeiras 39 colunas preservam os nomes e a ordem legados; o modelo tem 66 colunas e acrescenta
+As primeiras 39 colunas preservam os nomes e a ordem legados; o modelo tem 83 colunas e acrescenta
 IDs da origem, indicadores de cobertura e teste, datas de saída e atributos completos.
 O grão atendimento altera os totais e o significado dos IDs e ranks. A data pode permanecer ausente.
 
@@ -95,6 +95,54 @@ Os arrays preservam relações de um para muitos sem multiplicar o grão princip
 Ao usar `UNNEST` para analisar seus elementos, cuidado para não somar atendimentos
 uma vez por CBO, vínculo ou projeto.
 
+## Perfil social e comorbidades no dataviz geral
+
+O contrato acrescenta 17 colunas após as 66 anteriores, mantendo seus nomes,
+ordem e valores. Todos os enriquecimentos usam LEFT JOIN sobre relações com
+uma linha por usuário ou família; não filtram os atendimentos.
+
+| Tema | Campos | Origem e regra |
+| --- | --- | --- |
+| Serviços | `SERVICOS_SOCIOASSISTENCIAIS`, `SERVICOS_SOCIOASSISTENCIAIS_HISTORICO` | Família selecionada em `ID_FAMILIA`; resumo de não cancelados e array com todos os vínculos, inclusive cancelados. |
+| Violações | `FLAG_POSSUI_VIOLACAO_DIREITO`, `VIOLACOES`, `VIOLACOES_DETALHES` | Cadastro e evoluções de `int_usuarios_violacoes`; detalhes preservam código, descrição e origem. |
+| Benefícios | `FLAG_RECEBE_BENEFICIO`, `BENEFICIOS`, `BENEFICIOS_DETALHES` | Indicador indrecbenef e lista indqualbenef do cadastro de saúde mental. |
+| Deficiências | `FLAG_DEFICIENCIA`, `DEFICIENCIAS`, `DEFICIENCIAS_DETALHES` | Indicador indpresdefi e lista indtpdefi do cadastro de saúde mental. |
+| Situação de rua | `FLAG_SITUACAO_RUA` | Código original indmoradi: 5 é Sim; outras moradias conhecidas são Não; E, ausência e desconhecidos são Não Informado. |
+| Comorbidades | `FLAG_POSSUI_COMORBIDADE`, `COMORBIDADES`, `DATA_INFORMACAO_COMORBIDADES`, `LOCAL_TRATAMENTO_COMORBIDADES`, `COMORBIDADES_DETALHES` | Fonte específica gh_pac_info_med: indcomorb, dsccomorb, datcomorbinfo e dsclocaltratcomorb. |
+
+Os indicadores têm os valores `Sim`, `Não` e `Não Informado`. Ausência não é
+negativa. Para violações, qualquer item identificado tem prioridade sobre uma
+negativa cadastral; sem item, apenas N explícito no cadastro produz Não.
+Benefícios, deficiência e comorbidades usam a resposta explícita, sem inferi-la
+da descrição. Uma lista preenchida pode coexistir com indicador Não ou Não
+Informado: a divergência da origem é preservada.
+
+As listas de benefícios e deficiências removem itens repetidos, vazios e N;
+códigos sem tradução permanecem com o código visível. Os resumos em texto
+facilitam exibição; filtros por item devem usar o código do array, sem depender
+de busca parcial no texto. Os nomes de serviços validados são PAIF (1) e PAEFI
+(6), usados também no RMA. Os demais são exibidos como `Serviço não mapeado
+(ID ...)` até a validação do catálogo completo, sem perda de vínculos.
+
+Comorbidades permanecem em texto livre. Não se separa o conteúdo por vírgulas,
+não se inferem doenças nem se substitui esse campo por saúde mental, uso de
+substâncias ou respostas genéricas do formulário Situação de Saúde. O array de
+detalhes preserva os valores originais, inclusive descrição vazia ou divergente
+do indicador, e as datas/unidade do cadastro médico. Ter data preenchida não
+implica presença de comorbidade.
+
+Esses atributos representam o **cadastro atual**, inclusive violações registradas
+em evoluções posteriores ao atendimento. As datas expostas não reconstituem a
+situação histórica. Serviços e projetos usam a família selecionada pelo mart,
+não uma união de todas as famílias do usuário. Comorbidades, benefícios,
+deficiências, violações e situação de rua pertencem ao usuário atendido; não
+são propagados para todos os membros da família. Os projetos já disponíveis
+não constituem garantia de cobertura de todos os programas sociais externos.
+
+`COUNT(*)` continua contando atendimentos. Para pessoas atendidas, usar
+`COUNT(DISTINCT ID_USUARIO)`. Ao abrir os arrays, contar atendimentos distintos
+por `ID_ATENDIMENTO_MODULO` para evitar multiplicação entre itens.
+
 `EMAIL_PLANILHA` agrega todos os e-mails distintos da unidade em ordem alfabética.
 `EMAIL` combina CAS, unidade e planilha; componentes ausentes não anulam os demais.
 Os nomes de unidade ainda são associados por igualdade com a planilha.
@@ -108,3 +156,17 @@ O enriquecimento deve preservar todos os atendimentos de `int_atendimentos_compl
 com todas as suas posições profissionais dentro de `PROFISSIONAIS`.
 O fato `fct_atendimentos` usa essa mesma base, mantendo suas colunas e filtros
 anteriores para os consumidores existentes.
+
+### Validação da ampliação social — 14/10/2026
+
+Comparação das versões anterior e nova sobre as mesmas relações temporárias no
+BigQuery: **993.666 atendimentos/chaves únicas** em ambas, **1.022.354 posições
+profissionais** preservadas e **zero divergências nas 66 colunas anteriores**.
+O contrato novo tem **83 colunas**. Os testes de cobertura, preservação de todos
+os vínculos de serviços e preservação integral do cadastro de comorbidades
+retornaram zero falhas. Os dois testes unitários com cenários controlados passaram.
+Job de comparação: `b88c7ae5-cd66-4a31-b397-6c2ec35f68cc` (US, rj-smas-dev).
+
+A comparação usa os dados brutos atuais e um snapshot dos e-mails da planilha
+extraído da tabela já materializada. O CI usa a fonte real do Drive. Os totais
+são atendimentos, não pessoas únicas, e podem crescer em novas atualizações.

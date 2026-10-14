@@ -1,0 +1,26 @@
+version: 2
+models:
+  - name: int_perfil_social_usuarios
+    description: >
+      Perfil cadastral atual para dataviz, com uma linha por usuário, incluindo
+      TESTE e IDs ausentes no cadastro principal. Reutiliza os agregados de
+      violações, benefícios e deficiências. Não infere negativas por ausência.
+      Indicadores de benefício, deficiência e comorbidade preservam a resposta
+      explícita da origem mesmo quando as descrições divergem dela.
+      Comorbidades são texto livre de gh_pac_info_med, sem inferência clínica.
+    columns:
+      - name: id_usuario
+        data_tests:
+          - unique
+          - not_null
+  - name: int_servicos_familia_completos
+    description: >
+      Uma linha por família com resumo dos serviços não cancelados e histórico
+      completo de vínculos, incluindo datas, unidade e operador. PAIF (1) e
+      PAEFI (6) têm nomes validados nos modelos RMA; demais IDs são preservados
+      como não mapeados. Não modifica int_servicos_agregados nem seus consumidores.
+    columns:
+      - name: id_familia
+        data_tests:
+          - unique
+          - not_null
