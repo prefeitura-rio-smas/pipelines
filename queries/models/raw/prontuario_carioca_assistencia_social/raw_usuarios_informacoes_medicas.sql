@@ -1,4 +1,3 @@
--- Snapshot cadastral; não representa diagnósticos na data do atendimento.
 select
     seqpac as id_usuario,
     indcomorb as flag_possui_comorbidade,

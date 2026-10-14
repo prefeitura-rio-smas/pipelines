@@ -1,4 +1,3 @@
--- Contrato legado: uma linha por atendimento e profissional.
 select
     {{ dbt_utils.generate_surrogate_key(['a.id_atendimento_modulo', 'a.id_profissional']) }} as id_atendimento_sk,
     a.id_atendimento_modulo,

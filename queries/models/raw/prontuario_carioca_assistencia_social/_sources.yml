@@ -51,7 +51,6 @@ sources:
       - name: gh_pacientes_sm
         description: "Dados do módulo de Saúde Mental."
       - name: gh_pac_info_med
-        description: "Informações médicas cadastrais do usuário, incluindo comorbidades declaradas."
       - name: gh_evoluadm
         description: "Evoluções administrativas."
       - name: gh_evolupac

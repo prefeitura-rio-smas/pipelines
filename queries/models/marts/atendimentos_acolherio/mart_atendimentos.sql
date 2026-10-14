@@ -1,7 +1,6 @@
 {{ config(alias='atendimentos', tags=['acolherio_atendimentos_refresh']) }}
 
 -- noqa: disable=CP02,AL09,ST06
--- Uma linha por atendimento do módulo; os filtros são definidos no Looker.
 with atendimentos as (
     select
         *,

@@ -1,6 +1,5 @@
 {{ config(materialized='ephemeral') }}
 
--- Uma linha por atendimento e posição profissional.
 with atendimentos as (
     {% for modulo, modelo in [('familia', 'raw_atendimentos_familias'), ('usuario', 'raw_atendimentos_usuarios')] %}
         select

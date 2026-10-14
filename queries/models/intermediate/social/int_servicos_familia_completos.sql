@@ -1,9 +1,7 @@
--- Uma linha por família; inclui todos os vínculos no histórico.
 with servicos as (
     select
         *,
         case id_servico_assistencial
-            -- Códigos também usados nos modelos RMA CRAS/CREAS.
             when 1 then 'PAIF'
             when 6 then 'PAEFI'
             else format('Serviço não mapeado (ID %d)', id_servico_assistencial)

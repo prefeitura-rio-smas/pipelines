@@ -1,7 +1,0 @@
-version: 2
-models:
-  - name: raw_usuarios_informacoes_medicas
-    description: Cadastro de comorbidades de gh_pac_info_med, sem inferência clínica ou filtros.
-    columns:
-      - name: id_usuario
-        data_tests: [unique, not_null]

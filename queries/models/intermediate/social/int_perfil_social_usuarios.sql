@@ -1,4 +1,3 @@
--- Uma linha por usuário; preserva cadastros TESTE e IDs sem raw_usuarios.
 -- noqa: disable=ST06
 with usuarios as (
     select id_paciente as id_usuario from {{ ref('raw_usuarios_detalhes') }}
