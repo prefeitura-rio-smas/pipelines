@@ -29,8 +29,11 @@ atendimentos_candidatos as (
         safe_cast(a.data_atendimento as date) as data_atendimento,
         case
             -- Profissional de nível superior = grupo CBO 2 (descrições da fonte têm sufixo " CENTRO POP")
-            when {{ possui_cbo_grupo('coalesce(dp.codigos_cbo, [dp.cbo_principal_codigo])', '2') }}
-                then 'Atendimento Técnico'
+            when exists (
+                select 1
+                from unnest(coalesce(dp.codigos_cbo, [dp.cbo_principal_codigo])) as codigo_cbo
+                where starts_with(trim(codigo_cbo), '2')
+            ) then 'Atendimento Técnico'
             when a.tipo_atendimento_descricao like '%Recepção%' then 'Atendimento Recepção'
             when dp.nome = 'ATENDIMENTO RECEPÇÃO' then 'Atendimento Recepção'
             when
@@ -353,7 +356,23 @@ situacao_saude as (
 
 -- Última resposta e histórico de saúde da pessoa até o fechamento, em qualquer unidade.
 situacao_saude_mes as (
-    {{ situacao_saude_ate_mes('usuarios_mes', 'situacao_saude') }}
+    select
+        e.id_usuario_unidade_mes,
+        r.uso_substancias,
+        r.possui_acompanhamento_saude,
+        -- O histórico é agregado antes de escolher a última resposta do perfil.
+        logical_or(r.possui_problema_saude) over (
+            partition by e.id_usuario_unidade_mes
+        ) as possui_historico_problema_saude
+    from usuarios_mes as e
+    inner join situacao_saude as r
+        on
+            e.id_usuario = r.id_paciente
+            and {{ registro_ate_evento('r.data_evolucao', 'e.data_referencia') }}
+    qualify row_number() over (
+        partition by e.id_usuario_unidade_mes
+        order by r.data_evolucao desc, r.id_evolucao desc
+    ) = 1
 ),
 
 questionario_situacao_usuario as (
@@ -565,7 +584,8 @@ final as (
             from unnest(u.beneficio) as b
             order by b.codigo
         ), ', '), ''), 'Não Informado') as beneficio,
-        {{ map_resposta_sim_nao('u.flag_cadunico') }} as flag_possui_cadunico,
+        -- A origem já normaliza este campo com map_flag_cadunico.
+        coalesce(u.flag_cadunico, 'Não Informado') as flag_possui_cadunico,
         u.data_cadunico_informada,
         ic.data_atualizacao as data_atualizacao_cadunico,
         ic.data_limite_cadastro_atual as data_limite_atualizacao_cadunico,

@@ -45,6 +45,12 @@ uniao_atendimentos_base as (
     from atendimentos_usuarios
 ),
 
+-- Normaliza o principal uma vez, antes de combinar os profissionais do atendimento.
+atendimentos_normalizados as (
+    select * replace (safe_cast(trim(cast(id_profissional as string)) as int64) as id_profissional)
+    from uniao_atendimentos_base
+),
+
 -- Uma linha por atendimento e profissional, sem repetir IDs compartilhados.
 uniao_atendimentos as (
     select
@@ -59,10 +65,22 @@ uniao_atendimentos as (
         a.origem_modulo,
         a.flag_cancelado,
         a.id_login_cadastro
-    from uniao_atendimentos_base as a
-    cross join unnest({{ ids_profissionais_atendimento(
-        'a.id_profissional', 'a.id_profissional_compartilhado'
-    ) }}) as id_profissional_normalizado
+    from atendimentos_normalizados as a
+    cross join unnest(array_concat(
+        -- Preserva o principal, inclusive quando desconhecido, como primeiro elemento.
+        [a.id_profissional],
+        array(
+            select distinct id_compartilhado
+            from (
+                select safe_cast(trim(valor) as int64) as id_compartilhado
+                from unnest(split(a.id_profissional_compartilhado, ',')) as valor
+            ) as compartilhados
+            where
+                id_compartilhado is not null
+                and id_compartilhado != 0
+                and id_compartilhado is distinct from a.id_profissional
+        )
+    )) as id_profissional_normalizado
 ),
 
 operadores as (
