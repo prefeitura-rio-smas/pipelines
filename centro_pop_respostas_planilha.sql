@@ -4,7 +4,8 @@
 -- Produção: os dados refletem a última materialização da mart pelo dbt.
 -- Para revisar um PR, substitua a tabela no FROM pela tabela no dataset
 -- ci_<PR>__<SHA> informado no resumo do workflow CI - Recce Data Review.
-select
+-- A ordem das expressões segue o contrato da planilha.
+select -- noqa: ST06
     numero,
     mes_referencia,
     nome_centro_pop,

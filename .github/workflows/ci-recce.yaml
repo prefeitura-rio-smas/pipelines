@@ -4,6 +4,9 @@ on:
   pull_request:
     paths:
       - 'queries/models/**/*.sql'
+      - 'queries/models/**/*.yml'
+      - 'queries/macros/**'
+      - 'queries/tests/**'
 
 concurrency:
   group: ci-recce-${{ github.ref }}
@@ -55,34 +58,27 @@ jobs:
         with:
           credentials_json: ${{ secrets.GCP_CREDENTIALS }}
 
-      - name: List changed SQL models
+      - name: Detect changed dbt resources
         id: changed-models
         env:
           BASE_SHA: ${{ github.event.pull_request.base.sha }}
         run: |
           git cat-file -e "${BASE_SHA}^{commit}"
 
-          mapfile -t models < <(
-            git diff --name-only "$BASE_SHA...HEAD" -- 'queries/models/**/*.sql' |
-            sed 's|.*/||; s|\.sql$||' |
-            sort -u
+          mapfile -t files < <(
+            git diff --name-only "$BASE_SHA...HEAD" -- \
+              'queries/models/**/*.sql' 'queries/models/**/*.yml' \
+              queries/macros/ queries/tests/
           )
 
-          if ((${#models[@]} == 0)); then
-            echo "Nenhum modelo .sql alterado em queries/models/; Recce não será executado." >> "$GITHUB_STEP_SUMMARY"
+          if ((${#files[@]} == 0)); then
+            echo "Nenhum recurso dbt alterado; Recce não será executado." >> "$GITHUB_STEP_SUMMARY"
             echo "has_changes=false" >> "$GITHUB_OUTPUT"
             exit 0
           fi
 
-          selector=""
-          for m in "${models[@]}"; do
-            selector+="+$m "
-          done
-          selector="${selector%" "}"
-
           echo "has_changes=true" >> "$GITHUB_OUTPUT"
-          echo "selector=$selector" >> "$GITHUB_OUTPUT"
-          echo "Modelos alterados (git diff): ${models[*]}" >> "$GITHUB_STEP_SUMMARY"
+          echo "Recursos dbt alterados (git diff): ${files[*]}" >> "$GITHUB_STEP_SUMMARY"
 
       - name: DBT Deps
         if: steps.changed-models.outputs.has_changes == 'true' && steps.check-creds.outputs.has_creds == 'true'

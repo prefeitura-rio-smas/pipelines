@@ -1,0 +1,17 @@
+version: 2
+
+data_tests:
+  - name: test_ids_profissionais_atendimento
+    description: Profissionais principais e compartilhados preservam IDs válidos sem duplicatas, incluindo principal desconhecido.
+  - name: test_respostas_normalizadas
+    description: Respostas S/Sim e N/Não são normalizadas; desconhecidos recebem um único rótulo.
+  - name: test_marcadores_saude
+    description: Negativas explícitas e marcadores desconhecidos de saúde não viram evidências positivas.
+  - name: test_cbo_grupo
+    description: Um CBO secundário do grupo 2 é reconhecido; ausência ou array vazio não indica nível superior.
+  - name: test_historico_saude_no_fechamento
+    description: A última resposta e o histórico tem ou teve respeitam o corte mensal, desconhecidos e desempate por ID.
+  - name: test_datas_atendimento_tecnico
+    description: A última data técnica respeita o fechamento e preserva o próprio evento técnico, inclusive sem usuário identificado.
+  - name: test_historico_saude_persistente
+    description: Evidência positiva de problema de saúde permanece positiva nos meses seguintes.

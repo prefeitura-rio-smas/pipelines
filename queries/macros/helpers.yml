@@ -1,6 +1,50 @@
 version: 2
 
 macros:
+  - name: ids_profissionais_atendimento
+    description: "Retorna IDs INT64 distintos do principal e dos profissionais compartilhados, com o principal primeiro. Preserva o principal desconhecido; descarta inválidos e zero da lista secundária."
+    arguments:
+      - name: id_principal
+        type: string
+        description: "Expressão SQL do ID do profissional principal."
+      - name: ids_compartilhados
+        type: string
+        description: "Expressão SQL da lista textual de IDs separados por vírgula."
+
+  - name: map_resposta_sim_nao
+    description: "Normaliza respostas S/Sim e N/Não/nao para Sim/Não, ignorando caixa e espaços nas pontas. Demais valores retornam Não Informado."
+    arguments:
+      - name: coluna
+        type: string
+        description: "Expressão SQL textual da resposta."
+
+  - name: interpretar_resposta_saude
+    description: "Interpreta campos livres do formulário Situação de Saúde do Centro POP: negativas explícitas retornam FALSE, marcadores desconhecidos NULL e demais textos TRUE. Não interpreta frases."
+    arguments:
+      - name: coluna
+        type: string
+        description: "Expressão SQL textual da situação de saúde ou do local de tratamento."
+
+  - name: situacao_saude_ate_mes
+    description: "Seleciona a última resposta de saúde e agrega o histórico tem ou teve até o fechamento do mês, por usuário/unidade/mês. Respostas são associadas pela pessoa, em qualquer unidade."
+    arguments:
+      - name: usuarios_mes
+        type: string
+        description: "Relação SQL com id_usuario, id_usuario_unidade_mes e data_referencia."
+      - name: respostas_saude
+        type: string
+        description: "Relação SQL com respostas normalizadas, id_paciente, id_evolucao e data_evolucao."
+
+  - name: possui_cbo_grupo
+    description: "Verifica se algum código do array CBO começa pelo grupo informado. Array ausente ou vazio retorna FALSE."
+    arguments:
+      - name: codigos_cbo
+        type: string
+        description: "Expressão SQL ARRAY<STRING> dos códigos CBO."
+      - name: grupo
+        type: string
+        description: "Prefixo do grupo CBO, por exemplo 2 para profissionais de nível superior."
+
   - name: map_flag_situacao_rua
     description: "Traduz indmoradi: código 5 = Sim; códigos 1–4, 6–9 e A–D = Não; E, ausência e códigos fora do domínio = NULL. Normaliza espaços, caixa e representações inteiras dos códigos numéricos."
     arguments:

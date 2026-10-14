@@ -6,4 +6,4 @@ models:
       - name: numero_processo_decisao_apoiada
         description: "Conteúdo cadastral de dsctomdecproces, preservado como informado. O flag em int_usuarios indica se este campo está preenchido."
       - name: flag_cadunico
-        description: "S = Sim, N = Não; ausência ou resposta inválida é NULL."
+        description: "Valores de saída Sim/Não/NULL. Na origem indcadunico, S é convertido em Sim e N em Não; ausência ou resposta inválida é NULL."
