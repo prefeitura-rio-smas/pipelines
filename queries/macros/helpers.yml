@@ -1,20 +1,6 @@
 version: 2
 
 macros:
-  - name: map_resposta_sim_nao
-    description: "Normaliza respostas S/Sim e N/Não/nao para Sim/Não, ignorando caixa e espaços nas pontas. Demais valores retornam Não Informado."
-    arguments:
-      - name: coluna
-        type: string
-        description: "Expressão SQL textual da resposta."
-
-  - name: interpretar_resposta_saude
-    description: "Interpreta campos livres do formulário Situação de Saúde do Centro POP: negativas explícitas retornam FALSE, marcadores desconhecidos NULL e demais textos TRUE. Não interpreta frases."
-    arguments:
-      - name: coluna
-        type: string
-        description: "Expressão SQL textual da situação de saúde ou do local de tratamento."
-
   - name: map_flag_situacao_rua
     description: "Traduz indmoradi: código 5 = Sim; códigos 1–4, 6–9 e A–D = Não; E, ausência e códigos fora do domínio = NULL. Normaliza espaços, caixa e representações inteiras dos códigos numéricos."
     arguments:
