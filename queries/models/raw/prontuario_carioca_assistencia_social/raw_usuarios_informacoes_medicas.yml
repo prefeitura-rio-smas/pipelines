@@ -1,18 +1,7 @@
 version: 2
 models:
   - name: raw_usuarios_informacoes_medicas
-    description: >
-      Snapshot de gh_pac_info_med, com uma linha por usuário, sem filtro de
-      cadastro ou TESTE. Preserva indicador, texto livre, data da informação
-      de comorbidades, local de tratamento e cadastro da origem.
+    description: Cadastro de comorbidades de gh_pac_info_med, sem inferência clínica ou filtros.
     columns:
       - name: id_usuario
-        data_tests:
-          - unique
-          - not_null
-      - name: flag_possui_comorbidade
-        description: Indicador indcomorb da origem; S, N ou ausência de informação.
-      - name: descricao_comorbidades
-        description: Texto livre dsccomorb, sem inferência ou classificação de doenças.
-      - name: data_informacao_comorbidades
-        description: Data datcomorbinfo; não representa o início da condição.
+        data_tests: [unique, not_null]

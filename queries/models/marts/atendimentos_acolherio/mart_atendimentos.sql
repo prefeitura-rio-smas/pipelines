@@ -10,21 +10,10 @@ with atendimentos as (
     where flag_profissional_principal
 ),
 
-familia_usuario as (
+familias as (
     select
         id_paciente,
-        id_familia,
-        data_saida
-    from {{ ref('raw_membros_familia') }}
-    qualify row_number() over (
-        partition by id_paciente
-        order by data_saida desc nulls first, data_entrada desc, id_familia desc
-    ) = 1
-),
-
-vinculos_familia_usuario as (
-    select
-        id_paciente,
+        array_agg(struct(id_familia, data_saida) order by data_saida is null desc, data_saida desc, data_entrada desc, id_familia desc limit 1)[offset(0)] as principal,
         array_agg(struct(
             id_membro, id_familia, data_entrada, data_saida,
             id_familia_nova, id_motivo_saida, parentesco_responsavel
@@ -79,56 +68,12 @@ profissionais_cbo as (
     group by id_profissional
 ),
 
-catalogo_projetos_sociais as (
-    select
-        id_projeto_social,
-        nome_projeto_social
-    from unnest(array<struct<id_projeto_social int64, nome_projeto_social string>>[
-        (1, 'Territórios Sociais'),
-        (2, 'Pequenos Cariocas'),
-        (3, 'MCMV - Minha Casa Minha Vida'),
-        (4, 'Alimenta Rio'),
-        (5, 'Banco de Alimentos/Cozinha Comunitária'),
-        (6, 'Banco Carioca de Bolsa de Estudos'),
-        (7, 'Projetos de Empreendedorismo'),
-        (8, 'PRONASCI Juventude'),
-        (9, 'Agente Experiente'),
-        (10, 'Amparando Filhos'),
-        (11, 'Bora pra Escola'),
-        (12, 'DAM+'),
-        (13, 'De Mãos Dadas'),
-        (14, 'De Volta a Terra Natal'),
-        (15, 'Escritório Social'),
-        (16, 'Garupa'),
-        (17, 'Guarda Subsidiada'),
-        (18, 'Jovem Aprendiz'),
-        (19, 'Lares Cariocas'),
-        (20, 'Moradia com Apoio'),
-        (21, 'Novos Rumos'),
-        (22, 'Passo a Passo'),
-        (23, 'Penas e Medidas Alternativas'),
-        (24, 'PETI - Errad. Trab. Infantil'),
-        (25, 'Projetos de Qualificação Profissional'),
-        (26, 'Reinserção familiar ou comunitária'),
-        (27, 'SUAS Acolhendo Talentos'),
-        (28, 'Vem com a gente'),
-        (29, 'Rio Dignidade'),
-        (30, 'Idoso em Família'),
-        (31, 'Projovem Urbano'),
-        (32, 'Tô de Boa')
-    ])
-),
-
 projetos as (
     select
         vinculo.*,
-        coalesce(
-            catalogo.nome_projeto_social,
-            format('Projeto não mapeado (ID %d)', vinculo.id_projeto_social)
-        ) as nome_projeto_social,
+        {{ map_nome_projeto_social('vinculo.id_projeto_social') }} as nome_projeto_social,
         vinculo.indicador_ativo = 'S' and vinculo.data_cancelamento is null as flag_ativo
     from {{ ref('raw_familias_projetos_sociais') }} as vinculo
-    left join catalogo_projetos_sociais as catalogo on vinculo.id_projeto_social = catalogo.id_projeto_social
 ),
 
 projetos_familia as (
@@ -149,9 +94,9 @@ projetos_familia as (
 base as (
     select
         a.* except (id_familia),
-        coalesce(a.id_familia, familia.id_familia) as id_familia,
-        familia.data_saida as data_saida_vinculo_familiar,
-        vinculos.vinculos_familiares,
+        coalesce(a.id_familia, if(a.origem_modulo = 'usuario', familia.principal.id_familia, null)) as id_familia,
+        if(a.origem_modulo = 'usuario', familia.principal.data_saida, null) as data_saida_vinculo_familiar,
+        familia.vinculos_familiares,
         unidade.cas,
         case
             when unidade.nome_unidade like 'CENTRO POP%' then 'CENTRO POP'
@@ -186,8 +131,7 @@ base as (
     left join {{ ref('raw_unidades') }} as unidade on a.id_unidade = unidade.id_unidade
     left join {{ ref('raw_operadores') }} as operador on a.id_login_cadastro = operador.id_login
     left join {{ ref('raw_tipos_atendimento') }} as tipo on a.id_tipo_atendimento = tipo.id_tipo_atendimento
-    left join familia_usuario as familia on a.origem_modulo = 'usuario' and a.id_usuario = familia.id_paciente
-    left join vinculos_familia_usuario as vinculos on a.id_usuario = vinculos.id_paciente
+    left join familias as familia on a.id_usuario = familia.id_paciente
     left join filtro_emails as filtro on unidade.nome_unidade = filtro.unidade_atendimento
 ),
 
@@ -218,18 +162,6 @@ profissionais as (
     left join profissionais_cbo as cbo on a.id_profissional = cbo.id_profissional
 ),
 
-tipos_profissionais as (
-    select
-        p.*,
-        case
-            when p.nome_atendimento_original like '%Recepção%' or p.nome = 'ATENDIMENTO RECEPÇÃO' then 'Atendimento Recepção'
-            when p.flag_cbo_tecnico then 'Atendimento Técnico'
-            when p.flag_cbo_recepcao and p.nome_atendimento_original like '%CadÚnico%' then 'Atendimento Recepção'
-            else 'Outros Atendimentos'
-        end as tipo_atendimento
-    from profissionais as p
-),
-
 profissionais_classificados as (
     select
         p.id_atendimento_modulo,
@@ -241,10 +173,10 @@ profissionais_classificados as (
             p.cbos,
             p.cbo_original,
             p.cbo,
-            p.tipo_atendimento,
+            {{ classificar_atendimento('p') }} as tipo_atendimento,
             case
                 when
-                    p.tipo_atendimento = 'Atendimento Recepção' and p.flag_cbo_recepcao
+                    {{ classificar_atendimento('p') }} = 'Atendimento Recepção' and p.flag_cbo_recepcao
                     and p.tipo_unidade in ('CRAS', 'CREAS') and p.nome_atendimento_original like '%CadÚnico%'
                     then concat(p.tipo_unidade, ' - Recepção - Ação CadÚnico')
                 else p.nome_atendimento_original
@@ -252,14 +184,14 @@ profissionais_classificados as (
             p.flag_cadastrado,
             p.flag_teste
         ) as profissional
-    from tipos_profissionais as p
+    from profissionais as p
 ),
 
 profissionais_por_atendimento as (
     select
         id_atendimento_modulo,
         array_agg(profissional order by profissional.flag_principal desc, profissional.id_profissional asc) as profissionais,
-        array_agg(profissional order by profissional.flag_principal desc, profissional.id_profissional asc limit 1)[offset(0)] as principal,
+        any_value(if(profissional.flag_principal, profissional, null)) as principal,
         string_agg(distinct nullif(profissional.nome, ''), ', ' order by nullif(profissional.nome, '')) as nomes_profissionais,
         countif(profissional.id_profissional is not null) as quantidade_profissionais,
         countif(not profissional.flag_principal) > 0 as flag_atendimento_compartilhado,
@@ -271,16 +203,6 @@ profissionais_por_atendimento as (
         end as tipo_atendimento
     from profissionais_classificados
     group by id_atendimento_modulo
-),
-
-numerados as (
-    select
-        b.*,
-        row_number() over (
-            partition by b.id_usuario, b.id_unidade, b.data_atendimento, b.hora, b.nome_atendimento_original
-            order by b.data_cadastro_atendimento, b.id_atendimento_modulo
-        ) as rank_atendimento
-    from base as b
 )
 
 select
@@ -343,7 +265,10 @@ select
     b.id_atendimento_modulo as ID_ATENDIMENTO,
     concat(coalesce(b.email_cas, ''), ',', coalesce(b.email_unidade, ''), ',', coalesce(b.email_planilha, '')) as EMAIL,
     1 as cbo_unico_rank,
-    b.rank_atendimento as atendimento_unico_rank,
+    row_number() over (
+        partition by b.id_usuario, b.id_unidade, b.data_atendimento, b.hora, b.nome_atendimento_original
+        order by b.data_cadastro_atendimento, b.id_atendimento_modulo
+    ) as atendimento_unico_rank,
     projetos.projetos_sociais as PROJETOS_SOCIAIS,
     {{ dbt_utils.generate_surrogate_key(['b.id_atendimento_modulo']) }} as ID_ATENDIMENTO_SK,
     b.id_atendimento_modulo as ID_ATENDIMENTO_MODULO,
@@ -390,7 +315,7 @@ select
     perfil.data_informacao_comorbidades as DATA_INFORMACAO_COMORBIDADES,
     perfil.local_tratamento_comorbidades as LOCAL_TRATAMENTO_COMORBIDADES,
     perfil.comorbidades_detalhes as COMORBIDADES_DETALHES
-from numerados as b
+from base as b
 left join profissionais_por_atendimento as p on b.id_atendimento_modulo = p.id_atendimento_modulo
 left join projetos_familia as projetos on b.id_familia = projetos.id_familia
 left join {{ ref('int_servicos_familia_completos') }} as servicos on b.id_familia = servicos.id_familia

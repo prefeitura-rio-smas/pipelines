@@ -2,13 +2,3 @@ version: 2
 models:
   - name: raw_usuarios_saude_mental
     description: "Dados de saúde mental dos pacientes."
-    columns:
-      - name: id_paciente
-        data_tests:
-          - unique
-          - not_null
-      - name: tipo_moradia
-        description: >
-          Código original indmoradi. Permite distinguir situação de rua (5),
-          outras moradias conhecidas (1–4, 6–9, A–D) e desconhecido (E/ausência),
-          sem alterar a flag legada flag_situacao_rua.

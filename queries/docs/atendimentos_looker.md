@@ -1,172 +1,43 @@
 # Atendimentos no Looker
 
-O modelo `mart_atendimentos` materializa a tabela `atendimentos`: em produção,
-`rj-smas.marts.atendimentos`; no alvo dev, `rj-smas-dev.relatorio.atendimentos`.
-Não substitui a tabela legada `dev_atendimentos`.
+`mart_atendimentos` gera `rj-smas.marts.atendimentos` (`rj-smas-dev.relatorio.atendimentos` em dev).
+São 83 colunas e uma linha por `ID_ATENDIMENTO_MODULO`, sem filtros de cancelamento, TESTE ou cadastro ausente.
 
-## Grão e cobertura
+## Contagem e filtros
 
-Uma linha representa um atendimento do módulo família ou usuário, identificado
-por `ID_ATENDIMENTO_MODULO`. O mart agrega os profissionais principais e
-compartilhados em `PROFISSIONAIS`, sem multiplicar os atendimentos.
+- `COUNT(*)` conta atendimentos; `COUNT(DISTINCT ID_USUARIO)` conta pessoas.
+- `ID_ATENDIMENTO` é igual a `ID_ATENDIMENTO_MODULO`; `ID_ATENDIMENTO_SK` é seu hash.
+- Cancelamento, TESTE e ausência de cadastro são expostos em `FLAG_*` para filtros no Looker.
+- `atendimento_unico_rank` deduplica por usuário, unidade, data, hora e nome original. O rank é calculado antes dos filtros do Looker; `cbo_unico_rank` é sempre 1.
+- Ao abrir arrays, contar atendimentos distintos para evitar multiplicação por profissional, vínculo ou item social.
 
-A base inclui cancelados, registros cujos nomes contêm `TESTE`, atendimentos sem
-cadastros associados e usuários com vínculos familiares encerrados. A ausência
-de nome, data ou profissional não elimina o atendimento. O mart não aplica filtros
-pelos ranks de deduplicação.
+## Profissionais e família
 
-`ID_ATENDIMENTO` é igual a `ID_ATENDIMENTO_MODULO`. `ID_ATENDIMENTO_SK` é o hash
-desse identificador, independente dos profissionais. `COUNT(*)` conta atendimentos.
-A mudança substitui o formato anterior atendimento-profissional de `ID_ATENDIMENTO`.
+`PROFISSIONAIS` contém principal e compartilhados. Os campos individuais representam o principal, inclusive quando ausente.
+Compartilhados inválidos, zero, repetidos ou iguais ao principal são descartados; a posição principal ausente é preservada.
+A classificação respeita Recepção explícita; nos demais casos, considera todos os CBOs e prioriza Técnico, depois recepção com CadÚnico, depois Outros.
+O atendimento consolida Técnico se qualquer profissional for técnico; senão Recepção se houver profissional classificado como Recepção; senão Outros.
 
-Os campos individuais `PROFISSIONAL_ID`, `PROFISSIONAL`, `PROFISSIONAL_CBO`,
-`PROFISSIONAL_CBOS` e indicadores correspondentes representam o profissional
-principal da origem. Se ele estiver ausente, permanecem ausentes, mesmo quando
-houver compartilhados; não se escolhe um substituto arbitrário.
+Serviços e projetos usam a família do atendimento familiar ou o vínculo priorizado do usuário: aberto primeiro, depois saída mais recente.
+`VINCULOS_FAMILIARES` preserva todos os vínculos. Essa seleção não reconstrói a família na data do atendimento.
+Os e-mails da planilha são agregados por nome de unidade e combinados com os da unidade/CAS, mesmo quando algum componente falta.
 
-`PROFISSIONAIS` preserva todas as posições profissionais em structs com ID,
-nome, CBOs, classificação, indicação de principal e flags cadastrais/de teste.
-A posição do principal ausente é preservada com ID NULL. `QUANTIDADE_PROFISSIONAIS`
-conta somente profissionais com ID preenchido. Códigos compartilhados inválidos,
-zero, repetidos na lista ou iguais ao principal não geram posições adicionais.
+## Perfil social atual
 
-A classificação de cada profissional preserva a indicação explícita de Recepção
-no nome do atendimento ou do profissional. Nos demais casos, avalia todos os CBOs:
-
-1. Técnico: qualquer CBO de Advogado, Assistente social, Pedagogo ou Psicólogo.
-2. Recepção: qualquer CBO de recepção com atendimento CadÚnico.
-3. Outros Atendimentos.
-
-Os CBOs de recepção são Administrador, Articulador Comunitário, Assistente
-administrativo, Educador social, Orientador social e Recepcionista. Entre CBOs,
-Técnico tem prioridade sobre Recepção. As descrições preservam a normalização
-por prefixos da origem; o valor original permanece disponível.
-
-`TIPO_ATENDIMENTO` consolida os profissionais: Técnico se algum for Técnico;
-senão Recepção se algum for Recepção; senão Outros Atendimentos. O primeiro CBO
-continua exposto nos campos resumidos e não limita a classificação.
-`NOME_ATENDIMENTO` mantém o resumo pelas regras do principal; a classificação e
-os nomes individuais estão disponíveis dentro de `PROFISSIONAIS`.
-
-## Filtros no Looker
-
-| Campo | Uso |
+| Tema | Origem e saída |
 | --- | --- |
-| `FLAG_CANCELADO` | Excluir `S` para considerar apenas não cancelados; decidir explicitamente como tratar ausência. |
-| `FLAG_USUARIO_TESTE`, `FLAG_UNIDADE_TESTE`, `FLAG_OPERADOR_TESTE`, `FLAG_PROFISSIONAL_TESTE` | Excluir registros de teste quando necessário. Identificação por nome, sem distinguir caixa. |
-| `FLAG_*_CADASTRADO` | Identificar ausência de correspondência cadastral sem perder os IDs da origem. |
-| `FLAG_REGISTRO_TESTE` | Identificar TESTE em usuário, unidade, operador ou qualquer profissional com um único filtro. |
-| `FLAG_ATENDIMENTO_COMPARTILHADO` | Identificar presença de profissional compartilhado, inclusive com principal ausente. |
-| `FLAG_ALGUM_PROFISSIONAL_TESTE` | Identificar teste em qualquer profissional, incluindo compartilhados. |
-| `DATA_SAIDA_VINCULO_FAMILIAR` | Identificar vínculo resumido encerrado no módulo usuário. |
-| `DATA_SAIDA_ATENDIMENTO` | Saída do próprio atendimento, diferente da saída familiar. |
-| `atendimento_unico_rank` | Selecionar `1` para deduplicar atendimentos por usuário, unidade, data, hora e nome original, independente dos profissionais. Todas as posições ficam disponíveis. |
-| `cbo_unico_rank` | Sempre 1 no grão atendimento; mantido por compatibilidade de nomes. |
+| Projetos | Cadastro da família: resumo dos ativos/não cancelados e histórico completo. Não garante cobertura de programas externos. |
+| Serviços | Cadastro da família: resumo dos não cancelados e histórico completo. PAIF (1) e PAEFI (6) têm nomes validados; demais IDs permanecem visíveis como não mapeados. |
+| Violações | Cadastro e evoluções do usuário; detalhes preservam código, descrição e origem. Qualquer item identificado prevalece sobre N cadastral. |
+| Benefícios e deficiências | Indicadores explícitos e listas cadastrais; itens repetidos, vazios e N são removidos, códigos sem tradução são preservados. |
+| Situação de rua | indmoradi=5: Sim; outras moradias conhecidas: Não; E, ausência ou desconhecido: Não Informado. |
+| Comorbidades | gh_pac_info_med: indcomorb, dsccomorb, datcomorbinfo e dsclocaltratcomorb. Texto livre, data/local de tratamento e registro original nos detalhes. |
 
-Os filtros anteriores não representam uma configuração obrigatória do dashboard.
-Cada análise escolhe a população adequada. Os ranks são calculados sobre a base
-ampla; filtrá-los depois de outros atributos não recalcula sua numeração.
+Os indicadores distinguem `Sim`, `Não` e `Não Informado`; ausência não é negativa.
+Benefícios, deficiência e comorbidades não são inferidos da descrição: divergências entre indicador e texto são preservadas.
+Os resumos em texto servem para exibição; filtros por item devem usar os códigos dos arrays.
+O perfil é cadastral atual, incluindo evoluções posteriores ao atendimento, sem inferência clínica ou reconstrução histórica.
+A data de informação de comorbidades não indica o início da condição.
 
-`PROFISSIONAIS_NOMES` permite exibir todos os nomes sem abrir o array. Contém
-nomes distintos e não vazios, separados por vírgula e em ordem alfabética.
-Os IDs, CBOs e demais detalhes permanecem em `PROFISSIONAIS`.
-
-## Informações adicionais
-
-As primeiras 39 colunas preservam os nomes e a ordem legados; o modelo tem 83 colunas e acrescenta
-IDs da origem, indicadores de cobertura e teste, datas de saída e atributos completos.
-O grão atendimento altera os totais e o significado dos IDs e ranks. A data pode permanecer ausente.
-
-`PROFISSIONAL_CBOS` contém os códigos e descrições do principal em um array de structs.
-`PROFISSIONAL_CBO` e `PROFISSIONAL_CBO_ORIGINAL` continuam como resumos do primeiro
-CBO traduzível ordenado por código. `PROFISSIONAL_NOME_CADASTRAL` preserva o nome
-anterior à substituição pelo operador em profissionais genéricos.
-
-`VINCULOS_FAMILIARES` preserva todos os vínculos do usuário. O `ID_FAMILIA` resumido
-usa a família do atendimento familiar ou um vínculo selecionado no módulo usuário:
-prioriza aberto e, entre encerrados, a saída mais recente. Não reconstrói a família
-na data do atendimento.
-
-`PROJETOS_SOCIAIS` continua resumindo os projetos ativos e não cancelados da família
-selecionada. `PROJETOS_SOCIAIS_HISTORICO` inclui também vínculos inativos e cancelados,
-com as datas e indicadores da origem. Esses dados são um snapshot cadastral.
-
-Os arrays preservam relações de um para muitos sem multiplicar o grão principal.
-Ao usar `UNNEST` para analisar seus elementos, cuidado para não somar atendimentos
-uma vez por CBO, vínculo ou projeto.
-
-## Perfil social e comorbidades no dataviz geral
-
-O contrato acrescenta 17 colunas após as 66 anteriores, mantendo seus nomes,
-ordem e valores. Todos os enriquecimentos usam LEFT JOIN sobre relações com
-uma linha por usuário ou família; não filtram os atendimentos.
-
-| Tema | Campos | Origem e regra |
-| --- | --- | --- |
-| Serviços | `SERVICOS_SOCIOASSISTENCIAIS`, `SERVICOS_SOCIOASSISTENCIAIS_HISTORICO` | Família selecionada em `ID_FAMILIA`; resumo de não cancelados e array com todos os vínculos, inclusive cancelados. |
-| Violações | `FLAG_POSSUI_VIOLACAO_DIREITO`, `VIOLACOES`, `VIOLACOES_DETALHES` | Cadastro e evoluções de `int_usuarios_violacoes`; detalhes preservam código, descrição e origem. |
-| Benefícios | `FLAG_RECEBE_BENEFICIO`, `BENEFICIOS`, `BENEFICIOS_DETALHES` | Indicador indrecbenef e lista indqualbenef do cadastro de saúde mental. |
-| Deficiências | `FLAG_DEFICIENCIA`, `DEFICIENCIAS`, `DEFICIENCIAS_DETALHES` | Indicador indpresdefi e lista indtpdefi do cadastro de saúde mental. |
-| Situação de rua | `FLAG_SITUACAO_RUA` | Código original indmoradi: 5 é Sim; outras moradias conhecidas são Não; E, ausência e desconhecidos são Não Informado. |
-| Comorbidades | `FLAG_POSSUI_COMORBIDADE`, `COMORBIDADES`, `DATA_INFORMACAO_COMORBIDADES`, `LOCAL_TRATAMENTO_COMORBIDADES`, `COMORBIDADES_DETALHES` | Fonte específica gh_pac_info_med: indcomorb, dsccomorb, datcomorbinfo e dsclocaltratcomorb. |
-
-Os indicadores têm os valores `Sim`, `Não` e `Não Informado`. Ausência não é
-negativa. Para violações, qualquer item identificado tem prioridade sobre uma
-negativa cadastral; sem item, apenas N explícito no cadastro produz Não.
-Benefícios, deficiência e comorbidades usam a resposta explícita, sem inferi-la
-da descrição. Uma lista preenchida pode coexistir com indicador Não ou Não
-Informado: a divergência da origem é preservada.
-
-As listas de benefícios e deficiências removem itens repetidos, vazios e N;
-códigos sem tradução permanecem com o código visível. Os resumos em texto
-facilitam exibição; filtros por item devem usar o código do array, sem depender
-de busca parcial no texto. Os nomes de serviços validados são PAIF (1) e PAEFI
-(6), usados também no RMA. Os demais são exibidos como `Serviço não mapeado
-(ID ...)` até a validação do catálogo completo, sem perda de vínculos.
-
-Comorbidades permanecem em texto livre. Não se separa o conteúdo por vírgulas,
-não se inferem doenças nem se substitui esse campo por saúde mental, uso de
-substâncias ou respostas genéricas do formulário Situação de Saúde. O array de
-detalhes preserva os valores originais, inclusive descrição vazia ou divergente
-do indicador, e as datas/unidade do cadastro médico. Ter data preenchida não
-implica presença de comorbidade.
-
-Esses atributos representam o **cadastro atual**, inclusive violações registradas
-em evoluções posteriores ao atendimento. As datas expostas não reconstituem a
-situação histórica. Serviços e projetos usam a família selecionada pelo mart,
-não uma união de todas as famílias do usuário. Comorbidades, benefícios,
-deficiências, violações e situação de rua pertencem ao usuário atendido; não
-são propagados para todos os membros da família. Os projetos já disponíveis
-não constituem garantia de cobertura de todos os programas sociais externos.
-
-`COUNT(*)` continua contando atendimentos. Para pessoas atendidas, usar
-`COUNT(DISTINCT ID_USUARIO)`. Ao abrir os arrays, contar atendimentos distintos
-por `ID_ATENDIMENTO_MODULO` para evitar multiplicação entre itens.
-
-`EMAIL_PLANILHA` agrega todos os e-mails distintos da unidade em ordem alfabética.
-`EMAIL` combina CAS, unidade e planilha; componentes ausentes não anulam os demais.
-Os nomes de unidade ainda são associados por igualdade com a planilha.
-
-## Proteção da cobertura
-
-Os testes verificam unicidade e preenchimento de `ID_ATENDIMENTO_SK`, domínio do
-módulo, unicidade do identificador natural e cobertura dos atendimentos e profissionais
-da origem.
-O enriquecimento deve preservar todos os atendimentos de `int_atendimentos_completos`,
-com todas as suas posições profissionais dentro de `PROFISSIONAIS`.
-O fato `fct_atendimentos` usa essa mesma base, mantendo suas colunas e filtros
-anteriores para os consumidores existentes.
-
-### Validação da ampliação social — 14/10/2026
-
-Comparação das versões anterior e nova sobre as mesmas relações temporárias no
-BigQuery: **993.666 atendimentos/chaves únicas** em ambas, **1.022.354 posições
-profissionais** preservadas e **zero divergências nas 66 colunas anteriores**.
-O contrato novo tem **83 colunas**. Os testes de cobertura, preservação de todos
-os vínculos de serviços e preservação integral do cadastro de comorbidades
-retornaram zero falhas. Os dois testes unitários com cenários controlados passaram.
-Job de comparação: `b88c7ae5-cd66-4a31-b397-6c2ec35f68cc` (US, rj-smas-dev).
-
-A comparação usa os dados brutos atuais e um snapshot dos e-mails da planilha
-extraído da tabela já materializada. O CI usa a fonte real do Drive. Os totais
-são atendimentos, não pessoas únicas, e podem crescer em novas atualizações.
+A tabela legada `dev_atendimentos` e o contrato do fato legado são preservados.
+Testes verificam chaves, cobertura de atendimentos/profissionais, serviços, comorbidades e os casos de ausência/negação.
