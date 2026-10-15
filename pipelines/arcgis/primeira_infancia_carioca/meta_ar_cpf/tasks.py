@@ -6,7 +6,10 @@ from prefect import task
 import requests
 
 from pipelines.arcgis.constants import settings
-from pipelines.arcgis.primeira_infancia_carioca.tasks import _to_arcgis_value
+from pipelines.arcgis.primeira_infancia_carioca.tasks import (
+    _DATE_CLASSIC_COLUMNS,
+    _to_arcgis_value,
+)
 from pipelines.arcgis.utils import _get_arcgis_token, bq_client, resolve_arcgis_url
 
 # Resolve dataset e nomes de tabela por ambiente (MODE)
@@ -88,6 +91,16 @@ def apply_arcgis_adds(item_id: str, layer_idx: int = 0):
             # removido do layer. Reversível: tirar da lista + recriar campo no layer.
             if col.lower() in ("objectid", "data_particao", "bairro"):
                 continue
+            # Campos Date clássicos (esriFieldTypeDate) rejeitam string ISO e
+            # esperam epoch ms — mesma conversão do apply_arcgis_feedback.
+            if col in _DATE_CLASSIC_COLUMNS:
+                if value is None or pd.isna(value):
+                    attrs[col] = None
+                else:
+                    attrs[col] = _to_arcgis_value(
+                        col, pd.Timestamp(value).strftime("%Y-%m-%d")
+                    )
+                continue
             # Converte date/datetime para string ISO (json.dumps não serializa date nativo)
             if hasattr(value, 'isoformat'):
                 value = value.isoformat()
@@ -164,6 +177,9 @@ def apply_arcgis_status_sync(item_id: str, layer_idx: int = 0):
       "flutuar" o data_saida a cada execução)
     - status = status real do programa (do espelho, alimentado pelo incremental)
     - status_inativo_motivo = motivo da inativação (do espelho)
+    - cpf_pic = CPF de quem obteve (do espelho) — propaga o CPF para o produto
+    - protocolo_status = status do protocolo de CPF (do espelho) — propaga a
+      regularização do protocolo de quem saiu do recorte
     """
     logger = prefect.get_run_logger()
     client = bq_client()
@@ -174,13 +190,16 @@ def apply_arcgis_status_sync(item_id: str, layer_idx: int = 0):
 
     # 1. Buscar inativos (na crosswalk mas sem registro na última partição da _dev).
     #    LEFT JOIN com o espelho (alimentado pelo incremental manual, pois a SA
-    #    não acessa rj-crm-registry) para levar status e status_inativo_motivo reais.
+    #    não acessa rj-crm-registry) para levar status, status_inativo_motivo,
+    #    cpf de quem obteve o CPF e status do protocolo de CPF.
     query = f"""
         SELECT cw.id_membro_familia, cw.objectid_arcgis,
                (SELECT MAX(dev2.data_particao) FROM `{dev_table}` dev2
                 WHERE dev2.id_membro_familia = cw.id_membro_familia) AS data_saida,
                m.status AS status_programa,
-               m.status_inativo_motivo
+               m.status_inativo_motivo,
+               m.cpf AS cpf_programa,
+               m.protocolo_status AS protocolo_status_programa
         FROM `{cw_table}` cw
         LEFT JOIN `{motivo_table}` m ON cw.id_membro_familia = m.id_membro_familia
         WHERE NOT EXISTS (
@@ -203,7 +222,9 @@ def apply_arcgis_status_sync(item_id: str, layer_idx: int = 0):
     edits_url = f"{service_url}/applyEdits"
 
     # 3. Montar payload (objectid + status_monitoramento_cpf + data_saida quando houver
-    #    histórico + status do programa e status_inativo_motivo quando o espelho tiver)
+    #    histórico + status do programa, status_inativo_motivo, cpf e protocolo_status
+    #    quando o espelho tiver — cpf/protocolo propagam o CPF obtido e a regularização
+    #    do protocolo de quem saiu do recorte e não passa mais pelo delta/feedback)
     updates = []
     for _, row in rows.iterrows():
         attrs = {
@@ -217,6 +238,10 @@ def apply_arcgis_status_sync(item_id: str, layer_idx: int = 0):
             attrs["status"] = row["status_programa"]
         if not pd.isna(row["status_inativo_motivo"]):
             attrs["status_inativo_motivo"] = row["status_inativo_motivo"]
+        if not pd.isna(row["cpf_programa"]):
+            attrs["cpf_pic"] = row["cpf_programa"]
+        if not pd.isna(row["protocolo_status_programa"]):
+            attrs["protocolo_status"] = row["protocolo_status_programa"]
         updates.append({"attributes": attrs})
 
     # 4. Enviar

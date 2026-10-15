@@ -175,9 +175,9 @@ profissionais_classificados as (
             {{ classificar_atendimento('p') }} as tipo_atendimento,
             case
                 when
-                    {{ classificar_atendimento('p') }} = 'Atendimento Recepção' and p.flag_cbo_recepcao
+                    {{ classificar_atendimento('p') }} = 'Recepção' and p.flag_cbo_recepcao
                     and p.tipo_unidade in ('CRAS', 'CREAS') and p.nome_atendimento_original like '%CadÚnico%'
-                    then concat(p.tipo_unidade, ' - Recepção - Ação CadÚnico')
+                    then concat(p.tipo_unidade, ' - Recepção - Ações CadÚnico')
                 else p.nome_atendimento_original
             end as nome_atendimento,
             p.flag_cadastrado,
@@ -197,7 +197,7 @@ profissionais_por_atendimento as (
         logical_or(profissional.flag_teste) as flag_algum_profissional_teste,
         case
             when countif(profissional.tipo_atendimento = 'Atendimento Técnico') > 0 then 'Atendimento Técnico'
-            when countif(profissional.tipo_atendimento = 'Atendimento Recepção') > 0 then 'Atendimento Recepção'
+            when countif(profissional.tipo_atendimento = 'Recepção') > 0 then 'Recepção'
             else 'Outros Atendimentos'
         end as tipo_atendimento
     from profissionais_classificados
@@ -218,7 +218,7 @@ select
     b.id_usuario as ID_USUARIO,
     b.id_familia as ID_FAMILIA,
     b.nome_usuario as NOME_USUARIO,
-    case when b.cpf is null or b.cpf = '' then 'CPF não informado' else 'CPF informado' end as DOCUMENTACAO,
+    case when b.cpf is null or b.cpf = '' then '' else 'CPF' end as DOCUMENTACAO,
     case
         when b.cpf is null or b.cpf = '' then null
         else format(

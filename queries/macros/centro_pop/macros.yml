@@ -1,0 +1,9 @@
+version: 2
+
+macros:
+  - name: interpretar_resposta_saude
+    description: "Interpreta campos livres do formulário Situação de Saúde do Centro POP: negativas explícitas retornam FALSE, marcadores desconhecidos NULL e demais textos TRUE. Não interpreta frases."
+    arguments:
+      - name: coluna
+        type: string
+        description: "Expressão SQL textual da situação de saúde ou do local de tratamento."

@@ -29,11 +29,18 @@ atendimentos_candidatos as (
         safe_cast(a.data_atendimento as date) as data_atendimento,
         case
             -- Profissional de nível superior = grupo CBO 2 (descrições da fonte têm sufixo " CENTRO POP")
-            when substr(trim(cast(dp.cbo_principal_codigo as string)), 1, 1) = '2' then 'Atendimento Técnico'
+            when exists (
+                select 1
+                from unnest(coalesce(dp.codigos_cbo, [dp.cbo_principal_codigo])) as codigo_cbo
+                where starts_with(trim(codigo_cbo), '2')
+            ) then 'Atendimento Técnico'
             when a.tipo_atendimento_descricao like '%Recepção%' then 'Atendimento Recepção'
             when dp.nome = 'ATENDIMENTO RECEPÇÃO' then 'Atendimento Recepção'
             when
-                dp.cbo_principal_descricao in ('Administrador', 'Articulador Comunitário', 'Assistente administrativo', 'Educador social', 'Orientador social', 'Recepcionista')
+                dp.cbo_principal_descricao in (
+                    'Administrador', 'Articulador Comunitário', 'Assistente administrativo',
+                    'Educador social', 'Orientador social', 'Recepcionista'
+                )
                 and a.tipo_atendimento_descricao like '%CadÚnico%'
                 then 'Atendimento Recepção'
             else 'Outros Atendimentos'
@@ -91,8 +98,7 @@ atendimentos_mes as (
         id_unidade,
         date_trunc(data_atendimento, month) as mes_referencia,
         min(data_atendimento) as data_primeiro_atendimento_mes,
-        max(data_atendimento) as data_ultimo_atendimento_mes,
-        max(if(tipo_atendimento = 'Atendimento Técnico', data_atendimento, null)) as data_ultimo_atendimento_tecnico_mes
+        max(data_atendimento) as data_ultimo_atendimento_mes
     from atendimentos
     group by id_usuario, id_unidade, mes_referencia
 ),
@@ -103,6 +109,22 @@ usuarios_mes as (
         {{ dbt_utils.generate_surrogate_key(['id_usuario', 'id_unidade', 'mes_referencia']) }} as id_usuario_unidade_mes,
         last_day(mes_referencia) as data_referencia
     from atendimentos_mes
+),
+
+-- A pergunta 11 pede o último técnico conhecido, mesmo em mês anterior.
+-- O nome da coluna é preservado por compatibilidade com os consumidores.
+ultimo_atendimento_tecnico as (
+    select
+        a.id_usuario_unidade_mes,
+        max(t.data_atendimento) as data_ultimo_atendimento_tecnico_mes
+    from usuarios_mes as a
+    inner join atendimentos as t
+        on
+            a.id_usuario = t.id_usuario
+            and a.id_unidade = t.id_unidade
+            and t.tipo_atendimento = 'Atendimento Técnico'
+            and {{ registro_ate_evento('t.data_atendimento', 'a.data_referencia') }}
+    group by a.id_usuario_unidade_mes
 ),
 
 familia_usuario as (
@@ -214,31 +236,43 @@ desligamento_form as (
     where titulo_formulario = 'Centro POP - Desligamento PAI'
 ),
 
+-- O corte temporal usa o fechamento do mês; a janela escolhe o último registro
+-- de cada agrupamento usuário/unidade/mês, com desempate pelo ID da evolução.
 atendimento_social_mes as (
-    {{ registro_ate_evento(
-        relacao_evento = 'usuarios_mes', relacao_registros = 'atendimento_social_form',
-        pares_chave = [
-            {'evento': 'id_usuario', 'registro': 'id_paciente'},
-            {'evento': 'id_unidade', 'registro': 'id_unidade'}
-        ],
-        id_evento = 'id_usuario_unidade_mes', data_evento = 'data_referencia',
-        data_registro = 'data_evolucao', id_registro = 'id_evolucao',
-        colunas_saida = ['possui_referencias_familiares', 'territorio_referencia_familia',
-                        'possibilidade_reinsercao_familiar', 'motivo_secundario_permanencia_rua']
-    ) }}
+    select
+        e.id_usuario_unidade_mes,
+        r.possui_referencias_familiares,
+        r.territorio_referencia_familia,
+        r.possibilidade_reinsercao_familiar,
+        r.motivo_secundario_permanencia_rua
+    from usuarios_mes as e
+    inner join atendimento_social_form as r
+        on
+            e.id_usuario = r.id_paciente
+            and e.id_unidade = r.id_unidade
+            and {{ registro_ate_evento('r.data_evolucao', 'e.data_referencia') }}
+    qualify row_number() over (
+        partition by e.id_usuario_unidade_mes
+        order by r.data_evolucao desc, r.id_evolucao desc
+    ) = 1
 ),
 
 desligamento_mes as (
-    {{ registro_ate_evento(
-        relacao_evento = 'usuarios_mes', relacao_registros = 'desligamento_form',
-        pares_chave = [
-            {'evento': 'id_usuario', 'registro': 'id_paciente'},
-            {'evento': 'id_unidade', 'registro': 'id_unidade'}
-        ],
-        id_evento = 'id_usuario_unidade_mes', data_evento = 'data_referencia',
-        data_registro = 'data_evolucao', id_registro = 'id_evolucao',
-        colunas_saida = ['data_desligamento_formulario', 'motivo_desligamento', 'motivo_desligamento_outros']
-    ) }}
+    select
+        e.id_usuario_unidade_mes,
+        r.data_desligamento_formulario,
+        r.motivo_desligamento,
+        r.motivo_desligamento_outros
+    from usuarios_mes as e
+    inner join desligamento_form as r
+        on
+            e.id_usuario = r.id_paciente
+            and e.id_unidade = r.id_unidade
+            and {{ registro_ate_evento('r.data_evolucao', 'e.data_referencia') }}
+    qualify row_number() over (
+        partition by e.id_usuario_unidade_mes
+        order by r.data_evolucao desc, r.id_evolucao desc
+    ) = 1
 ),
 
 -- Demandas e encaminhamentos são registros do mês, e não apenas os campos
@@ -284,14 +318,17 @@ evolucoes_cadastro as (
         e.codigo_abrangencia,
         e.descricao_evolucao,
         e.data_evolucao,
-        du.id_usuario as id_paciente,
+        coalesce(du.id_usuario, e.id_paciente_familia) as id_paciente,
         concat(e.origem_modulo, ':', cast(e.id_evolucao as string)) as id_evolucao
     from {{ ref('fct_evolucoes') }} as e
-    inner join {{ ref('dim_usuarios') }} as du on e.id_usuario_sk = du.id_usuario_sk
-    where e.codigo_abrangencia = 1 and e.data_cancelamento is null
+    left join {{ ref('dim_usuarios') }} as du on e.id_usuario_sk = du.id_usuario_sk
+    where
+        e.codigo_abrangencia = 1
+        and e.data_cancelamento is null
+        and coalesce(du.id_usuario, e.id_paciente_familia) is not null
 ),
 
-situacao_saude as (
+formularios_saude as (
     {{ extrair_formulario(
         source_relation = 'evolucoes_cadastro',
         group_cols = ['id_paciente', 'id_evolucao', 'data_evolucao'],
@@ -305,14 +342,37 @@ situacao_saude as (
     ) }}
 ),
 
+-- Normaliza uma vez as respostas livres; desconhecido é diferente de Não.
+situacao_saude as (
+    select
+        id_paciente,
+        id_evolucao,
+        data_evolucao,
+        {{ map_resposta_sim_nao('uso_substancias') }} as uso_substancias,
+        {{ interpretar_resposta_saude('situacao_saude') }} as possui_problema_saude,
+        {{ interpretar_resposta_saude('local_tratamento') }} as possui_acompanhamento_saude
+    from formularios_saude
+),
+
+-- Última resposta e histórico de saúde da pessoa até o fechamento, em qualquer unidade.
 situacao_saude_mes as (
-    {{ registro_ate_evento(
-        relacao_evento = 'usuarios_mes', relacao_registros = 'situacao_saude',
-        pares_chave = [{'evento': 'id_usuario', 'registro': 'id_paciente'}],
-        id_evento = 'id_usuario_unidade_mes', data_evento = 'data_referencia',
-        data_registro = 'data_evolucao', id_registro = 'id_evolucao',
-        colunas_saida = ['uso_substancias', 'situacao_saude', 'local_tratamento']
-    ) }}
+    select
+        e.id_usuario_unidade_mes,
+        r.uso_substancias,
+        r.possui_acompanhamento_saude,
+        -- O histórico é agregado antes de escolher a última resposta do perfil.
+        logical_or(r.possui_problema_saude) over (
+            partition by e.id_usuario_unidade_mes
+        ) as possui_historico_problema_saude
+    from usuarios_mes as e
+    inner join situacao_saude as r
+        on
+            e.id_usuario = r.id_paciente
+            and {{ registro_ate_evento('r.data_evolucao', 'e.data_referencia') }}
+    qualify row_number() over (
+        partition by e.id_usuario_unidade_mes
+        order by r.data_evolucao desc, r.id_evolucao desc
+    ) = 1
 ),
 
 questionario_situacao_usuario as (
@@ -322,18 +382,27 @@ questionario_situacao_usuario as (
         ql.data_resposta,
         ql.resposta as motivo_ida_ruas
     from {{ ref('raw_evolucoes_questionario') }} as q
-    inner join {{ ref('raw_evolucoes_questionario_lista') }} as ql on q.id_evolucao = ql.id_evolucao
+    inner join {{ ref('raw_evolucoes_questionario_lista') }} as ql
+        on
+            q.id_evolucao = ql.id_evolucao
+            and q.id_template = ql.id_template
+            and q.id_modulo is not distinct from ql.id_modulo
     where q.id_template = 3 and ql.id_questao = 18
 ),
 
 questionario_situacao_usuario_mes as (
-    {{ registro_ate_evento(
-        relacao_evento = 'usuarios_mes', relacao_registros = 'questionario_situacao_usuario',
-        pares_chave = [{'evento': 'id_usuario', 'registro': 'id_usuario'}],
-        id_evento = 'id_usuario_unidade_mes', data_evento = 'data_referencia',
-        data_registro = 'data_resposta', id_registro = 'id_evolucao',
-        colunas_saida = ['motivo_ida_ruas']
-    ) }}
+    select
+        e.id_usuario_unidade_mes,
+        r.motivo_ida_ruas
+    from usuarios_mes as e
+    inner join questionario_situacao_usuario as r
+        on
+            e.id_usuario = r.id_usuario
+            and {{ registro_ate_evento('r.data_resposta', 'e.data_referencia') }}
+    qualify row_number() over (
+        partition by e.id_usuario_unidade_mes
+        order by r.data_resposta desc, r.id_evolucao desc
+    ) = 1
 ),
 
 -- CadÚnico é associado por CPF, sem confundir sua família com a do prontuário.
@@ -415,6 +484,7 @@ cadunico_atualizacao as (
 
 final as (
     select
+        -- Identificação do evento e referência mensal.
         e.id_atendimento,
         e.data_atendimento,
         e.tipo_atendimento,
@@ -427,11 +497,17 @@ final as (
         a.data_referencia,
         a.data_primeiro_atendimento_mes,
         a.data_ultimo_atendimento_mes,
-        a.data_ultimo_atendimento_tecnico_mes,
+        -- Sem ID, preserva a data do próprio evento técnico sem associar outras pessoas.
+        case
+            when e.id_usuario is null and e.tipo_atendimento = 'Atendimento Técnico' then e.data_atendimento
+            else uat.data_ultimo_atendimento_tecnico_mes
+        end as data_ultimo_atendimento_tecnico_mes,
         coalesce(e.nome_atendimento, 'Não Informado') as nome_atendimento,
         coalesce(nullif(array_to_string(e.profissionais_atendimento, ', '), ''), 'Não Informado') as profissionais_atendimento,
         coalesce(nullif(trim(u.nome), ''), 'Não Informado') as nome_usuario,
         coalesce(nullif(trim(u.nome_social), ''), 'Não Informado') as nome_social,
+
+        -- Acompanhamento e motivos da situação de rua.
         case
             when e.nome_atendimento is null then 'Não Informado'
             when lower(trim(e.nome_atendimento)) in (
@@ -445,6 +521,8 @@ final as (
         pim.data_inclusao_acompanhamento,
         coalesce(nullif(q.motivo_ida_ruas, 'undefined'), 'Não Informado') as motivo_principal_permanencia_rua,
         coalesce(nullif(asf.motivo_secundario_permanencia_rua, ''), 'Não Informado') as motivo_secundario_permanencia_rua,
+
+        -- Dados pessoais e documentos; ausência de número não comprova ausência do documento.
         u.data_nascimento,
         safe_cast({{ calc_idade('u.data_nascimento', 'a.data_referencia') }} as int64) as idade,
         coalesce(u.filiacao_mae, 'Não Informado') as filiacao_mae,
@@ -458,93 +536,79 @@ final as (
         coalesce(u.orientacao_sexual, 'Não Informado') as orientacao_sexual,
         coalesce(u.raca_cor, 'Não Informado') as raca_cor,
         coalesce(u.uf_nascimento, 'Não Informado') as naturalidade,
+
+        -- Série permanece como código bruto até a confirmação do domínio indserie.
+        {{ map_resposta_sim_nao('u.flag_frequenta_escola') }} as flag_estuda,
         case
-            when lower(trim(u.flag_frequenta_escola)) in ('s', 'sim') then 'Sim'
-            when lower(trim(u.flag_frequenta_escola)) in ('n', 'nao', 'não') then 'Não'
-            else 'Não Informado'
-        end as flag_estuda,
-        case
-            when lower(trim(u.flag_frequenta_escola)) in ('s', 'sim') then coalesce(u.serie_escolar, 'Não Informado')
+            when lower(trim(u.flag_frequenta_escola)) in ('s', 'sim')
+                then coalesce(nullif(trim(u.serie_escolar), ''), 'Não Informado')
             else 'Não Informado'
         end as ano_cursando,
         coalesce(u.escolaridade_indice, 'Não Informado') as nivel_escolaridade,
+
+        -- Deficiência e saúde combinam cadastro atual e formulários conhecidos até o fechamento.
+        {{ map_resposta_sim_nao('u.flag_deficiencia') }} as flag_deficiencia,
+        coalesce(nullif(array_to_string(array(
+            select distinct coalesce(d.descricao, d.codigo) as descricao
+            from unnest(u.deficiencia) as d
+            order by descricao
+        ), ', '), ''), 'Não Informado') as tipo_deficiencia,
+        coalesce(ss.uso_substancias, 'Não Informado') as flag_uso_substancias_psicoativas,
         case
-            when lower(trim(u.flag_deficiencia)) in ('s', 'sim') then 'Sim'
-            when lower(trim(u.flag_deficiencia)) in ('n', 'nao', 'não') then 'Não'
-            else 'Não Informado'
-        end as flag_deficiencia,
-        coalesce({{ map_coluna_tipo_deficiencia('u.tipo_deficiencia') }}, 'Não Informado') as tipo_deficiencia,
-        case
-            when lower(trim(nullif(ss.uso_substancias, 'undefined'))) in ('s', 'sim') then 'Sim'
-            when lower(trim(nullif(ss.uso_substancias, 'undefined'))) in ('n', 'nao', 'não') then 'Não'
-            else 'Não Informado'
-        end as flag_uso_substancias_psicoativas,
-        case
-            when lower(trim(ss.situacao_saude)) in ('n', 'nao', 'não') then 'Não'
-            when nullif(trim(ss.situacao_saude), 'undefined') != '' then 'Sim'
+            when ss.possui_historico_problema_saude then 'Sim'
             when u.flag_saude_mental_comprometida in (
                 'A', 'D', 'Pessoa com aparente agravo de saúde mental',
                 'Pessoa com diagnóstico (laudo médico) de doença mental'
             ) then 'Sim'
+            when ss.possui_historico_problema_saude = false then 'Não'
             else 'Não Informado'
         end as flag_problema_saude,
-        case
-            when lower(trim(ss.local_tratamento)) in ('n', 'nao', 'não') then 'Não'
-            when nullif(trim(ss.local_tratamento), 'undefined') != '' then 'Sim'
-            else 'Não Informado'
-        end as flag_acompanhamento_saude,
-        case
-            when lower(trim(asf.possui_referencias_familiares)) in ('s', 'sim') then 'Sim'
-            when lower(trim(asf.possui_referencias_familiares)) in ('n', 'nao', 'não') then 'Não'
-            else 'Não Informado'
-        end as flag_possui_vinculo_familiar,
+        {{ map_flag_boolean('ss.possui_acompanhamento_saude') }} as flag_acompanhamento_saude,
+
+        -- Vínculos familiares e atividade que gera renda.
+        {{ map_resposta_sim_nao('asf.possui_referencias_familiares') }} as flag_possui_vinculo_familiar,
         coalesce(nullif(trim(asf.territorio_referencia_familia), ''), 'Não Informado') as territorio_referencia_familia,
-        case
-            when lower(trim(asf.possibilidade_reinsercao_familiar)) in ('s', 'sim') then 'Sim'
-            when lower(trim(asf.possibilidade_reinsercao_familiar)) in ('n', 'nao', 'não') then 'Não'
-            else 'Não Informado'
-        end as flag_possibilidade_reinsercao_familiar,
-        case
-            when lower(trim(u.flag_trabalha)) in ('s', 'sim') then 'Sim'
-            when lower(trim(u.flag_trabalha)) in ('n', 'nao', 'não') then 'Não'
-            else 'Não Informado'
-        end as flag_exerce_atividade_renda,
+        {{ map_resposta_sim_nao('asf.possibilidade_reinsercao_familiar') }} as flag_possibilidade_reinsercao_familiar,
+        {{ map_resposta_sim_nao('u.flag_trabalha') }} as flag_exerce_atividade_renda,
         coalesce(nullif(trim(u.profissao), ''), 'Não Informado') as atividade_renda_qual,
         u.renda_ativa as valor_renda,
-        cast('Não Informado' as string) as flag_empregabilidade_imediata,
-        cast('Não Informado' as string) as capacidade_habilidades,
-        cast('Não Informado' as string) as flag_interesse_curso,
-        case
-            when lower(trim(u.flag_recebe_beneficio)) in ('s', 'sim') then 'Sim'
-            when lower(trim(u.flag_recebe_beneficio)) in ('n', 'nao', 'não') then 'Não'
-            else 'Não Informado'
-        end as flag_possui_beneficio,
+        'Não Informado' as flag_empregabilidade_imediata,
+        'Não Informado' as capacidade_habilidades,
+        'Não Informado' as flag_interesse_curso,
+
+        -- Benefícios e CadÚnico são snapshots atuais, associados por CPF.
+        {{ map_resposta_sim_nao('u.flag_recebe_beneficio') }} as flag_possui_beneficio,
         coalesce(u.tipo_beneficio, 'Não Informado') as tipo_beneficio,
         coalesce(nullif(array_to_string(array(
             select if(b.descricao is null, b.codigo, concat(b.codigo, ' - ', b.descricao))
             from unnest(u.beneficio) as b
             order by b.codigo
         ), ', '), ''), 'Não Informado') as beneficio,
-        case
-            when lower(trim(u.flag_cadunico)) in ('s', 'sim') then 'Sim'
-            when lower(trim(u.flag_cadunico)) in ('n', 'nao', 'não') then 'Não'
-            else 'Não Informado'
-        end as flag_possui_cadunico,
+        -- A origem já normaliza este campo com map_flag_cadunico.
+        coalesce(u.flag_cadunico, 'Não Informado') as flag_possui_cadunico,
         u.data_cadunico_informada,
         ic.data_atualizacao as data_atualizacao_cadunico,
         ic.data_limite_cadastro_atual as data_limite_atualizacao_cadunico,
         case
-            when ic.data_limite_cadastro_atual is null or ic.data_atualizacao is null or ic.data_atualizacao > a.data_referencia then 'Não Informado'
+            when
+                ic.data_limite_cadastro_atual is null
+                or ic.data_atualizacao is null
+                or ic.data_atualizacao > a.data_referencia
+                then 'Não Informado'
             when ic.data_limite_cadastro_atual >= a.data_referencia then 'Sim'
             else 'Não'
         end as flag_cadunico_atualizado,
         coalesce(nullif(dc.nis, ''), 'Não Informado') as nis_usuario,
+
+        -- Contexto mensal de oficinas e procedimentos, repetido em cada atendimento.
         {{ map_flag_boolean('nullif(ofc.qtd_oficinas, 0) > 0') }} as flag_participacao_oficinas,
         nullif(ofc.qtd_oficinas, 0) as qtd_oficinas_participadas_mes,
         coalesce(fm.demandas, 'Não Informado') as demandas,
         coalesce(fm.encaminhamentos, 'Não Informado') as encaminhamentos,
-        cast('Não Informado' as string) as resultado_acesso,
-        cast('Não Informado' as string) as resultado_descricao,
+        'Não Informado' as resultado_acesso,
+        'Não Informado' as resultado_descricao,
+
+        -- Último desligamento conhecido e observações do mês.
         coalesce(
             safe.parse_date('%d/%m/%Y', regexp_extract(df.data_desligamento_formulario, r'^\d{2}/\d{2}/\d{4}')),
             safe_cast(regexp_extract(df.data_desligamento_formulario, r'^\d{4}-\d{2}-\d{2}') as date)
@@ -564,6 +628,7 @@ final as (
     inner join centro_pop as c on a.id_unidade = c.id_unidade
     left join usuarios as u on a.id_usuario = u.id_usuario
     left join familia_usuario as fam on a.id_usuario = fam.id_usuario
+    left join ultimo_atendimento_tecnico as uat on a.id_usuario_unidade_mes = uat.id_usuario_unidade_mes
     left join pai_inclusao_mes as pim on a.id_usuario_unidade_mes = pim.id_usuario_unidade_mes
     left join atendimento_social_mes as asf on a.id_usuario_unidade_mes = asf.id_usuario_unidade_mes
     left join desligamento_mes as df on a.id_usuario_unidade_mes = df.id_usuario_unidade_mes
