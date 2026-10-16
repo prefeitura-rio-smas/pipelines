@@ -8,6 +8,20 @@ usuário; cada atendimento mantém os dados de sua ocorrência e sua equipe.
 Nenhum atendimento é excluído por testes, cadastro incompleto, vínculo
 encerrado, cancelamento ou rank. A filtragem acontece no dataviz.
 
+## Escopo do PR #147
+
+O objetivo deste PR é disponibilizar a base de atendimentos para o dataviz geral,
+com usuários, ocorrências, profissionais compartilhados, CBOs, identificadores,
+ranks e flags para filtragem no consumo. Os enriquecimentos cadastrais e sociais
+já presentes são contexto dos usuários e dos atendimentos, com as limitações
+temporais descritas neste documento.
+
+Novas integrações para RMAs, Planilha Unificada Centro POP, abordagens ArcGIS,
+atividades coletivas, encaminhamentos, acompanhamento mensal e medidas
+socioeducativas ficam para trabalhos futuros. A homologação desses produtos
+não é critério de aceite deste PR. A migração do dashboard e a substituição da
+consulta programada dependem da validação específica de atendimentos.
+
 ## Estrutura medallion
 
 - Raw: leitura das fontes de atendimentos, famílias, profissionais e cadastro
