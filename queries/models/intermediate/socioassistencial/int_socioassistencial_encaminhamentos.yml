@@ -1,5 +1,0 @@
-version: 2
-models:
-- name: int_socioassistencial_encaminhamentos
-  description: Uma declaração por campo/valor/formulário; multisseleção íntegra, sem
-    inferir envio efetivado.

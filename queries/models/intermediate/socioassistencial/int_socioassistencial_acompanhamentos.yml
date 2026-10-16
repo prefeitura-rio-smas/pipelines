@@ -1,5 +1,0 @@
-version: 2
-models:
-- name: int_socioassistencial_acompanhamentos
-  description: Uma família por serviço/unidade/competência, gerada das vigências declaradas
-    até a competência configurada, sem dependência de atendimento.

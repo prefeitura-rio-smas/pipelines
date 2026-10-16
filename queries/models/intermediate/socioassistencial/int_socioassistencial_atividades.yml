@@ -1,5 +1,0 @@
-version: 2
-models:
-- name: int_socioassistencial_atividades
-  description: Uma participação por chave composta de atividade/usuário/data/hora/unidade/setor;
-    cópias exatas contabilizadas separadamente.

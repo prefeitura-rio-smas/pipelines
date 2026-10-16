@@ -1,5 +1,0 @@
-version: 2
-models:
-- name: int_socioassistencial_atendimentos
-  description: 'Um atendimento por módulo, com equipe agregada e regras do PR #147
-    preservadas; sem filtros analíticos.'

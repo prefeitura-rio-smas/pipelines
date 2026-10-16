@@ -1,5 +1,0 @@
-version: 2
-models:
-- name: int_socioassistencial_formularios
-  description: Um formulário por evolução/módulo/título, com respostas e cancelamentos
-    preservados; não certifica acompanhamento ou vítima.

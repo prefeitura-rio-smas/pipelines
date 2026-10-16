@@ -1,5 +1,0 @@
-version: 2
-models:
-- name: int_socioassistencial_vinculos_servicos
-  description: Um vínculo observado por conteúdo, preservando cópias e intervalos
-    inválidos; fonte sem identificador de ciclo.

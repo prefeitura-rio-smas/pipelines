@@ -1,5 +1,0 @@
-version: 2
-models:
-- name: int_centro_pop_campos_formularios
-  description: Extração datada dos formulários Centro POP já usados pela planilha;
-    mantém filtros e identificação por módulo do contrato existente.

@@ -1,5 +1,0 @@
-version: 2
-models:
-- name: int_socioassistencial_abordagens
-  description: Uma ocorrência por GlobalID do repeat ArcGIS; reutiliza normalização
-    e cluster anual existentes sem excluir contatos repetidos da pessoa.

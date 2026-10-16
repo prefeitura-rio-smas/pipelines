@@ -1,7 +1,11 @@
 with servicos as (
     select
         *,
-        {{ nome_servico_socioassistencial('id_servico_assistencial') }} as nome_servico_socioassistencial
+        case id_servico_assistencial
+            when 1 then 'PAIF'
+            when 6 then 'PAEFI'
+            else format('Serviço não mapeado (ID %d)', id_servico_assistencial)
+        end as nome_servico_socioassistencial
     from {{ ref('raw_familias_servicos_assistenciais') }}
 )
 
