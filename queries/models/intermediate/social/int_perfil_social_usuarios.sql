@@ -38,11 +38,7 @@ select
     {{ map_indicador_social('s.flag_deficiencia') }} as flag_deficiencia,
     {{ descricoes_sociais('df.detalhes') }} as deficiencias,
     df.detalhes as deficiencias_detalhes,
-    case
-        when upper(trim(s.tipo_moradia)) = '5' then 'Sim'
-        when upper(trim(s.tipo_moradia)) in ('1', '2', '3', '4', '6', '7', '8', '9', 'A', 'B', 'C', 'D') then 'Não'
-        else 'Não Informado'
-    end as flag_situacao_rua,
+    coalesce(s.flag_situacao_rua, 'Não Informado') as flag_situacao_rua,
     {{ map_indicador_social('m.flag_possui_comorbidade') }} as flag_possui_comorbidade,
     nullif(trim(m.descricao_comorbidades), '') as comorbidades,
     m.data_informacao_comorbidades,

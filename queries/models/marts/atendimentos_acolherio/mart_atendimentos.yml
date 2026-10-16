@@ -1,0 +1,79 @@
+version: 2
+
+models:
+  - name: mart_atendimentos
+    description: |
+      Dataviz geral de atendimentos, no grão atendimento × profissional após
+      deduplicação analítica. Preserva as colunas e os rótulos da consulta V2.
+      O mesmo atendimento pode aparecer para vários profissionais; para contar
+      atendimentos use COUNT(DISTINCT ID_ATENDIMENTO_MODULO), e para pessoas
+      use COUNT(DISTINCT ID_USUARIO).
+      Perfil social, comorbidades, projetos e serviços refletem o cadastro atual,
+      inclusive para atendimentos antigos. Não são condições na data do atendimento.
+      Regras determinísticas de CBO, família e deduplicação estão documentadas
+      em queries/docs/atendimentos_dataviz.md.
+    data_tests:
+      - dbt_utils.unique_combination_of_columns:
+          arguments:
+            combination_of_columns:
+              - PROFISSIONAL_ID
+              - HORA_DE_ATENDIMENTO
+              - DATA_DE_ATENDIMENTO
+              - NOME_ATENDIMENTO_ORIGINAL
+              - ID_USUARIO
+              - UNIDADE_ATENDIMENTO
+    columns:
+      - name: ID_ATENDIMENTO_SK
+        description: Chave da participação do profissional, incluindo o módulo da origem.
+        data_tests: [unique, not_null]
+      - name: ID_ATENDIMENTO
+        description: |
+          Identificador legado sequência-profissional, sem módulo. Pode ser nulo
+          quando o profissional não existe e pode colidir entre módulos.
+          Use ID_ATENDIMENTO_SK como chave da linha.
+      - name: ID_ATENDIMENTO_MODULO
+        description: Identificador do atendimento com módulo, comum aos seus profissionais.
+        data_tests: [not_null]
+      - name: atendimento_unico_rank
+        description: Somente o primeiro registro de cada grupo analítico é publicado.
+        data_tests:
+          - accepted_values:
+              arguments:
+                values: [1]
+                quote: false
+      - name: FLAG_PROFISSIONAL_PRINCIPAL
+        description: Indica se o profissional da linha é o principal da origem.
+      - name: DOCUMENTACAO
+        data_tests:
+          - accepted_values:
+              arguments:
+                values: ['CPF informado', 'CPF não informado']
+      - name: TIPO_ATENDIMENTO
+        data_tests:
+          - accepted_values:
+              arguments:
+                values: ['Atendimento Recepção', 'Atendimento Técnico', 'Outros Atendimentos']
+      - name: PROFISSIONAIS
+        description: Equipe original do atendimento, antes da deduplicação analítica por profissional.
+      - name: PROJETOS_SOCIAIS
+        description: Projetos/programas sociais atuais da família, ativos e não cancelados.
+      - name: SERVICOS_SOCIOASSISTENCIAIS
+        description: Serviços atuais não cancelados da família; PAIF e PAEFI têm nomes validados.
+      - name: VIOLACOES
+        description: Violações identificadas no cadastro e nas evoluções não canceladas do usuário.
+      - name: BENEFICIOS
+        description: Descrições dos benefícios do cadastro atual do usuário.
+      - name: DEFICIENCIAS
+        description: Descrições das deficiências do cadastro atual do usuário.
+      - name: FLAG_SITUACAO_RUA
+        description: Situação de rua no cadastro atual; Sim, Não ou Não Informado.
+      - name: FLAG_POSSUI_COMORBIDADE
+        description: Indicador de comorbidade do cadastro atual; ausência não equivale a Não.
+      - name: COMORBIDADES
+        description: Texto livre de comorbidades de gh_pac_info_med; sem inferência de diagnóstico.
+      - name: DATA_INFORMACAO_COMORBIDADES
+        description: Data registrada na origem para a informação de comorbidades.
+      - name: LOCAL_TRATAMENTO_COMORBIDADES
+        description: Local de tratamento informado no cadastro.
+      - name: COMORBIDADES_DETALHES
+        description: Dados originais e procedência da informação de comorbidades.
