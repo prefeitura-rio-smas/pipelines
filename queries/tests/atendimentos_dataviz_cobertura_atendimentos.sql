@@ -9,8 +9,9 @@ with esperados as (
 ),
 
 publicados as (
-    select id_atendimento_modulo
-    from {{ ref('mart_atendimentos') }}
+    select a.id_atendimento_modulo
+    from {{ ref('mart_atendimentos') }} as u,
+        unnest(u.atendimentos) as a
 ),
 
 ausentes as (

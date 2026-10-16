@@ -3,68 +3,50 @@ version: 2
 models:
   - name: mart_atendimentos
     description: |
-      Dataviz geral com uma linha por atendimento, incluindo o módulo da origem.
-      Preserva todos os atendimentos; elegibilidade e deduplicação são filtros
-      opcionais no dataviz. As colunas escalares representam o profissional
-      principal e PROFISSIONAIS contém a equipe completa com ranks individuais.
-      Perfil social, comorbidades, projetos e serviços refletem o cadastro atual,
-      inclusive para atendimentos antigos. Não são condições na data do atendimento.
-      Regras determinísticas de CBO, família e ranks estão documentadas
-      em queries/docs/atendimentos_dataviz.md.
+      Dataviz geral com uma linha por usuário que possui atendimentos.
+      O cadastro e o perfil social atual ficam no usuário; ATENDIMENTOS é um
+      ARRAY de STRUCTs com todas as ocorrências e suas equipes, sem exclusões
+      analíticas. Filtros de elegibilidade, testes e ranks pertencem ao dataviz.
+      Projetos e serviços ficam no atendimento, pois dependem da família vinculada.
+      Informações sociais e comorbidades refletem o cadastro atual, inclusive
+      para atendimentos antigos. Consulte queries/docs/atendimentos_dataviz.md.
     columns:
-      - name: ID_ATENDIMENTO_SK
-        description: Chave técnica do atendimento, incluindo o módulo da origem.
+      - name: ID_USUARIO
+        description: Identificador natural do usuário, único na mart.
         data_tests: [unique, not_null]
-      - name: ID_ATENDIMENTO
-        description: Identificador sequência+módulo, único por atendimento.
+      - name: ID_USUARIO_SK
+        description: Chave técnica do usuário.
         data_tests: [unique, not_null]
-      - name: ID_ATENDIMENTO_MODULO
-        description: Identificador do atendimento com módulo, igual a ID_ATENDIMENTO.
-        data_tests: [unique, not_null]
-      - name: atendimento_unico_rank
-        description: |
-          Rank do profissional principal, sem excluir linhas. Prioriza registros
-          elegíveis da V2 e desempata por cadastro, sequência e módulo. Para
-          analisar outros profissionais, use o rank de cada item de PROFISSIONAIS.
+      - name: QUANTIDADE_ATENDIMENTOS
+        description: Quantidade de elementos em ATENDIMENTOS, antes de filtros do dataviz.
         data_tests: [not_null]
-      - name: FLAG_ELEGIVEL_DATAVIZ
+      - name: ATENDIMENTOS
         description: |
-          Indica o universo da V2 (nomes válidos/sem TESTE e vínculo familiar ativo
-          ou ausente no módulo usuário). Não filtra a mart e nunca é nula.
+          ARRAY de STRUCTs ordenado por data, hora e ID, com todos os atendimentos
+          do usuário. Cada elemento mantém ID com módulo, unidade, família,
+          projetos, serviços, flags, ranks e PROFISSIONAIS com a equipe completa.
+          As colunas profissionais do atendimento representam o principal.
+          O rank de cada integrante do array PROFISSIONAIS é independente.
         data_tests: [not_null]
       - name: DOCUMENTACAO
         data_tests:
           - accepted_values:
               arguments:
                 values: ['CPF informado', 'CPF não informado']
-      - name: TIPO_ATENDIMENTO
-        data_tests:
-          - accepted_values:
-              arguments:
-                values: ['Atendimento Recepção', 'Atendimento Técnico', 'Outros Atendimentos']
-      - name: PROFISSIONAIS
-        description: |
-          Equipe completa com IDs, CBOs, classificação e atendimento_unico_rank
-          individual. Para deduplicar participações, expanda este array e filtre
-          seu rank, sem filtrar antes pelo rank do principal.
-      - name: PROJETOS_SOCIAIS
-        description: Projetos/programas sociais atuais da família, ativos e não cancelados.
-      - name: SERVICOS_SOCIOASSISTENCIAIS
-        description: Serviços atuais não cancelados da família; PAIF e PAEFI têm nomes validados.
       - name: VIOLACOES
         description: Violações identificadas no cadastro e nas evoluções não canceladas do usuário.
       - name: BENEFICIOS
-        description: Descrições dos benefícios do cadastro atual do usuário.
+        description: Descrições dos benefícios do cadastro atual.
       - name: DEFICIENCIAS
-        description: Descrições das deficiências do cadastro atual do usuário.
+        description: Descrições das deficiências do cadastro atual.
       - name: FLAG_SITUACAO_RUA
         description: Situação de rua no cadastro atual; Sim, Não ou Não Informado.
       - name: FLAG_POSSUI_COMORBIDADE
-        description: Indicador de comorbidade do cadastro atual; ausência não equivale a Não.
+        description: Indicador atual de comorbidade; ausência não equivale a Não.
       - name: COMORBIDADES
-        description: Texto livre de comorbidades de gh_pac_info_med; sem inferência de diagnóstico.
+        description: Texto livre de gh_pac_info_med, sem inferência de diagnóstico.
       - name: DATA_INFORMACAO_COMORBIDADES
-        description: Data registrada na origem para a informação de comorbidades.
+        description: Data da informação de comorbidades registrada na origem.
       - name: LOCAL_TRATAMENTO_COMORBIDADES
         description: Local de tratamento informado no cadastro.
       - name: COMORBIDADES_DETALHES
