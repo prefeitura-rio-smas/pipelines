@@ -3,46 +3,35 @@ version: 2
 models:
   - name: mart_atendimentos
     description: |
-      Dataviz geral de atendimentos, no grão atendimento × profissional após
-      deduplicação analítica. Preserva as colunas e os rótulos da consulta V2.
-      O mesmo atendimento pode aparecer para vários profissionais; para contar
-      atendimentos use COUNT(DISTINCT ID_ATENDIMENTO_MODULO), e para pessoas
-      use COUNT(DISTINCT ID_USUARIO).
+      Dataviz geral com uma linha por atendimento, incluindo o módulo da origem.
+      Preserva todos os atendimentos; elegibilidade e deduplicação são filtros
+      opcionais no dataviz. As colunas escalares representam o profissional
+      principal e PROFISSIONAIS contém a equipe completa com ranks individuais.
       Perfil social, comorbidades, projetos e serviços refletem o cadastro atual,
       inclusive para atendimentos antigos. Não são condições na data do atendimento.
-      Regras determinísticas de CBO, família e deduplicação estão documentadas
+      Regras determinísticas de CBO, família e ranks estão documentadas
       em queries/docs/atendimentos_dataviz.md.
-    data_tests:
-      - dbt_utils.unique_combination_of_columns:
-          arguments:
-            combination_of_columns:
-              - PROFISSIONAL_ID
-              - HORA_DE_ATENDIMENTO
-              - DATA_DE_ATENDIMENTO
-              - NOME_ATENDIMENTO_ORIGINAL
-              - ID_USUARIO
-              - UNIDADE_ATENDIMENTO
     columns:
       - name: ID_ATENDIMENTO_SK
-        description: Chave da participação do profissional, incluindo o módulo da origem.
+        description: Chave técnica do atendimento, incluindo o módulo da origem.
         data_tests: [unique, not_null]
       - name: ID_ATENDIMENTO
-        description: |
-          Identificador legado sequência-profissional, sem módulo. Pode ser nulo
-          quando o profissional não existe e pode colidir entre módulos.
-          Use ID_ATENDIMENTO_SK como chave da linha.
+        description: Identificador sequência+módulo, único por atendimento.
+        data_tests: [unique, not_null]
       - name: ID_ATENDIMENTO_MODULO
-        description: Identificador do atendimento com módulo, comum aos seus profissionais.
-        data_tests: [not_null]
+        description: Identificador do atendimento com módulo, igual a ID_ATENDIMENTO.
+        data_tests: [unique, not_null]
       - name: atendimento_unico_rank
-        description: Somente o primeiro registro de cada grupo analítico é publicado.
-        data_tests:
-          - accepted_values:
-              arguments:
-                values: [1]
-                quote: false
-      - name: FLAG_PROFISSIONAL_PRINCIPAL
-        description: Indica se o profissional da linha é o principal da origem.
+        description: |
+          Rank do profissional principal, sem excluir linhas. Prioriza registros
+          elegíveis da V2 e desempata por cadastro, sequência e módulo. Para
+          analisar outros profissionais, use o rank de cada item de PROFISSIONAIS.
+        data_tests: [not_null]
+      - name: FLAG_ELEGIVEL_DATAVIZ
+        description: |
+          Indica o universo da V2 (nomes válidos/sem TESTE e vínculo familiar ativo
+          ou ausente no módulo usuário). Não filtra a mart e nunca é nula.
+        data_tests: [not_null]
       - name: DOCUMENTACAO
         data_tests:
           - accepted_values:
@@ -54,7 +43,10 @@ models:
               arguments:
                 values: ['Atendimento Recepção', 'Atendimento Técnico', 'Outros Atendimentos']
       - name: PROFISSIONAIS
-        description: Equipe original do atendimento, antes da deduplicação analítica por profissional.
+        description: |
+          Equipe completa com IDs, CBOs, classificação e atendimento_unico_rank
+          individual. Para deduplicar participações, expanda este array e filtre
+          seu rank, sem filtrar antes pelo rank do principal.
       - name: PROJETOS_SOCIAIS
         description: Projetos/programas sociais atuais da família, ativos e não cancelados.
       - name: SERVICOS_SOCIOASSISTENCIAIS

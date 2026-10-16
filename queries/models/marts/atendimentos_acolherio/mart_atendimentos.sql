@@ -1,105 +1,13 @@
 {{ config(alias='atendimentos', tags=['acolherio_atendimentos_refresh']) }}
 
--- noqa: disable=CP02,AL09,ST06
--- Contrato V2: atendimento × profissional, com o cadastro social atual.
-with profissionais as (
-    select
-        a.modulo,
-        a.CAS,
-        a.TIPO_UNIDADE,
-        a.UNIDADE_ATENDIMENTO,
-        a.EMAIL_UNIDADE,
-        a.EMAIL_CAS,
-        a.SEQ_ATENDIMENTO,
-        a.DATA_DE_ATENDIMENTO,
-        a.HORA_DE_ATENDIMENTO_ORIGINAL,
-        a.HORA_DE_ATENDIMENTO,
-        a.ID_USUARIO,
-        a.ID_FAMILIA,
-        a.NOME_USUARIO,
-        a.DOCUMENTACAO,
-        a.NUMERO_DOCUMENTO,
-        a.ENDERECO,
-        a.ENDERECO_NUMERO,
-        a.ENDERECO_COMPLEMENTO,
-        a.BAIRRO,
-        a.REFERENCIA_OU_COMUNIDADE,
-        a.NOME_ATENDIMENTO_ORIGINAL,
-        a.DATA_NASCIMENTO,
-        a.IDADE,
-        a.RACA_COR,
-        a.SEXO,
-        if(p.flag_cadastrado, p.id_profissional, null) as PROFISSIONAL_ID,
-        p.nome as PROFISSIONAL,
-        p.cbo_original as PROFISSIONAL_CBO_ORIGINAL,
-        p.cbo as PROFISSIONAL_CBO,
-        a.CADASTRANTE,
-        a.DATA_CADASTRO_ATENDIMENTO,
-        p.tipo_atendimento as TIPO_ATENDIMENTO,
-        p.nome_atendimento as NOME_ATENDIMENTO,
-        a.IDADE_FAIXA,
-        concat(a.SEQ_ATENDIMENTO, '-', if(p.flag_cadastrado, p.id_profissional, null)) as ID_ATENDIMENTO,
-        a.EMAIL,
-        a.PROJETOS_SOCIAIS,
-        {{ dbt_utils.generate_surrogate_key(['a.ID_ATENDIMENTO_MODULO', 'p.id_profissional']) }} as ID_ATENDIMENTO_SK,
-        a.ID_ATENDIMENTO_MODULO,
-        a.ID_UNIDADE,
-        a.ID_LOGIN_CADASTRO,
-        a.ID_TIPO_ATENDIMENTO,
-        a.FLAG_CANCELADO,
-        a.DATA_SAIDA_ATENDIMENTO,
-        a.DATA_SAIDA_VINCULO_FAMILIAR,
-        a.VINCULOS_FAMILIARES,
-        p.cbos as PROFISSIONAL_CBOS,
-        p.nome_cadastral as PROFISSIONAL_NOME_CADASTRAL,
-        a.EMAIL_PLANILHA,
-        a.FLAG_USUARIO_CADASTRADO,
-        a.FLAG_UNIDADE_CADASTRADA,
-        a.FLAG_OPERADOR_CADASTRADO,
-        p.flag_cadastrado as FLAG_PROFISSIONAL_CADASTRADO,
-        a.FLAG_USUARIO_TESTE,
-        a.FLAG_UNIDADE_TESTE,
-        a.FLAG_OPERADOR_TESTE,
-        p.flag_teste as FLAG_PROFISSIONAL_TESTE,
-        a.PROJETOS_SOCIAIS_HISTORICO,
-        a.PROFISSIONAIS,
-        a.QUANTIDADE_PROFISSIONAIS,
-        a.FLAG_ALGUM_PROFISSIONAL_TESTE,
-        a.PROFISSIONAIS_NOMES,
-        a.FLAG_ATENDIMENTO_COMPARTILHADO,
-        a.FLAG_REGISTRO_TESTE,
-        a.SERVICOS_SOCIOASSISTENCIAIS,
-        a.SERVICOS_SOCIOASSISTENCIAIS_HISTORICO,
-        a.FLAG_POSSUI_VIOLACAO_DIREITO,
-        a.VIOLACOES,
-        a.VIOLACOES_DETALHES,
-        a.FLAG_RECEBE_BENEFICIO,
-        a.BENEFICIOS,
-        a.BENEFICIOS_DETALHES,
-        a.FLAG_DEFICIENCIA,
-        a.DEFICIENCIAS,
-        a.DEFICIENCIAS_DETALHES,
-        a.FLAG_SITUACAO_RUA,
-        a.FLAG_POSSUI_COMORBIDADE,
-        a.COMORBIDADES,
-        a.DATA_INFORMACAO_COMORBIDADES,
-        a.LOCAL_TRATAMENTO_COMORBIDADES,
-        a.COMORBIDADES_DETALHES,
-        p.flag_principal as FLAG_PROFISSIONAL_PRINCIPAL
-    from {{ ref('int_atendimentos_dataviz') }} as a,
-        unnest(a.PROFISSIONAIS) as p
-    where a.FLAG_ELEGIVEL_DATAVIZ
-)
-
+-- Uma linha por atendimento. A seleção analítica acontece no dataviz.
 select
-    *,
-    -- O CBO já foi reduzido a um valor determinístico na intermediate.
+    a.*,
+    -- O CBO principal já é único; os demais ficam nos detalhes da equipe.
     1 as cbo_unico_rank,
-    row_number() over (
-        partition by
-            PROFISSIONAL_ID, HORA_DE_ATENDIMENTO, DATA_DE_ATENDIMENTO,
-            NOME_ATENDIMENTO_ORIGINAL, ID_USUARIO, UNIDADE_ATENDIMENTO
-        order by DATA_CADASTRO_ATENDIMENTO, SEQ_ATENDIMENTO, modulo
+    (
+        select p.atendimento_unico_rank
+        from unnest(a.profissionais) as p
+        where p.flag_principal
     ) as atendimento_unico_rank
-from profissionais
-qualify atendimento_unico_rank = 1
+from {{ ref('int_atendimentos_dataviz') }} as a

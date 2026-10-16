@@ -1,7 +1,7 @@
 {{ config(materialized='ephemeral') }}
 
 -- Cadastro atual por atendimento, com equipe e perfil social agregados.
--- A mart expande a equipe e aplica os filtros e a deduplicação analítica.
+-- A mart preserva o grão; flags e ranks permitem filtrar no dataviz.
 
 -- noqa: disable=CP02,AL09,ST06
 with atendimentos as (
@@ -127,10 +127,13 @@ base as (
         coalesce(upper(unidade.nome_unidade) like '%TESTE%', false) as flag_unidade_teste,
         coalesce(upper(operador.nome_operador) like '%TESTE%', false) as flag_operador_teste,
         -- Preserva os filtros da V2; NULL também fica fora do universo analítico.
-        usuario.nome not like '%TESTE%'
-        and unidade.nome_unidade not like '%TESTE%'
-        and operador.nome_operador not like '%TESTE%'
-        and (a.origem_modulo != 'usuario' or familia.principal.data_saida is null) as flag_elegivel_dataviz
+        coalesce(
+            usuario.nome not like '%TESTE%'
+            and unidade.nome_unidade not like '%TESTE%'
+            and operador.nome_operador not like '%TESTE%'
+            and (a.origem_modulo != 'usuario' or familia.principal.data_saida is null),
+            false
+        ) as flag_elegivel_dataviz
     from atendimentos as a
     left join {{ ref('raw_usuarios') }} as usuario on a.id_usuario = usuario.id_paciente
     left join {{ ref('raw_unidades') }} as unidade on a.id_unidade = unidade.id_unidade
@@ -147,6 +150,14 @@ profissionais as (
         a.flag_profissional_principal,
         b.tipo_unidade,
         b.nome_atendimento_original,
+        b.id_usuario,
+        b.hora,
+        b.data_atendimento,
+        b.unidade_atendimento,
+        b.flag_elegivel_dataviz,
+        b.data_cadastro_atendimento,
+        b.id_atendimento,
+        b.origem_modulo,
         case
             when trim(upper(p.nome)) in (
                 'ATENDIMENTO RECEPÇÃO', 'ATENDIMENTO BUSCA ATIVA', 'ATENDIMENTO ENTREVISTADOR SOCIAL'
@@ -191,7 +202,16 @@ profissionais_classificados as (
                 else p.nome_atendimento_original
             end as nome_atendimento,
             p.flag_cadastrado,
-            p.flag_teste
+            p.flag_teste,
+            -- Mantém os registros, mas prioriza o universo V2 para o filtro opcional.
+            row_number() over (
+                partition by
+                    if(p.flag_cadastrado, p.id_profissional, null), p.hora, p.data_atendimento,
+                    p.nome_atendimento_original, p.id_usuario, p.unidade_atendimento
+                order by
+                    p.flag_elegivel_dataviz desc, p.data_cadastro_atendimento asc,
+                    p.id_atendimento asc, p.origem_modulo asc
+            ) as atendimento_unico_rank
         ) as profissional
     from profissionais as p
 ),
