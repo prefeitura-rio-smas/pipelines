@@ -265,7 +265,7 @@ select
     concat(coalesce(b.email_cas, ''), ',', coalesce(b.email_unidade, ''), ',', coalesce(b.email_planilha, '')) as EMAIL,
     1 as cbo_unico_rank,
     row_number() over (
-        partition by b.id_usuario, b.id_unidade, b.data_atendimento, b.hora, b.nome_atendimento_original
+        partition by p.principal.id_profissional, b.id_usuario, b.id_unidade, b.data_atendimento, b.hora, b.nome_atendimento_original
         order by b.data_cadastro_atendimento, b.id_atendimento_modulo
     ) as atendimento_unico_rank,
     projetos.projetos_sociais as PROJETOS_SOCIAIS,
