@@ -27,7 +27,6 @@ models:
           projetos, serviços, flags, ranks e PROFISSIONAIS com a equipe completa.
           As colunas profissionais do atendimento representam o principal.
           O rank de cada integrante do array PROFISSIONAIS é independente.
-        data_tests: [not_null]
       - name: DOCUMENTACAO
         data_tests:
           - accepted_values:

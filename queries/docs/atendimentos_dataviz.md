@@ -132,7 +132,7 @@ dos grupos elegíveis de profissionais, inclusive compartilhados.
 Na validação de 16/10/2026, foram obtidos 310.199 usuários únicos e 1.001.937
 atendimentos nos arrays, com no máximo 878 atendimentos por usuário. Expandir
 os structs e reconstruir a projeção anterior recuperou todos os atendimentos,
-sem diferenças em nenhum campo. Os 11 testes dbt compilados passaram no BigQuery.
+sem diferenças em nenhum campo. Os 10 testes dbt compilados passaram no BigQuery.
 Os 655 registros fora do universo opcional da V2, 633 marcados como teste e
 7.440 com rank do principal maior que 1 continuam preservados nos arrays.
 
