@@ -25,6 +25,10 @@ CARIOCAS e as demais colunas da V2. O profissional é associado por seu ID,
 nunca pelo login do cadastrante. A classificação usa o mesmo CBO mostrado
 na linha, com a normalização e a precedência da V2.
 
+Para unidades com CAS GE, mantém `gdados.smas@prefeitura.rio`, conforme a
+tabela programada atual. Esse mapeamento não aparece no trecho V2 fornecido,
+mas é necessário para preservar os e-mails do dataviz existente.
+
 O universo mantém os filtros de nome de usuário, unidade e cadastrante
 `NOT LIKE '%TESTE%'`, inclusive a exclusão de nomes nulos. No módulo usuário,
 somente vínculos familiares ativos são usados; usuários sem vínculo também
@@ -114,7 +118,8 @@ sem falhas. Sete asserções adicionais com dados sintéticos verificaram
 deduplicação independente dos compartilhados, inclusive quando o principal
 é duplicata, exclusão de entradas inelegíveis e profissional desconhecido.
 
-A credencial local não acessa a planilha do Drive. Somente na validação,
+A credencial local não acessa a planilha do Drive. Na validação local,
 o filtro de e-mails foi substituído pelos valores já materializados em
-`relatorio.atendimentos`, preservando a agregação por unidade. Os e-mails
-atuais da planilha ainda precisam ser conferidos com a credencial do pipeline.
+`relatorio.atendimentos`, preservando a agregação por unidade. O build do CI
+usa a credencial do pipeline e a planilha original. A conferência de seu
+resultado materializado identificou o mapeamento de CAS GE descrito acima.

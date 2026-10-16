@@ -100,7 +100,11 @@ base as (
         end as tipo_unidade,
         unidade.nome_unidade as unidade_atendimento,
         unidade.email_unidade,
-        {{ email_cas('unidade.cas') }} as email_cas,
+        -- A tabela programada também atende unidades da gerência (CAS GE).
+        case
+            when unidade.cas = 'GE' then 'gdados.smas@prefeitura.rio'
+            else {{ email_cas('unidade.cas') }}
+        end as email_cas,
         filtro.email as email_planilha,
         usuario.nome as nome_usuario,
         usuario.cpf,
