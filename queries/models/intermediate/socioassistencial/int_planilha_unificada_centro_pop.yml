@@ -1,0 +1,5 @@
+version: 2
+models:
+- name: int_planilha_unificada_centro_pop
+  description: Transformação existente da planilha Centro POP, transferida sem mudança
+    de regras. Mantém saída e limitações do contrato legado.

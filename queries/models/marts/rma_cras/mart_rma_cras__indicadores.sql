@@ -411,19 +411,7 @@ presencas as (
 presencas_classificadas as (
     select
         *,
-        id_tipo_atividade in (1, 2, 3, 4) as flag_scfv,
-        id_tipo_atividade in (5, 6, 7, 8) as flag_nao_continuado,
-        (
-            coalesce(trim(recorrencia), '') != ''
-            and regexp_contains(
-                concat(
-                    coalesce(nome_atividade, ''),
-                    ' ',
-                    coalesce(nome_tipo_atividade, '')
-                ),
-                r'(?i)(\bPAIF\b|grupo.*fam[ií]lia|fam[ií]lia.*grupo)'
-            )
-        ) as flag_grupo_regular_paif
+        {{ classificar_atividade_rma('presencas') }}
     from presencas
 ),
 

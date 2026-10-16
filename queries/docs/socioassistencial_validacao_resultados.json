@@ -1,0 +1,113 @@
+{
+  "data_validacao": "2026-10-16",
+  "ambiente": "rj-smas-dev.ci_147_socioassistencial_20261016",
+  "baseline_pr": "96faed410b846aa0b4b112e81deb4e34b4963219",
+  "dbt_test": {
+    "aprovados": 10,
+    "erros": 0,
+    "avisos": 0
+  },
+  "resultados": [
+    {
+      "secao": "teste:socioassistencial_acompanhamentos",
+      "falhas": 0,
+      "job_id": "0689f239-05d3-449b-8635-a73fc672358c",
+      "bytes_processados": 65052427
+    },
+    {
+      "secao": "teste:socioassistencial_classificacao_atividades",
+      "falhas": 0,
+      "job_id": "b1119e6f-1f72-4ed8-82c6-9a2ec310febb",
+      "bytes_processados": 0
+    },
+    {
+      "secao": "teste:socioassistencial_cobertura_acompanhamentos",
+      "falhas": 0,
+      "job_id": "4ab59129-85eb-4d5b-80ff-1c5cc8c7e6de",
+      "bytes_processados": 64970777
+    },
+    {
+      "secao": "teste:socioassistencial_cobertura_fontes",
+      "falhas": 0,
+      "job_id": "d7166e50-913e-4ab3-8953-a5caae40675c",
+      "bytes_processados": 0
+    },
+    {
+      "secao": "teste:socioassistencial_integridade",
+      "falhas": 0,
+      "job_id": "0cff11a7-383e-4222-b431-fa1a017b4a0a",
+      "bytes_processados": 0
+    },
+    {
+      "secao": "teste:socioassistencial_paridade_atendimentos",
+      "falhas": 0,
+      "job_id": "c54c5629-2aaf-45e2-ad80-5e718916c23d",
+      "bytes_processados": 524596422
+    },
+    {
+      "secao": "teste:socioassistencial_paridade_planilha",
+      "falhas": 0,
+      "job_id": "aac4e2e5-f125-4dcf-8e62-1c6872e3c2d1",
+      "bytes_processados": 30684364
+    },
+    {
+      "secao": "teste:socioassistencial_vigencia_fechamento",
+      "falhas": 0,
+      "job_id": "3b3d53f7-cfb4-4ce1-a66c-ed62b74e5520",
+      "bytes_processados": 0
+    },
+    {
+      "secao": "teste:socioassistencial_vinculo_fichas_arcgis",
+      "falhas": 0,
+      "job_id": "db45d565-da66-448a-bd6f-e561a40734fb",
+      "bytes_processados": 91078637
+    },
+    {
+      "secao": "arcgis",
+      "ocorrencias": 542563,
+      "datas_recuperadas": 39998,
+      "sem_data": 2,
+      "fichas_localizadas": 542549,
+      "sem_unidade": 371303,
+      "job_id": "002a94ce-193f-4249-85a8-07367ff75339",
+      "bytes_processados": 0
+    },
+    {
+      "secao": "mensais_sem_atendimento",
+      "registros": 21533,
+      "sem_atendimento_no_mes": 13419,
+      "job_id": "212945a7-a270-4b3f-81f1-7d32a83d3b28",
+      "bytes_processados": 51379561
+    },
+    {
+      "secao": "comparacao_programada_por_mes_unidade",
+      "grupos": 1822,
+      "grupos_divergentes": 35,
+      "novo": 1022187,
+      "anterior": 1022073,
+      "diferenca": 114,
+      "job_id": "23cfa11e-e839-463d-bf8c-4cb0454a549a",
+      "bytes_processados": 129030653
+    },
+    {
+      "secao": "cras_atendimentos_setembro",
+      "unidades": 48,
+      "divergencias_c1": 0,
+      "divergencias_c6": 0,
+      "anterior_c1": 33442,
+      "nova_c1": 33442,
+      "job_id": "e47961d4-1d43-4bbc-95f9-abd6dfa68694",
+      "bytes_processados": 17151111
+    },
+    {
+      "secao": "cras_acompanhamentos_setembro",
+      "unidades": 48,
+      "divergencias_a1": 13,
+      "divergencias_a2": 0,
+      "anterior_a1": 2072,
+      "nova_a1": 1949,
+      "job_id": "28fdbbca-f885-47bc-9def-b23a30952ce9",
+      "bytes_processados": 5819465
+    }
+  ]
+}

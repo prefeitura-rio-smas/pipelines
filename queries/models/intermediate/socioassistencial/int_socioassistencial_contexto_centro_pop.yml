@@ -1,0 +1,5 @@
+version: 2
+models:
+- name: int_socioassistencial_contexto_centro_pop
+  description: Contextos da planilha agrupados por ID/usuário/unidade/data; preserva
+    divergências em ARRAY sem multiplicação.

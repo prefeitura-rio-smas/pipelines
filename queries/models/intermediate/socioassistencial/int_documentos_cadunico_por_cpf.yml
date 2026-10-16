@@ -1,0 +1,5 @@
+version: 2
+models:
+- name: int_documentos_cadunico_por_cpf
+  description: Documentos CadÚnico por CPF, com regras existentes para rejeitar associação
+    ambígua de família, NIS e documentos. Snapshot atual.
