@@ -18,17 +18,11 @@ unidades as (
 -- Métricas por (profissional × unidade do fato)
 atendimentos_agregados as (
     select
-        if(
-            p.flag_cadastrado and upper(p.nome_cadastral) not like '%TESTE%',
-            {{ dbt_utils.generate_surrogate_key(['p.id_profissional']) }}, null
-        ) as id_profissional_sk,
-        a.id_unidade,
-        count(distinct a.id_atendimento_sk) as total_atendimentos
-    from {{ ref('fct_atendimentos') }} as a
-    cross join unnest(a.profissionais) as p
-    where
-        coalesce(a.flag_cancelado, 'N') != 'S'
-        and not a.flag_operador_teste_legado
+        id_profissional_sk,
+        id_unidade,
+        count(distinct id_atendimento_sk) as total_atendimentos
+    from {{ ref('fct_atendimentos') }}
+    where coalesce(flag_cancelado, 'N') != 'S'
     group by 1, 2
 ),
 

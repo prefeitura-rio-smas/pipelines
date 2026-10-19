@@ -46,7 +46,6 @@ situacao_rua as (
     from {{ ref('fct_atendimentos') }}
     where id_usuario in (select id_usuario from {{ ref('dim_usuarios') }} where flag_situacao_rua = 'Sim')
       and (flag_cancelado is null or flag_cancelado != 'S')
-        and not flag_operador_teste_legado
     group by 1
 ),
 

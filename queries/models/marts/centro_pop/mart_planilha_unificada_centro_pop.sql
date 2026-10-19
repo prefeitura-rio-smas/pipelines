@@ -18,7 +18,7 @@ with centro_pop as (
     group by id_unidade
 ),
 
--- O fato contém eventos e equipe; expande participantes somente para a classificação POP.
+-- O fato tem uma linha por atendimento × profissional compartilhado.
 atendimentos_candidatos as (
     select
         a.id_usuario,
@@ -46,11 +46,9 @@ atendimentos_candidatos as (
             else 'Outros Atendimentos'
         end as tipo_atendimento
     from {{ ref('fct_atendimentos') }} as a
-    cross join unnest(a.PROFISSIONAIS) as p
     inner join centro_pop as c on a.id_unidade = c.id_unidade
-    left join {{ ref('dim_profissionais') }} as dp on p.id_profissional = dp.id_profissional
+    left join {{ ref('dim_profissionais') }} as dp on a.id_profissional_sk = dp.id_profissional_sk
     where (a.flag_cancelado is null or a.flag_cancelado != 'S')
-        and not a.flag_operador_teste_legado
 ),
 
 -- Deduplica apenas cópias idênticas dos atributos do fato. Se um ID tiver

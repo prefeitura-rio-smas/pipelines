@@ -67,18 +67,14 @@ with
             and fct.descricao_evolucao != ''
     ),
 
-atendimentos_por_pessoa_unidade as (
-    select
-        fct.id_usuario as id_paciente,
-        fct.id_unidade,
-        fct.data_atendimento as data_interacao
-    from {{ ref('fct_atendimentos') }} as fct
-    -- Mantém a contagem anterior por participação, sem mudar este indicador.
-    cross join unnest(fct.profissionais)
-    where
-        coalesce(fct.flag_cancelado, 'N') != 'S'
-        and not fct.flag_operador_teste_legado
-),
+    atendimentos_por_pessoa_unidade as (
+        select
+            fct.id_usuario as id_paciente,
+            fct.id_unidade,
+            fct.data_atendimento as data_interacao
+        from {{ ref('fct_atendimentos') }} fct
+        where coalesce(fct.flag_cancelado, 'N') != 'S'
+    ),
 
     interacoes_unificadas as (
         select

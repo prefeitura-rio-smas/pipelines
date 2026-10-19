@@ -50,7 +50,7 @@ with usuarios as (
             a.DATA_DE_ATENDIMENTO,
             a.HORA_DE_ATENDIMENTO_ORIGINAL,
             a.HORA_DE_ATENDIMENTO,
-            a.ID_FAMILIA_CONTEXTO as ID_FAMILIA,
+            a.ID_FAMILIA,
             a.NOME_ATENDIMENTO_ORIGINAL,
             a.PROFISSIONAL_ID,
             a.PROFISSIONAL,
@@ -60,7 +60,7 @@ with usuarios as (
             a.DATA_CADASTRO_ATENDIMENTO,
             a.TIPO_ATENDIMENTO,
             a.NOME_ATENDIMENTO,
-            a.ID_ATENDIMENTO_MODULO as ID_ATENDIMENTO,
+            a.ID_ATENDIMENTO,
             a.EMAIL,
             a.PROJETOS_SOCIAIS,
             a.ID_ATENDIMENTO_SK,
@@ -97,7 +97,7 @@ with usuarios as (
                 where p.flag_principal
             ) as atendimento_unico_rank
         ) order by a.DATA_DE_ATENDIMENTO, a.HORA_DE_ATENDIMENTO, a.ID_ATENDIMENTO_MODULO) as ATENDIMENTOS
-    from {{ ref('fct_atendimentos') }} as a
+    from {{ ref('int_atendimentos_dataviz') }} as a
     group by a.ID_USUARIO
 )
 

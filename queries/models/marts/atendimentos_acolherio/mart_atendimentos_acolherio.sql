@@ -1,34 +1,12 @@
--- Expande a equipe para preservar o contrato por participação desta mart.
 with fct_atendimentos as (
-    select
-        {{ dbt_utils.generate_surrogate_key(['a.id_atendimento_modulo', 'p.id_profissional']) }} as id_atendimento_sk,
-        a.id_atendimento_modulo,
-        a.id_usuario_sk,
-        if(
-            p.flag_cadastrado and upper(p.nome_cadastral) not like '%TESTE%',
-            {{ dbt_utils.generate_surrogate_key(['p.id_profissional']) }}, null
-        ) as id_profissional_sk,
-        a.id_unidade_sk,
-        a.id_usuario,
-        p.id_profissional,
-        a.id_unidade,
-        a.id_atendimento,
-        a.id_tipo_atendimento,
-        a.tipo_atendimento_descricao,
-        a.data_atendimento,
-        a.hora_atendimento,
-        a.origem_modulo,
-        a.flag_cancelado
-    from {{ ref('fct_atendimentos') }} as a
-    cross join unnest(a.profissionais) as p
-    where not a.flag_operador_teste_legado
+    select * from {{ ref('fct_atendimentos') }}
 ),
 
 filtro_email_dev as (
     select * from {{ source('dashboard_acolherio', 'filtro_email_dev') }}
 ),
 
--- Mantém os atributos de apresentação desta saída nas dimensões existentes.
+-- Restaura os atributos dimensionais que o fct_atendimentos deixou de expor (ver cda9167).
 base_enriquecida as (
     select
         a.*,
