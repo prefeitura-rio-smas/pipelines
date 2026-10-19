@@ -12,7 +12,7 @@ resolution-markers = [
 
 [manifest]
 overrides = [
-    { name = "apprise", specifier = ">=1.11.0" },
+    { name = "apprise", specifier = ">=1.11.0,<2" },
     { name = "black", specifier = ">=26.3.1" },
     { name = "click", specifier = ">=8.3.3" },
     { name = "cryptography", specifier = ">=46.0.7" },

@@ -1,6 +1,9 @@
 version: 2
 models:
   - name: fct_atendimentos
+    description: Uma linha por atendimento e profissional. A chave inclui o módulo da origem.
+      IDs compartilhados são convertidos para inteiros e deduplicados; inválidos e zero são descartados
+      da lista secundária. O profissional principal é preservado, inclusive quando desconhecido.
     columns:
       - name: id_atendimento_sk
         tests: [unique, not_null]
