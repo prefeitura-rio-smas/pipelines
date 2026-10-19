@@ -1,16 +1,13 @@
 version: 2
+
 models:
   - name: int_deficiencias_agregadas
-    description: Uma linha por usuário com deficiencias. Preserva o array deficiencia e acrescenta descrição e detalhes
-      normalizados para os consumidores.
+    description: |
+      Deficiências dos usuários explodidas (um registro por tipo de deficiência).
+      Ephemeral — materializado apenas como CTE nos modelos que o referenciam.
     columns:
       - name: id_usuario
-        description: ID original do usuário (seqpac).
-        tests:
-          - not_null
+        description: "ID original do usuário (seqpac)."
+        tests: [not_null]
       - name: deficiencia
-        description: Array estruturado de deficiências do usuário, com STRUCT (codigo, descricao).
-      - name: deficiencias
-        description: Descrições distintas ordenadas, separadas por vírgula.
-      - name: deficiencias_detalhes
-        description: ARRAY normalizado de código/descrição; preserva códigos desconhecidos com descrição de fallback.
+        description: "Array estruturado de deficiências do usuário, com STRUCT (codigo, descricao)."

@@ -62,6 +62,29 @@ profissionais_cbo as (
     group by id_profissional
 ),
 
+projetos as (
+    select
+        vinculo.*,
+        {{ map_nome_projeto_social('vinculo.id_projeto_social') }} as nome_projeto_social,
+        vinculo.indicador_ativo = 'S' and vinculo.data_cancelamento is null as flag_ativo
+    from {{ ref('raw_familias_projetos_sociais') }} as vinculo
+),
+
+projetos_familia as (
+    select
+        id_familia,
+        string_agg(
+            distinct if(flag_ativo, nome_projeto_social, null),
+            ', ' order by if(flag_ativo, nome_projeto_social, null)
+        ) as projetos_sociais,
+        array_agg(struct(
+            id_projeto_social, nome_projeto_social, id_unidade, id_login_cadastro,
+            data_cadastro, data_cancelamento, indicador_ativo
+        ) order by id_projeto_social, data_cadastro) as projetos_sociais_historico
+    from projetos
+    group by id_familia
+),
+
 base as (
     select
         a.* except (id_familia),
@@ -265,7 +288,7 @@ select
     end as IDADE_FAIXA,
     b.id_atendimento_modulo as ID_ATENDIMENTO,
     concat(b.email_cas, ',', b.email_unidade, ',', b.email_planilha) as EMAIL,
-    projetos.projetos_sociais_descricao as PROJETOS_SOCIAIS,
+    projetos.projetos_sociais as PROJETOS_SOCIAIS,
     {{ dbt_utils.generate_surrogate_key(['b.id_atendimento_modulo']) }} as ID_ATENDIMENTO_SK,
     b.id_atendimento_modulo as ID_ATENDIMENTO_MODULO,
     b.id_unidade as ID_UNIDADE,
@@ -314,6 +337,6 @@ select
     perfil.comorbidades_detalhes as COMORBIDADES_DETALHES
 from base as b
 left join profissionais_por_atendimento as p on b.id_atendimento_modulo = p.id_atendimento_modulo
-left join {{ ref('int_familias_projetos_sociais') }} as projetos on b.id_familia = projetos.id_familia
-left join {{ ref('int_servicos_agregados') }} as servicos on b.id_familia = servicos.id_familia
+left join projetos_familia as projetos on b.id_familia = projetos.id_familia
+left join {{ ref('int_servicos_familia_completos') }} as servicos on b.id_familia = servicos.id_familia
 left join {{ ref('int_perfil_social_usuarios') }} as perfil on b.id_usuario = perfil.id_usuario

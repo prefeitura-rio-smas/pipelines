@@ -7,6 +7,20 @@ with usuarios as (
     select id_usuario from {{ ref('raw_usuarios_informacoes_medicas') }}
     union distinct
     select id_usuario from {{ ref('int_usuarios_violacoes') }}
+),
+
+beneficios as (
+    select
+        id_usuario,
+        {{ normalizar_itens_sociais('beneficio', 'Benefício não mapeado (código %s)') }} as detalhes
+    from {{ ref('int_beneficios_agregados') }}
+),
+
+deficiencias as (
+    select
+        id_usuario,
+        {{ normalizar_itens_sociais('deficiencia', 'Deficiência não mapeada (código %s)') }} as detalhes
+    from {{ ref('int_deficiencias_agregadas') }}
 )
 
 select
@@ -19,11 +33,11 @@ select
     {{ descricoes_sociais('v.violacoes') }} as violacoes,
     v.violacoes as violacoes_detalhes,
     {{ map_indicador_social('s.flag_recebe_beneficio') }} as flag_recebe_beneficio,
-    b.beneficios as beneficios,
-    b.beneficios_detalhes,
+    {{ descricoes_sociais('b.detalhes') }} as beneficios,
+    b.detalhes as beneficios_detalhes,
     {{ map_indicador_social('s.flag_deficiencia') }} as flag_deficiencia,
-    df.deficiencias as deficiencias,
-    df.deficiencias_detalhes,
+    {{ descricoes_sociais('df.detalhes') }} as deficiencias,
+    df.detalhes as deficiencias_detalhes,
     coalesce(s.flag_situacao_rua, 'Não Informado') as flag_situacao_rua,
     {{ map_indicador_social('m.flag_possui_comorbidade') }} as flag_possui_comorbidade,
     nullif(trim(m.descricao_comorbidades), '') as comorbidades,
@@ -44,6 +58,6 @@ from usuarios as u
 left join {{ ref('raw_usuarios_detalhes') }} as d on u.id_usuario = d.id_paciente
 left join {{ ref('raw_usuarios_saude_mental') }} as s on u.id_usuario = s.id_paciente
 left join {{ ref('raw_usuarios_informacoes_medicas') }} as m on u.id_usuario = m.id_usuario
-left join {{ ref('int_beneficios_agregados') }} as b on u.id_usuario = b.id_usuario
-left join {{ ref('int_deficiencias_agregadas') }} as df on u.id_usuario = df.id_usuario
+left join beneficios as b on u.id_usuario = b.id_usuario
+left join deficiencias as df on u.id_usuario = df.id_usuario
 left join {{ ref('int_usuarios_violacoes') }} as v on u.id_usuario = v.id_usuario
