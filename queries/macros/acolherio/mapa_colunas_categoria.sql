@@ -1,0 +1,508 @@
+-- Coluna NACIONALIDADE do models relatorio_geral
+{% macro map_coluna_nacionalidade (coluna) %}
+  CASE
+    WHEN {{ coluna }} = '1' THEN 'Brasileira'
+    WHEN {{ coluna }} = '2' THEN 'Brasileira'
+    WHEN {{ coluna }} = '3' THEN 'Estrangeira'
+  END 
+{% endmacro %}
+
+-- Coluna COND_ESTRANGEIRO do models relatorio_geral
+{% macro map_coluna_cond_estrangeiro (coluna) %}
+  CASE
+    WHEN {{ coluna }} = '1' THEN 'Apatrida'
+    WHEN {{ coluna }} = '2' THEN 'Asilado'
+    WHEN {{ coluna }} = '3' THEN 'Imigrante com autorização de residência'
+    WHEN {{ coluna }} = '4' THEN 'Imigrante com visto temporário'
+    WHEN {{ coluna }} = '5' THEN 'Refugiado (Não legalizado)'
+    WHEN {{ coluna }} = '6' THEN 'Refugiado (Em solicitação)'
+    WHEN {{ coluna }} = '7' THEN 'Refugiado Legalizado'
+    WHEN {{ coluna }} = '8' THEN 'Turista'
+  END 
+{% endmacro %}
+
+-- Coluna RAÇA/COR do models relatorio_geral
+{% macro map_coluna_raca (coluna) %}
+  CASE
+    WHEN {{ coluna }} = '01' THEN 'Branca'
+    WHEN {{ coluna }} = '02' THEN 'Preta'
+    WHEN {{ coluna }} = '03' THEN 'Parda'
+    WHEN {{ coluna }} = '04' THEN 'Amarelo'
+    WHEN {{ coluna }} = '05' THEN 'Indígena'
+  END 
+{% endmacro %}
+
+-- Coluna GENERO do models relatorio_geral
+{% macro map_coluna_genero (coluna) %}
+  CASE
+    WHEN {{ coluna }} = '02' THEN 'Travesti'
+    WHEN {{ coluna }} = '03' THEN 'Homem transgênero'
+    WHEN {{ coluna }} = '04' THEN 'Intersexo'
+    WHEN {{ coluna }} = '05' THEN 'Mulher cisgênero'
+    WHEN {{ coluna }} = '06' THEN 'Homem cisgênero'
+    WHEN {{ coluna }} = '07' THEN 'Não binário'
+    WHEN {{ coluna }} = '98' THEN 'Outro'
+    WHEN {{ coluna }} = '01' THEN 'Mulher transgênero'
+    WHEN {{ coluna }} = '99' THEN 'Sem Informação' 
+  END
+{% endmacro %}
+
+-- Coluna FILIACAO do models relatorio_geral
+{% macro map_coluna_filiacao (coluna) %}
+  CASE
+    WHEN {{ coluna }} = '1' THEN 'Solteiro'
+    WHEN {{ coluna }} = '2' THEN 'Casado'
+    WHEN {{ coluna }} = '3' THEN 'Viúvo'
+    WHEN {{ coluna }} = '4' THEN 'Separado Judicialmente'
+    WHEN {{ coluna }} = '5' THEN 'União consensual'
+  END
+{% endmacro %}
+
+-- Coluna serie_escola do models relatorio_geral
+{% macro map_coluna_serie_escola (coluna) %}
+  CASE
+    WHEN {{ coluna }} = '1' THEN 'Educação Infantil'
+    WHEN {{ coluna }} = '2' THEN 'Fundamental I - 1° Ano'
+    WHEN {{ coluna }} = '3' THEN 'Fundamental I - 2° Ano'
+    WHEN {{ coluna }} = '5' THEN 'Fundamental I - 3° Ano'
+    WHEN {{ coluna }} = '6' THEN 'Fundamental I - 4° Ano'
+    WHEN {{ coluna }} = '7' THEN 'Fundamental I - 5° Ano'
+    WHEN {{ coluna }} = '8' THEN 'Fundamental II - 6° Ano'
+    WHEN {{ coluna }} = '9' THEN 'Fundamental II - 7° Ano'
+    WHEN {{ coluna }} = '10' THEN 'Fundamental II - 8° Ano'
+    WHEN {{ coluna }} = '11' THEN 'Fundamental II - 9° Ano'
+    WHEN {{ coluna }} = '12' THEN 'Ensino Médio - 1° Ano'
+    WHEN {{ coluna }} = '13' THEN 'Ensino Médio - 2° Ano'
+    WHEN {{ coluna }} = '14' THEN 'Ensino Médio - 3° Ano'
+    WHEN {{ coluna }} = '15' THEN 'Ensino Superior'
+    WHEN {{ coluna }} = '16' THEN 'PEJA I e II'
+    WHEN {{ coluna }} = '17' THEN 'PEJA III e IV'
+    WHEN {{ coluna }} = '18' THEN 'PEJA V'
+  END 
+{% endmacro %}
+
+-- Coluna ESCOLARIDADE do models relatorio_geral
+{% macro map_coluna_escolaridade (coluna) %}
+  CASE
+    WHEN {{ coluna }} = '01' THEN 'Não Alfabetizado'
+    WHEN {{ coluna }} = '02' THEN 'Alfabetizado'
+    WHEN {{ coluna }} = '03' THEN 'Nível fundamental incompleto'
+    WHEN {{ coluna }} = '04' THEN 'Nível fundamental completo'
+    WHEN {{ coluna }} = '05' THEN 'Nível médio incompleto'
+    WHEN {{ coluna }} = '06' THEN 'Nível médio completo'
+    WHEN {{ coluna }} = '07' THEN 'Superior incompleto'
+    WHEN {{ coluna }} = '08' THEN 'Superior completo'
+    -- Catálogo indescolari: escolaridade.ini e escolaridade_bc26.ini.
+    WHEN {{ coluna }} = '09' THEN 'Especialização'
+    WHEN {{ coluna }} = '10' THEN 'Mestrado'
+    WHEN {{ coluna }} = '11' THEN 'Doutorado'
+    WHEN {{ coluna }} = '12' THEN 'Nunca estudou'
+    WHEN {{ coluna }} = '13' THEN 'Nível fundamental incompleto (cursando)'
+    WHEN {{ coluna }} = '14' THEN 'Nível médio incompleto (cursando)'
+    WHEN {{ coluna }} = '15' THEN 'Superior incompleto (cursando)'
+    WHEN {{ coluna }} = '16' THEN 'Não sabe/Não informou'
+  END 
+{% endmacro %}
+
+-- Coluna TIPO_CURATELA do models relatorio_geral
+{% macro map_coluna_tipo_curatela (coluna) %}
+  CASE
+    WHEN {{ coluna }} = '1' THEN 'Família extensa'
+    WHEN {{ coluna }} = '2' THEN 'Público'
+    WHEN {{ coluna }} = '3' THEN 'Conhecido/amigo'
+    WHEN {{ coluna }} = '4' THEN 'Conselho de contabilidade'
+  END
+{% endmacro %}
+
+-- Coluna DECISAO_APOIADA do models relatorio_geral
+{% macro map_coluna_decisao_apoiada (coluna) %}
+  -- Indica preenchimento cadastral do campo do processo.
+  CASE
+    WHEN nullif(trim(cast({{ coluna }} as string)), '') IS NULL THEN 'N'
+    ELSE 'S'
+  END
+{% endmacro %}
+
+-- Coluna SITUACAO_DE_RUA do models relatorio_geral
+{% macro map_coluna_situacao_de_rua (coluna) %}
+  CASE 
+      WHEN {{ coluna }} = '5' THEN 'S'
+      ELSE 'N'  
+  END 
+{% endmacro %}
+
+-- Coluna SAUDE_MENTAL do models relatorio_geral
+{% macro map_coluna_saude_mental(coluna ) %}
+  CASE 
+      WHEN {{ coluna }} = 'A' THEN 'Pessoa com aparente agravo de saúde mental'
+      WHEN {{ coluna }} = 'D' THEN 'Pessoa com diagnóstico (laudo médico) de doença mental'
+      ELSE {{ coluna }}  
+  END 
+{% endmacro %}
+
+-- Coluna MOTIV_ACOLHIMENTO do models relatorio_geral
+{% macro map_coluna_tipo_motiv_acolhimento (coluna) %}
+  CASE
+    WHEN {{ coluna }} = '1' THEN 'Negligência'
+    WHEN {{ coluna }} = '2' THEN 'Abandono'
+    WHEN {{ coluna }} = '3' THEN 'Maus tratos'
+    WHEN {{ coluna }} = '4' THEN 'Conflito familiar'
+    WHEN {{ coluna }} = '5' THEN 'Uso abusivo de drogas'
+    WHEN {{ coluna }} = '6' THEN 'Perdido da família'
+    WHEN {{ coluna }} = '7' THEN 'Violência Sexual'
+    WHEN {{ coluna }} = '8' THEN 'Violência Psicológica'
+  END 
+{% endmacro %}
+
+-- Coluna TIPO_DEFICIENCIA do models tipo_deficiencia_unnest
+{% macro map_coluna_tipo_deficiencia (coluna) %}
+  CASE
+    WHEN {{ coluna }} = '1' THEN 'Deficiência auditiva total'
+    WHEN {{ coluna }} = '2' THEN 'Deficiência visual parcial'
+    WHEN {{ coluna }} = '3' THEN 'Deficiência visual total'
+    WHEN {{ coluna }} = '4' THEN 'Deficiência motora'
+    WHEN {{ coluna }} = '5' THEN 'Deficiência mental ou intelectual'
+    WHEN {{ coluna }} = '6' THEN 'Deficiência auditiva parcial'
+  END
+{% endmacro %}
+
+-- Coluna VIOLACAO_DIREITO do models violacao_direito
+{% macro map_coluna_violacao_de_direito (coluna) %}
+  CASE
+    WHEN {{ coluna }} = '01' THEN 'Violência Sexual'
+    WHEN {{ coluna }} = '02' THEN 'Violência Psicológica'
+    WHEN {{ coluna }} = '03' THEN 'Violência financeira ou patrimonial'
+    WHEN {{ coluna }} = '04' THEN 'Negligência e abandono'
+    WHEN {{ coluna }} = '05' THEN 'Violência medicamentosa'
+    WHEN {{ coluna }} = '06' THEN 'Violência doméstica'
+    WHEN {{ coluna }} = '07' THEN 'Violência por tráfico de seres humanos'
+    WHEN {{ coluna }} = '08' THEN 'Violência por trabalho escravo'
+    WHEN {{ coluna }} = '09' THEN 'Violência institucional'
+    WHEN {{ coluna }} = '10' THEN 'Adoção Ilegal'
+    WHEN {{ coluna }} = '11' THEN 'Afastamento do convívio familiar devido a aplicação de MSE ou medida de proteção'
+    WHEN {{ coluna }} = '12' THEN 'Auto Negligência'
+    WHEN {{ coluna }} = '13' THEN 'Cárcere Privado'
+    WHEN {{ coluna }} = '14' THEN 'Conflitos Territoriais / Conflitos Urbanos'
+    WHEN {{ coluna }} = '15' THEN 'Discriminação Étnica/Racial'
+    WHEN {{ coluna }} = '16' THEN 'Discriminação Religiosa'
+    WHEN {{ coluna }} = '17' THEN 'Discriminação Sexual / Gênero'
+    WHEN {{ coluna }} = '18' THEN 'Outras violências sexuais'
+    WHEN {{ coluna }} = '19' THEN 'Trabalho Infantil'
+    WHEN {{ coluna }} = '20' THEN 'Deficiência visual parcial'
+    WHEN {{ coluna }} = '21' THEN 'Deficiência visual total'
+    WHEN {{ coluna }} = '22' THEN 'Deficiência motora'
+    WHEN {{ coluna }} = '23' THEN 'Deficiência mental ou intelectual'
+    WHEN {{ coluna }} = '24' THEN 'Deficiência auditiva parcial'
+    WHEN {{ coluna }} = '25' THEN 'Deficiência mental ou intelectual'
+    WHEN {{ coluna }} = '26' THEN 'Deficiência auditiva parcial'
+  END
+{% endmacro %}
+
+-- Coluna BENEFICIO do models tipo_beneficio
+-- Fonte: rj-smas-dev.governance.dominios_acolherio WHERE dominio='indqualbenef' (43 códigos)
+{% macro map_coluna_beneficio(coluna) %}
+  CASE
+    WHEN {{ coluna }} = '1' THEN 'Aposentadoria'
+    WHEN {{ coluna }} = '2' THEN 'Auxilio Doença'
+    WHEN {{ coluna }} = '3' THEN 'Bolsa BAR [Bolsa de apoio à ressocialização]'
+    WHEN {{ coluna }} = '4' THEN 'Bolsa de volta para casa [PVC nacional]'
+    WHEN {{ coluna }} = '5' THEN 'Bolsa Família'
+    WHEN {{ coluna }} = '6' THEN 'Bolsa-Rio Tipo I'
+    WHEN {{ coluna }} = '7' THEN 'Bolsa-Rio Tipo II'
+    WHEN {{ coluna }} = '8' THEN 'Cartão Família Carioca [CFC]'
+    WHEN {{ coluna }} = '9' THEN 'BPC-Benefício de Prestação Continuada'
+    WHEN {{ coluna }} = '10' THEN 'Pensão'
+    WHEN {{ coluna }} = '11' THEN 'Auxilio Emergêncial'
+    WHEN {{ coluna }} = '12' THEN 'Auxilio Brasil'
+    WHEN {{ coluna }} = '13' THEN 'Assalariado'
+    WHEN {{ coluna }} = '14' THEN 'Agente Experiente'
+    WHEN {{ coluna }} = '15' THEN 'Aluguel Social'
+    WHEN {{ coluna }} = '16' THEN 'Apoio Moradia'
+    WHEN {{ coluna }} = '17' THEN 'Benefício comprometido em empréstimo'
+    WHEN {{ coluna }} = '18' THEN 'Benefícios eventuais'
+    WHEN {{ coluna }} = '19' THEN 'Pensão Alimentícia'
+    WHEN {{ coluna }} = '20' THEN 'Pensão por morte'
+    WHEN {{ coluna }} = '21' THEN 'Outro Benefício'
+    WHEN {{ coluna }} = '22' THEN 'Outro tipo de Pensão'
+    WHEN {{ coluna }} = '23' THEN 'Não sabe / Não lembra'
+    WHEN {{ coluna }} = '24' THEN 'Não respondeu'
+    WHEN {{ coluna }} = '25' THEN 'Bolsa de inclusão produtiva [Seguir em Frente]'
+    WHEN {{ coluna }} = '26' THEN 'Auxílio moradia temporário'
+    WHEN {{ coluna }} = '27' THEN 'Idoso em família'
+    WHEN {{ coluna }} = '28' THEN 'Riocard especial'
+    WHEN {{ coluna }} = '29' THEN 'Riocard estudante'
+    WHEN {{ coluna }} = '30' THEN 'Riocard senior'
+    WHEN {{ coluna }} = '31' THEN 'Acidente de trabalho'
+    WHEN {{ coluna }} = '32' THEN 'Aposentadoria por invalidez'
+    WHEN {{ coluna }} = '33' THEN 'Trabalho informal'
+    WHEN {{ coluna }} = '34' THEN 'Bolsa ONG / OSS'
+    WHEN {{ coluna }} = '35' THEN 'Militar da Reserva'
+    WHEN {{ coluna }} = '36' THEN 'Bolsa Estudantil'
+    WHEN {{ coluna }} = '37' THEN 'Autônomo'
+    WHEN {{ coluna }} = '38' THEN 'Jovem Aprendiz'
+    WHEN {{ coluna }} = '39' THEN 'Cartão da Primeira Infância Carioca'
+    WHEN {{ coluna }} = '40' THEN 'Auxílio reclusão'
+    WHEN {{ coluna }} = '41' THEN 'Auxílio natalidade'
+    WHEN {{ coluna }} = '42' THEN 'Auxílio funeral'
+    WHEN {{ coluna }} = '43' THEN 'Seguro desemprego'
+  END
+{% endmacro %}
+
+-- Coluna ORIENTACAO_SEXUAL do models relatorio_geral
+{% macro map_coluna_orientacao_sexual (coluna) %}
+  CASE
+    WHEN {{ coluna }} = '1' THEN 'Lésbica'
+    WHEN {{ coluna }} = '2' THEN 'Gay'
+    WHEN {{ coluna }} = '3' THEN 'Bissexual'
+    WHEN {{ coluna }} = '4' THEN 'Heterossexual'
+    WHEN {{ coluna }} = '5' THEN 'Pansexual'
+    WHEN {{ coluna }} = '6' THEN 'Não informado'
+  END 
+{% endmacro %}
+
+-- Coluna MOTIVO_DESLIGAMENTO do models acolhimentos
+{% macro map_coluna_motivo_desligamento (coluna) %}
+  CASE
+    WHEN {{ coluna }} = '2' THEN 'Deslig. por decisão da direção e/ou equipe téc. por conflito com prof. da unid. de acolhim.'
+    WHEN {{ coluna }} = '3' THEN 'Deslig. por decisão da direção e/ou equipe téc. por não aceitação das regras da instituição'
+    WHEN {{ coluna }} = '4' THEN 'Deslig. volunt. por conflito com outro acolhido'
+    WHEN {{ coluna }} = '5' THEN 'Deslig. volunt. por conflito com prof. da unid. de acolhim.'
+    WHEN {{ coluna }} = '7' THEN 'Deslig. volunt. por não aceitação das regras da instituição'
+    WHEN {{ coluna }} = '8' THEN 'Deslig. volunt. por abstinência de substâncias psicoativas'
+    WHEN {{ coluna }} = 'C' THEN 'Deslig. por decisão da direção e/ou equipe téc. por conflito com outro acolhido'
+    WHEN {{ coluna }} = 'D' THEN 'Deslig. volunt. sem motivo identificado'
+    WHEN {{ coluna }} = 'E' THEN 'Acolhido'
+    WHEN {{ coluna }} = 'F' THEN 'Deslig. por reinserção comunitária'
+    WHEN {{ coluna }} = 'G' THEN 'Deslig. por reinserção em família de origem ou família extensa'
+    WHEN {{ coluna }} = 'H' THEN 'Deslig. por afastamento de cri/adol por medida protetiva de acolhimento'
+    WHEN {{ coluna }} = 'I' THEN 'Solicitação de vaga'
+    WHEN {{ coluna }} = 'J' THEN 'Reinserção através do projeto de volta a terra natal'
+    WHEN {{ coluna }} = 'K' THEN 'Mudança para outro município'
+    WHEN {{ coluna }} = 'L' THEN 'Transferência para clínica de apoio a saúde'
+    WHEN {{ coluna }} = 'N' THEN 'Transferência para delegacia policial'
+    WHEN {{ coluna }} = 'O' THEN 'Óbito'
+    WHEN {{ coluna }} = 'T' THEN 'Deslig. por transferência para outra unid. de acolhim.'
+    WHEN {{ coluna }} = 'X' THEN 'Fechado pela Unificação'
+    WHEN {{ coluna }} = 'Y' THEN 'Demanda por serviço diurno'
+    WHEN {{ coluna }} = 'Z' THEN 'Demanda por serviço noturno'
+
+  END
+{% endmacro %}
+
+-- Coluna PERFIL_ACESSO do models contas_associadas
+{% macro map_coluna_perfil_acesso (coluna) %}
+  CASE
+    WHEN {{ coluna }} = 1 THEN 'Profissional de Nível Médio'
+    WHEN {{ coluna }} = 2 THEN 'Profissional de Nível Superior'
+    WHEN {{ coluna }} = 3 THEN 'Gestor local'
+    WHEN {{ coluna }} = 4 THEN 'Relatório'
+    WHEN {{ coluna }} = 5 THEN 'Gestor Local / Prof. Nível Superior'
+    WHEN {{ coluna }} = 6 THEN 'Assessoria'
+    WHEN {{ coluna }} = 7 THEN 'Relatorio'
+    WHEN {{ coluna }} = 8 THEN 'Acesso Personalizado'
+    WHEN {{ coluna }} = 98 THEN 'Gestor central'
+    WHEN {{ coluna }} = 99 THEN 'MASTER'
+    ELSE 'Nível ' || CAST({{ coluna }} AS STRING)
+  END
+{% endmacro %}
+
+-- Coluna STATUS_CONTA do models contas_associadas
+{% macro map_coluna_status_conta (coluna) %}
+  CASE
+    WHEN {{ coluna }} = '0' THEN 'Inativo'
+    WHEN {{ coluna }} = '1' THEN 'Ativo'
+    WHEN {{ coluna }} = '2' THEN 'Trocar senha'
+    WHEN {{ coluna }} = '3' THEN 'Bloqueado'
+    WHEN {{ coluna }} = '4' THEN 'Atualizar cadastro'
+    WHEN {{ coluna }} = '5' THEN 'Aceitar Termo de Uso'
+  END AS status_conta
+{% endmacro %}
+
+-- Coluna UNIDADE_ATIVA do models lista_unidades
+{% macro map_coluna_unidade_ativa (coluna) %}
+  CASE
+    WHEN {{ coluna }} = 'N' THEN 'S'
+    WHEN {{ coluna }} = 'S' THEN 'N'
+    ELSE 'S'
+  END
+{% endmacro %}
+
+-- Coluna indeixo do model lista_unidades (flag_adulto)
+{% macro map_coluna_indeixo_adulto (coluna) %}
+  max(
+    case
+      when lower({{ coluna }}) = 'a' then 'Sim'
+      else 'Não'
+    end
+  )
+{% endmacro %}
+
+-- Coluna indeixo do model lista_unidades (flag_familia)
+{% macro map_coluna_indeixo_familia (coluna) %}
+  max(
+    case
+      when lower({{ coluna }}) = 'f' then 'Sim'
+      else 'Não'
+    end
+  )
+{% endmacro %}
+
+-- Coluna indeixo do model lista_unidades (flag_idoso)
+{% macro map_coluna_indeixo_idoso (coluna) %}
+  max(
+    case
+      when lower({{ coluna }}) = 'i' then 'Sim'
+      else 'Não'
+    end
+  )
+{% endmacro %}
+-- Coluna vinculo_trabalhista do model dashboard_acolherio/intermediate/int_dados_usuarios
+{% macro map_coluna_vinculo_trabalhista (coluna) %}
+  CASE
+    WHEN {{ coluna }} = '1' THEN 'Formal'
+    WHEN {{ coluna }} = '2' THEN 'Informal'
+    WHEN {{ coluna }} = '3' THEN 'Não sabe / Não lembra'
+    WHEN {{ coluna }} = '4' THEN 'Não quis dizer'
+  END 
+{% endmacro %}
+
+
+-- Macro para a coluna indgraudepend do model dashboard_acolherio/intermediate/int_dados_usuarios
+{% macro map_grau_dependencia (coluna) %}
+  CASE
+    WHEN {{ coluna }} = '1' THEN '1-Idoso independente'
+    WHEN {{ coluna }} = '2' THEN '2-Idoso com dependencia em ate 3 atividades'
+    WHEN {{ coluna }} = '3' THEN '3-Idoso com dependencia em todas as atividades'
+  END 
+{% endmacro %}
+
+-- Coluna estcivil do models dashboard_acolherio/intermediate/int_dados_usuarios
+{% macro map_coluna_estado_civil (coluna) %}
+  CASE
+    WHEN {{ coluna }} = '1' THEN 'Solteiro'
+    WHEN {{ coluna }} = '2' THEN 'Casado'
+    WHEN {{ coluna }} = '3' THEN 'Viúvo'
+    WHEN {{ coluna }} = '4' THEN 'Separado Judicialmente'
+    WHEN {{ coluna }} = '5' THEN 'União consensual'
+  END 
+{% endmacro %}
+
+-- Coluna flag_trabalho do model stg_pacientes_sm_acolherio
+{% macro map_flag_trabalho (coluna) %}
+  case
+    when {{ coluna }} = 'S' then 'Sim'
+    else 'Não'
+  end 
+{% endmacro %}
+
+-- Coluna flag_frequencia_escola do model stg_pacientes_sm_acolherio
+{% macro map_flag_frequencia_escola (coluna) %}
+  case
+    when {{ coluna }} = 'S' then 'Sim'
+    else 'Não'
+  end 
+{% endmacro %}
+
+-- Coluna flag_deficiencia do model stg_pacientes_sm_acolherio
+{% macro map_flag_deficiencia (coluna) %}
+  case
+    when {{ coluna }} = 'S' then 'Sim'
+    else 'Não'
+  end 
+{% endmacro %}
+
+-- Coluna flag_curatela do model stg_pacientes_sm_acolherio
+{% macro map_flag_curatela (coluna) %}
+  case
+    when {{ coluna }} = 'S' then 'Sim'
+    else 'Não'
+  end 
+{% endmacro %}
+
+-- Coluna flag_situacao_rua do model stg_pacientes_sm_acolherio
+{% macro map_flag_situacao_rua (coluna) %}
+  case
+    when safe_cast(trim(cast({{ coluna }} as string)) as int64) = 5 then 'Sim'
+    -- Domínio indmoradi (moradia.ini): demais moradias conhecidas.
+    when safe_cast(trim(cast({{ coluna }} as string)) as int64) in (1, 2, 3, 4, 6, 7, 8, 9) then 'Não'
+    when upper(trim(cast({{ coluna }} as string))) in ('A', 'B', 'C', 'D') then 'Não'
+    -- E = Desconhecido; ausência e códigos fora do domínio permanecem desconhecidos.
+    else null
+  end 
+{% endmacro %}
+
+
+-- Coluna flag_cadunico do model stg_pac_dados_acolherio
+{% macro map_flag_cadunico (coluna) %}
+  case
+    when upper(trim(cast({{ coluna }} as string))) = 'S' then 'Sim'
+    when upper(trim(cast({{ coluna }} as string))) = 'N' then 'Não'
+    else null
+  end 
+{% endmacro %}
+
+-- Coluna int_unidades
+{% macro map_tipo_unidade (coluna) %}
+  case
+    when lower({{ coluna }}) like 'albergue%' then 'ALBERGUE'
+    when lower({{ coluna }}) like 'craf%' then 'CENTRAL DE RECEPÇÃO'
+    when lower({{ coluna }}) like 'cras%' then 'CRAS'
+    when lower({{ coluna }}) like 'creas%' then 'CREAS'
+    when lower({{ coluna }}) like 'cri%' then 'CENTRAL DE RECEPÇÃO'
+    when lower({{ coluna }}) like 'república%' then 'REPÚBLICA'  
+    when lower({{ coluna }}) like 'urs%' then 'URS' 
+    else 'UNIDADE CONVENIADA'
+  end 
+{% endmacro %}
+
+
+{% macro email_cas (coluna) %}
+  case
+    when lower({{ coluna }}) = '10' then 'cas10@prefeitura.rio'
+    when lower({{ coluna }}) = '09' then 'cas9@prefeitura.rio'
+    when lower({{ coluna }}) = '08' then 'cas8@prefeitura.rio'
+    when lower({{ coluna }}) = '07' then 'cas7@prefeitura.rio'
+    when lower({{ coluna }}) = '06' then 'cas6@prefeitura.rio'
+    when lower({{ coluna }}) = '05' then 'cas5@prefeitura.rio'  
+    when lower({{ coluna }}) = '04' then 'cas4@prefeitura.rio'
+    when lower({{ coluna }}) = '03' then 'cas3@prefeitura.rio'
+    when lower({{ coluna }}) = '02' then 'cas2@prefeitura.rio'
+    when lower({{ coluna }}) = '01' then 'cas1@prefeitura.rio'
+  end 
+{% endmacro %}
+
+{% macro profissional_atendimentos_bug_fix (coluna) %}
+  case
+    when trim(lower({{ coluna }})) in (
+      'atendimento recepção',
+      'atendimento busca ativa',
+      'atendimento entrevistador social'
+    )
+    then 'Não informado'
+    else nome_profissional
+  end 
+{% endmacro %}
+
+-- Macro retirada da query no bigquery.
+{% macro profissional_cbo(dsccbo_col) %}
+case
+    when lower({{ dsccbo_col }}) like 'articulador comunitário%' then 'ARTICULADOR COMUNITÁRIO'
+    when lower({{ dsccbo_col }}) like 'assistente administrativo%' then 'ASSISTENTE ADMINISTRATIVO'
+    when lower({{ dsccbo_col }}) like 'assistente social%' then 'ASSISTENTE SOCIAL'
+    when lower({{ dsccbo_col }}) like 'educador social%' then 'EDUCADOR SOCIAL'
+    when lower({{ dsccbo_col }}) like 'entrevistador social%' then 'ENTREVISTADOR SOCIAL'
+    when lower({{ dsccbo_col }}) like 'pedagogo%' then 'PEDAGOGO'
+    when lower({{ dsccbo_col }}) like 'psicólogo%' then 'PSICÓLOGO'
+    when lower({{ dsccbo_col }}) like 'recepcionista%' then 'RECEPCIONISTA'
+    else upper({{ dsccbo_col }})
+end
+{% endmacro %}
+
+-- Converte booleano em rótulo Sim/Não (NULL vira 'Não Informado').
+{% macro map_flag_boolean (coluna) %}
+  case
+    when {{ coluna }} then 'Sim'
+    when not {{ coluna }} then 'Não'
+    else 'Não Informado'
+  end
+{% endmacro %}
