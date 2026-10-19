@@ -277,7 +277,8 @@ def load_arcgis_to_bigquery(
                     if "rings" in geometry_data: geom = Polygon(geometry_data["rings"][0], geometry_data["rings"][1:])
                     elif "x" in geometry_data and "y" in geometry_data: geom = Point(geometry_data.get("x"), geometry_data.get("y"))
                     elif "paths" in geometry_data: geom = LineString(geometry_data["paths"][0])
-                    if geom: attributes[geometry_column] = geom
+                    if geom:
+                        attributes[geometry_column] = geom
                 processed_data.append(attributes)
 
             batch_df = pd.DataFrame(processed_data)
