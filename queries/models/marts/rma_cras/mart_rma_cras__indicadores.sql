@@ -261,6 +261,7 @@ agg_atendimentos as (
     where
         not regexp_contains(tipo_atendimento_descricao, '(?i)recepção')
         and {{ nao_cancelado() }}
+        and not flag_operador_teste_legado
         and {{ no_mes('data_atendimento') }}
     group by 1
 ),
@@ -274,6 +275,7 @@ agg_atendimentos_domiciliar as (
     where
         regexp_contains(tipo_atendimento_descricao, '(?i)domiciliar')
         and {{ nao_cancelado() }}
+        and not flag_operador_teste_legado
         and {{ no_mes('data_atendimento') }}
     group by 1
 ),

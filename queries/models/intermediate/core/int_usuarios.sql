@@ -1,15 +1,25 @@
--- Camada Intermediate: Entidade Usuários (core)
--- Grão: 1 linha por usuário (id_usuario / seqpac).
--- Absorve os 4 raws de cadastro (raw_usuarios, raw_usuarios_detalhes,
--- raw_usuarios_saude_mental, raw_origens) e os 4 agregados ephemeral
--- (int_usuarios_violacoes, int_deficiencias_agregadas, int_beneficios_agregados,
--- int_usuarios_projetos_sociais). Concentra a lógica de negócio (JOINs,
--- arrays via STRUCT e mapeamentos map_coluna_*).
--- A dim_usuarios (mart) consome esta int e adiciona apenas a surrogate key.
--- Direção de dependência: int_usuarios_violacoes -> int_usuarios (nunca o
--- inverso, para não fechar ciclo via int_evolucoes).
+-- Entidade de usuários com perfil cadastral/social disponível, inclusive IDs órfãos.
+-- A dimensão preserva seu recorte de usuários cadastrados e sem nome TESTE.
+-- Perfil atual não representa um snapshot histórico do atendimento.
+-- noqa: disable=ST06
 with base as (
     select * from {{ ref('raw_usuarios') }}
+),
+
+usuarios as (
+    select id_paciente as id_usuario from base
+    union distinct
+    select id_paciente from {{ ref('raw_usuarios_detalhes') }}
+    union distinct
+    select id_paciente from {{ ref('raw_usuarios_saude_mental') }}
+    union distinct
+    select id_usuario from {{ ref('raw_usuarios_informacoes_medicas') }}
+    union distinct
+    select id_usuario from {{ ref('int_usuarios_violacoes') }}
+),
+
+informacoes_medicas as (
+    select * from {{ ref('raw_usuarios_informacoes_medicas') }}
 ),
 
 detalhes as (
@@ -42,7 +52,7 @@ projetos as (
 
 final as (
     select
-        base.id_paciente as id_usuario,
+        u.id_usuario,
         base.nome,
         base.nome_social,
         base.nome_mae as filiacao_mae,
@@ -92,16 +102,51 @@ final as (
         b.beneficio,
         proj.projetos_sociais,
         base.id_unidade_referencia,
-        base.id_login_cadastro
-    from base as base
-    left join detalhes as det on base.id_paciente = det.id_paciente
-    left join saude_mental as sm on base.id_paciente = sm.id_paciente
+        base.id_login_cadastro,
+        base.id_paciente is not null as flag_usuario_cadastrado,
+        coalesce(upper(base.nome) like "%TESTE%", false) as flag_usuario_teste,
+        struct(
+            case
+                when array_length(v.violacoes) > 0 then "Sim"
+                when upper(trim(det.violacao_direito)) = "N" then "Não"
+                else "Não Informado"
+            end as flag_possui_violacao_direito,
+            {{ descricoes_sociais('v.violacoes') }} as violacoes,
+            v.violacoes as violacoes_detalhes,
+            {{ map_indicador_social('sm.flag_recebe_beneficio') }} as flag_recebe_beneficio,
+            b.beneficios as beneficios,
+            b.beneficios_detalhes as beneficios_detalhes,
+            {{ map_indicador_social('sm.flag_deficiencia') }} as flag_deficiencia,
+            d.deficiencias as deficiencias,
+            d.deficiencias_detalhes as deficiencias_detalhes,
+            coalesce(sm.flag_situacao_rua, "Não Informado") as flag_situacao_rua,
+            {{ map_indicador_social('med.flag_possui_comorbidade') }} as flag_possui_comorbidade,
+            nullif(trim(med.descricao_comorbidades), "") as comorbidades,
+            med.data_informacao_comorbidades,
+            nullif(trim(med.local_tratamento_comorbidades), "") as local_tratamento_comorbidades,
+            case
+                when med.id_usuario is not null then [struct(
+                    "gh_pac_info_med" as origem,
+                    med.flag_possui_comorbidade as indicador_original,
+                    med.descricao_comorbidades as descricao_original,
+                    med.data_informacao_comorbidades as data_informacao,
+                    med.local_tratamento_comorbidades as local_tratamento_original,
+                    med.data_cadastro,
+                    med.id_unidade_cadastro
+                )]
+            end as comorbidades_detalhes
+        ) as perfil_social
+    from usuarios as u
+    left join base on u.id_usuario = base.id_paciente
+    left join detalhes as det on u.id_usuario = det.id_paciente
+    left join saude_mental as sm on u.id_usuario = sm.id_paciente
     left join origens as ori on sm.codigo_origem = ori.id_origem
-    left join violacoes as v on base.id_paciente = v.id_usuario
-    left join deficiencias as d on base.id_paciente = d.id_usuario
-    left join beneficios as b on base.id_paciente = b.id_usuario
-    left join projetos as proj on base.id_paciente = proj.id_usuario
-    where base.nome not like "%TESTE%"
+    left join violacoes as v on u.id_usuario = v.id_usuario
+    left join deficiencias as d on u.id_usuario = d.id_usuario
+    left join beneficios as b on u.id_usuario = b.id_usuario
+    left join projetos as proj on u.id_usuario = proj.id_usuario
+    left join informacoes_medicas as med on u.id_usuario = med.id_usuario
+    where u.id_usuario is not null
 )
 
 select * from final

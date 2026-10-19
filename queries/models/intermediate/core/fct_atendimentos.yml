@@ -1,9 +1,27 @@
 version: 2
 models:
   - name: fct_atendimentos
-    description: Uma linha por atendimento e profissional. A chave inclui o módulo da origem.
-      IDs compartilhados são convertidos para inteiros e deduplicados; inválidos e zero são descartados
-      da lista secundária. O profissional principal é preservado, inclusive quando desconhecido.
+    description: |-
+      Motor compartilhado de atendimentos: uma linha por evento identificado pelo módulo e ID original, com profissionais em ARRAY<STRUCT>. Consome int_atendimentos e os agregados existentes de usuários, serviços e projetos.
+      A chave id_atendimento_sk é o hash de id_atendimento_modulo, não de evento × profissional. ID_ATENDIMENTO conserva o número original; a mart por usuário expõe ID_ATENDIMENTO_MODULO como ID_ATENDIMENTO.
+      Eventos de teste/cancelados permanecem com flags. Consumidores legados reaplicam seu filtro de operador e desaninham equipe quando sua contagem é por participação. Cadastro e CBO são os disponíveis na execução, sem reconstrução histórica.
     columns:
       - name: id_atendimento_sk
-        tests: [unique, not_null]
+        description: Hash da identidade qualificada do evento.
+        tests:
+          - unique
+          - not_null
+      - name: id_atendimento_modulo
+        description: ID original combinado com módulo f/u; identidade natural do evento.
+        tests:
+          - unique
+          - not_null
+      - name: ID_FAMILIA
+        description: Família informada no próprio evento; NULL no módulo usuário.
+      - name: ID_FAMILIA_CONTEXTO
+        description: Contexto cadastral usado na apresentação; não comprova família histórica do evento.
+      - name: PROFISSIONAIS
+        description: Participantes com id_profissional, flag_principal, CBOs, classificação e rank. Principal desconhecido
+          preserva um item com ID NULL.
+      - name: flag_operador_teste_legado
+        description: Predicado original case-sensitive sobre nome do operador; fica a cargo de cada consumidor aplicá-lo.

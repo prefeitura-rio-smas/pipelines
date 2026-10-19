@@ -1,14 +1,52 @@
--- Camada Mart: Dimensão Usuários (thin)
--- Consome a int_usuarios (grão: 1 linha por usuário) e adiciona apenas a
--- surrogate key. Toda a lógica de negócio (JOINs, arrays via STRUCT e
--- mapeamentos map_coluna_*) foi movida para a intermediate/core/int_usuarios.
--- Schema de saída idêntico ao anterior: id_usuario_sk (hash do id_usuario
--- natural) seguido de todas as colunas de atributos da int, na mesma ordem.
-with usuarios as (
-    select * from {{ ref('int_usuarios') }}
-)
-
+-- Mantém o contrato e os filtros da dimensão; o perfil ampliado pertence à int_usuarios.
 select
     {{ dbt_utils.generate_surrogate_key(['id_usuario']) }} as id_usuario_sk,
-    *
-from usuarios
+    id_usuario,
+    nome,
+    nome_social,
+    filiacao_mae,
+    nacionalidade,
+    condicao_estrangeira,
+    pais_origem,
+    cpf,
+    data_nascimento,
+    sexo,
+    raca_cor,
+    genero,
+    bairro,
+    prontuario,
+    flag_cadunico,
+    violacao_direito_bruto,
+    pontuacao,
+    grau_dependencia,
+    nome_apoiador,
+    numero_processo_decisao_apoiada,
+    renda_ativa,
+    atvd_remunerada,
+    flag_decisao_apoiada,
+    flag_saude_mental_comprometida,
+    motivo_acolhimento,
+    orientacao_sexual,
+    vinculo_trabalhista,
+    flag_trabalha,
+    profissao,
+    flag_frequenta_escola,
+    escolaridade_indice,
+    flag_recebe_beneficio,
+    tipo_beneficio,
+    flag_curatela,
+    tipo_curatela,
+    flag_deficiencia,
+    tipo_deficiencia,
+    flag_situacao_rua,
+    codigo_origem,
+    origem_demanda,
+    flag_possui_violacao_direito,
+    violacoes,
+    deficiencia,
+    beneficio,
+    projetos_sociais,
+    id_unidade_referencia,
+    id_login_cadastro
+from {{ ref('int_usuarios') }}
+where flag_usuario_cadastrado and nome not like '%TESTE%'

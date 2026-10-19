@@ -1,0 +1,10 @@
+version: 2
+models:
+  - name: int_atendimentos
+    description: Preparação dos módulos família/usuário no grão evento × profissional. Preserva IDs e datas originais;
+      expande principal e compartilhados, deduplicando secundários válidos por ID. Alimenta fct_atendimentos.
+    columns:
+      - name: id_atendimento_modulo
+        description: Identidade do evento repetida para cada participante.
+      - name: flag_profissional_principal
+        description: Principal da origem, inclusive quando o ID é desconhecido.

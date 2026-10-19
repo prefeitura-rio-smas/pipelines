@@ -1,13 +1,16 @@
 version: 2
-
 models:
   - name: int_beneficios_agregados
-    description: |
-      Benefícios dos usuários explodidos (um registro por tipo de benefício).
-      Ephemeral — materializado apenas como CTE nos modelos que o referenciam.
+    description: Uma linha por usuário com beneficios. Preserva o array beneficio e acrescenta descrição e detalhes
+      normalizados para os consumidores.
     columns:
       - name: id_usuario
-        description: "ID original do usuário (seqpac)."
-        tests: [not_null]
+        description: ID original do usuário (seqpac).
+        tests:
+          - not_null
       - name: beneficio
-        description: "Array estruturado de benefícios recebidos pelo usuário, com STRUCT (codigo, descricao)."
+        description: Array estruturado de benefícios recebidos pelo usuário, com STRUCT (codigo, descricao).
+      - name: beneficios
+        description: Descrições distintas ordenadas, separadas por vírgula.
+      - name: beneficios_detalhes
+        description: ARRAY normalizado de código/descrição; preserva códigos desconhecidos com descrição de fallback.
