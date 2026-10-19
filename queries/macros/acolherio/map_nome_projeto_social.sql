@@ -1,38 +1,3 @@
-{% macro map_indicador_social(coluna) %}
-    case upper(trim({{ coluna }}))
-        when 'S' then 'Sim'
-        when 'N' then 'Não'
-        else 'Não Informado'
-    end
-{% endmacro %}
-
-{% macro descricoes_sociais(itens) %}
-    (select string_agg(distinct item.descricao, ', ' order by item.descricao)
-     from unnest({{ itens }}) as item)
-{% endmacro %}
-
-{% macro normalizar_itens_sociais(itens, nao_mapeado) %}
-    array(
-        select distinct as struct
-            item.codigo,
-            coalesce(item.descricao, format('{{ nao_mapeado }}', item.codigo)) as descricao
-        from unnest({{ itens }}) as item
-        where upper(trim(item.codigo)) not in ('', 'N')
-        order by codigo
-    )
-{% endmacro %}
-
-{% macro classificar_atendimento(profissional) %}
-    case
-        when {{ profissional }}.nome_atendimento_original like '%Recepção%'
-            or {{ profissional }}.nome = 'ATENDIMENTO RECEPÇÃO' then 'Atendimento Recepção'
-        when {{ profissional }}.flag_cbo_recepcao
-            and {{ profissional }}.nome_atendimento_original like '%CadÚnico%' then 'Atendimento Recepção'
-        when {{ profissional }}.flag_cbo_tecnico then 'Atendimento Técnico'
-        else 'Outros Atendimentos'
-    end
-{% endmacro %}
-
 {% macro map_nome_projeto_social(coluna) %}
     case {{ coluna }}
         when 1 then 'Territórios Sociais'
