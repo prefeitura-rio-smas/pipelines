@@ -14,7 +14,7 @@ select
     a.hora_atendimento,
     a.origem_modulo,
     a.flag_cancelado
-from {{ ref('int_atendimentos_completos') }} as a
+from {{ ref('int_atendimentos_base') }} as a
 left join {{ ref('raw_usuarios') }} as u on a.id_usuario = u.id_paciente and u.nome not like '%TESTE%'
 left join {{ ref('raw_profissionais') }} as p on a.id_profissional = p.id_profissional and upper(p.nome) not like '%TESTE%'
 left join {{ ref('raw_unidades') }} as un on a.id_unidade = un.id_unidade and un.nome_unidade not like '%TESTE%'

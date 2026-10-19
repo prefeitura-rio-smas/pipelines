@@ -2,7 +2,7 @@ version: 2
 models:
   - name: mart_atendimentos
     description: |-
-      Mart de Atendimentos do Prontuário Carioca de Assistência Social, publicada com alias atendimentos. Uma linha por agrupamento ID_USUARIO, com perfil cadastral e eventos aninhados em ATENDIMENTOS, a partir de int_atendimentos_dataviz.
+      Mart de Atendimentos do Prontuário Carioca de Assistência Social, publicada com alias atendimentos. Uma linha por agrupamento ID_USUARIO, com perfil cadastral e eventos aninhados em ATENDIMENTOS, a partir de int_atendimentos_enriquecidos.
       O perfil é selecionado como um STRUCT completo pelo menor ID_ATENDIMENTO_MODULO; não é um snapshot histórico por atendimento. Eventos e profissionais compartilhados permanecem disponíveis com flags e ranks; os filtros são responsabilidade do consumidor.
       A tag acolherio_atendimentos_refresh identifica o modelo, mas não comprova agendamento ou execução. Esta descrição documenta o SQL existente e não homologa indicadores.
     columns:

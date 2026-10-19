@@ -8,7 +8,7 @@ with atendimentos as (
     select
         *,
         safe_cast(hora_atendimento as int64) as hora_original
-    from {{ ref('int_atendimentos_completos') }}
+    from {{ ref('int_atendimentos_base') }}
     where flag_profissional_principal
 ),
 
@@ -176,7 +176,7 @@ profissionais as (
         ), false) as flag_cbo_recepcao,
         p.id_profissional is not null as flag_cadastrado,
         coalesce(upper(p.nome) like '%TESTE%', false) as flag_teste
-    from {{ ref('int_atendimentos_completos') }} as a
+    from {{ ref('int_atendimentos_base') }} as a
     inner join base as b on a.id_atendimento_modulo = b.id_atendimento_modulo
     left join {{ ref('raw_profissionais') }} as p on a.id_profissional = p.id_profissional
     left join profissionais_cbo as cbo on a.id_profissional = cbo.id_profissional
@@ -338,5 +338,5 @@ select
 from base as b
 left join profissionais_por_atendimento as p on b.id_atendimento_modulo = p.id_atendimento_modulo
 left join projetos_familia as projetos on b.id_familia = projetos.id_familia
-left join {{ ref('int_servicos_familia_completos') }} as servicos on b.id_familia = servicos.id_familia
+left join {{ ref('int_servicos_agregados') }} as servicos on b.id_familia = servicos.id_familia
 left join {{ ref('int_perfil_social_usuarios') }} as perfil on b.id_usuario = perfil.id_usuario

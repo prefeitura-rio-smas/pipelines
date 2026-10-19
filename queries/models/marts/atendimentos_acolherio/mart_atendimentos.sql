@@ -97,7 +97,7 @@ with usuarios as (
                 where p.flag_principal
             ) as atendimento_unico_rank
         ) order by a.DATA_DE_ATENDIMENTO, a.HORA_DE_ATENDIMENTO, a.ID_ATENDIMENTO_MODULO) as ATENDIMENTOS
-    from {{ ref('int_atendimentos_dataviz') }} as a
+    from {{ ref('int_atendimentos_enriquecidos') }} as a
     group by a.ID_USUARIO
 )
 
