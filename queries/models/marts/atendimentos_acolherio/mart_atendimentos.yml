@@ -1,0 +1,89 @@
+version: 2
+models:
+  - name: mart_atendimentos
+    description: |-
+      Mart de Atendimentos do Prontuário Carioca de Assistência Social, publicada com alias atendimentos. Uma linha por agrupamento ID_USUARIO, com perfil cadastral e eventos aninhados em ATENDIMENTOS, a partir de int_atendimentos_dataviz.
+      O perfil é selecionado como um STRUCT completo pelo menor ID_ATENDIMENTO_MODULO; não é um snapshot histórico por atendimento. Eventos e profissionais compartilhados permanecem disponíveis com flags e ranks; os filtros são responsabilidade do consumidor.
+      A tag acolherio_atendimentos_refresh identifica o modelo, mas não comprova agendamento ou execução. Esta descrição documenta o SQL existente e não homologa indicadores.
+    columns:
+      - name: ID_USUARIO
+        description: ID original do usuário no Prontuário. Registros sem ID são agrupados juntos pelo
+          SQL; não representam uma pessoa identificada.
+      - name: ID_USUARIO_SK
+        description: Hash do ID_USUARIO. Chave técnica do agrupamento de usuário, não do atendimento.
+      - name: NOME_USUARIO
+        description: Nome no cadastro disponível na execução.
+      - name: DOCUMENTACAO
+        description: Indicação de CPF informado ou não informado no cadastro.
+      - name: NUMERO_DOCUMENTO
+        description: CPF formatado para apresentação; não é a chave do usuário.
+      - name: ENDERECO
+        description: Logradouro cadastral normalizado para apresentação.
+      - name: ENDERECO_NUMERO
+        description: Número do endereço cadastral normalizado para apresentação.
+      - name: ENDERECO_COMPLEMENTO
+        description: Complemento do endereço cadastral normalizado para apresentação.
+      - name: BAIRRO
+        description: Bairro cadastral; vazio é apresentado como NAO INFORMADO.
+      - name: REFERENCIA_OU_COMUNIDADE
+        description: Referência ou comunidade do endereço cadastral.
+      - name: DATA_NASCIMENTO
+        description: Data de nascimento do cadastro disponível.
+      - name: IDADE
+        description: Idade calculada na execução com calc_idade, não na data de cada atendimento.
+      - name: RACA_COR
+        description: Raça/cor cadastral mapeada para apresentação.
+      - name: SEXO
+        description: Sexo informado no cadastro disponível.
+      - name: IDADE_FAIXA
+        description: Faixa etária calculada a partir da idade cadastral na execução.
+      - name: FLAG_USUARIO_CADASTRADO
+        description: Indica correspondência do ID do evento com raw_usuarios.
+      - name: FLAG_USUARIO_TESTE
+        description: Indica nome cadastral contendo TESTE conforme normalização do dataviz; não remove
+          registros desta mart.
+      - name: VINCULOS_FAMILIARES
+        description: ARRAY de vínculos familiares disponíveis, com IDs, entrada, saída, transferência,
+          motivo e parentesco. Não equivale à família histórica de cada evento.
+      - name: FLAG_POSSUI_VIOLACAO_DIREITO
+        description: Sinalização de violações conforme perfil social disponível; usa Não Informado quando
+          ausente.
+      - name: VIOLACOES
+        description: Descrições de violações do perfil social disponível.
+      - name: VIOLACOES_DETALHES
+        description: ARRAY de códigos, descrições e origens das violações do perfil social.
+      - name: FLAG_RECEBE_BENEFICIO
+        description: Sinalização de benefícios do perfil disponível; usa Não Informado quando ausente.
+      - name: BENEFICIOS
+        description: Descrições de benefícios do perfil cadastral disponível.
+      - name: BENEFICIOS_DETALHES
+        description: ARRAY de códigos e descrições dos benefícios do perfil cadastral.
+      - name: FLAG_DEFICIENCIA
+        description: Sinalização de deficiência do perfil disponível; usa Não Informado quando ausente.
+      - name: DEFICIENCIAS
+        description: Descrições de deficiências do perfil cadastral disponível.
+      - name: DEFICIENCIAS_DETALHES
+        description: ARRAY de códigos e descrições das deficiências do perfil cadastral.
+      - name: FLAG_SITUACAO_RUA
+        description: Sinalização de situação de rua do perfil disponível; usa Não Informado quando ausente.
+      - name: FLAG_POSSUI_COMORBIDADE
+        description: Sinalização de comorbidade do perfil disponível; usa Não Informado quando ausente.
+      - name: COMORBIDADES
+        description: Descrição de comorbidades disponível no perfil.
+      - name: DATA_INFORMACAO_COMORBIDADES
+        description: Data informada na origem para o registro de comorbidades; não é a data de extração
+          ou processamento.
+      - name: LOCAL_TRATAMENTO_COMORBIDADES
+        description: Local de tratamento informado no cadastro médico disponível.
+      - name: COMORBIDADES_DETALHES
+        description: ARRAY de detalhes cadastrais das comorbidades, conforme int_perfil_social_usuarios.
+      - name: QUANTIDADE_ATENDIMENTOS
+        description: Quantidade de elementos em ATENDIMENTOS. Não aplica filtros de elegibilidade, cancelamento
+          ou ranks.
+      - name: ATENDIMENTOS
+        description: |-
+          ARRAY<STRUCT> ordenado por data, hora e ID qualificado do atendimento. Cada elemento contém IDs, datas, unidade, tipo, cadastrante, contexto familiar, projetos, serviços e flags do evento.
+          ID_ATENDIMENTO e ID_ATENDIMENTO_MODULO são qualificados pelo módulo; SEQ_ATENDIMENTO conserva o número original. ID_ATENDIMENTO_SK é o hash do evento qualificado, diferente da chave atendimento × profissional de fct_atendimentos.
+          PROFISSIONAIS é um ARRAY<STRUCT> com participantes, flag_principal, CBOs, classificações, flags e atendimento_unico_rank. Os campos escalares PROFISSIONAL e PROFISSIONAL_ID apresentam o participante principal; não definem o profissional de referência de acompanhamento.
+          FLAG_ELEGIVEL_DATAVIZ, flags de teste, FLAG_CANCELADO e ranks são expostos para filtros no consumidor. cbo_unico_rank é constante 1; atendimento_unico_rank é o rank do participante principal. Não deduplicar eventos apenas pela coincidência de pessoa, hora e unidade.
+          ID_FAMILIA pode usar vínculo cadastral disponível no módulo usuário; não comprova família histórica no evento. CBOs, perfil e demais atributos cadastrais refletem o estado disponível na execução.
