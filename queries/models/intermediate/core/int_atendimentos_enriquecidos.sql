@@ -126,6 +126,8 @@ base as (
         coalesce(upper(usuario.nome) like '%TESTE%', false) as flag_usuario_teste,
         coalesce(upper(unidade.nome_unidade) like '%TESTE%', false) as flag_unidade_teste,
         coalesce(upper(operador.nome_operador) like '%TESTE%', false) as flag_operador_teste,
+        -- A fato preserva operadores ausentes e o filtro original sensível a maiúsculas.
+        operador.nome_operador is null or operador.nome_operador not like '%TESTE%' as flag_elegivel_fato,
         -- Preserva os filtros da V2; NULL também fica fora do universo analítico.
         coalesce(
             usuario.nome not like '%TESTE%'
@@ -301,6 +303,7 @@ select
     p.principal.cbos as PROFISSIONAL_CBOS,
     p.principal.nome_cadastral as PROFISSIONAL_NOME_CADASTRAL,
     b.email_planilha as EMAIL_PLANILHA,
+    b.flag_elegivel_fato as FLAG_ELEGIVEL_FATO,
     b.flag_elegivel_dataviz as FLAG_ELEGIVEL_DATAVIZ,
     b.flag_usuario_cadastrado as FLAG_USUARIO_CADASTRADO,
     b.flag_unidade_cadastrada as FLAG_UNIDADE_CADASTRADA,

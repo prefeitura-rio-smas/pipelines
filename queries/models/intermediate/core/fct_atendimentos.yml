@@ -4,6 +4,9 @@ models:
     description: Uma linha por atendimento e profissional. A chave inclui o módulo da origem.
       IDs compartilhados são convertidos para inteiros e deduplicados; inválidos e zero são descartados
       da lista secundária. O profissional principal é preservado, inclusive quando desconhecido.
+      Usa int_atendimentos_base para as participações e int_atendimentos_enriquecidos para o cadastro
+      e a equipe de cada evento. Preserva o filtro próprio de operadores da fato, sem aplicar os filtros
+      de elegibilidade ou ranks do dataviz.
     columns:
       - name: id_atendimento_sk
         tests: [unique, not_null]
