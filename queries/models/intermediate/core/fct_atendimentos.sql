@@ -1,5 +1,5 @@
 -- Uma linha por atendimento e profissional, com o cadastro e a equipe do evento.
--- A mart usa apenas a participação principal; consumidores históricos filtram flag_elegivel_fato.
+-- A mart usa apenas a participação principal; o filtro histórico de operadores permanece na fato.
 -- noqa: disable=CP02,AL09,ST06
 with atendimentos_origem as (
     {% for modulo, modelo in [('familia', 'raw_atendimentos_familias'), ('usuario', 'raw_atendimentos_usuarios')] %}
@@ -167,8 +167,6 @@ base as (
         coalesce(upper(usuario.nome) like '%TESTE%', false) as flag_usuario_teste,
         coalesce(upper(unidade.nome_unidade) like '%TESTE%', false) as flag_unidade_teste,
         coalesce(upper(operador.nome_operador) like '%TESTE%', false) as flag_operador_teste,
-        -- A fato preserva operadores ausentes e o filtro original sensível a maiúsculas.
-        operador.nome_operador is null or operador.nome_operador not like '%TESTE%' as flag_elegivel_fato,
         -- Preserva os filtros da V2; NULL também fica fora do universo analítico.
         coalesce(
             usuario.nome not like '%TESTE%'
@@ -184,6 +182,7 @@ base as (
     left join {{ ref('raw_tipos_atendimento') }} as tipo on a.id_tipo_atendimento = tipo.id_tipo_atendimento
     left join familias as familia on a.id_usuario = familia.id_paciente
     left join filtro_emails as filtro on unidade.nome_unidade = filtro.unidade_atendimento
+    where operador.nome_operador is null or operador.nome_operador not like '%TESTE%'
 ),
 
 profissionais as (
@@ -345,7 +344,6 @@ eventos as (
         p.principal.cbos as PROFISSIONAL_CBOS,
         p.principal.nome_cadastral as PROFISSIONAL_NOME_CADASTRAL,
         b.email_planilha as EMAIL_PLANILHA,
-        b.flag_elegivel_fato as FLAG_ELEGIVEL_FATO,
         b.flag_elegivel_dataviz as FLAG_ELEGIVEL_DATAVIZ,
         b.flag_usuario_cadastrado as FLAG_USUARIO_CADASTRADO,
         b.flag_unidade_cadastrada as FLAG_UNIDADE_CADASTRADA,
@@ -413,7 +411,6 @@ select
     a.origem_modulo,
     a.flag_cancelado,
     a.flag_profissional_principal,
-    e.flag_elegivel_fato,
     e as evento
 from atendimentos_base as a
 inner join eventos as e

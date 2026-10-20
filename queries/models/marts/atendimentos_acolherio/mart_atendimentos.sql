@@ -1,7 +1,7 @@
 {{ config(alias='atendimentos', tags=['acolherio_atendimentos_refresh']) }}
 
 -- noqa: disable=CP02,ST06
--- Uma linha por usuário com todos os atendimentos; filtros ficam no dataviz.
+-- Uma linha por usuário com os atendimentos da fato; filtros adicionais ficam no dataviz.
 with atendimentos as (
     select evento.*
     from {{ ref('fct_atendimentos') }}

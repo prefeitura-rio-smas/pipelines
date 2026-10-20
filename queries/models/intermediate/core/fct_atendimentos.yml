@@ -5,8 +5,8 @@ models:
       IDs compartilhados são convertidos para inteiros e deduplicados; inválidos e zero são descartados
       da lista secundária. O profissional principal é preservado, inclusive quando desconhecido.
       Concentra a união dos módulos, a expansão de profissionais e o enriquecimento cadastral e social.
-      Preserva todos os registros; os consumidores históricos aplicam flag_elegivel_fato para manter
-      a exclusão anterior de operadores TESTE. A mart por usuário seleciona flag_profissional_principal
+      Mantém o filtro histórico da main, excluindo operadores cujo nome contém TESTE e preservando
+      nomes nulos ou ausentes. A mart por usuário seleciona flag_profissional_principal
       e consome o STRUCT evento, sem duplicar eventos pelos profissionais compartilhados.
     columns:
       - name: id_atendimento_sk
@@ -15,9 +15,6 @@ models:
         description: Número original do atendimento, sem qualificação pelo módulo.
       - name: flag_profissional_principal
         description: Identifica a única participação principal do evento, inclusive com profissional desconhecido.
-      - name: flag_elegivel_fato
-        description: Filtro histórico de operadores da fato. Aceita nomes nulos ou ausentes; exclui nomes
-          contendo TESTE com comparação sensível a maiúsculas. Não equivale à elegibilidade do dataviz.
       - name: evento
         description: |-
           STRUCT com cadastro, contexto familiar, perfil social, equipe, classificações, flags e ranks do evento, repetido nas participações profissionais.

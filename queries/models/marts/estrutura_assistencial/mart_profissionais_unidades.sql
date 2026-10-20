@@ -22,7 +22,7 @@ atendimentos_agregados as (
         id_unidade,
         count(distinct id_atendimento_sk) as total_atendimentos
     from {{ ref('fct_atendimentos') }}
-    where flag_elegivel_fato and coalesce(flag_cancelado, 'N') != 'S'
+    where coalesce(flag_cancelado, 'N') != 'S'
     group by 1, 2
 ),
 
