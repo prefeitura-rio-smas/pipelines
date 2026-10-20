@@ -48,7 +48,7 @@ atendimentos_candidatos as (
     from {{ ref('fct_atendimentos') }} as a
     inner join centro_pop as c on a.id_unidade = c.id_unidade
     left join {{ ref('dim_profissionais') }} as dp on a.id_profissional_sk = dp.id_profissional_sk
-    where (a.flag_cancelado is null or a.flag_cancelado != 'S')
+    where a.flag_elegivel_fato and (a.flag_cancelado is null or a.flag_cancelado != 'S')
 ),
 
 -- Deduplica apenas cópias idênticas dos atributos do fato. Se um ID tiver

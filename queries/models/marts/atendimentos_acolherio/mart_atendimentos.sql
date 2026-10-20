@@ -2,7 +2,13 @@
 
 -- noqa: disable=CP02,ST06
 -- Uma linha por usuário com todos os atendimentos; filtros ficam no dataviz.
-with usuarios as (
+with atendimentos as (
+    select evento.*
+    from {{ ref('fct_atendimentos') }}
+    where flag_profissional_principal
+),
+
+usuarios as (
     select
         a.ID_USUARIO,
         -- O cadastro atual é comum aos atendimentos; seleciona um perfil completo.
@@ -97,7 +103,7 @@ with usuarios as (
                 where p.flag_principal
             ) as atendimento_unico_rank
         ) order by a.DATA_DE_ATENDIMENTO, a.HORA_DE_ATENDIMENTO, a.ID_ATENDIMENTO_MODULO) as ATENDIMENTOS
-    from {{ ref('int_atendimentos_enriquecidos') }} as a
+    from atendimentos as a
     group by a.ID_USUARIO
 )
 

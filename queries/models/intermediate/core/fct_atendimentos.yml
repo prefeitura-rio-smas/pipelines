@@ -4,9 +4,24 @@ models:
     description: Uma linha por atendimento e profissional. A chave inclui o módulo da origem.
       IDs compartilhados são convertidos para inteiros e deduplicados; inválidos e zero são descartados
       da lista secundária. O profissional principal é preservado, inclusive quando desconhecido.
-      Usa int_atendimentos_base para as participações e int_atendimentos_enriquecidos para o cadastro
-      e a equipe de cada evento. Preserva o filtro próprio de operadores da fato, sem aplicar os filtros
-      de elegibilidade ou ranks do dataviz.
+      Concentra a união dos módulos, a expansão de profissionais e o enriquecimento cadastral e social.
+      Preserva todos os registros; os consumidores históricos aplicam flag_elegivel_fato para manter
+      a exclusão anterior de operadores TESTE. A mart por usuário seleciona flag_profissional_principal
+      e consome o STRUCT evento, sem duplicar eventos pelos profissionais compartilhados.
     columns:
       - name: id_atendimento_sk
         tests: [unique, not_null]
+      - name: id_atendimento
+        description: Número original do atendimento, sem qualificação pelo módulo.
+      - name: flag_profissional_principal
+        description: Identifica a única participação principal do evento, inclusive com profissional desconhecido.
+      - name: flag_elegivel_fato
+        description: Filtro histórico de operadores da fato. Aceita nomes nulos ou ausentes; exclui nomes
+          contendo TESTE com comparação sensível a maiúsculas. Não equivale à elegibilidade do dataviz.
+      - name: evento
+        description: |-
+          STRUCT com cadastro, contexto familiar, perfil social, equipe, classificações, flags e ranks do evento, repetido nas participações profissionais.
+          Os campos escalares PROFISSIONAL e PROFISSIONAL_ID apresentam o participante principal; a coluna id_profissional da fato identifica o participante da linha.
+          evento.ID_ATENDIMENTO é qualificado pelo módulo; evento.SEQ_ATENDIMENTO e a coluna id_atendimento da fato conservam o número original.
+          evento.ID_ATENDIMENTO_SK é o hash do evento qualificado, diferente de id_atendimento_sk da fato, que inclui o profissional.
+          A mart por usuário lê evento.* apenas nas linhas com flag_profissional_principal. Os filtros de dataviz permanecem disponíveis no STRUCT e não são aplicados pela fato.

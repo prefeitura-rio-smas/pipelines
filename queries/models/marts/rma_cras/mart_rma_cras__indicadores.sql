@@ -259,7 +259,8 @@ agg_atendimentos as (
         {{ contar('id_atendimento_modulo') }} as total_atendimentos_c1
     from {{ ref('fct_atendimentos') }}
     where
-        not regexp_contains(tipo_atendimento_descricao, '(?i)recepção')
+        flag_elegivel_fato
+        and not regexp_contains(tipo_atendimento_descricao, '(?i)recepção')
         and {{ nao_cancelado() }}
         and {{ no_mes('data_atendimento') }}
     group by 1
@@ -272,7 +273,8 @@ agg_atendimentos_domiciliar as (
         {{ contar('id_atendimento_modulo') }} as total_atendimentos_domiciliar_c6
     from {{ ref('fct_atendimentos') }}
     where
-        regexp_contains(tipo_atendimento_descricao, '(?i)domiciliar')
+        flag_elegivel_fato
+        and regexp_contains(tipo_atendimento_descricao, '(?i)domiciliar')
         and {{ nao_cancelado() }}
         and {{ no_mes('data_atendimento') }}
     group by 1

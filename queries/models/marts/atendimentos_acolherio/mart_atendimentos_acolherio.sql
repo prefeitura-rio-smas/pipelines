@@ -1,5 +1,6 @@
 with fct_atendimentos as (
     select * from {{ ref('fct_atendimentos') }}
+    where flag_elegivel_fato
 ),
 
 filtro_email_dev as (

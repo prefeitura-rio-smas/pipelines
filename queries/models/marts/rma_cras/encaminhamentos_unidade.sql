@@ -43,9 +43,15 @@ situacao_rua as (
     select
         id_unidade,
         count(distinct id_usuario) as total_rua
-    from {{ ref('fct_atendimentos') }}
-    where id_usuario in (select id_usuario from {{ ref('dim_usuarios') }} where flag_situacao_rua = 'Sim')
-      and (flag_cancelado is null or flag_cancelado != 'S')
+    from {{ ref('fct_atendimentos') }} as a
+    where
+        a.flag_elegivel_fato
+        and a.id_usuario in (
+            select u.id_usuario
+            from {{ ref('dim_usuarios') }} as u
+            where u.flag_situacao_rua = 'Sim'
+        )
+        and (a.flag_cancelado is null or a.flag_cancelado != 'S')
     group by 1
 ),
 
