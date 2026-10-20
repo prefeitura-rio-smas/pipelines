@@ -11,3 +11,8 @@ models:
         tests: [not_null]
       - name: beneficio
         description: "Array estruturado de benefícios recebidos pelo usuário, com STRUCT (codigo, descricao)."
+
+      - name: beneficios
+        description: "Descrições distintas ordenadas, separadas por vírgula."
+      - name: beneficios_detalhes
+        description: "Array normalizado de código e descrição; mantém o tratamento existente de códigos desconhecidos."
