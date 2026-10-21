@@ -1,17 +1,23 @@
 -- ============================================================
--- 1. Obtém a data da partição mais recente do CadÚnico
+-- Espelho cd_cidadao_pac do CadÚnico
+--
+-- Materializa o espelho no BigQuery e exporta o CSV.gz para o GCS.
+--
+-- Custo: cada CTE filtra `data_particao = @particao_*` (query parameter).
+-- Com o valor conhecido em tempo de execução, o BigQuery faz partition
+-- pruning e lê somente a partição do mês (antes: MAX(data_particao) como
+-- subquery, que impedia o pruning e varria as 54 partições de cada tabela).
+--
+-- Placeholders preenchidos em pipelines/cadunico_espelho/tasks.py:
+--   TARGET_TABLE → projeto.dataset.tabela de destino (prod ou staging)
+--   EXPORT_URI   → gs://bucket/prefixo/cd_cidadao_pac_<data>/cd_cidadao_pac_*.csv.gz
 -- ============================================================
 
-DECLARE v_data_particao DATE DEFAULT (
-  SELECT CAST(MAX(data_particao) AS DATE)
-  FROM `rj-smas.protecao_social_cadunico.identificacao_primeira_pessoa`
-);
-
 -- ============================================================
--- 2. Cria/atualiza a tabela de cidadãos do CadÚnico
+-- 1. Cria/atualiza a tabela de cidadãos do CadÚnico
 -- ============================================================
 
-CREATE OR REPLACE TABLE `rj-smas-dev.acolherio.cd_cidadao_pac` AS
+CREATE OR REPLACE TABLE `{{TARGET_TABLE}}` AS
 
 WITH i AS (
   SELECT
@@ -61,14 +67,11 @@ WITH i AS (
 
   FROM `rj-smas.protecao_social_cadunico.identificacao_primeira_pessoa`
 
-  WHERE data_particao = (
-    SELECT MAX(data_particao)
-    FROM `rj-smas.protecao_social_cadunico.identificacao_primeira_pessoa`
-  )
+  WHERE data_particao = @particao_pessoa
 ),
 
 -- ============================================================
--- 3. Identificação e controle do endereço familiar
+-- 2. Identificação e controle do endereço familiar
 -- ============================================================
 
 ic AS (
@@ -93,14 +96,11 @@ ic AS (
 
   FROM `rj-smas.protecao_social_cadunico.identificacao_controle`
 
-  WHERE data_particao = (
-    SELECT MAX(data_particao)
-    FROM `rj-smas.protecao_social_cadunico.identificacao_controle`
-  )
+  WHERE data_particao = @particao_controle
 ),
 
 -- ============================================================
--- 4. Dados de contato familiar
+-- 3. Dados de contato familiar
 -- ============================================================
 
 c AS (
@@ -125,14 +125,11 @@ c AS (
 
   FROM `rj-smas.protecao_social_cadunico.contato`
 
-  WHERE data_particao = (
-    SELECT MAX(data_particao)
-    FROM `rj-smas.protecao_social_cadunico.contato`
-  )
+  WHERE data_particao = @particao_contato
 ),
 
 -- ============================================================
--- 5. Documentos pessoais
+-- 4. Documentos pessoais
 -- ============================================================
 
 d AS (
@@ -143,14 +140,11 @@ d AS (
 
   FROM `rj-smas.protecao_social_cadunico.documento_pessoa`
 
-  WHERE data_particao = (
-    SELECT MAX(data_particao)
-    FROM `rj-smas.protecao_social_cadunico.documento_pessoa`
-  )
+  WHERE data_particao = @particao_documento
 ),
 
 -- ============================================================
--- 6. Dados de deficiência
+-- 5. Dados de deficiência
 -- ============================================================
 
 pd AS (
@@ -164,14 +158,11 @@ pd AS (
 
   FROM `rj-smas.protecao_social_cadunico.pessoa_deficiencia`
 
-  WHERE data_particao = (
-    SELECT MAX(data_particao)
-    FROM `rj-smas.protecao_social_cadunico.pessoa_deficiencia`
-  )
+  WHERE data_particao = @particao_deficiencia
 )
 
 -- ============================================================
--- 7. Consulta final
+-- 6. Consulta final
 -- ============================================================
 
 SELECT
@@ -242,22 +233,18 @@ WHERE
 ;
 
 -- ============================================================
--- 8. Exporta para o bucket GCS
---    Pasta identificada pelo projeto e data da partição
+-- 7. Exporta para o bucket GCS
+--    Pasta identificada pela data da partição (contrato do app)
 -- ============================================================
 
-EXECUTE IMMEDIATE FORMAT(
-  """
-  EXPORT DATA OPTIONS (
-    uri = 'gs://rj-smas-dev/raw/cadunico/cd_cidadao_pac_%s/cd_cidadao_pac_*.csv.gz',
-    format = 'CSV',
-    compression = 'GZIP',
-    overwrite = true,
-    header = true,
-    field_delimiter = ','
-  ) AS
-  SELECT *
-  FROM `rj-smas-dev.acolherio.cd_cidadao_pac`
-  """,
-  FORMAT_DATE('%Y-%m-%d', v_data_particao)
-);
+EXPORT DATA OPTIONS (
+  uri = '{{EXPORT_URI}}',
+  format = 'CSV',
+  compression = 'GZIP',
+  overwrite = true,
+  header = true,
+  field_delimiter = ','
+) AS
+SELECT *
+FROM `{{TARGET_TABLE}}`
+;
