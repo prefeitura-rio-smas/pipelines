@@ -1,0 +1,14 @@
+version: 2
+models:
+  - name: int_servicos_agregados
+    description: Preserva o ARRAY legado de serviços; acrescenta nomes ativos e histórico com unidade, login e datas.
+    columns:
+      - name: id_familia
+        description: ID original da família.
+      - name: servicos
+        description: Array legado preservado para dimensões e consumidores existentes.
+      - name: servicos_socioassistenciais
+        description: Nomes dos serviços sem cancelamento no estado disponível, separados por vírgula.
+      - name: servicos_socioassistenciais_historico
+        description: ARRAY com serviço, nome, unidade, login de cadastro e datas de cadastro/cancelamento disponíveis
+          na fonte.

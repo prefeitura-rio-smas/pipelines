@@ -38,6 +38,19 @@ final as (
           ) as beneficio
         from traducao
         group by id_usuario
+),
+
+normalizados as (
+    select
+        id_usuario,
+        beneficio,
+        {{ normalizar_itens_sociais('beneficio', 'Benefício não mapeado (código %s)') }} as beneficios_detalhes
+    from final
 )
 
-select * from final
+select
+    id_usuario,
+    beneficio,
+    beneficios_detalhes,
+    {{ descricoes_sociais('beneficios_detalhes') }} as beneficios
+from normalizados

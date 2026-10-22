@@ -11,3 +11,8 @@ models:
         tests: [not_null]
       - name: deficiencia
         description: "Array estruturado de deficiências do usuário, com STRUCT (codigo, descricao)."
+
+      - name: deficiencias
+        description: "Descrições distintas ordenadas, separadas por vírgula."
+      - name: deficiencias_detalhes
+        description: "Array normalizado de código e descrição; mantém o tratamento existente de códigos desconhecidos."
