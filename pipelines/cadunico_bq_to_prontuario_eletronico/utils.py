@@ -1,23 +1,82 @@
 # -*- coding: utf-8 -*-
-"""Funções puras do espelho cd_cidadao_pac (competência, pastas e estado).
+"""Funções do espelho cd_cidadao_pac (partição, competência, pastas e estado).
 
-Sem chamadas de BigQuery: só regra do produto (recarga no mesmo mês não
-reexporta), montagem de caminhos no GCS e leitura dos estados já gravados.
+O domínio fica todo aqui: qual macro do dbt define a partição disponível,
+como interpretar o resultado e a regra do produto (recarga no mesmo mês não
+reexporta). As funções puras não chamam BigQuery; só a leitura da partição
+executa o dbt e a listagem usa o cliente de Storage recebido.
 """
 
+import contextlib
 from datetime import date
+import io
+import json
 import re
 
+from dbt.cli.main import dbtRunner
 from google.cloud import storage
 
 from pipelines.cadunico_bq_to_prontuario_eletronico.constants import (
     EXPORT_FILE_PREFIX,
     settings,
 )
+from pipelines.utils.dbt import mensagem_falha
 
 STATE_PREFIX = "_state"
 
+# Inline que executa a macro existente e devolve a partição do CadÚnico.
+# A macro é resolvida pelo próprio dbt — nenhum SQL de negócio no Python.
+PARTICAO_CADUNICO_INLINE_SQL = (
+    "select '{{ obter_particao_cadunico() }}' as data_particao"
+)
+
 _STATE_DATE = re.compile(rf"{EXPORT_FILE_PREFIX}_(\d{{4}}-\d{{2}}-\d{{2}})\.json$")
+
+
+def obter_particao_disponivel(target: str) -> date | None:
+    """Executa a macro `obter_particao_cadunico()` e devolve a data da partição.
+
+    Usa `dbt show --inline`, então quem resolve a macro é o dbt (nenhum SQL de
+    negócio vive no Python). O `dbtRunner` não expõe as linhas do `show` no
+    `result`; com `--quiet --output json` o stdout contém apenas o JSON do
+    resultado, capturado aqui. Sem data na saída, devolve `None`.
+    """
+    buffer = io.StringIO()
+    with contextlib.redirect_stdout(buffer):
+        result = dbtRunner().invoke(
+            [
+                "show",
+                "--inline",
+                PARTICAO_CADUNICO_INLINE_SQL,
+                "--target",
+                target,
+                "--project-dir",
+                "queries",
+                "--profiles-dir",
+                "queries",
+                "--output",
+                "json",
+                "--quiet",
+            ]
+        )
+    if not result.success:
+        raise RuntimeError(f"dbt show falhou: {mensagem_falha(result)}")
+    try:
+        payload = json.loads(buffer.getvalue())
+    except json.JSONDecodeError as error:
+        raise RuntimeError(
+            f"dbt show nao devolveu JSON (stdout={buffer.getvalue()!r})"
+        ) from error
+    rows = payload.get("show") or []
+    if not rows:
+        return None
+    valor = rows[0].get("data_particao")
+    if valor is None or str(valor).strip() in ("", "None"):
+        return None
+    try:
+        return date.fromisoformat(str(valor)[:10])
+    except ValueError as error:
+        raise RuntimeError(f"particao invalida: {valor!r}") from error
 
 
 def partition_key(value: date) -> str:

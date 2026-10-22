@@ -22,9 +22,9 @@ from pipelines.cadunico_bq_to_prontuario_eletronico.constants import (
 from pipelines.cadunico_bq_to_prontuario_eletronico.utils import (
     export_uri,
     exported_dates,
+    obter_particao_disponivel,
     state_blob,
 )
-from pipelines.utils.dbt import obter_particao_cadunico
 from pipelines.utils.export import export_table_to_gcs
 
 _COUNT_SQL = "SELECT COUNT(*) AS n FROM `{table}`"
@@ -44,10 +44,13 @@ def dbt_build_command(target: str) -> str:
 
 
 @task(cache_policy=None)
-def fetch_particao_disponivel(target: str) -> date:
+def fetch_particao_disponivel(target: str) -> date | None:
     """Partição disponível no CadÚnico (macro `obter_particao_cadunico()`)."""
-    particao = obter_particao_cadunico(target)
-    get_run_logger().info("particao_disponivel=%s", particao.isoformat())
+    particao = obter_particao_disponivel(target)
+    if particao is None:
+        get_run_logger().warning("macro obter_particao_cadunico() sem data")
+    else:
+        get_run_logger().info("particao_disponivel=%s", particao.isoformat())
     return particao
 
 

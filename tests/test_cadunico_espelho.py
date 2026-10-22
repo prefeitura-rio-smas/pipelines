@@ -8,7 +8,9 @@ isolamento staging × prod.
 """
 
 from datetime import date
+import json
 import logging
+import types
 
 import pytest
 
@@ -218,14 +220,63 @@ def test_write_state_grava_json(monkeypatch):
 # ---------------------------------------------------------------------------
 
 
-def test_fetch_particao_disponivel_usa_a_macro(monkeypatch):
+class _FakeDbtRunner:
+    def __init__(self, payload=None, success=True):
+        self.payload = payload
+        self.success = success
+        self.args = None
+
+    def invoke(self, args):
+        self.args = args
+        if self.success:
+            print(json.dumps(self.payload))
+        return types.SimpleNamespace(success=self.success, result=None, exception=None)
+
+
+def test_obter_particao_disponivel_le_json_do_dbt_show(monkeypatch):
+    runner = _FakeDbtRunner({"show": [{"data_particao": "2026-09-11"}]})
+    monkeypatch.setattr(utils, "dbtRunner", lambda: runner)
+
+    assert utils.obter_particao_disponivel("staging") == PARTICAO
+
+    args = runner.args
+    assert args[0] == "show"
+    assert any("obter_particao_cadunico()" in arg for arg in args)
+    assert args[args.index("--target") + 1] == "staging"
+    assert args[args.index("--project-dir") + 1] == "queries"
+    assert args[args.index("--profiles-dir") + 1] == "queries"
+    assert args[args.index("--output") + 1] == "json"
+    assert "--quiet" in args
+
+
+def test_obter_particao_disponivel_sem_linha_retorna_none(monkeypatch):
+    monkeypatch.setattr(utils, "dbtRunner", lambda: _FakeDbtRunner({"show": []}))
+    assert utils.obter_particao_disponivel("staging") is None
+
+
+def test_obter_particao_disponivel_com_data_nula_retorna_none(monkeypatch):
+    monkeypatch.setattr(
+        utils,
+        "dbtRunner",
+        lambda: _FakeDbtRunner({"show": [{"data_particao": None}]}),
+    )
+    assert utils.obter_particao_disponivel("staging") is None
+
+
+def test_obter_particao_disponivel_falha_no_dbt(monkeypatch):
+    monkeypatch.setattr(utils, "dbtRunner", lambda: _FakeDbtRunner(success=False))
+    with pytest.raises(RuntimeError, match="dbt show falhou"):
+        utils.obter_particao_disponivel("staging")
+
+
+def test_fetch_particao_disponivel_delega_para_o_produto(monkeypatch):
     calls = {}
 
-    def fake_macro(target):
+    def fake_obter(target):
         calls["target"] = target
         return PARTICAO
 
-    monkeypatch.setattr(tasks, "obter_particao_cadunico", fake_macro)
+    monkeypatch.setattr(tasks, "obter_particao_disponivel", fake_obter)
     assert tasks.fetch_particao_disponivel.fn("staging") == PARTICAO
     assert calls["target"] == "staging"
 
@@ -320,6 +371,15 @@ def test_flow_pula_quando_competencia_igual(monkeypatch):
     assert state["dbt_runs"] == 0
     assert state["exports"] == 0
     assert state["estado"] is None
+
+
+def test_flow_encerra_sem_particao_disponivel(monkeypatch):
+    state = _install_fakes(monkeypatch, particao=None)
+    result = flows.cadunico_espelho_flow.fn()
+    assert result["status"] == "skipped"
+    assert result["data_particao"] is None
+    assert state["dbt_runs"] == 0
+    assert state["exports"] == 0
 
 
 def test_flow_exporta_quando_competencia_nova(monkeypatch):

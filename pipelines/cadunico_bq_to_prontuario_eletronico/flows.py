@@ -38,17 +38,30 @@ def cadunico_espelho_flow() -> dict:
     particao = fetch_particao_disponivel(target)
     competencias = fetch_competencias_exportadas()
     exportada = max(competencias) if competencias else None
-    exportar = should_export(particao, exportada)
     base = {
         "mode": target,
         "mart": MART_MODEL,
         "table": settings.FULL_TABLE_ID,
         "bucket": settings.GCS_BUCKET,
         "prefix": settings.GCS_PREFIX,
-        "data_particao": particao.isoformat(),
-        "competencia": partition_key(particao),
+        "data_particao": particao.isoformat() if particao else None,
+        "competencia": partition_key(particao) if particao else None,
         "competencia_exportada": exportada,
     }
+    if particao is None:
+        logger.warning(
+            "sem particao disponivel no CadUnico "
+            "(macro obter_particao_cadunico()); encerrando"
+        )
+        return {
+            **base,
+            "status": "skipped",
+            "rows": None,
+            "uri": None,
+            "job_id": None,
+            "state_uri": None,
+        }
+    exportar = should_export(particao, exportada)
     logger.info(
         "mode=%s table=%s bucket=%s prefix=%s competencia=%s "
         "competencia_exportada=%s decisao=%s",
