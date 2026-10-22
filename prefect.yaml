@@ -91,7 +91,7 @@ deployments:
   # CadÚnico — espelho cd_cidadao_pac
   # ---------------------------------------------------------------------------
   - name: cadunico-espelho-staging
-    entrypoint: pipelines/cadunico_espelho/flows.py:cadunico_espelho_flow
+    entrypoint: pipelines/cadunico_bq_to_prontuario_eletronico/flows.py:cadunico_espelho_flow
     work_pool:
       name: docker-pool
       job_variables:
@@ -107,7 +107,7 @@ deployments:
     tags: ["staging", "cadunico"]
 
   - name: cadunico-espelho-prod
-    entrypoint: pipelines/cadunico_espelho/flows.py:cadunico_espelho_flow
+    entrypoint: pipelines/cadunico_bq_to_prontuario_eletronico/flows.py:cadunico_espelho_flow
     schedule:
       cron: "0 6 * * *"
       timezone: "America/Sao_Paulo"

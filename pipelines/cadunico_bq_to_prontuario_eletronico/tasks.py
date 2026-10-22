@@ -15,8 +15,15 @@ from google.cloud import bigquery, storage
 from prefect import get_run_logger, task
 from prefect_dbt.cli.commands import trigger_dbt_cli_command
 
-from pipelines.cadunico_espelho.constants import MART_MODEL, settings
-from pipelines.cadunico_espelho.utils import export_uri, exported_dates, state_blob
+from pipelines.cadunico_bq_to_prontuario_eletronico.constants import (
+    MART_MODEL,
+    settings,
+)
+from pipelines.cadunico_bq_to_prontuario_eletronico.utils import (
+    export_uri,
+    exported_dates,
+    state_blob,
+)
 from pipelines.utils.dbt import obter_particao_cadunico
 from pipelines.utils.export import export_table_to_gcs
 

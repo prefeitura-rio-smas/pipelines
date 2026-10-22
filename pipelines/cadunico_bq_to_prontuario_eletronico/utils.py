@@ -10,7 +10,10 @@ import re
 
 from google.cloud import storage
 
-from pipelines.cadunico_espelho.constants import EXPORT_FILE_PREFIX, settings
+from pipelines.cadunico_bq_to_prontuario_eletronico.constants import (
+    EXPORT_FILE_PREFIX,
+    settings,
+)
 
 STATE_PREFIX = "_state"
 

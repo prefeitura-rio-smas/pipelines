@@ -12,7 +12,7 @@ import logging
 
 import pytest
 
-from pipelines.cadunico_espelho import flows, tasks, utils
+from pipelines.cadunico_bq_to_prontuario_eletronico import flows, tasks, utils
 from pipelines.utils import export as export_utils
 
 PARTICAO = date(2026, 9, 11)
@@ -23,10 +23,12 @@ def _silence_logger(monkeypatch):
     logger = logging.getLogger("cadunico-espelho-test")
     monkeypatch.setattr("prefect.get_run_logger", lambda: logger)
     monkeypatch.setattr(
-        "pipelines.cadunico_espelho.flows.get_run_logger", lambda: logger
+        "pipelines.cadunico_bq_to_prontuario_eletronico.flows.get_run_logger",
+        lambda: logger,
     )
     monkeypatch.setattr(
-        "pipelines.cadunico_espelho.tasks.get_run_logger", lambda: logger
+        "pipelines.cadunico_bq_to_prontuario_eletronico.tasks.get_run_logger",
+        lambda: logger,
     )
     return logger
 

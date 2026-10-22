@@ -12,8 +12,11 @@ mesmo mês não reexporta.
 
 from prefect import flow, get_run_logger
 
-from pipelines.cadunico_espelho.constants import MART_MODEL, settings
-from pipelines.cadunico_espelho.tasks import (
+from pipelines.cadunico_bq_to_prontuario_eletronico.constants import (
+    MART_MODEL,
+    settings,
+)
+from pipelines.cadunico_bq_to_prontuario_eletronico.tasks import (
     fetch_competencias_exportadas,
     fetch_particao_disponivel,
     run_dbt_build,
@@ -21,7 +24,10 @@ from pipelines.cadunico_espelho.tasks import (
     state_payload,
     write_state,
 )
-from pipelines.cadunico_espelho.utils import partition_key, should_export
+from pipelines.cadunico_bq_to_prontuario_eletronico.utils import (
+    partition_key,
+    should_export,
+)
 
 
 @flow(name="CadÚnico | Espelho cd_cidadao_pac")
