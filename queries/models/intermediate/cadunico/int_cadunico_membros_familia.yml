@@ -1,0 +1,47 @@
+version: 2
+
+models:
+  - name: int_cadunico_membros_familia
+    description: >
+      Membros de família do CadÚnico consolidados a partir das 5 fontes do
+      layout usadas pelo espelho do prontuário (identificação da pessoa,
+      identificação/controle da família, contato, documentação e deficiência).
+
+      Responsabilidades desta camada: os 5 joins (por `id_familia` para dados
+      de família e por `id_membro_familia` para dados do membro), as
+      normalizações de texto (telefones com zeros à esquerda removidos e
+      vazio → NULL; logradouro concatenado) e o filtro do espelho
+      (`estado_cadastral <> 'Excluido'` e `estado_cadastro = 'Cadastrado'`).
+
+      Grão: 1 linha por `id_membro_familia` (membro de família). `id_familia`
+      se repete legitimamente: a origem `identificacao_primeira_pessoa` traz
+      uma linha por membro (observado: até 14 membros por família).
+
+      Materializada como table (auditável). Consumida por `cd_cidadao_pac`.
+    columns:
+      - name: id_membro_familia
+        description: "Chave do membro de família — chave primária (1 linha por membro)."
+        tests:
+          - unique
+          - not_null
+
+      - name: id_familia
+        description: >
+          Chave da família. NÃO é única aqui: uma família com N membros
+          elegíveis aparece N vezes.
+        tests:
+          - not_null
+
+      - name: data_particao
+        description: "Data da partição de `identificacao_primeira_pessoa` usada no recorte."
+        tests:
+          - not_null
+
+      - name: telefone_1
+        description: "Telefone principal normalizado (DDD + número, zeros à esquerda removidos; vazio → NULL)."
+
+      - name: telefone_2
+        description: "Telefone secundário normalizado (DDD + número, zeros à esquerda removidos; vazio → NULL)."
+
+      - name: logradouro_completo
+        description: "Logradouro concatenado (tipo + título + nome), com vazios tratados por COALESCE."

@@ -1,7 +1,7 @@
 version: 2
 
 models:
-  - name: mart_cadunico__cidadao_pac
+  - name: cd_cidadao_pac
     description: >
       Espelho `cd_cidadao_pac` do CadÚnico (Prontuário Eletrônico).
 
@@ -11,18 +11,20 @@ models:
       Renomear, acrescentar ou reordenar coluna quebra o app — não faça.
 
       Grão: 1 linha por membro de família (`id_membro_familia` é a chave
-      única). `id_familia` NÃO é único: a origem
-      `identificacao_primeira_pessoa` traz uma linha por membro, então uma
-      família com N membros elegíveis gera N linhas (máximo observado: 14).
+      única). `id_familia` NÃO é único: a origem traz uma linha por membro,
+      então uma família com N membros elegíveis gera N linhas (máximo
+      observado: 14).
 
-      Filtro de negócio herdado do pipeline de exportação:
-      `estado_cadastral != 'Excluido'` e `estado_cadastro = 'Cadastrado'`.
+      Recorte herdado de `int_cadunico_membros_familia`
+      (`estado_cadastral <> 'Excluido'` e `estado_cadastro = 'Cadastrado'`).
+      Este modelo é só contrato: tradução de código, truncamentos e
+      constantes — sem join, sem filtro, sem agregação.
 
       Materializado como `rj-smas.prontuario_eletronico.cd_cidadao_pac` em
-      prod e `rj-smas-dev.relatorio.cd_cidadao_pac` em dev.
+      prod e `rj-smas-dev.relatorio.cd_cidadao_pac` em dev (via pasta).
     columns:
       - name: dsccns
-        description: "NIS da pessoa (`nis_original`)."
+        description: "NIS da pessoa (`nis_original`). Tem nulos reais na origem (~307k)."
 
       - name: dscnomepac
         description: "Nome da pessoa."
@@ -45,10 +47,10 @@ models:
         description: "Nome completo da mãe (filiação 1)."
 
       - name: dscnmpai
-        description: "Nome do pai (filiação 2)."
+        description: "Nome do pai (filiação 2). Tem nulos reais na origem (~227k)."
 
       - name: datnascim
-        description: "Data de nascimento."
+        description: "Data de nascimento (nulos reais na origem: ~2)."
 
       - name: indsexo
         description: "Sexo em código CadÚnico: M (Masculino), F (Feminino)."
@@ -65,10 +67,10 @@ models:
         description: "TRUE quando a pessoa é a Responsável pela Unidade Familiar (RF)."
 
       - name: numcpfpac
-        description: "CPF da pessoa (`documento_pessoa.cpf`)."
+        description: "CPF da pessoa (`documento_pessoa.cpf`). Tem nulos reais na origem (~19k)."
 
       - name: numrg
-        description: "RG da pessoa (15 últimos caracteres de `documento_pessoa.rg`)."
+        description: "RG da pessoa (15 últimos caracteres de `documento_pessoa.rg`). Tem nulos reais na origem (~480k)."
 
       - name: dsctelef1
         description: "Telefone principal da família (DDD + número, zeros à esquerda removidos)."
