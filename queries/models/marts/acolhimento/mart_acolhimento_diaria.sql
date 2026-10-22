@@ -159,7 +159,7 @@ final as (
                 )
             from unnest(usr.deficiencia) as d
             order by safe_cast(d.codigo as int64), d.codigo, d.descricao
-        ), ', '), ''), 'Não Informado') as tipo_deficiencia,
+        ), ', '), ''), '') as tipo_deficiencia,
         usr.flag_situacao_rua                 as situacao_de_rua,
         usr.flag_possui_violacao_direito       as flag_violacao_direito,
         usr.violacoes,

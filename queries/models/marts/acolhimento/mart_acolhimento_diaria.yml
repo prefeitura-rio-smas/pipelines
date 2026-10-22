@@ -69,7 +69,7 @@ models:
       - name: saude_mental
       - name: deficiencia
       - name: tipo_deficiencia
-        description: "Tipos de deficiência com código de dois dígitos e descrição (ex.: '01. Deficiência auditiva total'), ordenados por código e separados por vírgula. Ausência: 'Não Informado'; código desconhecido: código preservado com 'Descrição não informada'."
+        description: "Tipos de deficiência com código de dois dígitos e descrição (ex.: '01. Deficiência auditiva total'), ordenados por código e separados por vírgula. Ausência: string vazia (''); código desconhecido: código preservado com 'Descrição não informada'."
       - name: situacao_de_rua
       - name: flag_violacao_direito
       - name: violacoes
