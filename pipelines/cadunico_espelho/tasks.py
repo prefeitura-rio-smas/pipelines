@@ -1,38 +1,26 @@
 # -*- coding: utf-8 -*-
 """Tasks do espelho cd_cidadao_pac (CadÚnico → dbt → GCS).
 
-Fluxo de custo:
-- Detecção de partição nova: só `INFORMATION_SCHEMA.PARTITIONS` (nenhum dado
-  lido; piso de cobrança de 10 MB de metadata).
-- Exportação (só quando há partição nova, ~mensal): `dbt build` do mart,
-  verificação da partição efetivamente materializada (~18 MB) e `EXPORT DATA`.
-
-Idempotência: o marcador GCS (`<prefixo>/.last_export`) só é gravado depois
-de o dbt build e a exportação terminarem com sucesso. Falha no meio do
-caminho deixa o marcador intacto e o próximo run volta a exportar.
+Ordem no flow: partição disponível (macro no dbt) → competências já
+exportadas (estados no GCS) → decisão → `dbt build` do mart → `EXPORT DATA` →
+estado. O estado (`{prefixo}/_state/cd_cidadao_pac_<data>.json`) só é gravado
+depois do export bem-sucedido: falha no dbt ou no export não o grava e o
+próximo run reexporta (idempotente, `overwrite=true`).
 """
 
 from datetime import date, datetime, timezone
 import json
-from pathlib import Path
 
-from google.api_core.exceptions import NotFound
 from google.cloud import bigquery, storage
 from prefect import get_run_logger, task
 from prefect_dbt.cli.commands import trigger_dbt_cli_command
 
-from pipelines.cadunico_espelho.constants import (
-    DBT_PROFILES_DIR,
-    DBT_PROJECT_DIR,
-    LATEST_PARTITION_SQL,
-    MART_PARTITION_SQL,
-    SOURCE_DATASET,
-    TRIGGER_TABLE,
-    dbt_build_command,
-    settings,
-)
+from pipelines.cadunico_espelho.constants import MART_MODEL, settings
+from pipelines.cadunico_espelho.utils import export_uri, exported_dates, state_blob
+from pipelines.utils.dbt import obter_particao_cadunico
+from pipelines.utils.export import export_table_to_gcs
 
-SQL_PATH = Path(__file__).with_name("export_cd_cidadao_pac.sql")
+_COUNT_SQL = "SELECT COUNT(*) AS n FROM `{table}`"
 
 
 def _bq_client() -> bigquery.Client:
@@ -43,182 +31,105 @@ def _storage_client() -> storage.Client:
     return storage.Client(project=settings.GCP_PROJECT)
 
 
-def _as_date(value: date | datetime | None) -> date | None:
-    if value is None:
-        return None
-    if isinstance(value, datetime):
-        return value.date()
-    if isinstance(value, date):
-        return value
-    raise TypeError("Partição retornada não é uma data.")
-
-
-def export_uri(partition_date: date) -> str:
-    """URI (wildcard) do CSV.gz no GCS — contrato do app do prontuário."""
-    label = partition_date.isoformat()
-    prefix = settings.GCS_PREFIX
-    return (
-        f"gs://{settings.GCS_BUCKET}/{prefix}/cd_cidadao_pac_{label}/"
-        "cd_cidadao_pac_*.csv.gz"
-    )
-
-
-def build_export_sql(partition_date: date) -> str:
-    """Renderiza o EXPORT DATA com a tabela de destino e o URI do ambiente."""
-    sql = SQL_PATH.read_text(encoding="utf-8")
-    sql = sql.replace("{{TARGET_TABLE}}", settings.FULL_TABLE_ID)
-    sql = sql.replace("{{EXPORT_URI}}", export_uri(partition_date))
-    return sql
+def dbt_build_command(target: str) -> str:
+    """Comando do dbt build do espelho (target = prod|staging)."""
+    return f"dbt build --select +{MART_MODEL} --target {target}"
 
 
 @task(cache_policy=None)
-def fetch_source_location() -> str:
-    """Location do dataset de origem (usada em todas as queries)."""
-    client = _bq_client()
-    return client.get_dataset(SOURCE_DATASET).location
+def fetch_particao_disponivel(target: str) -> date:
+    """Partição disponível no CadÚnico (macro `obter_particao_cadunico()`)."""
+    particao = obter_particao_cadunico(target)
+    get_run_logger().info("particao_disponivel=%s", particao.isoformat())
+    return particao
 
 
 @task(cache_policy=None)
-def fetch_latest_partition(location: str) -> str | None:
-    """Partição (YYYYMM) mais recente da tabela-gatilho (`prefeitura`).
-
-    Lê só metadados (`INFORMATION_SCHEMA.PARTITIONS`): nenhum dado lido,
-    piso de cobrança de 10 MB de metadata.
-    """
-    sql = LATEST_PARTITION_SQL.format(dataset=SOURCE_DATASET, table=TRIGGER_TABLE)
-    client = _bq_client()
-    rows = list(client.query(sql, location=location).result())
-    if not rows or rows[0]["partition_id"] is None:
-        return None
-    partition_id = str(rows[0]["partition_id"])
-    get_run_logger().info("particao_origem=%s tabela=%s", partition_id, TRIGGER_TABLE)
-    return partition_id
+def fetch_competencias_exportadas() -> list[str]:
+    """Competências (AAAA-MM) já exportadas, a partir dos estados no GCS."""
+    competencias = exported_dates(_storage_client(), settings.GCS_PREFIX)
+    get_run_logger().info("competencias_exportadas=%s", competencias)
+    return competencias
 
 
 @task(cache_policy=None)
-def export_table_exists() -> bool:
-    """A tabela materializada de destino existe? (metadados, ~0 B)"""
-    try:
-        _bq_client().get_table(settings.FULL_TABLE_ID)
-    except NotFound:
-        return False
-    return True
-
-
-@task(cache_policy=None)
-def run_dbt_build() -> str:
-    """Roda `dbt build` do mart (o `+` avança os raws)."""
-    target = settings.DBT_TARGET
+def run_dbt_build(target: str) -> str:
+    """Roda `dbt build` do mart (o `+` avança int e raws)."""
     command = dbt_build_command(target)
     get_run_logger().info("dbt_build command=%s", command)
     trigger_dbt_cli_command(
         command=command,
-        project_dir=DBT_PROJECT_DIR,
-        profiles_dir=DBT_PROFILES_DIR,
+        project_dir="queries",
+        profiles_dir="queries",
     )
     return command
 
 
 @task(cache_policy=None)
-def fetch_mart_partition(location: str) -> tuple[date | None, int]:
-    """Data da partição EFETIVAMENTE materializada no mart + nº de linhas.
+def run_export(partition_date: date) -> dict:
+    """Exporta o mart já materializado para `{prefixo}/{pasta}/`.
 
-    Confirma que o dbt build produziu dados (o macro pina uma data para as 5
-    tabelas; se alguma não tiver essa partição, o mart fica vazio) e devolve a
-    data exata usada no nome da pasta exportada.
-    """
-    sql = MART_PARTITION_SQL.format(table=settings.FULL_TABLE_ID)
-    client = _bq_client()
-    rows = list(client.query(sql, location=location).result())
-    if not rows:
-        return None, 0
-    partition_date = _as_date(rows[0]["data_particao"])
-    count = int(rows[0]["n"] or 0)
-    get_run_logger().info(
-        "mart_materializado data_particao=%s rows=%s",
-        partition_date.isoformat() if partition_date else None,
-        count,
-    )
-    return partition_date, count
-
-
-@task(cache_policy=None)
-def read_watermark() -> dict | None:
-    """Lê o marcador da última exportação bem-sucedida no GCS.
-
-    Ausente/ilegível → None (o próximo run volta a exportar).
+    Conta as linhas ANTES de exportar: mart vazio (partição-gatilho sem dados
+    nas fontes) aborta sem publicar CSV e sem gravar estado.
     """
     logger = get_run_logger()
-    client = _storage_client()
-    blob = client.bucket(settings.GCS_BUCKET).blob(settings.WATERMARK_BLOB)
-    try:
-        raw = blob.download_as_text()
-    except NotFound:
-        logger.info(
-            "watermark ausente em gs://%s/%s",
-            settings.GCS_BUCKET,
-            settings.WATERMARK_BLOB,
+    client = _bq_client()
+    rows = _count_rows(client)
+    if rows == 0:
+        raise RuntimeError(
+            f"tabela vazia ({settings.FULL_TABLE_ID}); exportacao abortada"
         )
-        return None
-    try:
-        payload = json.loads(raw)
-    except json.JSONDecodeError:
-        logger.warning("watermark ilegivel (JSON invalido); tratando como ausente")
-        return None
-    if not isinstance(payload, dict) or not payload.get("partition_id"):
-        logger.warning("watermark sem partition_id; tratando como ausente")
-        return None
-    return payload
-
-
-@task(cache_policy=None)
-def write_watermark(payload: dict) -> str:
-    """Grava o marcador SÓ após dbt build + export terem terminado bem."""
-    client = _storage_client()
-    blob = client.bucket(settings.GCS_BUCKET).blob(settings.WATERMARK_BLOB)
-    blob.upload_from_string(
-        json.dumps(payload, sort_keys=True) + "\n", content_type="application/json"
-    )
-    get_run_logger().info(
-        "watermark gravado em gs://%s/%s", settings.GCS_BUCKET, settings.WATERMARK_BLOB
-    )
-    return f"gs://{settings.GCS_BUCKET}/{settings.WATERMARK_BLOB}"
-
-
-@task(cache_policy=None)
-def run_export(location: str, partition_date: date) -> dict:
-    """Exporta o CSV.gz do mart já materializado para o GCS."""
-    logger = get_run_logger()
-    sql = build_export_sql(partition_date)
-    client = _bq_client()
-    job = client.query(sql, location=location)
-    job.result()
-    result = {
-        "job_id": job.job_id,
-        "bytes_processed": job.total_bytes_processed,
-        "uri": export_uri(partition_date),
-    }
+    uri = export_uri(partition_date)
+    result = export_table_to_gcs(client, settings.FULL_TABLE_ID, uri)
     logger.info(
-        "export_concluido job_id=%s bytes_processed=%s uri=%s",
-        job.job_id,
-        job.total_bytes_processed,
-        result["uri"],
+        "export_concluido job_id=%s rows=%s bytes_processed=%s uri=%s",
+        result.job_id,
+        rows,
+        result.bytes_processed,
+        result.uri,
     )
-    return result
+    return {
+        "job_id": result.job_id,
+        "uri": result.uri,
+        "bytes_processed": result.bytes_processed,
+        "rows": rows,
+    }
 
 
-def watermark_payload(
-    partition_id: str,
+def _count_rows(client: bigquery.Client) -> int:
+    """Linhas da tabela exportada (`COUNT(*)` sem filtro: lido do metadado)."""
+    sql = _COUNT_SQL.format(table=settings.FULL_TABLE_ID)
+    rows = list(client.query(sql).result())
+    return int(rows[0]["n"]) if rows else 0
+
+
+@task(cache_policy=None)
+def write_state(partition_date: date, payload: dict) -> str:
+    """Grava o estado da exportação SÓ depois do export bem-sucedido."""
+    client = _storage_client()
+    blob_name = state_blob(partition_date)
+    blob = client.bucket(settings.GCS_BUCKET).blob(blob_name)
+    blob.upload_from_string(
+        json.dumps(payload, sort_keys=True) + "\n",
+        content_type="application/json",
+    )
+    path = f"gs://{settings.GCS_BUCKET}/{blob_name}"
+    get_run_logger().info("estado gravado em %s", path)
+    return path
+
+
+def state_payload(
     partition_date: date,
-    rows: int,
     export_result: dict,
 ) -> dict:
-    """Conteúdo do marcador: partição-gatilho + evidência da exportação."""
+    """Conteúdo do estado: evidência da exportação da competência."""
     return {
-        "partition_id": partition_id,
         "data_particao": partition_date.isoformat(),
-        "rows": rows,
-        "exported_at": datetime.now(timezone.utc).isoformat(timespec="seconds"),
-        "job_id": export_result.get("job_id"),
+        "competencia": partition_date.strftime("%Y-%m"),
+        "mode": settings.MODE,
+        "table": settings.FULL_TABLE_ID,
+        "rows": export_result.get("rows"),
         "uri": export_result.get("uri"),
+        "job_id": export_result.get("job_id"),
+        "exported_at": datetime.now(timezone.utc).isoformat(timespec="seconds"),
     }
