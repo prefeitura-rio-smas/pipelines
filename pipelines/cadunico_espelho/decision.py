@@ -2,9 +2,9 @@
 """Decisão de exportação do espelho cd_cidadao_pac.
 
 O gatilho é a PARTIÇÃO (mês, `partition_id` YYYYMM) mais recente da tabela
-`identificacao_primeira_pessoa`. Recarga corretiva no mesmo mês NÃO dispara
-nova exportação (decisão do Leone, 2026-10-21) — o pior caso é uma
-sobrescrita manual.
+`prefeitura` — o mesmo sinal canônico que o macro `filtro_particao_cadunico()`
+usa no dbt. Recarga corretiva no mesmo mês NÃO dispara nova exportação
+(decisão do Leone, 2026-10-21) — o pior caso é uma sobrescrita manual.
 """
 
 

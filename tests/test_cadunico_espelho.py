@@ -1,9 +1,9 @@
 # ruff: noqa: S101
 """Espelho cd_cidadao_pac: helpers, watermark e orquestração do flow.
 
-Cobre os cenários exigidos: tabela ausente, datas iguais, falha no export
-(watermark não avança → próximo run reexporta), ausência de partição e
-isolamento entre staging e produção.
+Cobre: ausência de partição, tabela ausente, falha no `dbt build` (zero export
+e watermark não avança), falha no export (próximo run reexporta), partição
+materializada divergente, comando/target do dbt e isolamento staging × prod.
 """
 
 from datetime import date
@@ -13,10 +13,10 @@ from google.api_core.exceptions import NotFound
 import pytest
 
 from pipelines.cadunico_espelho import flows, tasks
-from pipelines.cadunico_espelho.constants import SOURCE_TABLES, TRIGGER_TABLE
+from pipelines.cadunico_espelho.constants import dbt_build_command
 
-PARTITIONS = {table: "202609" for table in SOURCE_TABLES}
-DATES = {table: date(2026, 9, 11) for table in SOURCE_TABLES}
+TRIGGER_PARTITION = "202609"
+PARTITION_DATE = date(2026, 9, 11)
 
 
 @pytest.fixture(autouse=True)
@@ -67,25 +67,29 @@ class _FakeStorageClient:
 # ---------------------------------------------------------------------------
 
 
-def test_partition_bounds_primeiro_e_ultimo_dia():
-    assert tasks.partition_bounds("202609") == (date(2026, 9, 1), date(2026, 9, 30))
-    assert tasks.partition_bounds("202602") == (date(2026, 2, 1), date(2026, 2, 28))
-    assert tasks.partition_bounds("202402") == (date(2024, 2, 1), date(2024, 2, 29))
-
-
-def test_export_uri_usa_data_da_particao_gatilho():
-    uri = tasks.export_uri(DATES[TRIGGER_TABLE])
+def test_export_uri_usa_data_da_particao():
+    uri = tasks.export_uri(PARTITION_DATE)
     assert uri.endswith("cd_cidadao_pac_2026-09-11/cd_cidadao_pac_*.csv.gz")
     assert uri.startswith("gs://")
 
 
-def test_build_export_sql_renderiza_placeholders_e_uma_param_por_tabela():
-    sql = tasks.build_export_sql(DATES)
+def test_build_export_sql_renderiza_placeholders():
+    sql = tasks.build_export_sql(PARTITION_DATE)
+    body = "\n".join(
+        line for line in sql.splitlines() if not line.lstrip().startswith("--")
+    )
     assert "{{" not in sql
-    params = tasks.export_query_parameters(DATES)
-    assert [p.name for p in params] == list(SOURCE_TABLES.values())
-    for name in SOURCE_TABLES.values():
-        assert f"@{name}" in sql
+    assert "EXPORT DATA" in body
+    assert "CREATE OR REPLACE" not in body.upper()
+    assert "JOIN" not in body.upper()
+    assert tasks.settings.FULL_TABLE_ID in body
+
+
+def test_dbt_build_command_avanca_o_mart():
+    assert dbt_build_command("prod") == (
+        "dbt build --select +mart_cadunico__cidadao_pac --target prod"
+    )
+    assert dbt_build_command("staging").endswith("--target staging")
 
 
 # ---------------------------------------------------------------------------
@@ -109,10 +113,46 @@ def test_read_watermark_ilegivel_retorna_none(monkeypatch):
 def test_write_e_read_watermark_roundtrip(monkeypatch):
     fake = _FakeStorageClient()
     monkeypatch.setattr(tasks, "_storage_client", lambda: fake)
-    payload = {"partition_id": "202609", "rows": 10}
+    payload = {"partition_id": TRIGGER_PARTITION, "rows": 10}
     path = tasks.write_watermark.fn(payload)
     assert path.endswith(tasks.settings.WATERMARK_BLOB)
     assert tasks.read_watermark.fn() == payload
+
+
+def test_watermark_payload_registra_evidencia():
+    payload = tasks.watermark_payload(
+        TRIGGER_PARTITION,
+        PARTITION_DATE,
+        42,
+        {"job_id": "job-1", "uri": "gs://b/x"},
+    )
+    assert payload["partition_id"] == TRIGGER_PARTITION
+    assert payload["data_particao"] == "2026-09-11"
+    assert payload["job_id"] == "job-1"
+    assert payload["rows"] == 42
+
+
+# ---------------------------------------------------------------------------
+# dbt build
+# ---------------------------------------------------------------------------
+
+
+def test_run_dbt_build_usa_select_e_target_do_modo(monkeypatch):
+    calls = {}
+
+    def fake_trigger(command, project_dir, profiles_dir):
+        calls.update(
+            command=command, project_dir=project_dir, profiles_dir=profiles_dir
+        )
+        return "ok"
+
+    monkeypatch.setattr(tasks, "trigger_dbt_cli_command", fake_trigger)
+    command = tasks.run_dbt_build.fn()
+    assert calls["command"] == command
+    assert "+mart_cadunico__cidadao_pac" in calls["command"]
+    assert f"--target {tasks.settings.DBT_TARGET}" in calls["command"]
+    assert calls["project_dir"] == "queries"
+    assert calls["profiles_dir"] == "queries"
 
 
 # ---------------------------------------------------------------------------
@@ -121,30 +161,50 @@ def test_write_e_read_watermark_roundtrip(monkeypatch):
 
 
 def _install_fakes(
-    monkeypatch, *, partitions=PARTITIONS, table_exists=True, export_fail_times=0
+    monkeypatch,
+    *,
+    source_partition=TRIGGER_PARTITION,
+    table_exists=True,
+    mart_date=PARTITION_DATE,
+    mart_rows=10,
+    dbt_fail_times=0,
+    export_fail_times=0,
 ):
-    state = {"watermark": None, "exports": 0, "fail_remaining": export_fail_times}
+    state = {
+        "watermark": None,
+        "exports": 0,
+        "dbt_runs": 0,
+        "dbt_fail_remaining": dbt_fail_times,
+        "fail_remaining": export_fail_times,
+    }
 
-    def fake_export(partitions_, dates_, location):
+    def fake_dbt():
+        state["dbt_runs"] += 1
+        if state["dbt_fail_remaining"] > 0:
+            state["dbt_fail_remaining"] -= 1
+            raise RuntimeError("falha simulada no dbt build")
+        return "dbt build --select +mart_cadunico__cidadao_pac --target staging"
+
+    def fake_export(location, partition_date):
         if state["fail_remaining"] > 0:
             state["fail_remaining"] -= 1
             raise RuntimeError("falha simulada no EXPORT DATA")
         state["exports"] += 1
         return {
             "job_id": "job-1",
-            "rows": 10,
             "bytes_processed": 1,
-            "uri": tasks.export_uri(dates_[TRIGGER_TABLE]),
-            "partitions": partitions_,
-            "dates": {k: v.isoformat() for k, v in dates_.items()},
+            "uri": tasks.export_uri(partition_date),
         }
 
     monkeypatch.setattr(flows, "fetch_source_location", lambda: "US")
-    monkeypatch.setattr(flows, "fetch_latest_partitions", lambda location: partitions)
+    monkeypatch.setattr(
+        flows, "fetch_latest_partition", lambda location: source_partition
+    )
     monkeypatch.setattr(flows, "read_watermark", lambda: state["watermark"])
     monkeypatch.setattr(flows, "export_table_exists", lambda: table_exists)
+    monkeypatch.setattr(flows, "run_dbt_build", fake_dbt)
     monkeypatch.setattr(
-        flows, "resolve_partition_dates", lambda p, location: dict(DATES)
+        flows, "fetch_mart_partition", lambda location: (mart_date, mart_rows)
     )
     monkeypatch.setattr(flows, "run_export", fake_export)
 
@@ -157,24 +217,40 @@ def _install_fakes(
 
 
 def test_flow_encerra_sem_particao_de_origem(monkeypatch):
-    state = _install_fakes(monkeypatch, partitions={})
+    state = _install_fakes(monkeypatch, source_partition=None)
     result = flows.cadunico_espelho_flow.fn()
     assert result["status"] == "skipped"
+    assert state["dbt_runs"] == 0
     assert state["exports"] == 0
 
 
 def test_flow_exporta_quando_tabela_ausente(monkeypatch):
     state = _install_fakes(monkeypatch, table_exists=False)
-    state["watermark"] = {"partition_id": "202609"}
+    state["watermark"] = {"partition_id": TRIGGER_PARTITION}
     result = flows.cadunico_espelho_flow.fn()
     assert result["status"] == "exported"
+    assert state["dbt_runs"] == 1
     assert state["exports"] == 1
+
+
+def test_falha_no_dbt_nao_exporta_nem_grava_watermark(monkeypatch):
+    state = _install_fakes(monkeypatch, dbt_fail_times=1)
+
+    with pytest.raises(RuntimeError, match="dbt build"):
+        flows.cadunico_espelho_flow.fn()
+    assert state["watermark"] is None
+    assert state["exports"] == 0
+
+    result = flows.cadunico_espelho_flow.fn()
+    assert result["status"] == "exported"
+    assert state["dbt_runs"] == 2
+    assert state["watermark"]["partition_id"] == TRIGGER_PARTITION
 
 
 def test_falha_no_export_nao_grava_watermark_e_reexporta(monkeypatch):
     state = _install_fakes(monkeypatch, export_fail_times=1)
 
-    with pytest.raises(RuntimeError):
+    with pytest.raises(RuntimeError, match="EXPORT DATA"):
         flows.cadunico_espelho_flow.fn()
     assert state["watermark"] is None
     assert state["exports"] == 0
@@ -182,12 +258,29 @@ def test_falha_no_export_nao_grava_watermark_e_reexporta(monkeypatch):
     result = flows.cadunico_espelho_flow.fn()
     assert result["status"] == "exported"
     assert state["exports"] == 1
-    assert state["watermark"]["partition_id"] == "202609"
+    assert state["watermark"]["partition_id"] == TRIGGER_PARTITION
     assert result["watermark_written"] is True
 
     again = flows.cadunico_espelho_flow.fn()
     assert again["status"] == "skipped"
+    assert state["dbt_runs"] == 2
     assert state["exports"] == 1
+
+
+def test_flow_aborta_se_mart_vazio(monkeypatch):
+    state = _install_fakes(monkeypatch, mart_date=None, mart_rows=0)
+    with pytest.raises(RuntimeError, match="nao materializou dados"):
+        flows.cadunico_espelho_flow.fn()
+    assert state["exports"] == 0
+    assert state["watermark"] is None
+
+
+def test_flow_aborta_se_particao_materializada_diverge(monkeypatch):
+    state = _install_fakes(monkeypatch, mart_date=date(2026, 8, 7))
+    with pytest.raises(RuntimeError, match="diverge da particao-gatilho"):
+        flows.cadunico_espelho_flow.fn()
+    assert state["exports"] == 0
+    assert state["watermark"] is None
 
 
 def test_flow_retorna_metadados_de_observabilidade(monkeypatch):
@@ -195,27 +288,18 @@ def test_flow_retorna_metadados_de_observabilidade(monkeypatch):
     result = flows.cadunico_espelho_flow.fn()
     for key in (
         "mode",
+        "dbt_target",
         "project",
         "dataset",
         "table",
         "bucket",
         "prefix",
+        "trigger_table",
         "rows",
         "uri",
+        "dbt_command",
     ):
         assert result[key] is not None
-
-
-def test_watermark_payload_registra_evidencia():
-    payload = tasks.watermark_payload(
-        "202609",
-        DATES,
-        {"job_id": "job-1", "rows": 42, "uri": "gs://b/x"},
-    )
-    assert payload["partition_id"] == "202609"
-    assert payload["data_particao"] == "2026-09-11"
-    assert payload["job_id"] == "job-1"
-    assert payload["rows"] == 42
 
 
 # ---------------------------------------------------------------------------
@@ -225,18 +309,20 @@ def test_watermark_payload_registra_evidencia():
 
 def test_staging_nao_toca_destino_de_prod(monkeypatch):
     monkeypatch.setenv("MODE", "staging")
-    sql = tasks.build_export_sql(DATES)
+    sql = tasks.build_export_sql(PARTITION_DATE)
     assert "rj-smas.prontuario_eletronico" not in sql
     assert "gs://rj-smas-dev/raw/cadunico/" not in sql
-    assert "rj-smas-dev.cadunico_espelho_staging.cd_cidadao_pac" in sql
+    assert "rj-smas-dev.relatorio.cd_cidadao_pac" in sql
     assert "raw/cadunico-staging/cd_cidadao_pac_2026-09-11" in sql
     assert tasks.settings.WATERMARK_BLOB == "raw/cadunico-staging/.last_export"
+    assert tasks.settings.DBT_TARGET == "staging"
 
 
 def test_prod_aponta_para_dataset_e_prefixo_de_prod(monkeypatch):
     monkeypatch.setenv("MODE", "prod")
-    sql = tasks.build_export_sql(DATES)
+    sql = tasks.build_export_sql(PARTITION_DATE)
     assert "rj-smas.prontuario_eletronico.cd_cidadao_pac" in sql
     assert "raw/cadunico/cd_cidadao_pac_2026-09-11" in sql
     assert "raw/cadunico-staging" not in sql
     assert tasks.settings.WATERMARK_BLOB == "raw/cadunico/.last_export"
+    assert tasks.settings.DBT_TARGET == "prod"
