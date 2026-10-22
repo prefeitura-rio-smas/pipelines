@@ -10,11 +10,13 @@ with source as (
         indescolari as escolaridade,
         indrecbenef as flag_recebe_beneficio,
         indqualbenef as tipo_beneficio,
-        indcuratela as flag_curatela, 
+        indcuratela as flag_curatela,
         indtipcuratela as tipo_curatela,
         {{ map_flag_situacao_rua('indmoradi') }} as flag_situacao_rua,
         indpresdefi as flag_deficiencia,
-        indtpdefi as tipo_deficiencia
-    from  {{ source('brutos_acolherio_staging', 'gh_pacientes_sm') }}
+        indtpdefi as tipo_deficiencia,
+        indmoradi as tipo_moradia
+    from {{ source('brutos_acolherio_staging', 'gh_pacientes_sm') }}
 )
+
 select * from source
