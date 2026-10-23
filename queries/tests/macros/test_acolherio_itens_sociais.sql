@@ -24,7 +24,8 @@ with fixtures as (
         ] as sem_descricao,
         [
             struct('chave_2' as chave, 'Rótulo 2' as rotulo),
-            struct('chave_1' as chave, 'Rótulo 1' as rotulo)
+            struct('chave_1' as chave, 'Rótulo 1' as rotulo),
+            struct('chave_3' as chave, 'Rótulo 1' as rotulo)
         ] as estrutura_alternativa
 ),
 
@@ -40,7 +41,8 @@ resultados as (
             'estrutura_alternativa',
             campo_codigo='chave',
             campo_descricao='rotulo'
-        ) }} as alternativa
+        ) }} as alternativa,
+        {{ acolherio_descricoes_itens('estrutura_alternativa', campo='rotulo', separador=' / ') }} as descricoes_campo_custom
     from fixtures
 ),
 
@@ -102,6 +104,12 @@ checks as (
         'campo_e_separador_customizados',
         descricoes_alternativa,
         'Rótulo 1 | Rótulo 2'
+    from descricoes
+    union all
+    select
+        'campo_customizado_na_entrada',
+        descricoes_campo_custom,
+        'Rótulo 1 / Rótulo 2'
     from descricoes
 )
 
