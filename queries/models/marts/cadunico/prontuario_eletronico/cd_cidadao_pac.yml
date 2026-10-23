@@ -1,0 +1,133 @@
+version: 2
+
+models:
+  - name: cd_cidadao_pac
+    description: >
+      Espelho `cd_cidadao_pac` do CadÚnico (Prontuário Eletrônico).
+
+      CONTRATO EXTERNO: as 31 colunas abaixo, com estes nomes e esta ordem,
+      são consumidas pelo app do prontuário a partir do CSV publicado em
+      `gs://rj-smas-dev/raw/cadunico/cd_cidadao_pac_<data_particao>/`.
+      Renomear, acrescentar ou reordenar coluna quebra o app — não faça.
+
+      Grão: 1 linha por membro de família (`id_membro_familia` é a chave
+      única). `id_familia` NÃO é único: a origem traz uma linha por membro,
+      então uma família com N membros elegíveis gera N linhas (máximo
+      observado: 14).
+
+      Recorte herdado de `int_cadunico_membros_familia`
+      (`estado_cadastral <> 'Excluido'` e `estado_cadastro = 'Cadastrado'`).
+      Este modelo é só contrato: tradução de código, truncamentos e
+      constantes — sem join, sem filtro, sem agregação.
+
+      Materializado como `rj-smas.prontuario_eletronico.cd_cidadao_pac` em
+      prod e `rj-smas-dev.relatorio.cd_cidadao_pac` em dev (via pasta).
+    columns:
+      - name: dsccns
+        description: "NIS da pessoa (`nis_original`). Tem nulos reais na origem (~307k)."
+
+      - name: dscnomepac
+        description: "Nome da pessoa."
+
+      - name: dscnomsoci
+        description: "Nome social da pessoa."
+
+      - name: indgenero
+        description: >
+          Identidade de gênero em código CadÚnico: 06 (tipo 002), 05 (001),
+          04 (003), 99 (demais/não informado).
+
+      - name: paisorigem
+        description: "Código do país de nascimento (5 primeiros caracteres de `pais_nascimento`)."
+
+      - name: muninasc
+        description: "Município de nascimento."
+
+      - name: dscnmmae
+        description: "Nome completo da mãe (filiação 1)."
+
+      - name: dscnmpai
+        description: "Nome do pai (filiação 2). Tem nulos reais na origem (~227k)."
+
+      - name: datnascim
+        description: "Data de nascimento (nulos reais na origem: ~2)."
+
+      - name: indsexo
+        description: "Sexo em código CadÚnico: M (Masculino), F (Feminino)."
+
+      - name: racacor
+        description: >
+          Raça/cor em código CadÚnico: 01 (id 1), 02 (id 2), 04 (id 3),
+          03 (id 4), 05 (id 5), 99 (demais/não informado).
+
+      - name: parentesco_responsavel_familia
+        description: "Parentesco declarado em relação à pessoa responsável pela unidade familiar."
+
+      - name: flag_rf
+        description: "TRUE quando a pessoa é a Responsável pela Unidade Familiar (RF)."
+
+      - name: numcpfpac
+        description: "CPF da pessoa (`documento_pessoa.cpf`). Tem nulos reais na origem (~19k)."
+
+      - name: numrg
+        description: "RG da pessoa (15 últimos caracteres de `documento_pessoa.rg`). Tem nulos reais na origem (~480k)."
+
+      - name: dsctelef1
+        description: "Telefone principal da família (DDD + número, zeros à esquerda removidos)."
+
+      - name: dsctelef2
+        description: "Telefone secundário da família (DDD + número, zeros à esquerda removidos)."
+
+      - name: numcepender
+        description: "CEP do endereço familiar (`identificacao_controle.cep`)."
+
+      - name: dslogradouro
+        description: "Logradouro familiar concatenado (tipo + título + nome)."
+
+      - name: numend
+        description: "Número do endereço (7 primeiros caracteres)."
+
+      - name: complend
+        description: "Complemento do endereço familiar."
+
+      - name: dscbairroender
+        description: "Bairro/localidade da família (40 primeiros caracteres de `localidade`)."
+
+      - name: sigufender
+        description: "UF do endereço familiar — fixo 'RJ'."
+
+      - name: estado_cadastro
+        description: >
+          Estado do cadastro da família (`identificacao_controle`). Apenas
+          'Cadastrado' entra no espelho.
+
+      - name: data_atualizacao
+        description: "Data de atualização do cadastro familiar (`identificacao_controle`)."
+
+      - name: indpresdefi
+        description: "Indicador de deficiência: S (Sim), N (Não)."
+
+      - name: id_familia
+        description: >
+          Chave da família. NÃO é única neste modelo — o grão é por membro
+          (`id_membro_familia`). Uma família com N membros elegíveis aparece
+          N vezes.
+        tests:
+          - not_null
+
+      - name: id_membro_familia
+        description: "Chave do membro da família — chave primária deste modelo (1 linha por membro)."
+        tests:
+          - unique
+          - not_null
+
+      - name: flag_cadunico
+        description: "Indicador fixo de origem CadÚnico — sempre 'Sim'."
+
+      - name: muniend
+        description: "Município do endereço familiar — fixo 'Rio de Janeiro'."
+
+      - name: data_particao
+        description: "Data da partição de `identificacao_primeira_pessoa` usada para montar o espelho."
+        tests:
+          - not_null

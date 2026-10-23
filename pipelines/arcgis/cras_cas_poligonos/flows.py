@@ -11,11 +11,12 @@ def cras_cas_poligonos_flow() -> None:
     # Configuration for this product
     job_name = "cras_cas_poligonos"
     item_id = "e56a0700682b4dba96aca950fb3d96a3"
-    return_geometry = False
+    return_geometry = True
     batch_size = 20000
-    order_by_field = "objectid"
-    layer_name = "repeat"
-    layer_idx = 1
+    order_by_field = "fid"
+    layer_name = "smas"
+    layer_idx = 0
+    geometry_column = "shape"
 
 
     load_arcgis_to_bigquery(
@@ -26,6 +27,7 @@ def cras_cas_poligonos_flow() -> None:
         return_geometry=return_geometry,
         batch_size=batch_size,
         order_by_field=order_by_field,
+        geometry_column=geometry_column,
     )
 
 

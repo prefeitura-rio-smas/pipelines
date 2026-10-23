@@ -91,7 +91,7 @@ deployments:
   # CadÚnico — espelho cd_cidadao_pac
   # ---------------------------------------------------------------------------
   - name: cadunico-espelho-staging
-    entrypoint: pipelines/cadunico_espelho/flows.py:cadunico_espelho_flow
+    entrypoint: pipelines/cadunico_bq_to_prontuario_eletronico/flows.py:cadunico_espelho_flow
     work_pool:
       name: docker-pool
       job_variables:
@@ -107,7 +107,7 @@ deployments:
     tags: ["staging", "cadunico"]
 
   - name: cadunico-espelho-prod
-    entrypoint: pipelines/cadunico_espelho/flows.py:cadunico_espelho_flow
+    entrypoint: pipelines/cadunico_bq_to_prontuario_eletronico/flows.py:cadunico_espelho_flow
     schedule:
       cron: "0 6 * * *"
       timezone: "America/Sao_Paulo"
@@ -119,6 +119,12 @@ deployments:
         env:
           PREFECT_API_URL: http://prefect-api:4200/api
           MODE: prod
+          PREFECT_EVENTS_ENABLED: "false"
+          PREFECT_SERVER_EVENTS_ENABLED: "false"
+          PREFECT_EVENTS_MESSAGING_ENABLED: "false"
+          PREFECT_SERVER_SERVICES_EVENT_PERSISTER_ENABLED: "false"
+          PREFECT_SERVER_SERVICES_EVENT_LOGGER_ENABLED: "false"
+          PREFECT_SERVER_EVENTS_STREAM_OUT_ENABLED: "false"
           GCP_CREDENTIALS: "{{ $GCP_CREDENTIALS }}"
           SIURB_URL: "{{ $SIURB_URL }}"
           SIURB_USER: "{{ $SIURB_USER }}"

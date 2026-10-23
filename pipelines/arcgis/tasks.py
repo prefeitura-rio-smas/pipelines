@@ -152,7 +152,9 @@ def get_layer_info(service_url: str) -> dict:
         raise ValueError(f"Erro ao obter schema e CRS: {e}")
 
 
-def arcgis_to_bq_schema(arcgis_fields: list, return_geometry: bool) -> list:
+def arcgis_to_bq_schema(
+    arcgis_fields: list, return_geometry: bool, geometry_column: str = "geometry"
+) -> list:
     bq_schema = []
     if not arcgis_fields:
         return bq_schema
@@ -163,7 +165,7 @@ def arcgis_to_bq_schema(arcgis_fields: list, return_geometry: bool) -> list:
     if return_geometry:
         bq_schema.append(bigquery.SchemaField("longitude", "FLOAT64"))
         bq_schema.append(bigquery.SchemaField("latitude", "FLOAT64"))
-        bq_schema.append(bigquery.SchemaField("geometry", "GEOGRAPHY"))
+        bq_schema.append(bigquery.SchemaField(geometry_column, "GEOGRAPHY"))
     return bq_schema
 
 
@@ -186,7 +188,8 @@ def load_arcgis_to_bigquery(
     return_geometry: bool = False,
     batch_size: int = 20000,
     order_by_field: str = None,
-    where_clause: str = "1=1"
+    where_clause: str = "1=1",
+    geometry_column: str = "geometry",
 ):
     logger = prefect.get_run_logger()
     
@@ -201,7 +204,7 @@ def load_arcgis_to_bigquery(
     
     layer_info = get_layer_info(service_url=base_url)
     total_records = get_layer_metadata(service_url=base_url)
-    bq_schema = arcgis_to_bq_schema(layer_info["fields"], return_geometry)
+    bq_schema = arcgis_to_bq_schema(layer_info["fields"], return_geometry, geometry_column)
     source_crs_wkid = layer_info.get("crs", {}).get("wkid")
 
     if not bq_schema:
@@ -274,13 +277,14 @@ def load_arcgis_to_bigquery(
                     if "rings" in geometry_data: geom = Polygon(geometry_data["rings"][0], geometry_data["rings"][1:])
                     elif "x" in geometry_data and "y" in geometry_data: geom = Point(geometry_data.get("x"), geometry_data.get("y"))
                     elif "paths" in geometry_data: geom = LineString(geometry_data["paths"][0])
-                    if geom: attributes["geometry"] = geom
+                    if geom:
+                        attributes[geometry_column] = geom
                 processed_data.append(attributes)
 
             batch_df = pd.DataFrame(processed_data)
 
-            if return_geometry and "geometry" in batch_df.columns:
-                gdf = gpd.GeoDataFrame(batch_df, geometry='geometry')
+            if return_geometry and geometry_column in batch_df.columns:
+                gdf = gpd.GeoDataFrame(batch_df, geometry=geometry_column)
                 gdf.geometry = gdf.geometry.apply(safe_buffer)
                 if not gdf.empty:
                     first_geom = gdf.geometry.dropna().iloc[0] if not gdf.geometry.dropna().empty else None
