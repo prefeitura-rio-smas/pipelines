@@ -1,9 +1,0 @@
-version: 2
-
-macros:
-  - name: map_resposta_sim_nao
-    description: "Normaliza respostas S/Sim e N/Não/nao para Sim/Não, ignorando caixa e espaços nas pontas. Demais valores retornam Não Informado."
-    arguments:
-      - name: coluna
-        type: string
-        description: "Expressão SQL textual da resposta."
