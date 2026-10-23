@@ -171,5 +171,6 @@ left join d
 left join pd
     on i.id_membro_familia = pd.id_membro_familia
 
-where i.estado_cadastral <> 'Excluido'
+where
+    i.estado_cadastral <> 'Excluido'
     and ic.estado_cadastro = 'Cadastrado'
