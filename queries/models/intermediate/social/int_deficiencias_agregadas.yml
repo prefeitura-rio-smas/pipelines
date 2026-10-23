@@ -3,7 +3,8 @@ version: 2
 models:
   - name: int_deficiencias_agregadas
     description: |
-      Deficiências dos usuários explodidas (um registro por tipo de deficiência).
+      Deficiências dos usuários agregadas (uma linha por id_usuario; os tipos de
+      deficiência ficam em arrays STRUCT no próprio registro).
       Ephemeral — materializado apenas como CTE nos modelos que o referenciam.
     columns:
       - name: id_usuario

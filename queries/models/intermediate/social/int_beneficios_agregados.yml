@@ -3,7 +3,8 @@ version: 2
 models:
   - name: int_beneficios_agregados
     description: |
-      Benefícios dos usuários explodidos (um registro por tipo de benefício).
+      Benefícios dos usuários agregados (uma linha por id_usuario; os tipos de
+      benefício ficam em arrays STRUCT no próprio registro).
       Ephemeral — materializado apenas como CTE nos modelos que o referenciam.
     columns:
       - name: id_usuario

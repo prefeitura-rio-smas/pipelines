@@ -18,8 +18,10 @@ macros:
 
       Descrição nula: quando `campo_descricao` é NULL, a descrição vira o texto de
       `nao_mapeado_fmt` preenchido com o código normalizado. O formato DEVE conter
-      `%s` (código é string; `%d` falha a compilação para não truncar zeros à
-      esquerda) e é passado ao FORMAT do BigQuery como literal escapado.
+      EXATAMENTE um `%s` — zero ou mais de um falham na compilação, porque o FORMAT
+      do BigQuery é chamado com um único argumento (o código). `%d` é rejeitado na
+      compilação (inválido para STRING no BigQuery e truncaria zeros à esquerda).
+      O formato é passado ao FORMAT como literal escapado.
 
       Exemplo (entrada → saída):
         [ {codigo: '02', descricao: 'Auxilio Doença'},
@@ -35,7 +37,7 @@ macros:
         description: "Expressão SQL do array de STRUCTs a normalizar (ex.: 'beneficio')."
       - name: nao_mapeado_fmt
         type: string
-        description: "Texto de fallback quando a descrição é NULL; precisa conter %s. Padrão: 'Item não mapeado (código %s)'."
+        description: "Texto de fallback quando a descrição é NULL; precisa conter exatamente um %s. Padrão: 'Item não mapeado (código %s)'."
       - name: campo_codigo
         type: string
         description: "Nome do campo de código dentro do STRUCT. Padrão: 'codigo'."

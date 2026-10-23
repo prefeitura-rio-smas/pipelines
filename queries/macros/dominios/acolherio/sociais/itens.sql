@@ -14,16 +14,20 @@
     campo_codigo='codigo',
     campo_descricao='descricao'
 ) %}
-    {%- if '%s' not in nao_mapeado_fmt -%}
-        {{ exceptions.raise_compiler_error(
-            "acolherio_normalizar_itens: nao_mapeado_fmt precisa conter o placeholder '%s' "
-            ~ "(recebido: '" ~ nao_mapeado_fmt ~ "'). O código é STRING; use %s, não %d."
-        ) }}
-    {%- endif -%}
     {%- if '%d' in nao_mapeado_fmt -%}
         {{ exceptions.raise_compiler_error(
             "acolherio_normalizar_itens: nao_mapeado_fmt não pode usar '%d' "
-            ~ "(recebido: '" ~ nao_mapeado_fmt ~ "'). Use '%s': o código é string e zeros à esquerda devem ser preservados."
+            ~ "(recebido: '" ~ nao_mapeado_fmt ~ "'). O FORMAT do BigQuery é inválido para STRING com '%d'; "
+            ~ "use '%s', que também preserva zeros à esquerda do código."
+        ) }}
+    {%- endif -%}
+    {%- set placeholders_s = nao_mapeado_fmt.count('%s') -%}
+    {%- if placeholders_s != 1 -%}
+        {{ exceptions.raise_compiler_error(
+            "acolherio_normalizar_itens: nao_mapeado_fmt precisa conter exatamente um placeholder '%s' "
+            ~ "(encontrados " ~ placeholders_s ~ " em: '" ~ nao_mapeado_fmt ~ "'). "
+            ~ "O FORMAT do BigQuery é chamado com um único argumento (o código do item): "
+            ~ "zero placeholders ou mais de um falham em runtime com 'Too few/many arguments to FORMAT'."
         ) }}
     {%- endif -%}
     {%- set fmt_literal = "'" ~ (nao_mapeado_fmt | replace("'", "''")) ~ "'" -%}
