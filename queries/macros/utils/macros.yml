@@ -1,0 +1,35 @@
+version: 2
+
+macros:
+  - name: registro_ate_evento
+    description: "Gera uma condição para verificar se a data de um registro é anterior ou igual à referência definida pelo modelo consumidor."
+    arguments:
+      - name: data_registro
+        type: string
+        description: "Expressão SQL da data do registro, convertida para DATE com SAFE_CAST."
+      - name: data_referencia
+        type: string
+        description: "Expressão SQL da data limite inclusiva. No Centro POP, usa o último dia do mês."
+
+  - name: calc_idade
+    description: "Calcula a idade completa entre o nascimento e qualquer expressão SQL de data de referência."
+    arguments:
+      - name: data_nascimento
+        type: string
+        description: "Expressão SQL da data de nascimento."
+      - name: data_referencia
+        type: string
+        description: "Expressão SQL opcional; quando omitida, usa current_date()."
+
+  - name: contar
+    description: "Gera contagens simples, distintas ou condicionais, usando CASE WHEN para manter a expressão reutilizável."
+    arguments:
+      - name: expr
+        type: string
+        description: "Expressão SQL a contar; pode ser * somente quando distinto=false."
+      - name: condicao
+        type: string
+        description: "Condição SQL opcional para incluir uma linha na contagem."
+      - name: distinto
+        type: bool
+        description: "Quando true, aplica DISTINCT. Padrão: true para compatibilidade."
