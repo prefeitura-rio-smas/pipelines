@@ -8,7 +8,7 @@ models:
     columns:
       - name: id_usuario
         description: "ID original do usuário (seqpac)."
-        tests: [not_null]
+        tests: [not_null, unique]
       - name: beneficio
         description: "Array estruturado de benefícios recebidos pelo usuário, com STRUCT (codigo, descricao)."
       - name: beneficios
