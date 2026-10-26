@@ -8,6 +8,7 @@ import hashlib
 import json
 from pathlib import Path
 import re
+import time
 
 import google.auth
 from google.auth.transport.requests import AuthorizedSession
@@ -127,10 +128,14 @@ class Producer:
             backup.write_text(json.dumps(config, ensure_ascii=False, indent=2))
             backup.chmod(0o600)
         self.patch({"disabled": True})
-        if self.active_runs():
-            raise ValueError(
-                "Aguardar o término dos jobs antigos e repetir a ativação; a programada está pausada."
-            )
+        deadline = time.monotonic() + 600
+        while self.active_runs():
+            if time.monotonic() >= deadline:
+                raise ValueError(
+                    "Jobs antigos não terminaram em dez minutos; a programada permanece pausada."
+                )
+            print("Aguardando término dos jobs antigos da programada...", flush=True)
+            time.sleep(5)
         self.patch(
             {
                 "params": {

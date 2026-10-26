@@ -178,10 +178,10 @@ class ReferenceTests(unittest.TestCase):
             ),
         )
         env.globals["normalizar_hora_atendimento"] = env.from_string(
-            (QUERIES / "macros/normalizar_hora_atendimento.sql").read_text()
+            (QUERIES / "macros/utils/normalizar_hora_atendimento.sql").read_text()
         ).module.normalizar_hora_atendimento
         sql = env.from_string(
-            (QUERIES / "macros/planilha_unificada/referencia.sql").read_text()
+            (QUERIES / "macros/dominios/planilha_unificada/referencia.sql").read_text()
         ).module.pu_atendimentos_referencia_sql()
         rows = list(self.client.query(sql).result())
         events = {r["id_atendimento_modulo"]: r for r in rows[0].atendimentos}

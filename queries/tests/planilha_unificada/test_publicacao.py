@@ -48,7 +48,9 @@ class PublicationTests(unittest.TestCase):
             ),
         )
         macros = env.from_string(
-            (module.ROOT / "macros/planilha_unificada/dimensoes.sql").read_text()
+            (
+                module.ROOT / "macros/dominios/planilha_unificada/dimensoes.sql"
+            ).read_text()
         ).module
         macros.pu_ref("int_pu_atendimentos")
         self.assertTrue(set(module.SERVICES.values()).issubset(references))

@@ -25,6 +25,7 @@ models:
     intermediate:
       +materialized: ephemeral
       planilha_unificada:
+        +enabled: "{{ target.name != 'prod' }}"
         +tags: ["planilha_unificada"]
       core:
         +materialized: table
@@ -39,7 +40,8 @@ models:
       +schema: "{{ 'marts' if target.name == 'prod' else 'relatorio' }}"
 
       planilha_unificada:
-        # Validação em paralelo: seleção explícita, sem agendamento diário.
+        +enabled: "{{ target.name != 'prod' }}"
+        # Publicação pareada restrita a staging, com referência em rj-smas-dev.
         +tags: ["planilha_unificada"]
 
       core:
@@ -118,3 +120,9 @@ models:
         +enabled: true  # Mantido ativo durante a comparação com a nova arquitetura.
         +materialized: table
         +schema: "{{ 'bolsa_familia' if target.name == 'prod' else 'gerenciamento__dbt' }}"
+
+# A referência coordenada está habilitada somente em staging/CI nesta entrega.
+data_tests:
+  queries:
+    planilha_unificada:
+      +enabled: "{{ target.name != 'prod' }}"

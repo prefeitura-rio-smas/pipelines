@@ -18,10 +18,8 @@ where
     or exists (
         select 1 from unnest(p.atendimentos.registros) as evento
         where
-            {% if not var('pu_referencia', false) %}
-                upper(trim(evento.flag_cancelado)) = 'S' or
-            {% endif %}
-            (evento.hora_atendimento != '' and not regexp_contains(
+            (not {{ var('pu_referencia', false) }} and upper(trim(evento.flag_cancelado)) = 'S')
+            or (evento.hora_atendimento != '' and not regexp_contains(
                 evento.hora_atendimento, r'^(?:[01][0-9]|2[0-3]):[0-5][0-9]$'
             ))
     )

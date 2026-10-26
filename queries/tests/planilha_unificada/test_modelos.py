@@ -114,33 +114,35 @@ class PlanilhaUnificadaTests(unittest.TestCase):
             pu_servicos=lambda: services,
         )
 
-        normalizacao = QUERIES / "macros/decodificar_entidades_html.sql"
+        normalizacao = QUERIES / "macros/utils/decodificar_entidades_html.sql"
         env.globals["decodificar_entidades_html"] = env.from_string(
             normalizacao.read_text()
         ).module.decodificar_entidades_html
         env.globals["texto_html_legivel"] = env.from_string(
-            (QUERIES / "macros/texto_html_legivel.sql").read_text()
+            (QUERIES / "macros/utils/texto_html_legivel.sql").read_text()
         ).module.texto_html_legivel
         fixtures.setdefault(
             "dim_unidades",
             "select 10 id_unidade, 'Unidade A' nome_unidade, 'CRAS' tipo_unidade union all select 20, 'Unidade A', 'CRAS'",
         )
         env.globals["normalizar_hora_atendimento"] = env.from_string(
-            (QUERIES / "macros/normalizar_hora_atendimento.sql").read_text()
+            (QUERIES / "macros/utils/normalizar_hora_atendimento.sql").read_text()
         ).module.normalizar_hora_atendimento
         categorias = env.from_string(
-            (QUERIES / "macros/acolherio/mapa_colunas_categoria.sql").read_text()
+            (
+                QUERIES / "macros/dominios/acolherio/mapa_colunas_categoria.sql"
+            ).read_text()
         ).module
         env.globals["map_nome_projeto_social"] = categorias.map_nome_projeto_social
         env.globals["map_nome_servico_assistencial"] = (
             categorias.map_nome_servico_assistencial
         )
-        macro = QUERIES / "macros/acolherio/extrair_campos_html_evolucao.sql"
+        macro = QUERIES / "macros/dominios/acolherio/extrair_campos_html_evolucao.sql"
         env.globals["extrair_campos_html_evolucao"] = env.from_string(
             macro.read_text()
         ).module.extrair_campos_html_evolucao
         form_macros = env.from_string(
-            (QUERIES / "macros/planilha_unificada/formularios.sql").read_text()
+            (QUERIES / "macros/dominios/planilha_unificada/formularios.sql").read_text()
         ).module
         env.globals["pu_formularios_sql"] = form_macros.pu_formularios_sql
         if relative_path.endswith("planilha_unificada.sql"):
@@ -165,7 +167,9 @@ class PlanilhaUnificadaTests(unittest.TestCase):
             + expression
             + " when 'CRAS' then 'cras' when 'CREAS' then 'creas' when 'Centro POP' then 'centro_pop' else 'outros' end"
         )
-        macro_sql = (QUERIES / "macros/planilha_unificada/dimensoes.sql").read_text()
+        macro_sql = (
+            QUERIES / "macros/dominios/planilha_unificada/dimensoes.sql"
+        ).read_text()
         macro_sql = re.sub(
             r"{% macro pu_(servicos|ref)\(.*?{% endmacro %}", "", macro_sql, flags=re.S
         )
@@ -526,7 +530,7 @@ class PlanilhaUnificadaTests(unittest.TestCase):
         ]
         env = Environment(undefined=StrictUndefined, autoescape=False)  # noqa: S701
         macro = env.from_string(
-            (QUERIES / "macros/decodificar_entidades_html.sql").read_text()
+            (QUERIES / "macros/utils/decodificar_entidades_html.sql").read_text()
         ).module.decodificar_entidades_html
         entrada = fixture_rows(
             {"id_usuario": "int64", "texto": "string"},

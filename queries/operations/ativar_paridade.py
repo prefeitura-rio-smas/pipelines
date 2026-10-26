@@ -37,7 +37,7 @@ async def canary():
     run = await run_deployment(
         DEPLOYMENT,
         parameters={"verificar_ambiente": True},
-        timeout=240,
+        timeout=600,
         poll_interval=5,
     )
     if not run.state.is_completed():
