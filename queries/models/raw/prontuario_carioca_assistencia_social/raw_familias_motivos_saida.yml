@@ -1,0 +1,8 @@
+version: 2
+
+models:
+  - name: raw_familias_motivos_saida
+    description: Catálogo de motivos de saída; preserva também descrições de motivos inativos usados no histórico.
+    columns:
+      - name: id_motivo_saida
+        data_tests: [not_null, unique]

@@ -36,7 +36,7 @@ jobs:
           python-version: ${{ env.PYTHON_VERSION }}
 
       - name: Install Prefect CLI
-        run: pip install prefect prefect-docker
+        run: pip install prefect==3.6.29 prefect-docker
 
       - name: Define Image Metadata
         run: |
@@ -89,6 +89,18 @@ jobs:
           SIURB_USER: ${{ secrets.SIURB_USER }}
           SIURB_PWD: ${{ secrets.SIURB_PWD }}
         run: prefect deploy --name "*-staging"
+
+      - name: Activate paired attendance publication in staging
+        if: startsWith(github.ref, 'refs/heads/staging/')
+        env:
+          PREFECT_API_URL: ${{ secrets.PREFECT_API_URL }}
+          PREFECT_API_AUTH_STRING: ${{ secrets.PREFECT_API_AUTH_STRING }}
+          GCP_CREDENTIALS: ${{ secrets.GCP_CREDENTIALS }}
+        run: |
+          docker run --rm \
+            --env PREFECT_API_URL --env PREFECT_API_AUTH_STRING --env GCP_CREDENTIALS \
+            "${{ env.IMAGE_REPO }}:${{ env.TAG }}" \
+            python queries/operations/ativar_paridade.py
 
       - name: Deploy Prod Flows
         if: github.ref == 'refs/heads/main'

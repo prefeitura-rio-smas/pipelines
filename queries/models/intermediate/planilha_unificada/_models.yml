@@ -1,0 +1,39 @@
+version: 2
+
+models:
+  - name: int_pu_cadastro
+    description: Complementos cadastrais atuais por usuário. Divergências que produzam mais de uma linha falham na unicidade.
+    columns:
+      - name: id_usuario
+        data_tests: [not_null, unique]
+  - name: int_pu_documentos_cadunico
+    description: Documentos e controle do snapshot atual do CadÚnico por usuário, resolvendo ambiguidades por CPF.
+    columns:
+      - name: id_usuario
+        data_tests: [not_null, unique]
+  - name: int_pu_familias
+    description: Famílias, vínculos históricos e serviços, inclusive encerrados, por usuário. Responsabilidade e estado familiar são atuais.
+    columns:
+      - name: id_usuario
+        data_tests: [not_null, unique]
+  - name: int_pu_atendimentos
+    description: Eventos não cancelados de todos os tipos de unidade disponíveis no fato, sem filtro de competência; exclui flag S após TRIM/UPPER antes de agregar profissionais por evento. Hora original preservada para auditoria e formatação na saída final.
+    columns:
+      - name: id_usuario
+        data_tests: [not_null, unique]
+  - name: int_pu_evolucoes
+    description: Preparação por evolução não cancelada e usuário; associação familiar apenas pelo paciente explícito, sem distribuição aos membros. Data de cancelamento deve ser NULL antes da contagem e extração de formulários.
+    data_tests:
+      - dbt_utils.unique_combination_of_columns:
+          arguments:
+            combination_of_columns: [id_usuario, id_evolucao_modulo]
+    columns:
+      - name: id_usuario
+        data_tests: [not_null]
+      - name: id_evolucao_modulo
+        data_tests: [not_null]
+  - name: int_pu_formularios
+    description: Formulários HTML extraídos das evoluções, com entidades decodificadas nos textos antes da deduplicação, origem, unidade e datas; sem escolha do último perfil.
+    columns:
+      - name: id_usuario
+        data_tests: [not_null, unique]

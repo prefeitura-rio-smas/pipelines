@@ -1,0 +1,42 @@
+version: 2
+models:
+  - name: dim_cras
+    description: Uma linha por usuário com registros qualitativos de CRAS, sem contagens; construção isolada e publicação controlada.
+    data_tests:
+      - pu_preservacao_dimensao:
+          arguments: {servico: cras}
+      - pu_formularios_dimensao:
+          arguments: {servico: cras}
+    columns:
+      - name: id_usuario
+        data_tests: [not_null, unique]
+  - name: dim_creas
+    description: Uma linha por usuário com registros qualitativos de CREAS.
+    data_tests:
+      - pu_preservacao_dimensao:
+          arguments: {servico: creas}
+      - pu_formularios_dimensao:
+          arguments: {servico: creas}
+    columns:
+      - name: id_usuario
+        data_tests: [not_null, unique]
+  - name: dim_centro_pop
+    description: Uma linha por usuário com registros qualitativos de Centro POP.
+    data_tests:
+      - pu_preservacao_dimensao:
+          arguments: {servico: centro_pop}
+      - pu_formularios_dimensao:
+          arguments: {servico: centro_pop}
+    columns:
+      - name: id_usuario
+        data_tests: [not_null, unique]
+  - name: dim_outros_equipamentos
+    description: Uma linha por usuário nos demais equipamentos, incluindo unidades desconhecidas.
+    data_tests:
+      - pu_preservacao_dimensao:
+          arguments: {servico: outros}
+      - pu_formularios_dimensao:
+          arguments: {servico: outros}
+    columns:
+      - name: id_usuario
+        data_tests: [not_null, unique]

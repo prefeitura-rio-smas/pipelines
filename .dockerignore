@@ -1,0 +1,14 @@
+.git
+.venv
+**/__pycache__
+**/*.pyc
+**/.pytest_cache
+.ruff_cache
+.env
+.env.*
+**/target
+**/logs
+*.log
+
+**/dbt_packages
+**/dbt_internal_packages

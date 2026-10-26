@@ -1,0 +1,91 @@
+version: 2
+
+models:
+  - name: planilha_unificada
+    description: |
+      Uma linha por usuario.id_usuario, com a mesma população de dim_usuarios.
+      Contrato por assunto: usuario, familias, projetos_sociais, atendimentos e evolucoes.
+      Dados pessoais e perfil ficam em usuario; eventos têm quantidade, quantidade_por_servico e registros.
+      Evoluções não canceladas incluem registros sem formulário, com descrição legível.
+      Campos escalares são STRING com ausência como ''; as exceções são as quantidades totais e por serviço,
+      INT64 com zero sem registros.
+      STRUCTs ausentes têm campos vazios e listas sem registros são []. Não são
+      criados itens para simular ausência. As chaves e os tipos originais permanecem
+      nos intermediários; a saída apresenta nomes de unidades do lote utilizado em cada serviço.
+      Base em validação paralela, com atualização explícita em desenvolvimento;
+      não substitui a mart Centro POP nem implementa indicadores RMA. Cadastros e
+      documentos são o estado atual; cada consumidor define competência e população.
+    config:
+      meta:
+        granularidade: [usuario.id_usuario]
+        contrato: por_assunto_v3_dimensoes
+        execucao: candidato_validado
+        publicacao: desenvolvimento
+        documentacao: docs/dimensoes_planilha_unificada.md
+        valores_ausentes: texto_vazio
+        structs_ausentes: campos_vazios
+        tipos_escalares: STRING
+        excecoes_tipos:
+          atendimentos.quantidade: INT64
+          evolucoes.quantidade: INT64
+          atendimentos.quantidade_por_servico.cras: INT64
+          atendimentos.quantidade_por_servico.creas: INT64
+          atendimentos.quantidade_por_servico.centro_pop: INT64
+          atendimentos.quantidade_por_servico.outros: INT64
+          evolucoes.quantidade_por_servico.cras: INT64
+          evolucoes.quantidade_por_servico.creas: INT64
+          evolucoes.quantidade_por_servico.centro_pop: INT64
+          evolucoes.quantidade_por_servico.outros: INT64
+        identificadores_permitidos:
+          - id_usuario
+          - id_familia
+          - id_atendimento_modulo
+          - id_evolucao_modulo
+    columns:
+      - name: usuario
+        description: |
+          STRUCT com os 38 atributos cadastrais anteriores, incluindo id_usuario e
+          nome_unidade_referencia, cadastro_complementar, documentos_cadunico,
+          beneficio, deficiencia e violacoes. Famílias, projetos e eventos ficam em
+          blocos próprios. Documentos são associados pelo CPF e preservam flags de
+          ambiguidade como texto; ausência não equivale a uma resposta negativa.
+      - name: usuario.id_usuario
+        description: Identificador natural do usuário como STRING; mesma população de dim_usuarios.
+        data_tests: [not_null, unique]
+      - name: familias
+        description: |
+          ARRAY<STRUCT> por id_familia com responsável e estado cadastral atuais,
+          vinculos datados e servicos datados da família. Serviços usam nome_unidade,
+          incluem vínculos encerrados e se repetem entre membros; não comprovam
+          atendimento individual. Inclui responsáveis sem registro de membro.
+      - name: projetos_sociais
+        description: |
+          ARRAY<STRUCT> com nome_projeto_social, nome_unidade, indicador_ativo e datas.
+          Preserva a regra compartilhada: membros familiares ativos e somente o
+          cadastro mais recente por usuário/projeto. Não é um histórico completo.
+      - name: atendimentos
+        description: |
+          STRUCT com quantidade INT64, quantidade_por_servico e registros ARRAY<STRUCT>. Um evento por
+          id_atendimento_modulo, com origem, nome_unidade, tipo, data, hora HH:MM,
+          flag_cancelado e profissionais. Exclui S após TRIM/UPPER; mantém N e vazio.
+          Profissionais homônimos não são deduplicados após retirar seus IDs.
+      - name: atendimentos.quantidade
+        description: Igual ao tamanho de atendimentos.registros, em todo o histórico disponível; zero sem eventos.
+        data_tests: [not_null]
+      - name: evolucoes
+        description: |
+          STRUCT com quantidade INT64 e registros ARRAY<STRUCT>, uma entrada por
+          usuário e id_evolucao_modulo não cancelado. Contém origem, família,
+          nome_unidade, datas, tipo, profissional, atividade, descricao_evolucao
+          legível e formularios ARRAY<STRUCT<titulo_formulario, observacoes, campos>>.
+          Formulários pertencem à evolução, mantêm os textos e campos já normalizados
+          e não multiplicam sua quantidade. Sem HTML extraível, formularios é [].
+          Evoluções familiares pertencem apenas ao paciente explicitamente indicado.
+      - name: evolucoes.quantidade
+        description: Igual ao tamanho de evolucoes.registros, incluindo evoluções sem formulário; zero sem registros.
+        data_tests: [not_null]
+
+      - name: atendimentos.quantidade_por_servico
+        description: Contagens INT64 de cras, creas, centro_pop e outros; a soma é igual ao total.
+      - name: evolucoes.quantidade_por_servico
+        description: Contagens INT64 de cras, creas, centro_pop e outros, sem multiplicar pelos formulários.

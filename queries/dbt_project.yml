@@ -24,6 +24,8 @@ models:
 
     intermediate:
       +materialized: ephemeral
+      planilha_unificada:
+        +tags: ["planilha_unificada"]
       core:
         +materialized: table
         +schema: "{{ 'core' if target.name == 'prod' else 'gerenciamento__dbt' }}"
@@ -35,6 +37,10 @@ models:
     marts:
       +materialized: table
       +schema: "{{ 'marts' if target.name == 'prod' else 'relatorio' }}"
+
+      planilha_unificada:
+        # Validação em paralelo: seleção explícita, sem agendamento diário.
+        +tags: ["planilha_unificada"]
 
       core:
         dimensions:

@@ -1,0 +1,9 @@
+version: 2
+sources:
+  - name: acolherio_referencia
+    database: rj-smas-dev
+    schema: dashboard_acolherio
+    tables:
+      - name: atendimentos_programada
+        identifier: dev_atendimentos_candidata
+        description: Resultado materializado da programada; somente o publicador pareado escreve na tabela pública.
