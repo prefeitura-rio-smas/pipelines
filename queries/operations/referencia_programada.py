@@ -136,14 +136,9 @@ class Producer:
                 )
             print("Aguardando término dos jobs antigos da programada...", flush=True)
             time.sleep(5)
-        self.patch(
-            {
-                "params": {
-                    **config["params"],
-                    "query": redirect(config["params"]["query"]),
-                }
-            }
-        )
+        query = redirect(config["params"]["query"])
+        if destination(config["params"]["query"]) != CANDIDATE:
+            self.patch({"params": {**config["params"], "query": query}})
         self.assert_routed()
 
     def resume(self):

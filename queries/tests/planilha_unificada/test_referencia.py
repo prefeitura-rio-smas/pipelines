@@ -2,6 +2,8 @@
 
 # ruff: noqa: S608 - SQL composed only from local fixtures and validated relation helpers
 import os
+from pathlib import Path
+from tempfile import TemporaryDirectory
 import unittest
 from unittest.mock import Mock, patch
 
@@ -20,6 +22,21 @@ from queries.operations.referencia_programada import (
 
 
 class RoutingTests(unittest.TestCase):
+    def test_retry_does_not_rewrite_already_routed_query(self):
+        producer = Producer.__new__(Producer)
+        producer.get = Mock(
+            return_value={
+                "params": {
+                    "query": "CREATE OR REPLACE TABLE " + CANDIDATE + " AS (SELECT 1)"
+                }
+            }
+        )
+        producer.active_runs = Mock(return_value=[])
+        producer.patch = Mock()
+        with TemporaryDirectory() as directory:
+            producer.stage(Path(directory) / "backup.json")
+        producer.patch.assert_called_once_with({"disabled": True})
+
     def test_redirect_changes_only_the_destination(self):
         original = "/* regra */ CREATE OR REPLACE TABLE " + PUBLIC + " AS (SELECT 1);"
         changed = redirect(original)
