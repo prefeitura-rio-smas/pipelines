@@ -18,10 +18,13 @@ macros:
 
       Descrição nula: quando `campo_descricao` é NULL, a descrição vira o texto de
       `nao_mapeado_fmt` preenchido com o código normalizado. O formato DEVE conter
-      EXATAMENTE um `%s` — zero ou mais de um falham na compilação, porque o FORMAT
-      do BigQuery é chamado com um único argumento (o código). `%d` é rejeitado na
-      compilação (inválido para STRING no BigQuery e truncaria zeros à esquerda).
-      O formato é passado ao FORMAT como literal escapado.
+      EXATAMENTE um `%s`, preservando zeros à esquerda do código. Use `%%` para
+      percentuais literais: `Item %%s: %s` produz `Item %s: 99` para o código 99.
+      Zero ou múltiplos placeholders, outros especificadores (como `%d`) e
+      percentuais soltos são rejeitados na compilação. `%%d` é texto literal.
+      O formato é passado ao FORMAT como literal GoogleSQL escapado, preservando
+      apóstrofos, barras invertidas, quebras de linha, tabulações e Unicode.
+      Passe o texto original, sem escape SQL prévio.
 
       Exemplo (entrada → saída):
         [ {codigo: '02', descricao: 'Auxilio Doença'},
@@ -37,7 +40,7 @@ macros:
         description: "Expressão SQL do array de STRUCTs a normalizar (ex.: 'beneficio')."
       - name: nao_mapeado_fmt
         type: string
-        description: "Texto de fallback quando a descrição é NULL; precisa conter exatamente um %s. Padrão: 'Item não mapeado (código %s)'."
+        description: "Texto original de fallback quando a descrição é NULL; exige exatamente um %s e aceita %% para percentual literal. Padrão: 'Item não mapeado (código %s)'."
       - name: campo_codigo
         type: string
         description: "Nome do campo de código dentro do STRUCT. Padrão: 'codigo'."
@@ -57,6 +60,8 @@ macros:
       Entrada: ARRAY<STRUCT<...>> já normalizado por acolherio_normalizar_itens.
       Retorno: STRING com as descrições distintas em ordem alfabética.
       NULL: array vazio/NULL retorna NULL (comportamento do STRING_AGG sem linhas).
+      O separador é texto original, sem escape SQL prévio. Apóstrofos, barras
+      invertidas, quebras de linha, tabulações e Unicode são preservados.
 
       Exemplo (entrada → saída), separador padrão ', ':
         [ {codigo: '01', descricao: 'Aposentadoria'},
@@ -71,7 +76,7 @@ macros:
         description: "Nome do campo de descrição dentro do STRUCT. Padrão: 'descricao'."
       - name: separador
         type: string
-        description: "Separador entre as descrições, como literal SQL escapado. Padrão: ', '."
+        description: "Texto original do separador; a macro aplica o escape GoogleSQL. Padrão: ', '."
     meta:
       owner: acolherio
       status: stable

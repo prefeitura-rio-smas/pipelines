@@ -26,7 +26,9 @@ with fixtures as (
             struct('chave_2' as chave, 'Rótulo 2' as rotulo),
             struct('chave_1' as chave, 'Rótulo 1' as rotulo),
             struct('chave_3' as chave, 'Rótulo 1' as rotulo)
-        ] as estrutura_alternativa
+        ] as estrutura_alternativa,
+        [struct('99' as codigo, cast(null as string) as descricao)] as item_sem_descricao,
+        [struct('A' as descricao), struct('B' as descricao)] as duas_descricoes
 ),
 
 resultados as (
@@ -42,7 +44,16 @@ resultados as (
             campo_codigo='chave',
             campo_descricao='rotulo'
         ) }} as alternativa,
-        {{ acolherio_descricoes_itens('estrutura_alternativa', campo='rotulo', separador=' / ') }} as descricoes_campo_custom
+        {{ acolherio_descricoes_itens('estrutura_alternativa', campo='rotulo', separador=' / ') }} as descricoes_campo_custom,
+        {{ acolherio_normalizar_itens(
+            'item_sem_descricao', "Item d'origem \\pasta\n\r\t\b\f\a\v%s 😀"
+        ) }} as formato_com_escape,
+        {{ acolherio_descricoes_itens(
+            'duas_descricoes', separador="'\\pasta\n\r\t\b\f\a\v😀"
+        ) }} as separador_com_escape,
+        {{ acolherio_normalizar_itens(
+            'item_sem_descricao', 'Item %%s: %s (%%d; 100%%)'
+        ) }} as formato_percentual
     from fixtures
 ),
 
@@ -110,6 +121,24 @@ checks as (
         'campo_customizado_na_entrada',
         descricoes_campo_custom,
         'Rótulo 1 / Rótulo 2'
+    from descricoes
+    union all
+    select
+        'formato_preserva_aspas_barras_controles_e_unicode' as caso,
+        (select item.descricao from unnest(formato_com_escape) as item) as obtido,
+        "Item d'origem \\pasta\n\r\t\b\f\a\v99 😀" as esperado
+    from descricoes
+    union all
+    select
+        'separador_preserva_aspas_barras_controles_e_unicode' as caso,
+        separador_com_escape as obtido,
+        "A'\\pasta\n\r\t\b\f\a\v😀B" as esperado
+    from descricoes
+    union all
+    select
+        'percentuais_escapados_sao_literais' as caso,
+        (select item.descricao from unnest(formato_percentual) as item) as obtido,
+        'Item %s: 99 (%d; 100%)' as esperado
     from descricoes
 )
 

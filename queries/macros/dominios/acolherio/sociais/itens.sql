@@ -14,23 +14,27 @@
     campo_codigo='codigo',
     campo_descricao='descricao'
 ) %}
-    {%- if '%d' in nao_mapeado_fmt -%}
-        {{ exceptions.raise_compiler_error(
-            "acolherio_normalizar_itens: nao_mapeado_fmt não pode usar '%d' "
-            ~ "(recebido: '" ~ nao_mapeado_fmt ~ "'). O FORMAT do BigQuery é inválido para STRING com '%d'; "
-            ~ "use '%s', que também preserva zeros à esquerda do código."
-        ) }}
-    {%- endif -%}
-    {%- set placeholders_s = nao_mapeado_fmt.count('%s') -%}
-    {%- if placeholders_s != 1 -%}
+    {%- set formato_sem_literais = nao_mapeado_fmt | replace('%%', '') -%}
+    {%- if formato_sem_literais.count('%s') != 1
+        or '%' in (formato_sem_literais | replace('%s', '')) -%}
         {{ exceptions.raise_compiler_error(
             "acolherio_normalizar_itens: nao_mapeado_fmt precisa conter exatamente um placeholder '%s' "
-            ~ "(encontrados " ~ placeholders_s ~ " em: '" ~ nao_mapeado_fmt ~ "'). "
-            ~ "O FORMAT do BigQuery é chamado com um único argumento (o código do item): "
-            ~ "zero placeholders ou mais de um falham em runtime com 'Too few/many arguments to FORMAT'."
+            ~ "(recebido: '" ~ nao_mapeado_fmt ~ "'). Use '%%' para um percentual literal; "
+            ~ "outros especificadores (como '%d') e percentuais soltos não são aceitos."
         ) }}
     {%- endif -%}
-    {%- set fmt_literal = "'" ~ (nao_mapeado_fmt | replace("'", "''")) ~ "'" -%}
+    {# GoogleSQL usa barra invertida; escape-a antes dos demais caracteres. #}
+    {%- set fmt_literal = "'" ~ (nao_mapeado_fmt
+        | replace('\\', '\\\\')
+        | replace("'", "\\'")
+        | replace('\n', '\\n')
+        | replace('\r', '\\r')
+        | replace('\t', '\\t')
+        | replace('\b', '\\b')
+        | replace('\f', '\\f')
+        | replace('\a', '\\a')
+        | replace('\v', '\\v')
+    ) ~ "'" -%}
 array(
         select distinct as struct
             upper(trim(cast(item.{{ campo_codigo }} as string))) as codigo,
@@ -45,7 +49,17 @@ array(
 {%- endmacro %}
 
 {% macro acolherio_descricoes_itens(itens, campo='descricao', separador=', ') %}
-    {%- set sep_literal = "'" ~ (separador | replace("'", "''")) ~ "'" -%}
+    {%- set sep_literal = "'" ~ (separador
+        | replace('\\', '\\\\')
+        | replace("'", "\\'")
+        | replace('\n', '\\n')
+        | replace('\r', '\\r')
+        | replace('\t', '\\t')
+        | replace('\b', '\\b')
+        | replace('\f', '\\f')
+        | replace('\a', '\\a')
+        | replace('\v', '\\v')
+    ) ~ "'" -%}
     (select string_agg(distinct item.{{ campo }}, {{ sep_literal }} order by item.{{ campo }})
      from unnest({{ itens }}) as item)
 {%- endmacro %}
