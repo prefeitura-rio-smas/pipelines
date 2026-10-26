@@ -100,7 +100,7 @@ jobs:
           docker run --rm \
             --env PREFECT_API_URL --env PREFECT_API_AUTH_STRING --env GCP_CREDENTIALS \
             "${{ env.IMAGE_REPO }}:${{ env.TAG }}" \
-            python queries/operations/ativar_paridade.py
+            python -m queries.operations.ativar_paridade
 
       - name: Deploy Prod Flows
         if: github.ref == 'refs/heads/main'
