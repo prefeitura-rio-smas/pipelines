@@ -187,3 +187,33 @@ temporárias BigQuery.
 
 A publicação coordenada é restrita a staging/dev em `rj-smas-dev`. A limpeza
 continua explícita e recusa bases/candidatos referenciados ou em processamento.
+
+## Restrição de propriedade na primeira ativação
+
+O canário do worker passou em 26/10/2026. A alteração do SQL da transferência
+foi recusada tanto para a conta do deploy quanto para a credencial local:
+`Cannot modify restricted parameters without taking ownership of the transfer configuration`.
+A consulta pertence a `smas-luisa.pilar@dados.rio`. Sua identidade de execução foi
+preservada, pois a consulta lê uma tabela externa do Drive. A transferência ficou
+pausada e o deployment pareado também permanece pausado; as tabelas públicas não
+foram substituídas. O lote validado permanece na área candidata.
+
+Para concluir, a proprietária deve editar a consulta programada
+`acolherio_atendimentos_dev` (configuração
+`68e47fbc-0000-27ab-b6f9-883d24faad98`, região `us`) e trocar somente o destino
+do `CREATE OR REPLACE TABLE`:
+
+```sql
+CREATE OR REPLACE TABLE `rj-smas-dev.dashboard_acolherio.dev_atendimentos_candidata`
+```
+
+Preservar todo o restante do SQL e manter a transferência pausada. Depois,
+executar novamente o CD da branch staging com a correção de retomada. A ativação
+reconhece o destino aplicado sem tentar reescrever parâmetros restritos, refaz o
+canário, publica o par validado, habilita o Prefect e retoma a transferência.
+Não habilitar isoladamente a consulta antiga apontando para a tabela pública.
+
+O SQL completo com apenas essa substituição e os parâmetros para a API estão em
+`/opt/pipelines/temp/programada-destino-candidata.sql` e
+`/opt/pipelines/temp/programada-parametros-candidata.json`. O guia também está
+copiado para `/opt/pipelines/temp/implementacao-dimensoes-planilha-unificada.md`.
