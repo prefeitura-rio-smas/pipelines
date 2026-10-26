@@ -97,8 +97,8 @@ imagem, usando as configurações já existentes do GitHub Actions.
 A ativação pode ser executada manualmente com o perfil remoto configurado:
 
 ```bash
-.venv/bin/python queries/operations/ativar_paridade.py --checar
-.venv/bin/python queries/operations/ativar_paridade.py
+.venv/bin/python -m queries.operations.ativar_paridade --checar
+.venv/bin/python -m queries.operations.ativar_paridade
 ```
 
 O canário remoto valida a imagem/protocolo `programada_v2`, acesso BigQuery e
