@@ -1,6 +1,6 @@
 {{ config(schema=var('pu_candidato_schema', 'pu_candidatos'), pre_hook='{{ pu_exigir_candidato() }}') }}
 -- noqa: disable=ST06
--- Contrato por assunto; IDs técnicos são usados apenas antes da apresentação.
+-- Contrato por assunto; identificadores públicos restritos aos campos autorizados.
 with unidades as (
     select
         id_unidade,
@@ -21,34 +21,67 @@ projetos_por_usuario as (
     group by u.id_usuario
 ),
 
-dimensoes as (
-    {{ pu_dimensoes_sql() }}
-),
-
 atendimentos_por_usuario as (
     select
         d.id_usuario,
         array_agg(
-            a order by
+            (
+                select as struct
+                    a.* except (profissionais),
+                    c.cas,
+                    c.email_unidade,
+                    c.email_cas,
+                    c.email,
+                    c.cadastrante,
+                    c.data_cadastro_atendimento,
+                    c.profissionais as complementos_profissionais,
+                    a.profissionais
+            ) order by
                 a.data_atendimento, a.hora_atendimento, a.id_atendimento_modulo,
                 a.id_unidade, a.id_tipo_atendimento, a.tipo_atendimento_descricao, a.flag_cancelado
         ) as atendimentos
-    from dimensoes as d, unnest(d.atendimentos) as a
+    from {{ pu_ref('int_pu_atendimentos') }} as d, unnest(d.atendimentos) as a
+    left join {{ pu_ref('int_pu_complementos_bi') }} as c on a.id_atendimento_modulo = c.id_atendimento_modulo and d.id_usuario = c.id_usuario
     group by d.id_usuario
+),
+
+formularios_por_evolucao as (
+    select
+        p.id_usuario,
+        f.id_evolucao_modulo,
+        array_agg(struct(f.titulo_formulario, f.observacoes, f.campos) order by posicao) as formularios
+    from {{ pu_ref('int_pu_formularios') }} as p, unnest(p.formularios) as f with offset as posicao
+    group by p.id_usuario, f.id_evolucao_modulo
 ),
 
 registros_evolucoes as (
     select
-        d.id_usuario,
+        e.id_usuario,
         array_agg(struct(
             e.id_evolucao_modulo, e.origem_modulo, e.id_familia, e.id_unidade, e.nome_unidade,
             e.tipo_servico, e.data_evolucao, e.data_cancelamento, e.tipo_evolucao,
             e.nome_profissional, e.nome_atividade,
             {{ texto_html_legivel('e.descricao_evolucao') }} as descricao_evolucao,
-            e.formularios
+            coalesce(f.formularios, []) as formularios
         ) order by e.data_evolucao, e.id_evolucao_modulo) as evolucoes
-    from dimensoes as d, unnest(d.evolucoes) as e
-    group by d.id_usuario
+    from {{ pu_ref('int_pu_evolucoes') }} as e
+    left join formularios_por_evolucao as f on e.id_usuario = f.id_usuario and e.id_evolucao_modulo = f.id_evolucao_modulo
+    group by e.id_usuario
+),
+
+escopo_centro_pop as (
+    select
+        s.id_usuario,
+        array_agg(if(s.tipo_registro != 'participacao', struct({{ pu_cpop_historico_publico('s') }}), null) ignore nulls order by s.data_registro, s.data_resposta, s.id_registro) as historico,
+        array_agg(if(s.tipo_registro = 'participacao', struct(
+            coalesce(cast(s.id_atividade as string), '') as id_atividade,
+            coalesce(s.nome_atividade, '') as nome_atividade,
+            coalesce(s.nome_unidade, '') as nome_unidade,
+            coalesce(cast(s.data_presenca as string), '') as data_presenca,
+            coalesce(s.hora_presenca, '') as hora_presenca
+        ), null) ignore nulls order by s.data_presenca, s.hora_presenca, s.id_atividade, s.id_registro) as participacoes
+    from {{ pu_ref('int_pu_registros_centro_pop') }} as s
+    group by s.id_usuario
 ),
 
 base as (
@@ -113,6 +146,7 @@ base as (
         ) as beneficio,
         coalesce(proj.projetos_sociais, []) as projetos_sociais,
         c.cadastro_complementar,
+        end_bi.endereco,
         if(d.documentos_cadunico is null, null, (
             select as struct d.documentos_cadunico.* except (cpf_normalizado, id_familia_cadunico)
         )) as documentos_cadunico,
@@ -139,10 +173,15 @@ base as (
         ) as familias,
         array(
             select as struct
-                a.* except (id_atendimento, id_tipo_atendimento, profissionais),
+                a.* except (id_atendimento, id_tipo_atendimento, profissionais, complementos_profissionais),
+                {{ pu_cpop_classificacao('a') }} as classificacao_atendimento,
                 array(
-                    select as struct pr.* except (id_profissional, codigos_cbo, cbo_principal_codigo)
+                    select as struct
+                        pr.* except (codigos_cbo, cbo_principal_codigo),
+                        cp.id_familia_referencia,
+                        cp.id_atendimento_legado
                     from unnest(a.profissionais) as pr with offset as posicao
+                    left join unnest(a.complementos_profissionais) as cp on pr.id_profissional = cp.id_profissional
                     order by posicao
                 ) as profissionais
             from unnest(a.atendimentos) as a with offset as posicao
@@ -152,6 +191,7 @@ base as (
     from {{ pu_ref('dim_usuarios') }} as u
     left join projetos_por_usuario as proj on u.id_usuario = proj.id_usuario
     left join {{ pu_ref('int_pu_cadastro') }} as c on u.id_usuario = c.id_usuario
+    left join {{ pu_ref('int_pu_enderecos_bi') }} as end_bi on u.id_usuario = end_bi.id_usuario
     left join
         {{ pu_ref('int_pu_documentos_cadunico') }} as d
         on u.id_usuario = d.id_usuario
@@ -204,24 +244,20 @@ select
         coalesce(cast(p.origem_demanda as string), '') as origem_demanda,
         coalesce(cast(p.flag_possui_violacao_direito as string), '') as flag_possui_violacao_direito,
         coalesce(unidade_referencia.nome_unidade, '') as nome_unidade_referencia,
-        struct(
-            coalesce(cast(p.cadastro_complementar.uf_nascimento as string), '') as uf_nascimento,
-            coalesce(cast(p.cadastro_complementar.serie_escolar as string), '') as serie_escolar,
-            coalesce(cast(p.cadastro_complementar.data_cadunico_informada as string), '') as data_cadunico_informada
-        ) as cadastro_complementar,
-        struct(
-            coalesce(cast(p.documentos_cadunico.nis as string), '') as nis,
-            coalesce(cast(p.documentos_cadunico.numero_rg as string), '') as numero_rg,
-            coalesce(cast(p.documentos_cadunico.possui_rg as string), '') as possui_rg,
-            coalesce(cast(p.documentos_cadunico.possui_certidao_nascimento as string), '') as possui_certidao_nascimento,
-            coalesce(cast(p.documentos_cadunico.numero_certidao_nascimento as string), '') as numero_certidao_nascimento,
-            coalesce(cast(p.documentos_cadunico.data_atualizacao as string), '') as data_atualizacao,
-            coalesce(cast(p.documentos_cadunico.data_limite_cadastro_atual as string), '') as data_limite_cadastro_atual,
-            coalesce(cast(p.documentos_cadunico.flag_familia_ambigua as string), '') as flag_familia_ambigua,
-            coalesce(cast(p.documentos_cadunico.flag_nis_ambiguo as string), '') as flag_nis_ambiguo,
-            coalesce(cast(p.documentos_cadunico.flag_rg_ambiguo as string), '') as flag_rg_ambiguo,
-            coalesce(cast(p.documentos_cadunico.flag_certidao_ambigua as string), '') as flag_certidao_ambigua
-        ) as documentos_cadunico,
+        coalesce(cast(p.cadastro_complementar.uf_nascimento as string), '') as uf_nascimento,
+        coalesce(cast(p.cadastro_complementar.serie_escolar as string), '') as serie_escolar,
+        coalesce(cast(p.cadastro_complementar.data_cadunico_informada as string), '') as data_cadunico_informada,
+        coalesce(cast(p.documentos_cadunico.nis as string), '') as nis,
+        coalesce(cast(p.documentos_cadunico.numero_rg as string), '') as numero_rg,
+        coalesce(cast(p.documentos_cadunico.possui_rg as string), '') as possui_rg,
+        coalesce(cast(p.documentos_cadunico.possui_certidao_nascimento as string), '') as possui_certidao_nascimento,
+        coalesce(cast(p.documentos_cadunico.numero_certidao_nascimento as string), '') as numero_certidao_nascimento,
+        coalesce(cast(p.documentos_cadunico.data_atualizacao as string), '') as data_atualizacao,
+        coalesce(cast(p.documentos_cadunico.data_limite_cadastro_atual as string), '') as data_limite_cadastro_atual,
+        coalesce(cast(p.documentos_cadunico.flag_familia_ambigua as string), '') as flag_familia_ambigua,
+        coalesce(cast(p.documentos_cadunico.flag_nis_ambiguo as string), '') as flag_nis_ambiguo,
+        coalesce(cast(p.documentos_cadunico.flag_rg_ambiguo as string), '') as flag_rg_ambiguo,
+        coalesce(cast(p.documentos_cadunico.flag_certidao_ambigua as string), '') as flag_certidao_ambigua,
         array(
             select as struct coalesce(cast(item1.descricao as string), '') as descricao
             from unnest(p.beneficio) as item1 with offset as posicao
@@ -238,7 +274,11 @@ select
                 coalesce(cast(item1.origem as string), '') as origem
             from unnest(p.violacoes) as item1 with offset as posicao
             order by posicao
-        ) as violacoes
+        ) as violacoes,
+        coalesce(p.endereco.logradouro, '') as logradouro,
+        coalesce(p.endereco.numero, '') as numero,
+        coalesce(p.endereco.complemento, '') as complemento,
+        coalesce(p.endereco.referencia_ou_comunidade, '') as referencia_ou_comunidade
     ) as usuario,
     array(
         select as struct
@@ -247,6 +287,14 @@ select
             coalesce(cast(item1.flag_responsavel_atual as string), '') as flag_responsavel_atual,
             coalesce(cast(item1.flag_ativo as string), '') as flag_ativo,
             coalesce(cast(item1.data_ultima_modificacao as string), '') as data_ultima_modificacao,
+            array(
+                select as struct
+                    coalesce(cast(item2.id_usuario as string), '') as id_usuario,
+                    coalesce(cast(item2.nome as string), '') as nome,
+                    coalesce(cast(item2.parentesco_responsavel as string), '') as parentesco_responsavel
+                from unnest(item1.membros) as item2 with offset as posicao
+                order by posicao
+            ) as membros,
             array(
                 select as struct
                     coalesce(cast(item2.data_entrada as string), '') as data_entrada,
@@ -280,7 +328,7 @@ select
     ) as projetos_sociais,
     struct(
         array_length(p.atendimentos) as quantidade,
-        {{ pu_contagens_servico("p.atendimentos") }} as quantidade_por_servico,
+        {{ pu_contagens_diretas('p.atendimentos') }},
         array(
             select as struct
                 coalesce(cast(item1.id_atendimento_modulo as string), '') as id_atendimento_modulo,
@@ -297,17 +345,28 @@ select
                             select coalesce(item3, '') from unnest(item2.descricoes_cbo) as item3 with offset as posicao
                             order by posicao
                         ) as descricoes_cbo,
-                        coalesce(cast(item2.cbo_principal_descricao as string), '') as cbo_principal_descricao
+                        coalesce(cast(item2.cbo_principal_descricao as string), '') as cbo_principal_descricao,
+                        coalesce(cast(item2.id_profissional as string), '') as id_profissional,
+                        coalesce(cast(item2.id_familia_referencia as string), '') as id_familia_referencia,
+                        coalesce(item2.id_atendimento_legado, '') as id_atendimento_legado
                     from unnest(item1.profissionais) as item2 with offset as posicao
                     order by posicao
-                ) as profissionais
+                ) as profissionais,
+                coalesce(item1.tipo_servico, '') as tipo_servico,
+                coalesce(item1.classificacao_atendimento, '') as classificacao_atendimento,
+                coalesce(item1.cas, '') as cas,
+                coalesce(item1.email_unidade, '') as email_unidade,
+                coalesce(item1.email_cas, '') as email_cas,
+                coalesce(item1.email, '') as email,
+                coalesce(item1.cadastrante, '') as cadastrante,
+                coalesce(cast(item1.data_cadastro_atendimento as string), '') as data_cadastro_atendimento
             from unnest(p.atendimentos) as item1 with offset as posicao
             order by posicao
         ) as registros
     ) as atendimentos,
     struct(
         array_length(p.evolucoes) as quantidade,
-        {{ pu_contagens_servico("p.evolucoes") }} as quantidade_por_servico,
+        {{ pu_contagens_diretas('p.evolucoes') }},
         array(
             select as struct
                 coalesce(cast(item1.id_evolucao_modulo as string), '') as id_evolucao_modulo,
@@ -325,18 +384,20 @@ select
                         coalesce(cast(item2.titulo_formulario as string), '') as titulo_formulario,
                         coalesce(cast(item2.observacoes as string), '') as observacoes,
                         array(
-                            select as struct
-                                coalesce(cast(item3.label as string), '') as label,
-                                coalesce(cast(item3.valor as string), '') as valor
+                            select concat(coalesce(cast(item3.label as string), ''), ': ', coalesce(cast(item3.valor as string), ''))
                             from unnest(item2.campos) as item3 with offset as posicao
                             order by posicao
                         ) as campos
                     from unnest(item1.formularios) as item2 with offset as posicao
                     order by posicao
-                ) as formularios
+                ) as formularios,
+                coalesce(item1.tipo_servico, '') as tipo_servico
             from unnest(p.evolucoes) as item1 with offset as posicao
             order by posicao
         ) as registros
-    ) as evolucoes
+    ) as evolucoes,
+    struct(struct(coalesce(esc.historico, []) as historico, coalesce(esc.participacoes, []) as participacoes, {{ pu_cpop_perfil_publico('perfil_cp') }}) as centro_pop) as escopos
 from base as p
+left join escopo_centro_pop as esc on p.id_usuario = esc.id_usuario
+left join {{ pu_ref('dim_centro_pop') }} as perfil_cp on p.id_usuario = perfil_cp.id_usuario
 left join unidades as unidade_referencia on safe_cast(p.id_unidade_referencia as int64) = unidade_referencia.id_unidade

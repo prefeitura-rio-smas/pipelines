@@ -1,6 +1,7 @@
 -- noqa: disable=ST06
 {{ config(tags=['planilha_unificada']) }}
-{% if var('pu_referencia', false) %}
+-- depends_on: {{ ref('planilha_unificada') }}
+{% if var('pu_referencia', false) and var('pu_paridade_global', true) %}
     with referencia as (
         select distinct
             concat(cast(seq_atendimento as string), modulo) as chave,

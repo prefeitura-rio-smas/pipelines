@@ -9,9 +9,7 @@ with esperado as (
             coalesce(f.titulo_formulario, '') as titulo_formulario,
             coalesce(f.observacoes, '') as observacoes,
             array(
-                select as struct
-                    coalesce(c.label, '') as label,
-                    coalesce(c.valor, '') as valor
+                select concat(coalesce(c.label, ''), ': ', coalesce(c.valor, ''))
                 from unnest(f.campos) as c with offset as ordem
                 order by ordem
             ) as campos

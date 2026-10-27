@@ -14,7 +14,8 @@ with esperado as (
             coalesce(cast(e.tipo_evolucao as string), '') as tipo_evolucao,
             coalesce(cast(e.nome_profissional as string), '') as nome_profissional,
             coalesce(cast(e.nome_atividade as string), '') as nome_atividade,
-            {{ texto_html_legivel('e.descricao_evolucao') }} as descricao_evolucao
+            {{ texto_html_legivel('e.descricao_evolucao') }} as descricao_evolucao,
+            coalesce(e.tipo_servico, '') as tipo_servico
         )) as registro
     from {{ pu_ref('int_pu_evolucoes') }} as e
     inner join {{ pu_ref('dim_usuarios') }} as u on e.id_usuario = u.id_usuario

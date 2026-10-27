@@ -13,16 +13,18 @@ with esperado as (
             as tipo_atendimento_descricao,
         coalesce(cast(a.data_atendimento as string), '') as data_atendimento,
         {{ normalizar_hora_atendimento('a.hora_atendimento') }} as hora_atendimento,
-        coalesce(a.flag_cancelado, '') as flag_cancelado
+        coalesce(a.flag_cancelado, '') as flag_cancelado,
+        coalesce(a.tipo_servico, '') as tipo_servico,
+        {{ pu_cpop_classificacao('a') }} as classificacao_atendimento
     from {{ pu_ref('int_pu_atendimentos') }} as p, unnest(p.atendimentos) as a
     inner join {{ pu_ref('dim_usuarios') }} as u on p.id_usuario = u.id_usuario
-    where upper(trim(coalesce(a.flag_cancelado, ''))) != 'S'
+    where {{ var('pu_referencia', false) }} or upper(trim(coalesce(a.flag_cancelado, ''))) != 'S'
 ),
 
 obtido as (
     select
         p.usuario.id_usuario,
-        a.* except (profissionais)
+        a.* except (profissionais, cas, email_unidade, email_cas, email, cadastrante, data_cadastro_atendimento)
     from {{ ref('planilha_unificada') }} as p,
         unnest(p.atendimentos.registros) as a
 ),

@@ -8,18 +8,16 @@
 {% endmacro %}
 
 {% macro pu_exigir_candidato() %}
-    {% if execute == true and flags.WHICH in ['run', 'build'] and target.name != 'ci' and (not var('pu_candidato_schema', '') or not var('pu_fontes', {})) %}
-        {{ exceptions.raise_compiler_error('Use operations/planilha_unificada.py: construção exige candidato e lote congelado.') }}
-    {% endif %}
+{% if execute == true and flags.WHICH in ['run', 'build'] and target.name != 'ci' and (not var('pu_candidato_schema', '') or not var('pu_fontes', {})) %}
+    {{ exceptions.raise_compiler_error('Use operations/planilha_unificada.py: construção exige candidato e lote congelado.') }}
+{% endif %}
     select 1
 {% endmacro %}
 
 {% macro pu_ref(nome) %}
     {# Register the real dependency even when its input is redirected. #}
     {% set dependencia = ref(nome) %}
-    {% if model is defined and model.resource_type == 'test' and var('pu_dimensoes', {}) and nome in ['int_pu_atendimentos', 'int_pu_evolucoes', 'int_pu_formularios'] %}
-        {{ '(' ~ pu_esperado_sql(nome) ~ ')' }}
-    {% elif execute == true and nome in var('pu_fontes', {}) %}
+    {% if execute == true and nome in var('pu_fontes', {}) %}
         {{ api.Relation.create(database=target.database, schema=var('pu_base_schema'), identifier=nome) }}
     {% else %}
         {{ dependencia }}
@@ -37,11 +35,7 @@
 {% endmacro %}
 
 {% macro pu_contagens_servico(registros) %}
-    struct(
-    {% for servico in ['cras', 'creas', 'centro_pop', 'outros'] %}
-        (select count(*) from unnest({{ registros }}) as r where r.tipo_servico = '{{ servico }}') as {{ servico }}
-        {% if not loop.last %},{% endif %}
-    {% endfor %})
+    struct({% for servico in ['cras', 'creas', 'centro_pop', 'outros'] %}(select count(*) from unnest({{ registros }}) as r where r.tipo_servico = '{{ servico }}') as {{ servico }}{% if not loop.last %}, {% endif %}{% endfor %})
 {% endmacro %}
 
 {% macro pu_dimensao_sql(servico) %}
@@ -98,4 +92,11 @@ with dimensoes as ({{ pu_dimensoes_sql() }})
     from dimensoes as d, unnest(d.evolucoes) as e,
         unnest(e.formularios) as f with offset as posicao group by d.id_usuario
 {% endif %}
+{% endmacro %}
+
+{% macro pu_contagens_diretas(registros) %}
+    {% for servico in ['cras', 'creas', 'centro_pop', 'outros'] %}
+        {% if not loop.first %},{% endif %}
+        (select count(*) from unnest({{ registros }}) as evento where evento.tipo_servico = '{{ servico }}') as quantidade_{{ servico }}
+    {% endfor %}
 {% endmacro %}

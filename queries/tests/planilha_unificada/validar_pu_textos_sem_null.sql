@@ -42,22 +42,24 @@ where
     or p.usuario.origem_demanda is null
     or p.usuario.flag_possui_violacao_direito is null
     or p.usuario.nome_unidade_referencia is null
-    or p.usuario.cadastro_complementar is null
-    or p.usuario.cadastro_complementar.uf_nascimento is null
-    or p.usuario.cadastro_complementar.serie_escolar is null
-    or p.usuario.cadastro_complementar.data_cadunico_informada is null
-    or p.usuario.documentos_cadunico is null
-    or p.usuario.documentos_cadunico.nis is null
-    or p.usuario.documentos_cadunico.numero_rg is null
-    or p.usuario.documentos_cadunico.possui_rg is null
-    or p.usuario.documentos_cadunico.possui_certidao_nascimento is null
-    or p.usuario.documentos_cadunico.numero_certidao_nascimento is null
-    or p.usuario.documentos_cadunico.data_atualizacao is null
-    or p.usuario.documentos_cadunico.data_limite_cadastro_atual is null
-    or p.usuario.documentos_cadunico.flag_familia_ambigua is null
-    or p.usuario.documentos_cadunico.flag_nis_ambiguo is null
-    or p.usuario.documentos_cadunico.flag_rg_ambiguo is null
-    or p.usuario.documentos_cadunico.flag_certidao_ambigua is null
+    or p.usuario.uf_nascimento is null
+    or p.usuario.serie_escolar is null
+    or p.usuario.data_cadunico_informada is null
+    or p.usuario.logradouro is null
+    or p.usuario.numero is null
+    or p.usuario.complemento is null
+    or p.usuario.referencia_ou_comunidade is null
+    or p.usuario.nis is null
+    or p.usuario.numero_rg is null
+    or p.usuario.possui_rg is null
+    or p.usuario.possui_certidao_nascimento is null
+    or p.usuario.numero_certidao_nascimento is null
+    or p.usuario.data_atualizacao is null
+    or p.usuario.data_limite_cadastro_atual is null
+    or p.usuario.flag_familia_ambigua is null
+    or p.usuario.flag_nis_ambiguo is null
+    or p.usuario.flag_rg_ambiguo is null
+    or p.usuario.flag_certidao_ambigua is null
     or exists (
         select 1 from unnest(p.usuario.beneficio) as item1
         where item1.descricao is null
@@ -103,7 +105,7 @@ where
             select 1 from unnest(item1.formularios) as item2
             where item2.titulo_formulario is null or item2.observacoes is null or exists (
                 select 1 from unnest(item2.campos) as item3
-                where item3.label is null or item3.valor is null
+                where item3 is null
             )
         )
     )

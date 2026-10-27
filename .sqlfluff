@@ -2,6 +2,7 @@
 templater = jinja
 dialect = bigquery
 exclude_rules = L016, L031
+large_file_skip_byte_limit = 100000
 
 [sqlfluff:templater:jinja]
 apply_dbt_builtins = True
@@ -10,3 +11,7 @@ library_path = sqlfluff_libs
 
 [sqlfluff:templater:jinja:macros]
 filtro_particao_cadunico = {% macro filtro_particao_cadunico() %}data_particao = date('2024-01-01'){% endmacro %}
+# Offline Jinja cannot evaluate dbt macros returning dictionaries. These projections
+# let SQLFluff lint the callers; dbt/BigQuery tests execute the complete real SQL.
+pu_cpop_perfil_sql = {% macro pu_cpop_perfil_sql() %}select 1 as id_usuario{% endmacro %}
+pu_cpop_perfil_publico = {% macro pu_cpop_perfil_publico(alias) %}coalesce({{ alias }}.possui_registro_pai, '') as possui_registro_pai{% endmacro %}

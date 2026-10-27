@@ -7,13 +7,19 @@ where
     table_name = '{{ ref('planilha_unificada').identifier }}'
     and ((
         regexp_contains(field_path, r'(^|\.)(id_|codigo|codigos_)|_codigo$')
+        and field_path not in (
+            'escopos.centro_pop.participacoes.id_atividade',
+            'atendimentos.registros.profissionais.id_profissional',
+            'atendimentos.registros.profissionais.id_familia_referencia',
+            'atendimentos.registros.profissionais.id_atendimento_legado'
+        )
         and regexp_extract(field_path, r'[^.]+$') not in (
             'id_usuario', 'id_familia', 'id_atendimento_modulo', 'id_evolucao_modulo'
         )
     )
-    or (regexp_contains(field_path, r'^(atendimentos|evolucoes)\.quantidade(_por_servico\.(cras|creas|centro_pop|outros))?$') and data_type != 'INT64')
+    or (regexp_contains(field_path, r'^(atendimentos|evolucoes)\.quantidade(_(cras|creas|centro_pop|outros))?$') and data_type != 'INT64')
     or (
-        not regexp_contains(field_path, r'^(atendimentos|evolucoes)\.quantidade(_por_servico\.(cras|creas|centro_pop|outros))?$')
+        not regexp_contains(field_path, r'^(atendimentos|evolucoes)\.quantidade(_(cras|creas|centro_pop|outros))?$')
         and data_type not in ('STRING', 'ARRAY<STRING>')
         and not starts_with(data_type, 'STRUCT<')
         and not starts_with(data_type, 'ARRAY<STRUCT<')
@@ -24,8 +30,8 @@ from `{{ ref('planilha_unificada').database }}.{{ ref('planilha_unificada').sche
 where
     table_name = '{{ ref('planilha_unificada').identifier }}'
     and (
-        column_name not in ('usuario', 'familias', 'projetos_sociais', 'atendimentos', 'evolucoes')
-        or (column_name in ('usuario', 'atendimentos', 'evolucoes') and not starts_with(data_type, 'STRUCT<'))
+        column_name not in ('usuario', 'familias', 'projetos_sociais', 'atendimentos', 'evolucoes', 'escopos')
+        or (column_name in ('usuario', 'atendimentos', 'evolucoes', 'escopos') and not starts_with(data_type, 'STRUCT<'))
         or (column_name in ('familias', 'projetos_sociais') and not starts_with(data_type, 'ARRAY<STRUCT<'))
     )
 union all
@@ -34,4 +40,4 @@ from (
     select count(*) as quantidade from `{{ ref('planilha_unificada').database }}.{{ ref('planilha_unificada').schema }}.INFORMATION_SCHEMA.COLUMNS`
     where table_name = '{{ ref('planilha_unificada').identifier }}'
 )
-where quantidade != 5
+where quantidade != 6
