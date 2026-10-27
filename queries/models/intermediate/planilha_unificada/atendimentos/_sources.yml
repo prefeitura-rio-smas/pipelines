@@ -6,4 +6,4 @@ sources:
     tables:
       - name: atendimentos_programada
         identifier: dev_atendimentos
-        description: Referência materializada da consulta programada, somente leitura; capturada em lotes imutáveis por serviço.
+        description: Referência materializada da consulta programada, somente leitura.

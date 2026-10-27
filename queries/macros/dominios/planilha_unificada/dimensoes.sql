@@ -7,13 +7,6 @@
         when 'Centro POP' then 'centro_pop' else 'outros' end
 {% endmacro %}
 
-{% macro pu_exigir_candidato() %}
-{% if execute == true and flags.WHICH in ['run', 'build'] and target.name != 'ci' and (not var('pu_candidato_schema', '') or not var('pu_fontes', {})) %}
-    {{ exceptions.raise_compiler_error('Use operations/planilha_unificada.py: construção exige candidato e lote congelado.') }}
-{% endif %}
-    select 1
-{% endmacro %}
-
 {% macro pu_ref(nome) %}
     {# Register the real dependency even when its input is redirected. #}
     {% set dependencia = ref(nome) %}

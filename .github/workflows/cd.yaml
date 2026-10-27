@@ -36,7 +36,7 @@ jobs:
           python-version: ${{ env.PYTHON_VERSION }}
 
       - name: Install Prefect CLI
-        run: pip install prefect==3.6.29 prefect-docker
+        run: pip install prefect prefect-docker
 
       - name: Define Image Metadata
         run: |

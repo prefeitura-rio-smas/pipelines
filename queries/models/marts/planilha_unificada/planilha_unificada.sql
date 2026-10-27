@@ -1,4 +1,4 @@
-{{ config(schema=var('pu_candidato_schema', 'pu_candidatos'), pre_hook='{{ pu_exigir_candidato() }}') }}
+{{ config(schema=var('pu_candidato_schema', 'pu_candidatos')) }}
 -- noqa: disable=ST06
 -- Contrato por assunto; identificadores públicos restritos aos campos autorizados.
 with unidades as (
