@@ -38,6 +38,19 @@ final as (
           ) as deficiencia
         from traducao
         group by id_usuario
+),
+
+normalizados as (
+    select
+        id_usuario,
+        deficiencia,
+        {{ acolherio_normalizar_itens('deficiencia', 'Deficiência não mapeada (código %s)') }} as deficiencias_detalhes
+    from final
 )
 
-select * from final
+select
+    id_usuario,
+    deficiencia,
+    deficiencias_detalhes,
+    {{ acolherio_descricoes_itens('deficiencias_detalhes') }} as deficiencias
+from normalizados
