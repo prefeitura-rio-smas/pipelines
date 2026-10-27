@@ -480,7 +480,7 @@ deployments:
           SIURB_PWD: "{{ $SIURB_PWD }}"
     tags: ["prod", "dbt", "monthly"]
 
-  # Activate only through queries/operations/ativar_paridade.py after the canary.
+  # Legacy deployment remains paused; independent dimensions use the manual CLI.
   - name: planilha-unificada-staging
     version: programada_v2
     entrypoint: pipelines/datalake/transform/planilha_unificada/flows.py:planilha_unificada_flow

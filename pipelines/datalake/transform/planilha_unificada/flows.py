@@ -1,4 +1,4 @@
-"""Poll the official candidate; publish both public tables in one transaction."""
+"""Legacy paused deployment; the automatic cycle is disabled by the manual operator."""
 
 import os
 from pathlib import Path

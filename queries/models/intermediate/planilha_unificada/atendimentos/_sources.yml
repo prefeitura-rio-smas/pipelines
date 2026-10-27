@@ -5,5 +5,5 @@ sources:
     schema: dashboard_acolherio
     tables:
       - name: atendimentos_programada
-        identifier: dev_atendimentos_candidata
-        description: Resultado materializado da programada; somente o publicador pareado escreve na tabela pública.
+        identifier: dev_atendimentos
+        description: Referência materializada da consulta programada, somente leitura; capturada em lotes imutáveis por serviço.

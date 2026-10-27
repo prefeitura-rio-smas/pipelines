@@ -1,23 +1,11 @@
-"""Activate paired publication only with a healthy deployed worker; never request credentials in logs."""
+"""Read-only legacy canary; activation is disabled for independent dimensions."""
 
 import argparse
 import asyncio
-from pathlib import Path
-from uuid import UUID
 
 from prefect.client.orchestration import get_client
-from prefect.client.schemas.actions import DeploymentUpdate
 from prefect.deployments import run_deployment
 from prefect.settings import get_current_settings
-
-from pipelines.utils.settings import BaseSettings
-
-try:
-    from .planilha_unificada import Pipeline
-    from .referencia_programada import CANDIDATE, PUBLIC, Producer
-except ImportError:
-    from planilha_unificada import Pipeline
-    from referencia_programada import CANDIDATE, PUBLIC, Producer
 
 DEPLOYMENT = "Planilha unificada | Publicação pareada/planilha-unificada-staging"
 
@@ -49,49 +37,9 @@ async def canary():
 
 async def activate():
     if not get_current_settings().api.url:
-        await canary()  # raises before any cloud mutation
-    BaseSettings()
-    pipeline = Pipeline("staging")
-    from google.api_core.exceptions import NotFound
-
-    try:
-        pipeline.client.get_table(CANDIDATE)
-    except NotFound:
-        pipeline.client.copy_table(PUBLIC, CANDIDATE).result()
-    deployment_id = await canary()
-    producer = Producer()
-    pipeline.dataset("pu_coordenacao", "coordenacao", create=True)
-    try:
-        pipeline.read_json("pu_coordenacao", "programada_config_original")
-    except NotFound:
-        original = producer.get()
-        pipeline.write_json(
-            "pu_coordenacao",
-            "programada_config_original",
-            {k: original.get(k) for k in ["name", "params", "schedule", "disabled"]},
-        )
-    backup = (
-        Path(__file__).resolve().parents[1]
-        / "target/pu/ativacao/programada-original.json"
-    )
-    # Only after a successful remote canary may the existing schedule be paused/rerouted.
-    producer.stage(backup)
-    if not pipeline.state().get("programada", {}).get("referencia_versao"):
-        from google.cloud import bigquery
-
-        pipeline.client.copy_table(
-            PUBLIC,
-            CANDIDATE,
-            job_config=bigquery.CopyJobConfig(write_disposition="WRITE_TRUNCATE"),
-        ).result()
-    await asyncio.to_thread(pipeline.cycle)
-    async with get_client() as client:
-        await client.update_deployment(
-            UUID(str(deployment_id)), deployment=DeploymentUpdate(paused=False)
-        )
-    producer.resume()
-    print(
-        "Publicação pareada ativada; programada a cada seis horas e verificação Prefect a cada cinco minutos."
+        await canary()  # fail before any cloud mutation
+    raise ValueError(
+        "Ativação pareada desabilitada: dimensões independentes usam somente publicação manual, sem alterar a programada."
     )
 
 

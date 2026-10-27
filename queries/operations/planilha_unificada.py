@@ -1,7 +1,8 @@
-"""Build, validate and publish PU batches, without changing shared dbt models.
+"""Build frozen user data with direct fields and readable form answers.
 
-Run with the repository Python environment. `--help` and docs/dimensoes_planilha_unificada.md
-explain the staged commands. All dbt artifacts are kept under queries/target/pu.
+Use preparar, dimensao --servico centro_pop and consolidar --servicos centro_pop.
+Use publicar for the manual migration with backups and compensating restoration.
+The scheduled query remains paused; automatic cycles stay disabled.
 """
 
 # SQL templates use quote()/literal() for validated relations and scalar literals; JSON payloads use parameters.
@@ -9,9 +10,9 @@ explain the staged commands. All dbt artifacts are kept under queries/target/pu.
 from __future__ import annotations
 
 import argparse
-from concurrent.futures import ThreadPoolExecutor
 from contextlib import contextmanager
-from datetime import datetime
+from copy import deepcopy
+from datetime import datetime, timezone
 import json
 from pathlib import Path
 import re
@@ -28,12 +29,56 @@ try:
         PUBLIC,
         Producer,
         parity_sql,
+        reference_membership_sql,
         version,
     )
 except ModuleNotFoundError:  # CLI invoked with queries/operations as sys.path[0]
-    from referencia_programada import CANDIDATE, PUBLIC, Producer, parity_sql, version
+    from referencia_programada import (
+        CANDIDATE,
+        PUBLIC,
+        Producer,
+        parity_sql,
+        reference_membership_sql,
+        version,
+    )
 
 ROOT = Path(__file__).resolve().parents[1]
+SCOPE_CONTRACT = "centro_pop_usuario_v3"
+UNIFIED_CONTRACT = "por_assunto_v9_campos_diretos_formularios_texto"
+BI_FIELDS = {
+    **dict.fromkeys(
+        (
+            "usuario.endereco." + f
+            for f in ["logradouro", "numero", "complemento", "referencia_ou_comunidade"]
+        ),
+        "STRING",
+    ),
+    **dict.fromkeys(
+        (
+            "atendimentos.registros." + f
+            for f in [
+                "cas",
+                "email_unidade",
+                "email_cas",
+                "email",
+                "cadastrante",
+                "data_cadastro_atendimento",
+            ]
+        ),
+        "STRING",
+    ),
+    **dict.fromkeys(
+        (
+            "atendimentos.registros.profissionais." + f
+            for f in [
+                "id_profissional",
+                "id_familia_referencia",
+                "id_atendimento_legado",
+            ]
+        ),
+        "STRING",
+    ),
+}
 SERVICES = {
     "cras": "dim_cras",
     "creas": "dim_creas",
@@ -76,6 +121,8 @@ def transaction_sql(
     reference=None,
     programada=None,
     reference_version=None,
+    checks="",
+    dimension_manifest=None,
 ):
     """One atomic DML transaction; a stale candidate never overwrites a newer run."""
     parts = [
@@ -109,15 +156,381 @@ def transaction_sql(
         parts.append(
             f"UPDATE {quote(control)} SET referencia_versao={literal(reference_version)} WHERE servico IN ('supertabela','programada','cras','creas','centro_pop','outros');"
         )
-    parts += ["COMMIT TRANSACTION;"]
+    if dimension_manifest is not None:
+        for service in updates:
+            parts.append(
+                f"UPDATE {quote(control)} SET referencia_versao={literal(dimension_manifest[service]['referencia_versao'])} WHERE servico={literal(service)};"
+            )
+        versions = {v["referencia_versao"] for v in dimension_manifest.values()}
+        common = literal(next(iter(versions))) if len(versions) == 1 else "NULL"
+        payload = literal(json.dumps(dimension_manifest, default=stamp, sort_keys=True))
+        parts.append(
+            f"UPDATE {quote(control)} SET dimensoes_utilizadas=PARSE_JSON({payload}),referencia_versao={common} WHERE servico='supertabela';"
+        )
+    parts += [checks, "COMMIT TRANSACTION;"]
     return "\n".join(parts)
+
+
+def table_equality_sql(left, right):
+    """Exact row multiset comparison, including duplicates and nested array order."""
+    return f"""ASSERT NOT EXISTS (
+      WITH registros AS (
+        SELECT TO_JSON_STRING(r) valor, 1 lado FROM {quote(left)} r
+        UNION ALL SELECT TO_JSON_STRING(r), -1 FROM {quote(right)} r)
+      SELECT valor FROM registros GROUP BY valor HAVING SUM(lado) != 0
+    ) AS 'Dados divergentes após materialização/restauração';"""
+
+
+def schema_projection(schema, alias="p", level=0, cpop_direct=False, prefix=""):
+    """Project nested arrays onto the old schema, preserving order and null STRUCTs."""
+    output = []
+    for field in schema:
+        name = field["name"]
+        if not re.fullmatch(r"[a-zA-Z_][a-zA-Z0-9_]*", name):
+            raise ValueError("Nome de coluna inválido no schema")
+        logical_path = prefix + name
+        path = (
+            alias
+            if cpop_direct and logical_path == "escopos.centro_pop.respostas"
+            else f"{alias}.`{name}`"
+        )
+        if field.get("fields"):
+            if field.get("mode") == "REPEATED":
+                item, offset = f"item{level}", f"pos{level}"
+                nested = schema_projection(
+                    field["fields"], item, level + 1, cpop_direct, logical_path + "."
+                )
+                expr = f"ARRAY(SELECT AS STRUCT {nested} FROM UNNEST({path}) AS {item} WITH OFFSET AS {offset} ORDER BY {offset})"
+            else:
+                nested = schema_projection(
+                    field["fields"], path, level + 1, cpop_direct, logical_path + "."
+                )
+                expr = f"IF({path} IS NULL, NULL, STRUCT({nested}))"
+        else:
+            expr = path
+        output.append(f"{expr} AS `{name}`")
+    return ", ".join(output)
+
+
+def schema_signature(fields):
+    return tuple(
+        (
+            f["name"],
+            f["type"],
+            f.get("mode", "NULLABLE"),
+            schema_signature(f.get("fields", [])),
+        )
+        for f in fields
+    )
+
+
+def cpop_direct_schema(schema, profile):
+    """Move only the approved 35 profile fields; preserve every other schema node."""
+    if len(profile) != 35 or len({f["name"] for f in profile}) != 35:
+        raise ValueError("Perfil Centro POP deve conter 35 campos distintos")
+    if sum(f.get("mode", "NULLABLE") == "REPEATED" for f in profile) != 4 or any(
+        f["type"] != "STRING"
+        or f.get("fields")
+        or f.get("mode", "NULLABLE") not in {"NULLABLE", "REPEATED"}
+        for f in profile
+    ):
+        raise ValueError("Perfil exige 31 STRING e quatro ARRAY<STRING>")
+    result = deepcopy(schema)
+    try:
+        scopes = next(f for f in result if f["name"] == "escopos")
+        centro = next(f for f in scopes["fields"] if f["name"] == "centro_pop")
+    except (StopIteration, KeyError) as error:
+        raise ValueError("Schema sem escopos.centro_pop") from error
+    if (
+        scopes["type"] not in {"RECORD", "STRUCT"}
+        or centro["type"] not in {"RECORD", "STRUCT"}
+        or centro.get("mode", "NULLABLE") != "NULLABLE"
+    ):
+        raise ValueError("Tipo do escopo Centro POP incompatível")
+    children = centro["fields"]
+    if [f["name"] for f in children[:2]] != ["historico", "participacoes"]:
+        raise ValueError(
+            "Histórico e participações devem permanecer nas posições anteriores"
+        )
+    if any(f["name"] == "respostas" for f in children):
+        if (
+            len(children) != 3
+            or children[2]["name"] != "respostas"
+            or children[2]["type"] not in {"RECORD", "STRUCT"}
+            or children[2].get("mode", "NULLABLE") != "NULLABLE"
+        ):
+            raise ValueError("Agrupador respostas incompatível com a migração")
+        if schema_signature(children[2].get("fields", [])) != schema_signature(profile):
+            raise ValueError("Perfil anterior diverge da dimensão Centro POP")
+        centro["fields"] = children[:2] + deepcopy(profile)
+    elif schema_signature(children[2:]) != schema_signature(profile):
+        raise ValueError("Campos diretos do perfil divergem da dimensão Centro POP")
+    return result
+
+
+def validate_cpop_direct_schema(old, new, profile):
+    expected = cpop_direct_schema(old, profile)
+    # Also assert the candidate exposes the direct shape, never the old wrapper.
+    direct = cpop_direct_schema(new, profile)
+    if schema_signature(direct) != schema_signature(new) or schema_signature(
+        expected
+    ) != schema_signature(new):
+        raise ValueError(
+            "Schema permite somente mover respostas para escopos.centro_pop"
+        )
+
+
+def validate_bi_schema(old, new):
+    """Only the thirteen approved public leaves may extend the existing contract."""
+    found = set()
+
+    def walk(left, right, prefix=""):
+        if len(right) < len(left):
+            raise ValueError("Schema remove campos anteriores")
+        for index, field in enumerate(right):
+            name = field["name"]
+            path = prefix + name
+            previous = left[index] if index < len(left) else None
+            if previous is not None:
+
+                def signature(f):
+                    return (f["name"], f["type"], f.get("mode", "NULLABLE"))
+
+                if signature(previous) != signature(field):
+                    raise ValueError("Schema altera campo anterior: " + path)
+            if field.get("fields"):
+                if previous is None and not (
+                    field["type"] in {"RECORD", "STRUCT"}
+                    and field.get("mode", "NULLABLE") == "NULLABLE"
+                    and any(p.startswith(path + ".") for p in BI_FIELDS)
+                ):
+                    raise ValueError("STRUCT adicional não autorizado: " + path)
+                walk(
+                    previous.get("fields", []) if previous else [],
+                    field["fields"],
+                    path + ".",
+                )
+            elif path in BI_FIELDS:
+                if (
+                    field["type"] != BI_FIELDS[path]
+                    or field.get("mode", "NULLABLE") != "NULLABLE"
+                ):
+                    raise ValueError("Tipo incorreto no complemento: " + path)
+                found.add(path)
+            elif previous is None:
+                raise ValueError("Campo adicional não autorizado: " + path)
+
+    walk(old, new)
+    if found != set(BI_FIELDS):
+        raise ValueError("Schema incompleto dos treze complementos BI")
+
+
+SIMPLE_GROUPS = {
+    "usuario.cadastro_complementar": (
+        "uf_nascimento",
+        "serie_escolar",
+        "data_cadunico_informada",
+    ),
+    "usuario.documentos_cadunico": (
+        "nis",
+        "numero_rg",
+        "possui_rg",
+        "possui_certidao_nascimento",
+        "numero_certidao_nascimento",
+        "data_atualizacao",
+        "data_limite_cadastro_atual",
+        "flag_familia_ambigua",
+        "flag_nis_ambiguo",
+        "flag_rg_ambiguo",
+        "flag_certidao_ambigua",
+    ),
+    "usuario.endereco": (
+        "logradouro",
+        "numero",
+        "complemento",
+        "referencia_ou_comunidade",
+    ),
+    "atendimentos.quantidade_por_servico": ("cras", "creas", "centro_pop", "outros"),
+    "evolucoes.quantidade_por_servico": ("cras", "creas", "centro_pop", "outros"),
+}
+FORM_FIELDS_PATH = "evolucoes.registros.formularios.campos"
+
+
+def simple_fields_schema(schema):
+    """Only the five approved groups and form answer representation may change."""
+    # Subsequent manual consolidations must also accept the complete v9 shape.
+    leaves = {}
+
+    def inventory(fields, prefix=""):
+        for field in fields:
+            path = prefix + field["name"]
+            leaves[path] = field
+            inventory(field.get("fields", []), path + ".")
+
+    inventory(schema)
+    if not any(path in leaves for path in SIMPLE_GROUPS):
+        for group, names in SIMPLE_GROUPS.items():
+            parent = group.rsplit(".", 1)[0]
+            numeric = group.endswith("quantidade_por_servico")
+            for name in names:
+                path = parent + "." + ("quantidade_" if numeric else "") + name
+                field = leaves.get(path, {})
+                if (
+                    field.get("type")
+                    not in ({"INTEGER", "INT64"} if numeric else {"STRING"})
+                    or field.get("mode", "NULLABLE") != "NULLABLE"
+                    or field.get("fields")
+                ):
+                    raise ValueError("Schema v9 incompleto: " + path)
+        answers = leaves.get(FORM_FIELDS_PATH, {})
+        if (
+            answers.get("type") != "STRING"
+            or answers.get("mode") != "REPEATED"
+            or answers.get("fields")
+        ):
+            raise ValueError("Respostas v9 exigem ARRAY<STRING>")
+        return deepcopy(schema)
+    found = set()
+
+    def walk(fields, prefix=""):
+        output = []
+        for field in deepcopy(fields):
+            path = prefix + field["name"]
+            if path in SIMPLE_GROUPS:
+                children = field.get("fields", [])
+                numeric = path.endswith("quantidade_por_servico")
+                if (
+                    field["type"] not in {"RECORD", "STRUCT"}
+                    or field.get("mode", "NULLABLE") != "NULLABLE"
+                    or tuple(f["name"] for f in children) != SIMPLE_GROUPS[path]
+                    or any(
+                        f["type"]
+                        not in ({"INTEGER", "INT64"} if numeric else {"STRING"})
+                        or f.get("mode", "NULLABLE") != "NULLABLE"
+                        or f.get("fields")
+                        for f in children
+                    )
+                ):
+                    raise ValueError("Agrupador incompatível: " + path)
+                for child in children:
+                    if numeric:
+                        child["name"] = "quantidade_" + child["name"]
+                    output.append(child)
+                found.add(path)
+            elif path == FORM_FIELDS_PATH:
+                if (
+                    field["type"] not in {"RECORD", "STRUCT"}
+                    or field.get("mode") != "REPEATED"
+                    or schema_signature(field.get("fields", []))
+                    != schema_signature(
+                        [
+                            {"name": "label", "type": "STRING", "mode": "NULLABLE"},
+                            {"name": "valor", "type": "STRING", "mode": "NULLABLE"},
+                        ]
+                    )
+                ):
+                    raise ValueError("Respostas de formulário incompatíveis")
+                output.append({"name": "campos", "type": "STRING", "mode": "REPEATED"})
+                found.add(path)
+            else:
+                if field.get("fields"):
+                    field["fields"] = walk(field["fields"], path + ".")
+                output.append(field)
+        if len({f["name"] for f in output}) != len(output):
+            raise ValueError("Colisão de nomes ao remover agrupadores")
+        return output
+
+    result = walk(schema)
+    if found != set(SIMPLE_GROUPS) | {FORM_FIELDS_PATH}:
+        raise ValueError("Schema anterior incompleto para migração v9")
+    return result
+
+
+def validate_simple_fields_schema(old, new):
+    if schema_signature(simple_fields_schema(old)) != schema_signature(new):
+        raise ValueError("Schema permite somente grupos simples e respostas em texto")
+
+
+def simple_fields_projection(schema, alias="p", prefix="", level=0):
+    """Forward projection of the complete frozen v8 row, retaining every array offset."""
+    output = []
+    for field in schema:
+        name = field["name"]
+        if not re.fullmatch(r"[a-zA-Z_][a-zA-Z0-9_]*", name):
+            raise ValueError("Nome de coluna inválido no schema")
+        logical = prefix + name
+        path = f"{alias}.`{name}`"
+        if logical in SIMPLE_GROUPS:
+            for child in field["fields"]:
+                target = (
+                    "quantidade_" if logical.endswith("quantidade_por_servico") else ""
+                ) + child["name"]
+                output.append(f"{path}.`{child['name']}` AS `{target}`")
+            continue
+        if logical == FORM_FIELDS_PATH and field.get("fields"):
+            expr = f"ARRAY(SELECT CONCAT(COALESCE(c.label, ''), ': ', COALESCE(c.valor, '')) FROM UNNEST({path}) c WITH OFFSET AS pos ORDER BY pos)"
+        elif field.get("fields"):
+            if field.get("mode") == "REPEATED":
+                item, offset = f"v9item{level}", f"v9pos{level}"
+                nested = simple_fields_projection(
+                    field["fields"], item, logical + ".", level + 1
+                )
+                expr = f"ARRAY(SELECT AS STRUCT {nested} FROM UNNEST({path}) {item} WITH OFFSET AS {offset} ORDER BY {offset})"
+            else:
+                nested = simple_fields_projection(
+                    field["fields"], path, logical + ".", level + 1
+                )
+                expr = f"IF({path} IS NULL, NULL, STRUCT({nested}))"
+        else:
+            expr = path
+        output.append(f"{expr} AS `{name}`")
+    return ", ".join(output)
+
+
+def migration_parity_sql(
+    before, after, schema=None, cpop_direct=False, simple_fields=False
+):
+    """Compare full rows through the explicitly selected schema transformation.
+
+    Without schema, retain the historical Centro POP v2-to-v3 comparison only.
+    """
+
+    def normalized(relation, direct=False):
+        if simple_fields:
+            if schema is None:
+                raise ValueError("Migração v9 exige schema anterior")
+            projection = (
+                schema_projection(simple_fields_schema(schema))
+                if direct
+                else simple_fields_projection(schema)
+            )
+            return f"SELECT p.usuario.id_usuario id_usuario, TO_JSON_STRING(STRUCT({projection})) valor FROM {quote(relation)} p"
+        if schema is not None:
+            return f"SELECT p.usuario.id_usuario id_usuario, TO_JSON_STRING(STRUCT({schema_projection(schema, cpop_direct=direct)})) valor FROM {quote(relation)} p"
+        return f"""SELECT p.usuario.id_usuario id_usuario,
+          TO_JSON_STRING((SELECT AS STRUCT p.* EXCEPT(escopos),
+            STRUCT(STRUCT(p.escopos.centro_pop.historico AS historico,
+              p.escopos.centro_pop.participacoes AS participacoes) AS centro_pop) AS escopos)) valor
+          FROM {quote(relation)} p"""
+
+    checks = []
+    for relation in [before, after]:
+        checks.append(f"""ASSERT (SELECT COUNT(*)=COUNT(DISTINCT usuario.id_usuario)
+            AND COUNTIF(usuario.id_usuario IS NULL OR usuario.id_usuario='')=0 FROM {quote(relation)})
+            AS 'População com chave inválida';""")
+    checks.append(f"""ASSERT NOT EXISTS (
+      WITH antes AS ({normalized(before)}), depois AS ({normalized(after, cpop_direct or simple_fields)})
+      SELECT 1 FROM antes a FULL OUTER JOIN depois d USING(id_usuario)
+      WHERE a.valor IS DISTINCT FROM d.valor
+    ) AS 'Usuários, atendimentos, evoluções, histórico ou participações mudaram';""")
+    return "\n".join(checks)
 
 
 class Pipeline:
     def __init__(self, target="staging"):
         if target not in ["dev", "staging"]:
             raise ValueError(
-                "Publicação pareada habilitada somente em staging/dev (rj-smas-dev)."
+                "Construção de escopos habilitada somente em staging/dev (rj-smas-dev)."
             )
         self.target = target
         profile = yaml.safe_load((ROOT / "profiles.yml").read_text())["rj_smas_dev"][
@@ -253,10 +666,12 @@ class Pipeline:
             )
         return tests
 
-    def prepare(self, batch):
+    def prepare(self, batch, derive_from=None):
+        if derive_from is not None:
+            return self.derive_batch(batch, derive_from)
         if self.target not in ["dev", "staging"]:
             raise ValueError(
-                "A referência coordenada está habilitada somente em staging."
+                "A captura da referência está habilitada somente em staging."
             )
         schema = "pu_base_" + identifier(batch)
         artifact = self.dbt("parse", f"preparar_{batch}", {"pu_referencia": True})
@@ -301,7 +716,7 @@ class Pipeline:
             pass
         else:
             if existing.get("referencia", {}).get("versao") == version(
-                self.fingerprint(CANDIDATE)
+                self.fingerprint(PUBLIC)
             ):
                 self.base(batch)
                 print(f"Lote já selado: {schema}", flush=True)
@@ -315,7 +730,7 @@ class Pipeline:
                 for key, node in ancestors.items()
             }
             before = {key: self.fingerprint(rel) for key, rel in source_ids.items()}
-            producer_fingerprint = self.fingerprint(CANDIDATE)
+            producer_fingerprint = self.fingerprint(PUBLIC)
             # Build the existing user entity and its ancestors in a private dataset.
             auxiliary = "pu_build_" + batch
             self.dataset(auxiliary, "base_aux", create=True)
@@ -323,7 +738,7 @@ class Pipeline:
                 "run",
                 f"{batch}/cadastro",
                 {"pu_isolar_schema": auxiliary},
-                ["+dim_usuarios"],
+                ["+dim_usuarios", "raw_usuarios_enderecos"],
             )
             self.dbt(
                 "test",
@@ -372,7 +787,7 @@ class Pipeline:
                 snapshots[name] = self.fingerprint(destination)
                 print(f"Capturado: {name}", flush=True)
             after = {key: self.fingerprint(rel) for key, rel in source_ids.items()}
-            if before != after or self.fingerprint(CANDIDATE) != producer_fingerprint:
+            if before != after or self.fingerprint(PUBLIC) != producer_fingerprint:
                 raise ValueError(
                     "Fontes mudaram durante a captura. Lote não foi selado; repita a preparação."
                 )
@@ -394,7 +809,7 @@ class Pipeline:
             )
             reference_info = {
                 "versao": version(producer_fingerprint),
-                "origem": CANDIDATE,
+                "origem": PUBLIC,
                 "origem_fingerprint": producer_fingerprint,
                 "capturado_em": captured,
                 **metrics,
@@ -413,6 +828,123 @@ class Pipeline:
             )
         print(f"Lote selado: {schema}", flush=True)
 
+    def derive_batch(self, batch, parent):
+        batch, parent = identifier(batch), identifier(parent)
+        if batch == parent:
+            raise ValueError("Lote derivado exige um identificador novo")
+        parent_schema, inherited = self.base(parent)
+        schema = "pu_base_" + batch
+        self.dataset(schema, "base", create=True)
+        try:
+            existing = self.read_json(schema, "_pu_lote")
+        except NotFound:
+            pass
+        else:
+            if existing.get("lote_pai") != parent:
+                raise ValueError("Lote já selado com outra origem")
+            self.base(batch)
+            self.check_derived_batch(existing)
+            print(f"Lote derivado já selado: {schema}", flush=True)
+            return
+        with self.lock(schema, "preparar"):
+            parent_manifest = self.fingerprint(self.relation(parent_schema, "_pu_lote"))
+            snapshots = {}
+            for name in inherited["fontes"]:
+                self.copy(
+                    self.relation(parent_schema, name), self.relation(schema, name)
+                )
+                snapshots[name] = self.fingerprint(self.relation(schema, name))
+                print(f"Herdado: {name}", flush=True)
+            if "raw_usuarios_enderecos" in inherited["fontes"]:
+                # Never replace an inherited snapshot with a fresh capture.
+                self.base(parent)
+                self.verify(self.relation(parent_schema, "_pu_lote"), parent_manifest)
+                self.write_json(
+                    schema,
+                    "_pu_lote",
+                    {
+                        **inherited,
+                        "lote": batch,
+                        "lote_pai": parent,
+                        "lote_pai_manifesto": parent_manifest,
+                        "herdadas": inherited["fontes"],
+                        "fontes": snapshots,
+                        "derivado_em": datetime.now(timezone.utc).isoformat(),
+                    },
+                )
+                print(
+                    f"Lote derivado selado com endereços herdados: {schema}", flush=True
+                )
+                return
+            auxiliary = "pu_build_" + batch
+            self.dataset(auxiliary, "base_aux", create=True)
+            artifact = self.dbt(
+                "parse", f"{batch}/enderecos", {"pu_isolar_schema": auxiliary}
+            )
+            manifest = json.loads((artifact / "manifest.json").read_text())
+            source_key = "source.queries.brutos_acolherio_staging.gh_cidadao_pac"
+            source = manifest["sources"][source_key]["relation_name"].replace("`", "")
+            original = self.fingerprint(source)
+            self.dbt(
+                "run",
+                f"{batch}/enderecos",
+                {"pu_isolar_schema": auxiliary},
+                ["raw_usuarios_enderecos"],
+            )
+            captured = self.query("SELECT CURRENT_TIMESTAMP() instante")[
+                0
+            ].instante.isoformat()
+            destination = self.relation(schema, "raw_usuarios_enderecos")
+            self.query(
+                f"CREATE OR REPLACE TABLE {quote(destination)} AS SELECT * FROM {quote(self.relation(auxiliary, 'raw_usuarios_enderecos'))}"
+            )
+            self.query(
+                f"ASSERT (SELECT COUNT(*)=COUNT(DISTINCT id_paciente) AND COUNTIF(id_paciente IS NULL)=0 FROM {quote(destination)}) AS 'Cadastro de endereços conflitante';"
+            )
+            self.verify(source, original)
+            self.base(parent)
+            self.verify(self.relation(parent_schema, "_pu_lote"), parent_manifest)
+            snapshots["raw_usuarios_enderecos"] = self.fingerprint(destination)
+            self.write_json(
+                schema,
+                "_pu_lote",
+                {
+                    **inherited,
+                    "lote": batch,
+                    "lote_pai": parent,
+                    "lote_pai_manifesto": parent_manifest,
+                    "herdadas": inherited["fontes"],
+                    "fontes": snapshots,
+                    "derivado_em": captured,
+                    "complementos": {
+                        "raw_usuarios_enderecos": {
+                            "capturado_em": captured,
+                            "origem": source,
+                            "origem_fingerprint": original,
+                        }
+                    },
+                },
+            )
+        print(f"Lote derivado selado: {schema}", flush=True)
+
+    def check_derived_batch(self, info):
+        if not info.get("lote_pai"):
+            return
+        parent_schema, parent = self.base(info["lote_pai"])
+        self.verify(
+            self.relation(parent_schema, "_pu_lote"), info["lote_pai_manifesto"]
+        )
+        if (
+            info.get("herdadas") != parent["fontes"]
+            or info["referencia"] != parent["referencia"]
+            or info["capturado_em"] != parent["capturado_em"]
+        ):
+            raise ValueError("Lote derivado não preserva a base e referência do pai")
+        for name, original in parent["fontes"].items():
+            clone = info["fontes"].get(name, {})
+            if any(clone.get(k) != original[k] for k in ["rows", "schema"]):
+                raise ValueError("Fonte herdada incompatível: " + name)
+
     def base(self, batch):
         schema = "pu_base_" + identifier(batch)
         self.dataset(schema, "base")
@@ -430,6 +962,8 @@ class Pipeline:
             "execucao": execution,
             "capturado_em": base["capturado_em"],
             "referencia_versao": base["referencia"]["versao"],
+            "contrato": UNIFIED_CONTRACT,
+            "contrato_centro_pop": SCOPE_CONTRACT,
         }
         try:
             self.write_json(schema, "_pu_execucao", context)
@@ -456,39 +990,56 @@ class Pipeline:
             self.client.delete_table(name, not_found_ok=True)
 
     def build_dimension(self, batch, execution, service):
+        if service != "centro_pop":
+            raise ValueError(
+                "Dimensões de eventos são legadas; nesta etapa somente o escopo centro_pop é construído."
+            )
         schema, context, variables = self.context(batch, execution)
+        required = {
+            "raw_presencas_usuarios",
+            "raw_evolucoes_questionario",
+            "raw_evolucoes_questionario_lista",
+        }
+        if not required.issubset(variables["pu_fontes"]):
+            raise ValueError(
+                "Lote sem fontes do escopo Centro POP; prepare um novo lote completo."
+            )
         with self.lock(schema, service):
             try:
                 validated = self.read_json(schema, "_pu_validada_" + service)
             except NotFound:
                 pass
             else:
-                self.verify(
-                    self.relation(schema, SERVICES[service]), validated["tabela"]
-                )
-                if validated.get("validacao") == "programada_v2":
-                    print(f"Dimensão já validada: {service}")
-                    return
-                artifact = ROOT / "target" / "pu" / execution / service
-                self.dbt(
-                    "test",
-                    f"{execution}/{service}",
-                    variables,
-                    self.tests_for(artifact, [SERVICES[service]]),
-                )
-                validated["validacao"] = "programada_v2"
-                self.write_json(
-                    schema, "_pu_validada_" + service, validated, replace=True
-                )
+                if validated.get("validacao") != SCOPE_CONTRACT:
+                    raise ValueError(
+                        "Artefato legado; use nova execução para o escopo de respostas."
+                    )
+                for relation, expected in validated["tabelas"].items():
+                    self.verify(relation, expected)
+                print("Escopo Centro POP já validado.", flush=True)
                 return
-            self.dbt("build", f"{execution}/{service}", variables, [SERVICES[service]])
-            self.base(batch)
-            context["validacao"] = "programada_v2"
-            context["tabela"] = self.fingerprint(
-                self.relation(schema, SERVICES[service])
+            self.dbt(
+                "build",
+                f"{execution}/centro_pop",
+                variables,
+                ["dim_centro_pop", "int_pu_registros_centro_pop"],
             )
-            self.write_json(schema, "_pu_validada_" + service, context)
-        print(f"Dimensão validada: {schema}.{SERVICES[service]}", flush=True)
+            self.base(batch)
+            self.write_json(
+                schema,
+                "_pu_validada_centro_pop",
+                {
+                    **context,
+                    "validacao": SCOPE_CONTRACT,
+                    "tabelas": {
+                        self.relation(schema, name): self.fingerprint(
+                            self.relation(schema, name)
+                        )
+                        for name in ["dim_centro_pop", "int_pu_registros_centro_pop"]
+                    },
+                },
+            )
+        print(f"Escopo validado: {schema}.dim_centro_pop", flush=True)
 
     def state(self):
         try:
@@ -531,28 +1082,13 @@ class Pipeline:
     def check_movements(self, base_schema, previous, selected):
         if not previous:
             return
-        # Ownership is read from the entire new source batch, including services not yet built.
-        fact = quote(self.relation(base_schema, "fct_atendimentos"))
-        evo = quote(self.relation(base_schema, "int_evolucoes"))
-        units = quote(self.relation(base_schema, "dim_unidades"))
-        users = quote(self.relation(base_schema, "dim_usuarios"))
-        classify = "CASE u.tipo_unidade WHEN 'CRAS' THEN 'cras' WHEN 'CREAS' THEN 'creas' WHEN 'Centro POP' THEN 'centro_pop' ELSE 'outros' END"
-        source = f"""
-          SELECT DISTINCT CAST(a.id_usuario AS STRING) AS usuario, 'atendimentos' AS bloco,
-            a.id_atendimento_modulo AS chave, {classify} AS servico
-          FROM {fact} a JOIN {users} c ON a.id_usuario=c.id_usuario
-          LEFT JOIN {units} u ON a.id_unidade=u.id_unidade
-          WHERE UPPER(TRIM(COALESCE(a.flag_cancelado,''))) != 'S'
-          UNION DISTINCT
-          SELECT CAST(COALESCE(a.id_usuario,a.id_paciente_familia) AS STRING), 'evolucoes',
-            CONCAT(a.origem_modulo,':',CAST(a.id_evolucao AS STRING)), {classify}
-          FROM {evo} a JOIN {users} c ON COALESCE(a.id_usuario,a.id_paciente_familia)=c.id_usuario
-          LEFT JOIN {units} u ON a.id_unidade=u.id_unidade WHERE a.data_cancelamento IS NULL
-        """
+        # Inspect all assignments in the new reference, including unselected services.
+        source = reference_membership_sql(self.project, base_schema, quote)
         selected_sql = ",".join(literal(s) for s in selected)
         rows = self.query(f"""WITH anterior AS ({self.membership_sql(previous)}), novo AS ({source})
           SELECT DISTINCT a.servico AS anterior, n.servico AS novo
-          FROM anterior a JOIN novo n USING(usuario,bloco,chave)
+          FROM anterior a JOIN novo n ON a.bloco=n.bloco AND a.chave=n.chave
+            AND (a.bloco='atendimentos' OR a.usuario=n.usuario)
           WHERE a.servico != n.servico
             AND (a.servico IN ({selected_sql}) OR n.servico IN ({selected_sql}))
             AND NOT (a.servico IN ({selected_sql}) AND n.servico IN ({selected_sql}))""")
@@ -562,96 +1098,126 @@ class Pipeline:
                 + str([dict(r.items()) for r in rows])
             )
 
-    def consolidate(self, batch, execution, selected):
-        schema, context, _ = self.context(batch, execution)
-        with self.lock(schema, "consolidar_publicar"):
-            state = self.state()
-            root = state.get("supertabela", {})
-            generation = root.get("geracao", 0)
-            if root.get("estado", "pronto") != "pronto":
+    def migration_baseline(self, schema, batch, state):
+        if state.get("supertabela", {}).get("lote") != batch:
+            _, child = self.base(batch)
+            if child.get("lote_pai") != state.get("supertabela", {}).get("lote"):
                 raise ValueError(
-                    "Inicialização em andamento; conclua a publicação anterior."
+                    "Migração exige o mesmo lote congelado ou seu derivado validado."
                 )
-            if set(selected) != set(SERVICES):
-                raise ValueError("Publicação pareada exige as quatro dimensões.")
-            selected_info = {}
-            for service in selected:
-                info = self.read_json(schema, "_pu_validada_" + service)
-                if info.get("validacao") != "programada_v2":
-                    raise ValueError(
-                        f"Revalide a dimensão com o comando dimensao: {service}"
-                    )
-                self.verify(self.relation(schema, SERVICES[service]), info["tabela"])
-                old = state.get(service, {})
-                if (
-                    old.get("capturado_em")
-                    and datetime.fromisoformat(info["capturado_em"])
-                    < old["capturado_em"]
-                ):
-                    raise ValueError(
-                        f"Lote mais antigo que a versão publicada: {service}"
-                    )
-                if (
-                    info.get("referencia_versao") != context["referencia_versao"]
-                    or info.get("lote") != batch
-                ):
-                    raise ValueError(
-                        "Dimensões pertencem a referências/lotes diferentes."
-                    )
-                selected_info[service] = info
-            cadastro_batch = batch
-            base_schema, base = self.base(cadastro_batch)
-            relations = {s: self.relation(schema, name) for s, name in SERVICES.items()}
-            variables = {
-                "pu_base_schema": base_schema,
-                "pu_referencia": True,
-                "pu_fontes": dict.fromkeys(base["fontes"], True),
-                "pu_candidato_schema": schema,
-                "pu_dimensoes": {s: quote(rel) for s, rel in relations.items()},
-            }
-            self.dbt(
-                "build", f"{execution}/consolidar", variables, ["planilha_unificada"]
+            self.check_derived_batch(child)
+        live = (
+            [self.destination, self.control]
+            + [
+                f"{self.project}.{self.core}.{name}"
+                for name in [
+                    "dim_centro_pop",
+                    "int_pu_registros_centro_pop",
+                    "dim_cras",
+                    "dim_creas",
+                    "dim_outros_equipamentos",
+                ]
+            ]
+            + [f"{self.project}.relatorio.mart_planilha_unificada_centro_pop"]
+        )
+        fingerprints = {r: self.fingerprint(r) for r in live}
+        baseline = self.relation(schema, "_pu_antes_planilha_unificada")
+        self.copy(self.destination, baseline)
+        for relation, expected in fingerprints.items():
+            self.verify(relation, expected)
+        return {
+            "tabela": baseline,
+            "fingerprint": self.fingerprint(baseline),
+            "publicadas": fingerprints,
+        }
+
+    def copy(self, source, destination):
+        self.client.copy_table(
+            source,
+            destination,
+            job_config=bigquery.CopyJobConfig(write_disposition="WRITE_TRUNCATE"),
+        ).result()
+
+    def consolidate(self, batch, execution, selected):
+        if set(selected) != {"centro_pop"}:
+            raise ValueError(
+                "A consolidação atual utiliza somente o escopo centro_pop; eventos vêm dos intermediários comuns."
             )
+        schema, context, variables = self.context(batch, execution)
+        with self.lock(schema, "consolidar_publicar"):
+            info = self.read_json(schema, "_pu_validada_centro_pop")
+            if info.get("validacao") != SCOPE_CONTRACT or info.get("lote") != batch:
+                raise ValueError(
+                    "Escopo legado ou de outro lote; reconstrua a dimensão na nova execução."
+                )
+            for relation, expected in info["tabelas"].items():
+                self.verify(relation, expected)
+            if "raw_usuarios_enderecos" not in variables.get("pu_fontes", {}):
+                raise ValueError(
+                    "Lote sem snapshot cadastral dos endereços; prepare um lote derivado."
+                )
+            state = self.state()
+            base_schema, base = self.base(batch)
+            baseline = self.migration_baseline(schema, batch, state)
+            self.dbt(
+                "build",
+                f"{execution}/consolidar",
+                variables,
+                ["int_pu_enderecos_bi", "int_pu_complementos_bi", "planilha_unificada"],
+            )
+            candidate = self.relation(schema, "planilha_unificada")
             self.query(
                 parity_sql(
                     self.relation(base_schema, "atendimentos_programada"),
-                    self.relation(schema, "planilha_unificada"),
+                    candidate,
                     quote,
+                    direct_counts=True,
                 )
             )
+            self.validate_candidate_schema(
+                candidate, baseline["fingerprint"].get("schema")
+            )
+            self.query(
+                migration_parity_sql(
+                    baseline["tabela"],
+                    candidate,
+                    baseline["fingerprint"].get("schema"),
+                    simple_fields=True,
+                )
+            )
+            self.verify(baseline["tabela"], baseline["fingerprint"])
+            for relation, expected in baseline["publicadas"].items():
+                self.verify(relation, expected)
+            self.base(batch)
+            for relation, expected in info["tabelas"].items():
+                self.verify(relation, expected)
             if self.state() != state:
                 raise ValueError(
-                    "Publicação mudou durante a consolidação; reconsolide."
+                    "Estado publicado mudou durante a validação; reconsolide."
                 )
-            for service, info in selected_info.items():
-                self.verify(relations[service], info["tabela"])
-            self.base(cadastro_batch)
             self.write_json(
                 schema,
                 "_pu_consolidada",
                 {
                     **context,
-                    "geracao": generation,
+                    "contrato": UNIFIED_CONTRACT,
+                    "publicacao_permitida": True,
+                    "antes_migracao": baseline,
+                    "geracao": state.get("supertabela", {}).get("geracao", 0),
                     "referencia": base["referencia"],
-                    "servicos": list(selected),
                     "cadastro": {
-                        "lote": cadastro_batch,
+                        "lote": batch,
                         "execucao": execution,
                         "capturado_em": base["capturado_em"],
                     },
-                    "dimensoes": selected_info,
-                    "relacoes": relations,
-                    "tabelas": {
-                        rel: self.fingerprint(rel) for rel in relations.values()
-                    },
-                    "tabela": self.fingerprint(
-                        self.relation(schema, "planilha_unificada")
-                    ),
+                    "escopos": {"centro_pop": info},
+                    "tabelas": info["tabelas"],
+                    "tabela": self.fingerprint(candidate),
                 },
                 replace=True,
             )
         print(
-            f"Supertabela validada: {schema}.planilha_unificada (geração de origem {generation})",
+            f"Unificada com campos diretos e formulários em texto validada: {candidate}; pronta para publicação manual com backup.",
             flush=True,
         )
 
@@ -668,6 +1234,57 @@ class Pipeline:
         except Conflict:
             pass
 
+    def ensure_public_schema(self, candidate):
+        current = self.client.get_table(self.destination)
+        expected = self.client.get_table(candidate)
+        if current.schema == expected.schema:
+            return False
+        allowed = {
+            "atendimentos.registros.tipo_servico",
+            "evolucoes.registros.tipo_servico",
+        }
+
+        def compatible(old, new, path=""):
+            if len(new) < len(old):
+                return False
+            for left, right in zip(old, new):
+                if (left.name, left.field_type, left.mode) != (
+                    right.name,
+                    right.field_type,
+                    right.mode,
+                ):
+                    return False
+                if not compatible(left.fields, right.fields, path + left.name + "."):
+                    return False
+            return all(
+                path + field.name in allowed
+                and field.field_type == "STRING"
+                and field.mode == "NULLABLE"
+                for field in new[len(old) :]
+            )
+
+        if not compatible(current.schema, expected.schema):
+            raise ValueError(
+                "Migração de schema não aditiva; revise antes de publicar."
+            )
+        # Only additive nested STRING fields; rollback restores the backup if DML fails.
+        current.schema = expected.schema
+        self.client.update_table(current, ["schema"])
+        return True
+
+    def validate_candidate_schema(self, candidate, previous):
+        if previous is None:
+            raise ValueError("Manifesto sem schema anterior")
+        current = [f.to_api_repr() for f in self.client.get_table(candidate).schema]
+        validate_simple_fields_schema(previous, current)
+
+    def assert_paused(self):
+        producer = Producer()
+        if not producer.get().get("disabled", False) or producer.active_runs():
+            raise ValueError(
+                "Consulta programada deve permanecer pausada e sem execuções pendentes."
+            )
+
     def publish(self, execution):
         schema = "pu_cand_" + identifier(execution)
         self.dataset(schema, "candidato")
@@ -677,108 +1294,140 @@ class Pipeline:
             self.lock(schema, "consolidar_publicar"),
         ):
             info = self.read_json(schema, "_pu_consolidada")
-            if not info.get("referencia") or set(info["servicos"]) != set(SERVICES):
-                raise ValueError(
-                    "Publicação exige quatro dimensões e referência programada validada."
-                )
-            self.verify(self.relation(schema, "planilha_unificada"), info["tabela"])
+            if info.get("contrato") != UNIFIED_CONTRACT or not info.get(
+                "publicacao_permitida"
+            ):
+                raise ValueError("Candidato exige nova consolidação no contrato v9.")
+            state = self.state()
+            if state.get("supertabela", {}).get("geracao") != info["geracao"]:
+                raise ValueError("Geração mudou; reconsolide antes de publicar.")
+            self.assert_paused()
+            _, frozen = self.base(info["lote"])
+            self.check_derived_batch(frozen)
+            candidate = self.relation(schema, "planilha_unificada")
+            self.verify(candidate, info["tabela"])
             for relation, expected in info["tabelas"].items():
                 self.verify(relation, expected)
-            early_state = self.state()
-            early_root = early_state.get(
-                "supertabela", {"geracao": 0, "execucao": None, "estado": "pronto"}
+            baseline = info["antes_migracao"]
+            self.verify(baseline["tabela"], baseline["fingerprint"])
+            for relation, expected in baseline["publicadas"].items():
+                self.verify(relation, expected)
+            self.validate_candidate_schema(
+                candidate, baseline["fingerprint"].get("schema")
             )
-            if early_root["execucao"] == execution and early_root["estado"] == "pronto":
-                print("Publicação já concluída; nenhuma alteração.")
-                return
-            if early_root["geracao"] != info["geracao"]:
-                raise ValueError("Geração mudou; reconsolide antes de publicar.")
-            base_schema, base = self.base(info["lote"])
-            reference = self.relation(base_schema, "atendimentos_programada")
             self.query(
-                parity_sql(
-                    reference, self.relation(schema, "planilha_unificada"), quote
+                migration_parity_sql(
+                    baseline["tabela"],
+                    candidate,
+                    baseline["fingerprint"].get("schema"),
+                    simple_fields=True,
                 )
             )
-            Producer().assert_routed()  # Never leave an independent writer on the public destination.
-            self.initialize_control()
-            self.query(
-                f"ALTER TABLE {quote(self.control)} ADD COLUMN IF NOT EXISTS referencia_versao STRING;"
-            )
-            self.query(f"""MERGE {quote(self.control)} t USING(SELECT 'programada' servico) s ON t.servico=s.servico
-              WHEN NOT MATCHED THEN INSERT(servico,geracao,estado) VALUES('programada',0,'pronto');""")
-            state = self.state()
-            root = state["supertabela"]
-            if root["execucao"] == execution and root["estado"] == "pronto":
-                print("Publicação já concluída; nenhuma alteração.")
-                return
-            if root["geracao"] != info["geracao"]:
-                raise ValueError("Geração mudou; reconsolide antes de publicar.")
-            dimensions = [
-                (f"{self.project}.{self.core}.{name}", self.relation(schema, name))
-                for name in SERVICES.values()
-            ]
-            for published, candidate in dimensions + [
-                (self.destination, self.relation(schema, "planilha_unificada")),
-                (PUBLIC, reference),
-            ]:
+            self.query(parity_sql(PUBLIC, candidate, quote, direct_counts=True))
+            replacements = [(self.destination, candidate)]
+            suffix = datetime.now(timezone.utc).strftime("%Y%m%d_%H%M%S_%f")
+            backups = {}
+            for destination in [*(d for d, _ in replacements), self.control]:
+                backup = self.relation(
+                    schema,
+                    "_pu_backup_" + destination.rsplit(".", 1)[-1] + "_" + suffix,
+                )
+                self.copy(destination, backup)
+                backups[destination] = backup
+            # All backups and the recovery manifest exist before the first live replacement.
+            recovery = {
+                "contrato": UNIFIED_CONTRACT,
+                "execucao": execution,
+                "backups": backups,
+                "estado": "preparado",
+            }
+            self.write_json(schema, "_pu_migracao", recovery, replace=True)
+            for relation, expected in baseline["publicadas"].items():
+                self.verify(relation, expected)
+            self.assert_paused()
+            changed = []
+            try:
+                for destination, source in replacements:
+                    changed.append(destination)
+                    self.copy(source, destination)
+                    self.query(table_equality_sql(source, destination))
                 self.query(
-                    f"CREATE TABLE IF NOT EXISTS {quote(published)} AS SELECT * FROM {quote(candidate)} WHERE FALSE"
+                    migration_parity_sql(
+                        baseline["tabela"],
+                        self.destination,
+                        baseline["fingerprint"].get("schema"),
+                        simple_fields=True,
+                    )
                 )
-            # Retain a paired pre-publication backup for rollback/audit.
-            for name, source in [
-                ("_pu_backup_unificada", self.destination),
-                ("_pu_backup_programada", PUBLIC),
-            ]:
-                backup = self.relation(schema, name)
-                try:
-                    self.client.get_table(backup)
-                except NotFound:
-                    self.client.copy_table(source, backup).result()
-            updates = {**info["dimensoes"], "programada": info["cadastro"]}
-            self.query(
-                transaction_sql(
-                    self.control,
-                    self.destination,
-                    self.relation(schema, "planilha_unificada"),
-                    dimensions,
-                    info["geracao"],
-                    updates,
-                    info["cadastro"],
-                    reference=reference,
-                    programada=PUBLIC,
-                    reference_version=info["referencia"]["versao"],
+                self.query(
+                    parity_sql(PUBLIC, self.destination, quote, direct_counts=True)
                 )
-            )
+                for relation, expected in baseline["publicadas"].items():
+                    if relation not in {self.destination, self.control}:
+                        self.verify(relation, expected)
+                self.assert_paused()
+                changed.append(self.control)
+                self.query(
+                    f"""BEGIN TRANSACTION;
+                    ASSERT (SELECT COUNT(*)=1 FROM {quote(self.control)} WHERE servico='supertabela'
+                      AND geracao={int(info["geracao"])} AND estado='pronto') AS 'Geração mudou';
+                    UPDATE {quote(self.control)} SET lote=@lote,execucao=@execucao,
+                      capturado_em=TIMESTAMP(@capturado),publicado_em=CURRENT_TIMESTAMP(),
+                      geracao={int(info["geracao"]) + 1},estado='pronto',contrato=@contrato,
+                      referencia_versao=@referencia
+                    WHERE servico='supertabela';
+                    UPDATE {quote(self.control)} SET escopos_utilizados=PARSE_JSON(@escopos)
+                    WHERE servico='supertabela';
+                    COMMIT TRANSACTION;""",
+                    lote=info["lote"],
+                    execucao=execution,
+                    capturado=info["cadastro"]["capturado_em"],
+                    contrato=UNIFIED_CONTRACT,
+                    referencia=info["referencia"]["versao"],
+                    escopos=json.dumps(info["escopos"]),
+                )
+                self.write_json(
+                    schema,
+                    "_pu_migracao",
+                    {**recovery, "estado": "publicado"},
+                    replace=True,
+                )
+            except Exception as error:
+                failures = []
+                for destination in reversed(changed):
+                    try:
+                        self.copy(backups[destination], destination)
+                        self.query(
+                            table_equality_sql(backups[destination], destination)
+                        )
+                    except Exception as restore_error:
+                        failures.append(f"{destination}: {restore_error}")
+                self.write_json(
+                    schema,
+                    "_pu_migracao",
+                    {
+                        **recovery,
+                        "estado": "restauracao_pendente" if failures else "restaurado",
+                        "erro": str(error),
+                        "falhas_restauracao": failures,
+                    },
+                    replace=True,
+                )
+                if failures:
+                    raise RuntimeError(
+                        "Falha na restauração; usar backups do manifesto: "
+                        + str(failures)
+                    ) from error
+                raise
         print(
-            f"Publicação pareada concluída: {self.destination} e {PUBLIC}", flush=True
+            f"Publicado: {self.destination}; backups em {schema}._pu_migracao; programada permanece pausada.",
+            flush=True,
         )
 
     def cycle(self):
-        Producer().assert_routed()
-        self.dataset("pu_coordenacao", "coordenacao", create=True)
-        with self.lock("pu_coordenacao", "ciclo"):
-            fingerprint = self.fingerprint(CANDIDATE)
-            ref_version = version(fingerprint)
-            if (
-                self.state().get("programada", {}).get("referencia_versao")
-                == ref_version
-            ):
-                print("Referência já publicada; nenhuma alteração.", flush=True)
-                return
-            batch = "b" + ref_version[:24]
-            execution = "e" + ref_version[:24]
-            self.prepare(batch)
-            # Four isolated dbt subprocesses; never share dbtRunner across threads.
-            with ThreadPoolExecutor(max_workers=4) as pool:
-                futures = [
-                    pool.submit(self.build_dimension, batch, execution, s)
-                    for s in SERVICES
-                ]
-                for future in futures:
-                    future.result()
-            self.consolidate(batch, execution, list(SERVICES))
-            self.publish(execution)
+        raise ValueError(
+            "Ciclo automático desabilitado. Use preparar, dimensao e consolidar; publicar é uma operação manual explícita."
+        )
 
     def clean(self, schemas):
         state = self.state()
@@ -802,8 +1451,27 @@ class Pipeline:
                 try:
                     pending = self.read_json(dataset.dataset_id, "_pu_consolidada")
                     referenced.add("pu_base_" + pending["cadastro"]["lote"])
+                    for item in {
+                        **pending.get("dimensoes", {}),
+                        **pending.get("escopos", {}),
+                    }.values():
+                        referenced.add("pu_base_" + item["lote"])
+                        referenced.add("pu_cand_" + item["execucao"])
                 except NotFound:
                     pass
+        frontier = [s for s in referenced if s.startswith("pu_base_")]
+        visited = set()
+        while frontier:
+            base_schema = frontier.pop()
+            if base_schema in visited:
+                continue
+            visited.add(base_schema)
+            metadata = self.read_json(base_schema, "_pu_lote")
+            parent = metadata.get("lote_pai")
+            if parent:
+                parent_schema = "pu_base_" + identifier(parent)
+                referenced.add(parent_schema)
+                frontier.append(parent_schema)
         for schema in schemas:
             kind = (
                 "base_aux"
@@ -813,6 +1481,16 @@ class Pipeline:
             path = self.dataset(schema, kind)
             if schema in referenced:
                 raise ValueError(f"Dataset ainda referenciado: {schema}")
+            if kind == "candidato":
+                try:
+                    recovery = self.read_json(schema, "_pu_migracao")
+                except NotFound:
+                    pass
+                else:
+                    if recovery.get("estado") in {"preparado", "restauracao_pendente"}:
+                        raise ValueError(
+                            f"Dataset contém backups de migração pendente: {schema}"
+                        )
             if any(
                 t.table_id.startswith("_pu_lock_")
                 for t in self.client.list_tables(path)
@@ -831,6 +1509,7 @@ def main():
     commands = parser.add_subparsers(dest="command", required=True)
     prepare = commands.add_parser("preparar")
     prepare.add_argument("--lote", required=True, type=identifier)
+    prepare.add_argument("--derivar-de", type=identifier)
     for name in ["dimensao", "consolidar"]:
         command = commands.add_parser(name)
         command.add_argument("--lote", required=True, type=identifier)
@@ -858,7 +1537,7 @@ def main():
     elif args.command == "ciclo":
         pipeline.cycle()
     elif args.command == "preparar":
-        pipeline.prepare(args.lote)
+        pipeline.prepare(args.lote, args.derivar_de)
     elif args.command == "dimensao":
         pipeline.build_dimension(args.lote, args.execucao, args.servico)
     elif args.command == "consolidar":
