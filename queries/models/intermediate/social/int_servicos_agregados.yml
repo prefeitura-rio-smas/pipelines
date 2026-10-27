@@ -1,14 +1,43 @@
 version: 2
+
 models:
   - name: int_servicos_agregados
-    description: Preserva o ARRAY legado de serviços; acrescenta nomes ativos e histórico com unidade, login e datas.
+    description: |
+      Serviços socioassistenciais das famílias, uma linha por `id_familia`.
+      Ephemeral — materializado apenas como CTE em `dim_familias` e
+      `mart_familias_indicadores`.
+
+      Duas leituras convivem no mesmo registro:
+      - **vigente** (`servicos_ativos`): serviços cujo vínculo não tem data de
+        cancelamento (`data_cancelamento IS NULL`) — é o atributo da dimensão;
+      - **histórico** (`servicos_historico`): todos os vínculos, inclusive
+        cancelados, no grão do vínculo (serviço + unidade + profissional + datas).
+
+      O nome do serviço vem do seed `acolherio_dominios` (`dominio = 'servassist'`).
+      Código sem rótulo no seed cai em `Serviço não mapeado (código <N>)`.
+
+      **Deduplicação:** linhas exatamente duplicadas da fonte são descartadas
+      (`select distinct`). Eram 17 linhas em 9 famílias (0,3% da fonte) e inflavam
+      `array_length(servicos)`.
     columns:
       - name: id_familia
-        description: ID original da família.
+        description: "ID original da família (`gh_famil_servassist.seqfamil`)."
+        tests: [unique, not_null]
       - name: servicos
-        description: Array legado preservado para dimensões e consumidores existentes.
-      - name: servicos_socioassistenciais
-        description: Nomes dos serviços sem cancelamento no estado disponível, separados por vírgula.
-      - name: servicos_socioassistenciais_historico
-        description: ARRAY com serviço, nome, unidade, login de cadastro e datas de cadastro/cancelamento disponíveis
-          na fonte.
+        description: |
+          ARRAY legado preservado para `dim_familias` e consumidores existentes:
+          STRUCT(id_servico_assistencial, data_cadastro, id_profissional), sem nome
+          do serviço e sem data de cancelamento. Ordenado por
+          (id_servico_assistencial, data_cadastro, id_profissional).
+      - name: servicos_ativos
+        description: |
+          STRING com os nomes distintos dos serviços **vigentes**, em ordem
+          alfabética e separados por `, `. NULL quando a família não tem vínculo
+          ativo.
+      - name: servicos_historico
+        description: |
+          ARRAY com todos os vínculos da família: STRUCT(id_servico_assistencial,
+          nome_servico_socioassistencial, id_unidade, id_profissional,
+          data_cadastro, data_cancelamento). `data_cancelamento IS NULL` identifica
+          o vínculo vigente. Ordenado por (serviço, cadastro, cancelamento,
+          unidade, profissional).
