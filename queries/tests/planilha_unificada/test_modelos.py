@@ -8,6 +8,7 @@ Os testes não leem tabelas externas nem materializam dados. Requerem credenciai
 BigQuery e usam BIGQUERY_TEST_PROJECT (padrão: rj-smas-dev) para executar consultas.
 """
 
+import ast
 import json
 import os
 from pathlib import Path
@@ -17,6 +18,68 @@ import unittest
 from jinja2 import Environment, StrictUndefined
 
 QUERIES = Path(__file__).resolve().parents[2]
+
+
+def bi_reference_schema():
+    return dict(
+        id_usuario="INT64",
+        seq_atendimento="INT64",
+        modulo="STRING",
+        cas="STRING",
+        email_unidade="STRING",
+        email_cas="STRING",
+        email="STRING",
+        cadastrante="STRING",
+        data_cadastro_atendimento="DATE",
+        profissional_id="INT64",
+        id_familia="INT64",
+        id_atendimento="STRING",
+        endereco="STRING",
+        endereco_numero="STRING",
+        endereco_complemento="STRING",
+        referencia_ou_comunidade="STRING",
+    )
+
+
+def empty_relation(schema):
+    return (
+        "select "
+        + ",".join(f"cast(null as {kind}) {name}" for name, kind in schema.items())
+        + " from unnest([1]) where false"
+    )
+
+
+def cpop_fields():
+    source = (
+        QUERIES / "macros/dominios/planilha_unificada/escopo_centro_pop.sql"
+    ).read_text()
+    body = re.search(
+        r"{% macro pu_cpop_campos\(\) %}.*?return\((.*?)\) }}", source, re.S
+    ).group(1)
+    return ast.literal_eval(body)
+
+
+def empty_cpop_scope():
+    fields = dict(
+        id_registro="STRING",
+        id_usuario="INT64",
+        id_unidade="INT64",
+        origem="STRING",
+        tipo_registro="STRING",
+        abrangencia="STRING",
+        id_evolucao_modulo="STRING",
+        titulo_formulario="STRING",
+        data_registro="DATETIME",
+        data_resposta="DATETIME",
+        **cpop_fields(),
+        conflitos="INT64",
+        nome_unidade="STRING",
+    )
+    return (
+        "select "
+        + ",".join(f"cast(null as {kind}) {name}" for name, kind in fields.items())
+        + " from unnest([1]) where false"
+    )
 
 
 def sql_literal(value):
@@ -48,6 +111,16 @@ def fixture_rows(schema, rows):
         )
         for row in rows
     )
+
+
+def cpop_profile_subjects():
+    source = (
+        QUERIES / "macros/dominios/planilha_unificada/escopo_centro_pop.sql"
+    ).read_text()
+    body = re.search(
+        r"{% macro pu_cpop_perfil_assuntos\(\) %}.*?return\((.*?)\) }}", source, re.S
+    ).group(1)
+    return ast.literal_eval(body)
 
 
 @unittest.skipUnless(
@@ -99,7 +172,42 @@ class PlanilhaUnificadaTests(unittest.TestCase):
             "outros": "dim_outros_equipamentos",
         }
 
+        fixtures.setdefault(
+            "atendimentos_programada", empty_relation(bi_reference_schema())
+        )
+        fixtures.setdefault(
+            "raw_usuarios_enderecos",
+            empty_relation(
+                dict(
+                    id_paciente="INT64",
+                    logradouro="STRING",
+                    numero="STRING",
+                    complemento="STRING",
+                    referencia_ou_comunidade="STRING",
+                )
+            ),
+        )
+
         def reference(name):
+            if name in {"int_pu_enderecos_bi", "int_pu_complementos_bi"}:
+                macro = (
+                    bi_macros.pu_bi_enderecos_sql
+                    if name == "int_pu_enderecos_bi"
+                    else bi_macros.pu_bi_complementos_sql
+                )
+                return "(" + (fixtures[name] if name in fixtures else macro()) + ")"
+            if name == "dim_centro_pop":
+                return (
+                    "("
+                    + (
+                        fixtures[name]
+                        if name in fixtures
+                        else scope_macros.pu_cpop_perfil_sql()
+                    )
+                    + ")"
+                )
+            if name == "int_pu_registros_centro_pop":
+                return "(" + fixtures.get(name, empty_cpop_scope()) + ")"
             if name in services.values():
                 service = next(k for k, v in services.items() if v == name)
                 return "(" + dimension_macros.pu_dimensao_sql(service) + ")"
@@ -108,6 +216,8 @@ class PlanilhaUnificadaTests(unittest.TestCase):
         env.globals.update(
             ref=reference,
             pu_ref=reference,
+            source=lambda domain, name: reference(name),
+            pu_programada=lambda: reference("atendimentos_programada"),
             execute=False,
             config=lambda **kwargs: "",
             var=lambda name, default=None: default,
@@ -179,6 +289,40 @@ class PlanilhaUnificadaTests(unittest.TestCase):
             pu_dimensoes_sql=dimension_macros.pu_dimensoes_sql,
             pu_dimensao_sql=dimension_macros.pu_dimensao_sql,
             pu_contagens_servico=dimension_macros.pu_contagens_servico,
+            pu_contagens_diretas=dimension_macros.pu_contagens_diretas,
+        )
+        scope_sql = (
+            QUERIES / "macros/dominios/planilha_unificada/escopo_centro_pop.sql"
+        ).read_text()
+        scope_sql = re.sub(
+            r"{% macro pu_cpop_(campos|perfil_assuntos)\(\) %}.*?{% endmacro %}",
+            "",
+            scope_sql,
+            flags=re.S,
+        )
+        env.globals["pu_cpop_campos"] = cpop_fields
+        env.globals["pu_cpop_perfil_assuntos"] = cpop_profile_subjects
+        env.globals["interpretar_resposta_saude"] = env.from_string(
+            (
+                QUERIES / "macros/dominios/centro_pop/interpretar_resposta_saude.sql"
+            ).read_text()
+        ).module.interpretar_resposta_saude
+        scope_macros = env.from_string(scope_sql).module
+        env.globals.update(
+            {
+                name: getattr(scope_macros, name)
+                for name in dir(scope_macros)
+                if name.startswith("pu_cpop_")
+            }
+        )
+        bi_macros = env.from_string(
+            (QUERIES / "macros/dominios/planilha_unificada/complementos_bi.sql")
+            .read_text()
+            .split("{% test")[0]
+        ).module
+        env.globals.update(
+            pu_bi_enderecos_sql=bi_macros.pu_bi_enderecos_sql,
+            pu_bi_complementos_sql=bi_macros.pu_bi_complementos_sql,
         )
         sql = env.from_string((QUERIES / relative_path).read_text()).render()
         # SQL vem apenas dos modelos versionados e fixtures sintéticas deste teste.
@@ -191,7 +335,9 @@ class PlanilhaUnificadaTests(unittest.TestCase):
                 for row in self.client.query(query).result(timeout=60)
             ),
             key=lambda row: (
-                row["usuario"]["id_usuario"] if "usuario" in row else row["id_usuario"]
+                row["usuario"]["id_usuario"]
+                if "usuario" in row
+                else row.get("id_usuario", row.get("id_unidade"))
             ),
         )
 
@@ -456,6 +602,98 @@ class PlanilhaUnificadaTests(unittest.TestCase):
         self.assertTrue(responsavel["flag_responsavel_atual"])
         self.assertEqual(responsavel["vinculos"], [])
 
+    def test_membros_atuais_por_familia_sem_duplicar_responsavel_ou_homonimos(self):
+        def membro(usuario, familia, registro, entrada="2026-01-01", **outros):
+            return dict(
+                id_paciente=usuario,
+                id_familia=familia,
+                id_membro=registro,
+                data_entrada=entrada,
+                **outros,
+            )
+
+        fixtures = {
+            "raw_membros_familia": fixture_rows(
+                dict(
+                    id_paciente="int64",
+                    id_familia="int64",
+                    id_membro="int64",
+                    id_familia_nova="int64",
+                    id_motivo_saida="int64",
+                    data_entrada="date",
+                    data_saida="date",
+                    parentesco_responsavel="string",
+                ),
+                [
+                    membro(1, 10, 1, parentesco_responsavel="Filho"),
+                    membro(2, 10, 2, parentesco_responsavel="Cônjuge"),
+                    membro(3, 10, 30, "2025-01-01", parentesco_responsavel="Antigo"),
+                    membro(3, 10, 29, parentesco_responsavel="Outro"),
+                    membro(3, 10, 31, parentesco_responsavel="Irmã"),
+                    membro(3, 10, 31, parentesco_responsavel="Filha"),
+                    membro(3, 10, 31, parentesco_responsavel="Filha"),
+                    membro(4, 10, 4, parentesco_responsavel="Filho"),
+                    membro(99, 10, 99),
+                    membro(
+                        6,
+                        10,
+                        6,
+                        data_saida="2026-02-01",
+                        parentesco_responsavel="Irmão",
+                    ),
+                    membro(1, 20, 7, parentesco_responsavel="Neto"),
+                    membro(7, 30, 8, data_saida="2026-02-01"),
+                ],
+            ),
+            "raw_familias": fixture_rows(
+                dict(
+                    id_familia="int64",
+                    id_usuario_responsavel="int64",
+                    flag_ativo="string",
+                    data_ultima_modificacao="datetime",
+                ),
+                [
+                    dict(id_familia=10, id_usuario_responsavel=2),
+                    dict(id_familia=20, id_usuario_responsavel=4),
+                    dict(id_familia=30),
+                ],
+            ),
+            "raw_familias_servicos_assistenciais": """select cast(null as int64) id_familia,
+                cast(null as int64) id_servico_assistencial,cast(null as int64) id_unidade,
+                cast(null as int64) id_login_cadastro,cast(null as datetime) data_cadastro,
+                cast(null as datetime) data_cancelamento from unnest([1]) where false""",
+            "dim_usuarios": "select 1 id_usuario, 'Pessoa A' nome union all select 2, 'Pessoa B' union all select 3, 'Alex' union all select 4, 'Alex'",
+        }
+        resultado = self.consultar_modelo(
+            "models/intermediate/planilha_unificada/familias/int_pu_familias.sql",
+            fixtures,
+        )
+        usuarios = {r["id_usuario"]: r["familias"] for r in resultado}
+        self.assertEqual(set(usuarios), {1, 2, 3, 4, 6, 7, 99})
+        familia10 = usuarios[1][0]
+        esperados = [
+            dict(id_usuario=99, nome=None, parentesco_responsavel=None),
+            dict(id_usuario=3, nome="Alex", parentesco_responsavel="Filha"),
+            dict(id_usuario=4, nome="Alex", parentesco_responsavel="Filho"),
+            dict(id_usuario=1, nome="Pessoa A", parentesco_responsavel="Filho"),
+            dict(id_usuario=2, nome="Pessoa B", parentesco_responsavel="Responsável"),
+        ]
+        self.assertEqual(familia10["membros"], esperados)
+        for familias in usuarios.values():
+            for familia in familias:
+                if familia["id_familia"] == 10:
+                    self.assertEqual(familia["membros"], esperados)
+        # Responsável sem vínculo próprio, outra composição e família histórica vazia.
+        self.assertEqual(
+            usuarios[1][1]["membros"],
+            [
+                dict(id_usuario=4, nome="Alex", parentesco_responsavel="Responsável"),
+                dict(id_usuario=1, nome="Pessoa A", parentesco_responsavel="Neto"),
+            ],
+        )
+        self.assertEqual(usuarios[7][0]["membros"], [])
+        self.assertEqual(usuarios[6][0]["vinculos"][0]["data_saida"], "2026-02-01")
+
     def test_formularios_preservam_historico_nao_cancelado_campos_observacoes(self):
         schema = {
             "id_usuario": "int64",
@@ -683,7 +921,7 @@ class PlanilhaUnificadaTests(unittest.TestCase):
             "int_pu_evolucoes": "select 1 id_usuario, 'usuario:7' id_evolucao_modulo",
             "int_pu_cadastro": "select 1 id_usuario, struct('RJ' as uf_nascimento,cast(null as string) as serie_escolar,cast(null as date) as data_cadunico_informada) cadastro_complementar",
             "int_pu_documentos_cadunico": "select 1 id_usuario, struct('123' as numero_rg,'111' as cpf_normalizado,20 as id_familia_cadunico,cast(null as string) as nis,cast(null as string) as numero_certidao_nascimento,cast(null as bool) as possui_rg,cast(null as bool) as possui_certidao_nascimento,cast(null as date) as data_atualizacao,cast(null as date) as data_limite_cadastro_atual,false as flag_familia_ambigua,false as flag_nis_ambiguo,false as flag_rg_ambiguo,false as flag_certidao_ambigua) documentos_cadunico",
-            "int_pu_familias": """select 1 id_usuario, [struct(10 as id_familia,2 as id_usuario_responsavel,'Responsável' as nome_responsavel,true as flag_responsavel_atual,cast(null as string) as flag_ativo,cast(null as date) as data_ultima_modificacao,[struct(7 as id_membro,20 as id_familia_nova,1 as id_motivo_saida,'Mudança' as motivo_saida,cast(null as date) as data_entrada,cast(null as date) as data_saida,cast(null as string) as parentesco_responsavel)] as vinculos,[struct(1 as id_servico_assistencial,'PAIF' as nome_servico,10 as id_unidade,'Unidade A' as nome_unidade,100 as id_login_cadastro,cast(null as datetime) as data_cadastro,cast(null as datetime) as data_cancelamento)] as servicos)] familias""",
+            "int_pu_familias": """select 1 id_usuario, [struct(10 as id_familia,2 as id_usuario_responsavel,'Responsável' as nome_responsavel,true as flag_responsavel_atual,cast(null as string) as flag_ativo,cast(null as date) as data_ultima_modificacao,array<struct<id_usuario int64,nome string,parentesco_responsavel string>>[] as membros,[struct(7 as id_membro,20 as id_familia_nova,1 as id_motivo_saida,'Mudança' as motivo_saida,cast(null as date) as data_entrada,cast(null as date) as data_saida,cast(null as string) as parentesco_responsavel)] as vinculos,[struct(1 as id_servico_assistencial,'PAIF' as nome_servico,10 as id_unidade,'Unidade A' as nome_unidade,100 as id_login_cadastro,cast(null as datetime) as data_cadastro,cast(null as datetime) as data_cancelamento)] as servicos)] familias""",
             "int_pu_atendimentos": """select 1 id_usuario, [struct('7u' as id_atendimento_modulo,7 as id_atendimento,1 as id_tipo_atendimento,10 as id_unidade,'Unidade A' as nome_unidade,'Atendimento' as tipo_atendimento_descricao,'usuario' as origem_modulo,cast(null as date) as data_atendimento,cast(null as string) as hora_atendimento,cast(null as string) as flag_cancelado,[struct(100 as id_profissional,'Alex' as nome_profissional,['2516'] as codigos_cbo,['Assistente Social'] as descricoes_cbo,'2516' as cbo_principal_codigo,'Assistente Social' as cbo_principal_descricao),struct(101,'Alex',['2516'],['Assistente Social'],'2516','Assistente Social')] as profissionais)] atendimentos""",
             "int_pu_formularios": """select 1 id_usuario,[struct('usuario:7' as id_evolucao_modulo,7 as id_evolucao,100 as id_profissional,29 as codigo_abrangencia,20 as id_atividade,10 as id_unidade,10 as id_familia,'Alex' as nome_profissional,'Oficina' as nome_atividade,'usuario' as origem_modulo,cast(null as datetime) as data_evolucao,cast(null as datetime) as data_cancelamento,cast(null as string) as tipo_evolucao,cast(null as string) as titulo_formulario,cast(null as string) as observacoes,array<struct<label string,valor string>>[] as campos)] formularios""",
         }
@@ -702,12 +940,45 @@ class PlanilhaUnificadaTests(unittest.TestCase):
             fixtures if fixtures is not None else self.fixtures_saida_enxuta(),
         )
 
-    def test_cinco_blocos_preservam_usuario_sem_eventos_e_ids_permitidos(self):
+    def test_saida_membros_texto_vazio_sem_alterar_outros_blocos(self):
+        baseline = self.consultar_saida()
+        fixtures = self.fixtures_saida_enxuta()
+        fixtures["int_pu_familias"] = fixtures["int_pu_familias"].replace(
+            "array<struct<id_usuario int64,nome string,parentesco_responsavel string>>[] as membros",
+            "[struct(99 as id_usuario,cast(null as string) as nome,cast(null as string) as parentesco_responsavel),struct(2,'Pessoa B','Responsável')] as membros",
+        )
+        resultado = self.consultar_saida(fixtures)
+        self.assertEqual(
+            resultado[0]["familias"][0]["membros"],
+            [
+                dict(id_usuario="99", nome="", parentesco_responsavel=""),
+                dict(
+                    id_usuario="2",
+                    nome="Pessoa B",
+                    parentesco_responsavel="Responsável",
+                ),
+            ],
+        )
+        self.assertEqual(baseline[0]["familias"][0]["membros"], [])
+        for linhas in [baseline, resultado]:
+            for linha in linhas:
+                for familia in linha["familias"]:
+                    del familia["membros"]
+        self.assertEqual(resultado, baseline)
+
+    def test_seis_blocos_preservam_usuario_sem_eventos_e_ids_permitidos(self):
         resultado = self.consultar_saida()
         self.assertEqual(len(resultado), 2)
         self.assertEqual(
             set(resultado[0]),
-            {"usuario", "familias", "projetos_sociais", "atendimentos", "evolucoes"},
+            {
+                "usuario",
+                "familias",
+                "projetos_sociais",
+                "atendimentos",
+                "evolucoes",
+                "escopos",
+            },
         )
         self.assertEqual(resultado[1]["usuario"]["nome"], "Pessoa B")
         for bloco in ["atendimentos", "evolucoes"]:
@@ -716,17 +987,40 @@ class PlanilhaUnificadaTests(unittest.TestCase):
                 resultado[1][bloco],
                 {
                     "quantidade": 0,
-                    "quantidade_por_servico": dict.fromkeys(
-                        ["cras", "creas", "centro_pop", "outros"], 0
+                    **dict.fromkeys(
+                        [
+                            "quantidade_" + s
+                            for s in ["cras", "creas", "centro_pop", "outros"]
+                        ],
+                        0,
                     ),
                     "registros": [],
                 },
             )
         self.assertEqual(resultado[1]["familias"], [])
+        self.assertEqual(
+            resultado[0]["atendimentos"]["registros"][0]["tipo_servico"], "cras"
+        )
+        self.assertEqual(
+            resultado[0]["evolucoes"]["registros"][0]["tipo_servico"], "cras"
+        )
         self.assertEqual(resultado[1]["projetos_sociais"], [])
         self.assertTrue(
             all(
-                v == "" for v in resultado[1]["usuario"]["documentos_cadunico"].values()
+                resultado[1]["usuario"][key] == ""
+                for key in [
+                    "nis",
+                    "numero_rg",
+                    "possui_rg",
+                    "possui_certidao_nascimento",
+                    "numero_certidao_nascimento",
+                    "data_atualizacao",
+                    "data_limite_cadastro_atual",
+                    "flag_familia_ambigua",
+                    "flag_nis_ambiguo",
+                    "flag_rg_ambiguo",
+                    "flag_certidao_ambigua",
+                ]
             )
         )
         self.assertEqual(
@@ -746,11 +1040,23 @@ class PlanilhaUnificadaTests(unittest.TestCase):
             "id_evolucao_modulo",
         }
 
-        def conferir(valor):
+        adicionais = {
+            "atendimentos.registros.profissionais." + name
+            for name in [
+                "id_profissional",
+                "id_familia_referencia",
+                "id_atendimento_legado",
+            ]
+        }
+
+        def conferir(valor, path=""):
             if isinstance(valor, dict):
                 for nome, item in valor.items():
+                    child = path + nome
                     if nome.startswith("id_"):
-                        self.assertIn(nome, permitidos)
+                        self.assertTrue(
+                            nome in permitidos or child in adicionais, child
+                        )
                     self.assertNotIn(
                         nome,
                         {
@@ -760,18 +1066,22 @@ class PlanilhaUnificadaTests(unittest.TestCase):
                             "codigo_abrangencia",
                         },
                     )
-                    if nome == "quantidade" or nome in {
-                        "cras",
-                        "creas",
-                        "centro_pop",
-                        "outros",
-                    }:
+                    if nome.startswith("quantidade") or (
+                        not isinstance(item, dict)
+                        and nome
+                        in {
+                            "cras",
+                            "creas",
+                            "centro_pop",
+                            "outros",
+                        }
+                    ):
                         self.assertIsInstance(item, int)
                     else:
-                        conferir(item)
+                        conferir(item, child + ".")
             elif isinstance(valor, list):
                 for item in valor:
-                    conferir(item)
+                    conferir(item, path)
             else:
                 self.assertIsInstance(valor, str)
 
@@ -797,16 +1107,12 @@ class PlanilhaUnificadaTests(unittest.TestCase):
         self.assertEqual(u["nome_social"], "null")
         self.assertEqual(u["cpf"], "000123")
         self.assertEqual(u["nome_apoiador"], " Nome com espaços ")
-        self.assertEqual(u["cadastro_complementar"]["serie_escolar"], "")
-        self.assertEqual(u["documentos_cadunico"]["nis"], "")
-        self.assertEqual(u["documentos_cadunico"]["flag_nis_ambiguo"], "false")
+        self.assertEqual(u["serie_escolar"], "")
+        self.assertEqual(u["nis"], "")
+        self.assertEqual(u["flag_nis_ambiguo"], "false")
         self.assertEqual(
             linha["evolucoes"]["registros"][0]["formularios"][0]["campos"],
-            [
-                {"label": "", "valor": ""},
-                {"label": "Resposta", "valor": "Não"},
-                {"label": "Número", "valor": "0"},
-            ],
+            [": ", "Resposta: Não", "Número: 0"],
         )
 
     def test_representacao_de_datas_numeros_e_booleanos_no_usuario(self):
@@ -827,7 +1133,7 @@ class PlanilhaUnificadaTests(unittest.TestCase):
         self.assertEqual(u["data_nascimento"], "2000-01-02")
         self.assertEqual(u["pontuacao"], "42")
         self.assertEqual(u["renda_ativa"], "123.45")
-        self.assertEqual(u["documentos_cadunico"]["flag_nis_ambiguo"], "false")
+        self.assertEqual(u["flag_nis_ambiguo"], "false")
 
     def test_normalizacao_de_horas_na_saida_final(self):
         casos = [
@@ -1001,12 +1307,13 @@ class PlanilhaUnificadaTests(unittest.TestCase):
         self.assertEqual(professional["descricoes_cbo"], [])
         self.assertEqual(professional["id_profissional"], 100)
 
-    def test_dimensoes_separam_servicos_e_preservam_usuario_so_com_evolucao(self):
+    def test_dimensoes_legadas_separam_servicos_e_preservam_usuario_so_com_evolucao(
+        self,
+    ):
         fixtures = self.fixtures_multiplos_servicos()
         for service, model in [
             ("cras", "dim_cras"),
             ("creas", "dim_creas"),
-            ("centro_pop", "dim_centro_pop"),
             ("outros", "dim_outros_equipamentos"),
         ]:
             with self.subTest(service=service):
@@ -1019,12 +1326,7 @@ class PlanilhaUnificadaTests(unittest.TestCase):
                 self.assertEqual(len(rows), 2 if service == "creas" else 1)
                 self.assertEqual(len(rows[0]["atendimentos"]), 1)
                 self.assertEqual(rows[0]["atendimentos"][0]["tipo_servico"], service)
-                if service == "centro_pop":
-                    self.assertEqual(
-                        rows[0]["evolucoes"][0]["formularios"][0]["campos"],
-                        [{"label": "Demanda", "valor": "Não"}],
-                    )
-                elif service == "creas":
+                if service == "creas":
                     self.assertEqual(rows[1]["atendimentos"], [])
                     self.assertEqual(len(rows[1]["evolucoes"]), 1)
                 else:
@@ -1034,15 +1336,24 @@ class PlanilhaUnificadaTests(unittest.TestCase):
         rows = self.consultar_saida(self.fixtures_multiplos_servicos())
         self.assertEqual(rows[0]["atendimentos"]["quantidade"], 4)
         self.assertEqual(
-            rows[0]["atendimentos"]["quantidade_por_servico"],
+            {
+                service: rows[0]["atendimentos"]["quantidade_" + service]
+                for service in ["cras", "creas", "centro_pop", "outros"]
+            },
             {"cras": 1, "creas": 1, "centro_pop": 1, "outros": 1},
         )
         self.assertEqual(
-            rows[0]["evolucoes"]["quantidade_por_servico"],
+            {
+                service: rows[0]["evolucoes"]["quantidade_" + service]
+                for service in ["cras", "creas", "centro_pop", "outros"]
+            },
             {"cras": 0, "creas": 0, "centro_pop": 1, "outros": 0},
         )
         self.assertEqual(
-            rows[1]["evolucoes"]["quantidade_por_servico"],
+            {
+                service: rows[1]["evolucoes"]["quantidade_" + service]
+                for service in ["cras", "creas", "centro_pop", "outros"]
+            },
             {"cras": 0, "creas": 1, "centro_pop": 0, "outros": 0},
         )
         self.assertEqual(rows[1]["atendimentos"]["quantidade"], 0)

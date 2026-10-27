@@ -10,7 +10,7 @@ select u.id_usuario,
     struct(
         {% for campo in ['logradouro', 'numero', 'complemento', 'referencia_ou_comunidade'] %}
         if(f.id_usuario is not null, f.{{ campo }}, c.{{ campo }}) as {{ campo }}{% if not loop.last %},{% endif %}
-        {% endfor %}
+{% endfor %}
     ) as endereco,
     case when f.id_usuario is not null then 'referencia_bi'
         when c.id_paciente is not null then 'cadastro' else 'sem_registro' end as origem_endereco

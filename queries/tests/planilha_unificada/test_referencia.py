@@ -16,6 +16,7 @@ from queries.operations.referencia_programada import (
     PUBLIC,
     Producer,
     destination,
+    independent_parity_sql,
     parity_sql,
     redirect,
 )
@@ -93,7 +94,7 @@ class RoutingTests(unittest.TestCase):
             patch.object(
                 ativar_paridade, "get_current_settings", return_value=settings
             ),
-            patch.object(ativar_paridade, "Producer") as producer,
+            patch("queries.operations.referencia_programada.Producer") as producer,
         ):
             with self.assertRaisesRegex(ValueError, "PREFECT_API_URL"):
                 asyncio.run(ativar_paridade.activate())
@@ -284,3 +285,119 @@ class ReferenceTests(unittest.TestCase):
 
         with self.assertRaises(BadRequest):
             self.client.query(sql).result()
+
+    def independent_fixture(self, invalid=False):
+        manifest = {
+            s: {
+                "base_schema": "nova" if s == "cras" else "antiga",
+                "lote": "nova" if s == "cras" else "antiga",
+                "execucao": "teste",
+                "capturado_em": "2026-10-26T00:00:00+00:00",
+                "referencia_versao": "v_nova" if s == "cras" else "v_antiga",
+            }
+            for s in ["cras", "creas", "centro_pop", "outros"]
+        }
+        dimensions = {s: "dim_" + s for s in manifest}
+        setup = """
+          CREATE TEMP TABLE unidades AS SELECT 10 id_unidade,'CRAS' tipo_unidade UNION ALL SELECT 20,'CREAS';
+          CREATE TEMP TABLE usuarios AS SELECT 1 id_usuario UNION ALL SELECT 2;
+          CREATE TEMP TABLE origens AS SELECT CONCAT(CAST(seq AS STRING),'u') id_atendimento_modulo,
+            IF(seq IN (1,8),10,20) id_unidade FROM UNNEST([1,2,8,9]) seq;
+          CREATE TEMP TABLE familias AS SELECT * FROM origens WHERE FALSE;
+          CREATE TEMP TABLE nova_ref AS SELECT 1 ID_USUARIO,1 SEQ_ATENDIMENTO,'u' modulo UNION ALL SELECT 2,9,'u';
+          CREATE TEMP TABLE antiga_ref AS SELECT 1 ID_USUARIO,8 SEQ_ATENDIMENTO,'u' modulo UNION ALL SELECT 2,2,'u';
+          CREATE TEMP TABLE nova_evo AS SELECT 1 id_usuario,CAST(NULL AS INT64) id_paciente_familia,
+            10 id_unidade,7 id_evolucao,'usuario' origem_modulo,CAST(NULL AS DATETIME) data_cancelamento;
+          CREATE TEMP TABLE antiga_evo AS SELECT e.* REPLACE(2 AS id_usuario,20 AS id_unidade) FROM nova_evo e;
+          CREATE TEMP TABLE dim_cras AS SELECT 1 id_usuario,[STRUCT('1u' AS id_atendimento_modulo)] atendimentos,
+            [STRUCT('usuario:7' AS id_evolucao_modulo)] evolucoes;
+          CREATE TEMP TABLE dim_creas AS SELECT d.* REPLACE(2 AS id_usuario,[STRUCT('2u' AS id_atendimento_modulo)] AS atendimentos) FROM dim_cras d;
+          CREATE TEMP TABLE dim_centro_pop AS SELECT * FROM dim_cras WHERE FALSE;
+          CREATE TEMP TABLE dim_outros AS SELECT * FROM dim_cras WHERE FALSE;
+          CREATE TEMP TABLE candidato AS SELECT STRUCT(CAST(d.id_usuario AS STRING) AS id_usuario) usuario,
+            STRUCT(1 AS quantidade,STRUCT(IF(d.id_usuario=1,1,0) AS cras,IF(d.id_usuario=2,1,0) AS creas,0 AS centro_pop,0 AS outros) AS quantidade_por_servico,
+              [STRUCT(d.atendimentos[OFFSET(0)].id_atendimento_modulo AS id_atendimento_modulo,IF(d.id_usuario=1,'cras','creas') AS tipo_servico)] AS registros) atendimentos,
+            STRUCT(1 AS quantidade,STRUCT(IF(d.id_usuario=1,1,0) AS cras,IF(d.id_usuario=2,1,0) AS creas,0 AS centro_pop,0 AS outros) AS quantidade_por_servico,
+              [STRUCT('usuario:7' AS id_evolucao_modulo,IF(d.id_usuario=1,'cras','creas') AS tipo_servico)] AS registros) evolucoes
+            FROM (SELECT * FROM dim_cras UNION ALL SELECT * FROM dim_creas) d;
+          CREATE TEMP TABLE destino AS SELECT * FROM candidato;
+          UPDATE destino SET atendimentos.registros=[STRUCT('8u' AS id_atendimento_modulo,'cras' AS tipo_servico)] WHERE usuario.id_usuario='1';
+          CREATE TEMP TABLE cras_publicada AS SELECT d.* REPLACE([STRUCT('8u' AS id_atendimento_modulo)] AS atendimentos) FROM dim_cras d;
+          CREATE TEMP TABLE controle AS SELECT servico,'antiga' lote,'antiga' execucao,
+            CURRENT_TIMESTAMP() capturado_em,CURRENT_TIMESTAMP() publicado_em,5 geracao,'pronto' estado,
+            'v_antiga' referencia_versao,CAST(NULL AS JSON) dimensoes_utilizadas
+            FROM UNNEST(['supertabela','cras','creas','centro_pop','outros']) servico;
+        """
+        if invalid:
+            setup += "UPDATE candidato SET atendimentos.registros=[STRUCT('9u' AS id_atendimento_modulo,'creas' AS tipo_servico)] WHERE usuario.id_usuario='2';"
+        published = {**dimensions, "cras": "cras_publicada"}
+        checks = independent_parity_sql(
+            "p", manifest, published, "destino", "usuarios", quote
+        )
+        for schema, prefix in [("nova", "nova"), ("antiga", "antiga")]:
+            for name, fixture in {
+                "atendimentos_programada": prefix + "_ref",
+                "int_evolucoes": prefix + "_evo",
+                "raw_atendimentos_usuarios": "origens",
+                "raw_atendimentos_familias": "familias",
+                "dim_unidades": "unidades",
+                "dim_usuarios": "usuarios",
+            }.items():
+                checks = checks.replace(f"`p.{schema}.{name}`", fixture)
+        transaction = transaction_sql(
+            "controle",
+            "destino",
+            "candidato",
+            [("cras_publicada", "dim_cras")],
+            5,
+            {"cras": manifest["cras"]},
+            manifest["cras"],
+            checks=checks,
+            dimension_manifest=manifest,
+        )
+        return setup, transaction
+
+    def test_independent_versions_preserve_other_services_and_shared_evolution_ids(
+        self,
+    ):
+        setup, transaction = self.independent_fixture()
+        row = list(
+            self.client.query(
+                setup
+                + transaction
+                + """
+          SELECT (SELECT SUM(atendimentos.quantidade) FROM destino) atendimentos,
+            (SELECT SUM(evolucoes.quantidade) FROM destino) evolucoes,
+            (SELECT lote FROM controle WHERE servico='creas') lote_creas,
+            (SELECT referencia_versao FROM controle WHERE servico='supertabela') referencia_global,
+            (SELECT JSON_VALUE(dimensoes_utilizadas,'$.creas.lote') FROM controle WHERE servico='supertabela') manifesto_creas;
+        """
+            ).result()
+        )[0]
+        self.assertEqual(
+            (
+                row.atendimentos,
+                row.evolucoes,
+                row.lote_creas,
+                row.referencia_global,
+                row.manifesto_creas,
+            ),
+            (2, 2, "antiga", None, "antiga"),
+        )
+
+    def test_invalid_independent_candidate_rolls_back_selected_dimension_and_root(self):
+        setup, transaction = self.independent_fixture(invalid=True)
+        row = list(
+            self.client.query(
+                setup
+                + "BEGIN\n"
+                + transaction
+                + """
+          EXCEPTION WHEN ERROR THEN ROLLBACK TRANSACTION; END;
+          SELECT (SELECT atendimentos[OFFSET(0)].id_atendimento_modulo FROM cras_publicada) chave_dim,
+            (SELECT atendimentos.registros[OFFSET(0)].id_atendimento_modulo FROM destino WHERE usuario.id_usuario='1') chave_raiz,
+            (SELECT geracao FROM controle WHERE servico='supertabela') geracao;
+        """
+            ).result()
+        )[0]
+        self.assertEqual((row.chave_dim, row.chave_raiz, row.geracao), ("8u", "8u", 5))

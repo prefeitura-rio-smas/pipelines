@@ -1,0 +1,34 @@
+{
+  "execucao": "e20261027_cpop_usuario",
+  "lote": "l20261027_cpop_respostas_qa",
+  "metricas": {
+    "usuarios": 586840,
+    "atendimentos": 1021410,
+    "evolucoes": 654748,
+    "historico": 1128,
+    "participacoes": 0,
+    "perfis": 769,
+    "colunas_perfil": 36,
+    "perfis_com_pai": 6
+  },
+  "migracao": {
+    "backups": {
+      "rj-smas-dev.gerenciamento__dbt.dim_centro_pop": "rj-smas-dev.pu_cand_e20261027_cpop_usuario._pu_backup_dim_centro_pop_20261027_165430_676699",
+      "rj-smas-dev.gerenciamento__dbt.int_pu_registros_centro_pop": "rj-smas-dev.pu_cand_e20261027_cpop_usuario._pu_backup_int_pu_registros_centro_pop_20261027_165430_676699",
+      "rj-smas-dev.relatorio.controle_planilha_unificada_publicacoes": "rj-smas-dev.pu_cand_e20261027_cpop_usuario._pu_backup_controle_planilha_unificada_publicacoes_20261027_165430_676699",
+      "rj-smas-dev.relatorio.planilha_unificada": "rj-smas-dev.pu_cand_e20261027_cpop_usuario._pu_backup_planilha_unificada_20261027_165430_676699"
+    },
+    "contrato": "centro_pop_usuario_v3",
+    "estado": "publicado",
+    "execucao": "e20261027_cpop_usuario"
+  },
+  "comparacao_integral_por_usuario": true,
+  "historico_tecnico_identico": true,
+  "tabelas_preservadas": [
+    "rj-smas-dev.gerenciamento__dbt.dim_cras",
+    "rj-smas-dev.gerenciamento__dbt.dim_creas",
+    "rj-smas-dev.gerenciamento__dbt.dim_outros_equipamentos",
+    "rj-smas-dev.relatorio.mart_planilha_unificada_centro_pop"
+  ],
+  "programada_pausada": true
+}

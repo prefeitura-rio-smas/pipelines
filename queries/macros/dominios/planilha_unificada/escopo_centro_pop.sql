@@ -208,7 +208,7 @@ from registros r left join {{ pu_ref('dim_unidades') }} u on r.id_unidade = u.id
 {% endmacro %}
 
 {% macro pu_cpop_perfil_nome(assunto, campo) -%}
-    {{ campo ~ '_' ~ assunto if campo in ['demandas', 'encaminhamentos', 'observacoes'] else campo }}
+{{ campo ~ '_' ~ assunto if campo in ['demandas', 'encaminhamentos', 'observacoes'] else campo }}
 {%- endmacro %}
 
 {% macro pu_cpop_perfil_sql() %}
@@ -228,15 +228,15 @@ select u.id_usuario,
     {% for assunto, campos in pu_cpop_perfil_assuntos().items() %}
         , {{ assunto }}.data_registro as data_registro_{{ assunto }}
         , {{ assunto }}.data_resposta as data_resposta_{{ assunto }}
-        {% for campo in campos %}
+{% for campo in campos %}
         , {% if campo == 'encaminhamentos' %}
             array(select distinct concat(e.label, ': ', e.valor) from unnest({{ assunto }}.encaminhamentos) e
                 where nullif(trim(e.label), '') is not null and nullif(trim(e.valor), '') is not null order by 1)
           {% elif campo == 'demandas' %}coalesce({{ assunto }}.{{ campo }}, [])
           {% elif pu_cpop_campos()[campo] == 'DATE' %}{{ assunto }}.{{ campo }}
           {% else %}coalesce({{ assunto }}.{{ campo }}, ''){% endif %} as {{ pu_cpop_perfil_nome(assunto, campo) }}
-        {% endfor %}
-    {% endfor %}
+{% endfor %}
+{% endfor %}
 from usuarios u
 {% for assunto in pu_cpop_perfil_assuntos() %}
 left join ultimos {{ assunto }} on u.id_usuario = {{ assunto }}.id_usuario and {{ assunto }}.tipo_registro = '{{ assunto }}'
@@ -248,10 +248,10 @@ left join ultimos {{ assunto }} on u.id_usuario = {{ assunto }}.id_usuario and {
     {% for assunto, campos in pu_cpop_perfil_assuntos().items() %}
         , coalesce(cast({{ alias }}.data_registro_{{ assunto }} as string), '') as data_registro_{{ assunto }}
         , coalesce(cast({{ alias }}.data_resposta_{{ assunto }} as string), '') as data_resposta_{{ assunto }}
-        {% for campo in campos %}
-            {% set nome = pu_cpop_perfil_nome(assunto, campo) %}
+{% for campo in campos %}
+{% set nome = pu_cpop_perfil_nome(assunto, campo) %}
             , {% if campo in ['demandas', 'encaminhamentos'] %}coalesce({{ alias }}.{{ nome }}, [])
               {% else %}coalesce(cast({{ alias }}.{{ nome }} as string), ''){% endif %} as {{ nome }}
-        {% endfor %}
-    {% endfor %}
+{% endfor %}
+{% endfor %}
 {% endmacro %}

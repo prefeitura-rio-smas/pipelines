@@ -1,3 +1,5 @@
+> Contrato público atual: `por_assunto_v9_campos_diretos_formularios_texto`; veja a seção de campos diretos e formulários em texto ao final.
+
 # Arquitetura de Dados - SMAS (Medallion)
 
 Este documento descreve a organização e os princípios da arquitetura de dados utilizada no projeto dbt da Secretaria Municipal de Assistência Social (SMAS).
@@ -62,8 +64,8 @@ O projeto dbt fica em `/opt/pipelines/pipelines/queries`. A tabela
 `marts/planilha_unificada/planilha_unificada.sql` mantém uma linha por
 `usuario.id_usuario`, com a mesma população de `dim_usuarios`.
 
-A raiz tem cinco blocos: `usuario`, `familias`, `projetos_sociais`,
-`atendimentos` e `evolucoes`. Dados pessoais, documentos e perfil são agrupados
+A raiz tem seis blocos: `usuario`, `familias`, `projetos_sociais`,
+`atendimentos`, `evolucoes` e `escopos`. Dados pessoais, documentos e perfil são agrupados
 em usuario. Atendimentos e evoluções são STRUCTs com quantidade INT64 e uma
 lista registros. Os demais escalares são STRING; ausências ficam vazias,
 contagens sem eventos são 0 e listas sem registros são [].
@@ -71,10 +73,11 @@ contagens sem eventos são 0 e listas sem registros são [].
 Os módulos `int_pu_*` são ephemeral. Os joins de nomes de unidades são feitos
 por ID antes de agregar listas; a dimensão precisa ser única por ID. IDs de
 unidade não são expostos. Permanecem apenas usuário, família e IDs qualificados
-por módulo de atendimento/evolução. Nomes homônimos não causam deduplicação.
+por módulo de atendimento/evolução; participações do escopo Centro POP também
+preservam id_atividade para distinguir oficinas homônimas.
 
-Atendimentos com flag S após TRIM/UPPER e evoluções com data de cancelamento
-preenchida são excluídos nos módulos próprios. Atendimentos mantêm hora HH:MM.
+Os atendimentos preservam as PKs da referência programada; evoluções com data de
+cancelamento preenchida são excluídas. Atendimentos mantêm hora HH:MM.
 Todas as evoluções não canceladas aparecem uma vez por usuário, inclusive sem
 formulário. A descrição legível remove HTML antes de decodificar entidades;
 os formulários ficam associados à evolução, preservando conteúdo e ordem.
@@ -91,11 +94,52 @@ CREAS e RMAs definirão competências, populações e regras de indicadores pró
 Não fazer dim_usuarios nem seus insumos dependerem da base final, evitando ciclos.
 
 O contrato, as consultas atualizadas e as limitações estão em
-[Planilha unificada](docs/planilha_unificada.md).
+[Planilha unificada e escopo Centro POP](docs/dimensoes_planilha_unificada.md).
 
 ---
 *Este documento serve como guia para desenvolvedores e agentes de IA manterem a consistência do repositório.*
 
-### Dimensões qualitativas por usuário
+### Perfil e histórico Centro POP
 
-A planilha recebe atendimentos e evoluções de `dim_cras`, `dim_creas`, `dim_centro_pop` e `dim_outros_equipamentos`, por usuário. Os atendimentos usam as PKs do resultado materializado da consulta programada. As quatro dimensões processam um lote imutável e publicam junto com a unificada e a programada pública em uma transação, com conciliação por PK e usuário. O Prefect verifica novas referências a cada cinco minutos; a consulta produtora mantém sua frequência de seis horas e escreve na candidata. Consulte [o roteiro de operação](docs/dimensoes_planilha_unificada.md).
+`dim_centro_pop` tem uma linha por `id_usuario`, sem STRUCTs, com o último
+formulário inteiro por assunto em todas as unidades. Datas internas permanecem
+tipadas; listas de encaminhamento são textos distintos e ordenados. Não há
+preenchimento de vazios com formulários anteriores nem inferência de acompanhamento
+ativo pela presença de PAI. O histórico materializado `int_pu_registros_centro_pop`
+conserva as ocorrências datadas e suas regras de extração.
+
+A unificada mantém a população de `dim_usuarios`, cruzando o perfil por LEFT JOIN.
+Os 35 campos do perfil ficam diretamente em `escopos.centro_pop`, sem agrupador
+`respostas` nem contexto `unidades`; histórico e
+participações permanecem integrais. Dados comuns, contagens, CRAS, CREAS e a mart
+existente não são reformulados. O contrato `centro_pop_usuario_v3` exige construção
+isolada, comparação integral na mesma base congelada e publicação manual com backup
+e restauração compensatória. A consulta programada permanece pausada.
+Consulte [o contrato e a operação](docs/dimensoes_planilha_unificada.md).
+
+### Complementos do BI na supertabela
+
+O contrato `por_assunto_v7_complementos_bi` adiciona endereço em `usuario.endereco`,
+contexto da referência em `atendimentos.registros` e identificadores da linha
+profissional em `profissionais`. Mantém os seis blocos e os campos anteriores.
+A referência congelada prevalece para os atendidos; o cadastro congelado de
+endereços complementa apenas os usuários fora dessa referência, sem preencher
+lacunas entre origens. O lote derivado mantém os insumos anteriores imutáveis.
+A migração publica apenas supertabela/controle, com backup e restauração.
+Consulte [o contrato e a operação](docs/complementos_bi_planilha_unificada.md).
+
+### Centro POP direto no contrato v8
+
+`por_assunto_v8_centro_pop_direto` remove somente o agrupador `respostas` e move
+seus 35 campos para `escopos.centro_pop.<campo>`. Os seis blocos, histórico,
+participações, 13 complementos do BI e demais dados são preservados. Mantém
+31 escalares STRING e quatro ARRAY<STRING>, com ausências vazias. O perfil
+Centro POP conserva o contrato v3. A migração compara o conteúdo integral
+reconstruindo o formato antigo apenas durante a validação, publica somente
+a supertabela/controle com backup e mantém a consulta programada pausada.
+
+A apresentação atual usa `por_assunto_v9_campos_diretos_formularios_texto`: cadastro, documentos e
+endereço diretamente em `usuario`; contagens `quantidade_<serviço>` diretamente
+nos blocos de eventos; respostas em `formularios.campos` como `ARRAY<STRING>`
+no formato `rótulo: valor`. A auditoria mantém os pares originais no intermediário.
+Os seis blocos principais e as demais listas permanecem inalterados.
