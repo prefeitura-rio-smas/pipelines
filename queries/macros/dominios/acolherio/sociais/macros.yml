@@ -1,0 +1,83 @@
+version: 2
+
+macros:
+  - name: acolherio_normalizar_itens
+    description: |
+      Normaliza um array de itens sociais (STRUCT com código e descrição) por usuário.
+
+      Entrada: qualquer expressão SQL que resolva para ARRAY<STRUCT<...>>, tipicamente
+      o array agregado de benefícios ou deficiências de um usuário.
+
+      Retorno: ARRAY<STRUCT<codigo STRING, descricao STRING>> em que
+      - `codigo` recebe upper(trim(cast(<campo_codigo> as string)));
+      - itens com código vazio ('') ou 'N' (após normalização) são descartados;
+      - duplicatas são removidas (distinct);
+      - o array sai ordenado por `codigo`.
+
+      NULL: entrada NULL ou array vazio retorna array vazio ([]), nunca NULL.
+
+      Descrição nula: quando `campo_descricao` é NULL, a descrição vira o texto de
+      `nao_mapeado_fmt` preenchido com o código normalizado. O formato DEVE conter
+      EXATAMENTE um `%s`, preservando zeros à esquerda do código. Use `%%` para
+      percentuais literais: `Item %%s: %s` produz `Item %s: 99` para o código 99.
+      Zero ou múltiplos placeholders, outros especificadores (como `%d`) e
+      percentuais soltos são rejeitados na compilação. `%%d` é texto literal.
+      O formato é passado ao FORMAT como literal GoogleSQL escapado, preservando
+      apóstrofos, barras invertidas, quebras de linha, tabulações e Unicode.
+      Passe o texto original, sem escape SQL prévio.
+
+      Exemplo (entrada → saída):
+        [ {codigo: '02', descricao: 'Auxilio Doença'},
+          {codigo: '01', descricao: 'Aposentadoria'},
+          {codigo: '02', descricao: 'Auxilio Doença'} ]
+        → [ {codigo: '01', descricao: 'Aposentadoria'},
+            {codigo: '02', descricao: 'Auxilio Doença'} ]
+        [ {codigo: '99', descricao: NULL} ]
+        → [ {codigo: '99', descricao: 'Item não mapeado (código 99)'} ]
+    arguments:
+      - name: itens
+        type: string
+        description: "Expressão SQL do array de STRUCTs a normalizar (ex.: 'beneficio')."
+      - name: nao_mapeado_fmt
+        type: string
+        description: "Texto original de fallback quando a descrição é NULL; exige exatamente um %s e aceita %% para percentual literal. Padrão: 'Item não mapeado (código %s)'."
+      - name: campo_codigo
+        type: string
+        description: "Nome do campo de código dentro do STRUCT. Padrão: 'codigo'."
+      - name: campo_descricao
+        type: string
+        description: "Nome do campo de descrição dentro do STRUCT. Padrão: 'descricao'."
+    meta:
+      owner: acolherio
+      status: stable
+      since: "2026-10-23"
+
+  - name: acolherio_descricoes_itens
+    description: |
+      Achata as descrições de um array de itens sociais em uma STRING
+      (distintas, ordenadas pela própria descrição e unidas pelo separador).
+
+      Entrada: ARRAY<STRUCT<...>> já normalizado por acolherio_normalizar_itens.
+      Retorno: STRING com as descrições distintas em ordem alfabética.
+      NULL: array vazio/NULL retorna NULL (comportamento do STRING_AGG sem linhas).
+      O separador é texto original, sem escape SQL prévio. Apóstrofos, barras
+      invertidas, quebras de linha, tabulações e Unicode são preservados.
+
+      Exemplo (entrada → saída), separador padrão ', ':
+        [ {codigo: '01', descricao: 'Aposentadoria'},
+          {codigo: '02', descricao: 'Auxilio Doença'} ]
+        → 'Aposentadoria, Auxilio Doença'
+    arguments:
+      - name: itens
+        type: string
+        description: "Expressão SQL do array de STRUCTs (ex.: 'beneficios_detalhes')."
+      - name: campo
+        type: string
+        description: "Nome do campo de descrição dentro do STRUCT. Padrão: 'descricao'."
+      - name: separador
+        type: string
+        description: "Texto original do separador; a macro aplica o escape GoogleSQL. Padrão: ', '."
+    meta:
+      owner: acolherio
+      status: stable
+      since: "2026-10-23"

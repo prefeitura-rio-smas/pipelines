@@ -38,6 +38,19 @@ final as (
           ) as beneficio
         from traducao
         group by id_usuario
+),
+
+normalizados as (
+    select
+        id_usuario,
+        beneficio,
+        {{ acolherio_normalizar_itens('beneficio', 'Benefício não mapeado (código %s)') }} as beneficios_detalhes
+    from final
 )
 
-select * from final
+select
+    id_usuario,
+    beneficio,
+    beneficios_detalhes,
+    {{ acolherio_descricoes_itens('beneficios_detalhes') }} as beneficios
+from normalizados
