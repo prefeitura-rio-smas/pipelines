@@ -17,8 +17,9 @@ dominios as (
         codigo,
         rotulo
     from {{ ref('acolherio_dominios') }}
-    where dominio = 'servassist'
-      and (vigente_ate is null or vigente_ate >= current_date())
+    where
+        dominio = 'servassist'
+        and (vigente_ate is null or vigente_ate >= current_date())
 ),
 
 servicos_com_nome as (
