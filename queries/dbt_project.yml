@@ -31,7 +31,10 @@ models:
       cartao_pic:
         +materialized: table
         +schema: "{{ 'core' if target.name == 'prod' else 'gerenciamento__dbt' }}"
-    
+
+      cadunico:
+        +materialized: table
+
     marts:
       +materialized: table
       +schema: "{{ 'marts' if target.name == 'prod' else 'relatorio' }}"
@@ -41,6 +44,10 @@ models:
           +schema: "{{ 'core' if target.name == 'prod' else 'gerenciamento__dbt' }}"
         facts:
           +schema: "{{ 'core' if target.name == 'prod' else 'gerenciamento__dbt' }}"
+
+      cadunico:
+        prontuario_eletronico:
+          +schema: "{{ 'prontuario_eletronico' if target.name == 'prod' else 'relatorio' }}"
 
       cartao_pic:
         +schema: "{{ 'cartao_pic' if target.name == 'prod' else 'relatorio' }}"
