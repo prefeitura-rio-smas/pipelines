@@ -44,7 +44,7 @@ normalizados as (
     select
         id_usuario,
         deficiencia,
-        {{ normalizar_itens_sociais('deficiencia', 'Deficiência não mapeada (código %s)') }} as deficiencias_detalhes
+        {{ acolherio_normalizar_itens('deficiencia', 'Deficiência não mapeada (código %s)') }} as deficiencias_detalhes
     from final
 )
 
@@ -52,5 +52,5 @@ select
     id_usuario,
     deficiencia,
     deficiencias_detalhes,
-    {{ descricoes_sociais('deficiencias_detalhes') }} as deficiencias
+    {{ acolherio_descricoes_itens('deficiencias_detalhes') }} as deficiencias
 from normalizados

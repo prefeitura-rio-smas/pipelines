@@ -44,7 +44,7 @@ normalizados as (
     select
         id_usuario,
         beneficio,
-        {{ normalizar_itens_sociais('beneficio', 'Benefício não mapeado (código %s)') }} as beneficios_detalhes
+        {{ acolherio_normalizar_itens('beneficio', 'Benefício não mapeado (código %s)') }} as beneficios_detalhes
     from final
 )
 
@@ -52,5 +52,5 @@ select
     id_usuario,
     beneficio,
     beneficios_detalhes,
-    {{ descricoes_sociais('beneficios_detalhes') }} as beneficios
+    {{ acolherio_descricoes_itens('beneficios_detalhes') }} as beneficios
 from normalizados
