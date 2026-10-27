@@ -12,7 +12,7 @@ models:
       - name: id_usuario
         data_tests: [not_null, unique]
   - name: int_pu_familias
-    description: Famílias, vínculos históricos e serviços, inclusive encerrados, por usuário. Responsabilidade e estado familiar são atuais.
+    description: Famílias, membros atuais, vínculos históricos e serviços, inclusive encerrados, por usuário. Composição inclui responsável atual sem vínculo próprio e mantém membros sem cadastro. Responsabilidade e estado familiar são atuais.
     columns:
       - name: id_usuario
         data_tests: [not_null, unique]

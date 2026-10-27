@@ -49,6 +49,53 @@ usuarios_familias as (
     where id_usuario_responsavel is not null and id_familia is not null
 ),
 
+membros_atuais_candidatos as (
+    select
+        id_familia,
+        id_usuario,
+        parentesco_responsavel,
+        data_entrada,
+        id_membro,
+        0 as prioridade_responsavel
+    from membros
+    where data_saida is null
+    union all
+    select
+        id_familia,
+        id_usuario_responsavel as id_usuario,
+        'Responsável' as parentesco_responsavel,
+        null as data_entrada,
+        null as id_membro,
+        1 as prioridade_responsavel
+    from familias
+    where id_usuario_responsavel is not null and id_familia is not null
+),
+
+membros_atuais_unicos as (
+    select
+        id_familia,
+        id_usuario,
+        parentesco_responsavel
+    from membros_atuais_candidatos
+    qualify row_number() over (
+        partition by id_familia, id_usuario
+        order by prioridade_responsavel desc, data_entrada desc, id_membro desc, parentesco_responsavel asc
+    ) = 1
+),
+
+composicao_familiar as (
+    select
+        m.id_familia,
+        array_agg(struct(
+            m.id_usuario,
+            u.nome,
+            m.parentesco_responsavel
+        ) order by coalesce(u.nome, ''), m.id_usuario) as membros
+    from membros_atuais_unicos as m
+    left join {{ pu_ref('dim_usuarios') }} as u on m.id_usuario = u.id_usuario
+    group by m.id_familia
+),
+
 servicos_distintos as (
     select distinct
         s.id_familia,
@@ -87,12 +134,14 @@ select
         f.id_usuario_responsavel = uf.id_usuario as flag_responsavel_atual,
         f.flag_ativo,
         f.data_ultima_modificacao,
+        coalesce(cf.membros, []) as membros,
         coalesce(v.vinculos, []) as vinculos,
         coalesce(s.servicos, []) as servicos
     ) order by uf.id_familia) as familias
 from usuarios_familias as uf
 left join familias as f on uf.id_familia = f.id_familia
 left join {{ pu_ref('dim_usuarios') }} as r on f.id_usuario_responsavel = r.id_usuario
+left join composicao_familiar as cf on uf.id_familia = cf.id_familia
 left join vinculos as v on uf.id_usuario = v.id_usuario and uf.id_familia = v.id_familia
 left join servicos as s on uf.id_familia = s.id_familia
 group by uf.id_usuario
