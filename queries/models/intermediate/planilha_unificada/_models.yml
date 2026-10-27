@@ -37,3 +37,16 @@ models:
     columns:
       - name: id_usuario
         data_tests: [not_null, unique]
+
+  - name: int_pu_enderecos_bi
+    description: Um endereço por usuário, da foto do BI quando presente ou do cadastro congelado para os demais; não preenche lacunas entre fontes.
+    columns:
+      - name: id_usuario
+        data_tests: [not_null, unique]
+  - name: int_pu_complementos_bi
+    description: Contexto único por evento e complementos por profissional da referência congelada; IDs de família diferentes são mantidos por linha profissional.
+    columns:
+      - name: id_atendimento_modulo
+        data_tests: [not_null, unique]
+    data_tests:
+      - pu_bi_profissionais_unicos
