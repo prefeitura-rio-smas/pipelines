@@ -1,3 +1,8 @@
+{% macro pu_tipo_servico(expressao) %}
+    case {{ expressao }} when 'CRAS' then 'cras' when 'CREAS' then 'creas'
+        when 'Centro POP' then 'centro_pop' else 'outros' end
+{% endmacro %}
+
 {% macro pu_ref(nome) %}
     {# Register the real dependency even when its input is redirected. #}
     {% set dependencia = ref(nome) %}
