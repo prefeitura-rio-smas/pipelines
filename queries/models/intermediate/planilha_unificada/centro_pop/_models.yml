@@ -24,3 +24,18 @@ models:
     data_tests:
     - not_null
     - unique
+
+- name: int_pu_centro_pop_mensal
+  description: Contexto mensal derivado exclusivamente da supertabela; chave usuário/unidade/mês.
+  data_tests:
+  - pu_mensal_grupos
+  - dbt_utils.unique_combination_of_columns:
+      arguments:
+        combination_of_columns: [id_usuario, id_unidade, mes_referencia]
+  columns:
+  - name: id_usuario
+    data_tests: [not_null]
+  - name: id_unidade
+    data_tests: [not_null]
+  - name: mes_referencia
+    data_tests: [not_null]

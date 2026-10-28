@@ -1,0 +1,271 @@
+version: 2
+models:
+- name: mart_planilha_unificada_centro_pop_mensal
+  description: '50 colunas da planilha Centro POP, por usuário/unidade/mês. Fonte
+    única: planilha_unificada. Cadastro e documentos atuais; perfil até o fechamento.
+    Naturalidade representa UF. Número é sequência de apresentação. Campos sem coleta
+    permanecem vazios. Campos de PAI indicam evidência de formulário, não acompanhamento
+    ativo. Último técnico considera todo o histórico até o fechamento na mesma unidade.
+    Profissionais são os executores dos atendimentos do mês, não uma referência designada.
+    Datas sem valor são NULL; textos sem coleta são vazios. Documentos sem número
+    são traço; ausência não representa Não. Saúde usa registros até o fechamento.
+    Oficinas sem evidência permanecem desconhecidas.'
+  columns:
+  - name: numero
+    description: Nº
+    meta:
+      colunas_planilha:
+      - 1
+    data_tests:
+    - not_null
+    - unique
+  - name: mes_referencia
+    description: MÊS DE REFERÊNCIA
+    meta:
+      colunas_planilha:
+      - 2
+  - name: nome_centro_pop
+    description: CENTRO POP
+    meta:
+      colunas_planilha:
+      - 3
+  - name: profissionais_atendimento
+    description: PROFISSIONAL DE REFERÊNCIA
+    meta:
+      colunas_planilha:
+      - 4
+  - name: nome_usuario
+    description: NOME DO USUÁRIO DO SERVIÇO
+    meta:
+      colunas_planilha:
+      - 5
+  - name: nome_social
+    description: NOME SOCIAL
+    meta:
+      colunas_planilha:
+      - 6
+  - name: flag_atendido_pontualmente
+    description: USUÁRIO/FAMÍLIA FOI ATENDIDO PONTUALMENTE ? (SIM OU NÃO)
+    meta:
+      colunas_planilha:
+      - 7
+  - name: flag_inserido_acompanhamento
+    description: USUÁRIO/ FAMILIA FOI INSERIDO NO ACOMPANHAMENTO? (SIM OU NÃO)
+    meta:
+      colunas_planilha:
+      - 8
+  - name: data_inclusao_acompanhamento
+    description: DATA DA INCLUSÃO NO ACOMPANHAMENTO DD/MM/AAAA
+    meta:
+      colunas_planilha:
+      - 9
+  - name: flag_possui_plano_individual
+    description: USUÁRIO/ FAMÍLIA TEM PLANO DE ACOMPANHAMENTO INDIVIDUAL? (SIM OU
+      NÃO)
+    meta:
+      colunas_planilha:
+      - 10
+  - name: data_ultimo_atendimento_tecnico
+    description: DATA DO ÚLTIMO ATENDIMENTO TÉCNICO
+    meta:
+      colunas_planilha:
+      - 11
+  - name: quantidade_atendimentos_mes
+    description: QUANTIDADE DE ATENDIMENTOS REALIZADOS NO MÊS
+    meta:
+      colunas_planilha:
+      - 12
+  - name: motivo_principal_permanencia_rua
+    description: 1 - PRINCIPAL MOTIVO DE PERMANÊNCIA NA RUA
+    meta:
+      colunas_planilha:
+      - 13
+  - name: motivo_secundario_permanencia_rua
+    description: 2 – MOTIVO SECUNDÁRIO DE PERMANÊNCIA NA RUA
+    meta:
+      colunas_planilha:
+      - 14
+  - name: data_nascimento
+    description: DATA DE NASCIMENTO DD/MM/AAAA
+    meta:
+      colunas_planilha:
+      - 15
+  - name: idade
+    description: IDADE INFORMADA
+    meta:
+      colunas_planilha:
+      - 16
+  - name: filiacao_mae
+    description: NOME DA MÃE
+    meta:
+      colunas_planilha:
+      - 17
+  - name: documentacao
+    description: RCN E DOCUMENTAÇÃO
+    meta:
+      colunas_planilha:
+      - 18
+  - name: genero
+    description: GÊNERO
+    meta:
+      colunas_planilha:
+      - 19
+  - name: orientacao_sexual
+    description: ORIENTAÇÃO SEXUAL
+    meta:
+      colunas_planilha:
+      - 20
+  - name: raca_cor
+    description: COR E ETNIA
+    meta:
+      colunas_planilha:
+      - 21
+  - name: naturalidade
+    description: NATURALIDADE
+    meta:
+      colunas_planilha:
+      - 22
+  - name: flag_estuda
+    description: VOCÊ ESTUDA? (SIM OU NÃO)
+    meta:
+      colunas_planilha:
+      - 23
+  - name: ano_cursando
+    description: CASO SIM, QUAL ANO ESTÁ CURSANDO?
+    meta:
+      colunas_planilha:
+      - 24
+  - name: nivel_escolaridade
+    description: NÍVEL DE ESCOLARIDADE
+    meta:
+      colunas_planilha:
+      - 25
+  - name: deficiencia
+    description: POSSUI DEFICIÊNCIA? QUAL?
+    meta:
+      colunas_planilha:
+      - 26
+  - name: flag_uso_substancias_psicoativas
+    description: FAZ USO DE SUBSTÂNCIAS PSICOATIVAS?
+    meta:
+      colunas_planilha:
+      - 27
+  - name: flag_problema_saude
+    description: TEM OU TEVE ALGUM PROBLEMA DE SAÚDE?
+    meta:
+      colunas_planilha:
+      - 28
+  - name: flag_acompanhamento_saude
+    description: REALIZA ALGUM ACOMPANHAMENTO DE SAÚDE?
+    meta:
+      colunas_planilha:
+      - 29
+  - name: flag_possui_vinculo_familiar
+    description: USUÁRIO POSSUI VÍNCULO FAMILIAR? (SIM OU NÃO)
+    meta:
+      colunas_planilha:
+      - 30
+  - name: territorio_referencia_familia
+    description: TERRITÓRIO DE REFERÊNCIA DA FAMÍLIA
+    meta:
+      colunas_planilha:
+      - 31
+  - name: flag_possibilidade_reinsercao_familiar
+    description: EXISTE POSSIBILIDADE DE REINSERÇÃO FAMILIAR? (SIM OU NÃO)
+    meta:
+      colunas_planilha:
+      - 32
+  - name: atividade_renda
+    description: EXERCE ALGUMA ATIVIDADE QUE GERE RENDA? QUAL?
+    meta:
+      colunas_planilha:
+      - 33
+  - name: valor_renda
+    description: VALOR DA RENDA OBTIDA ATRAVÉS DA ATIVIDADE?
+    meta:
+      colunas_planilha:
+      - 34
+  - name: flag_empregabilidade_imediata
+    description: ESTÁ PRONTO (A) PARA EMPREGABILIDADE IMEDIATA? (SIM OU NÃO)
+    meta:
+      colunas_planilha:
+      - 35
+  - name: capacidade_habilidades
+    description: CAPACIDADE/HABILIDADES
+    meta:
+      colunas_planilha:
+      - 36
+  - name: flag_interesse_curso
+    description: TEM INTERESSE EM FAZER CURSO? (SIM OU NÃO)
+    meta:
+      colunas_planilha:
+      - 37
+  - name: beneficios
+    description: USUÁRIO POSSUI ALGUM BENEFÍCIO?
+    meta:
+      colunas_planilha:
+      - 38
+  - name: flag_possui_cadunico
+    description: USUÁRIO POSSUI CAD ÚNICO? (SIM OU NÃO)
+    meta:
+      colunas_planilha:
+      - 39
+  - name: flag_cadunico_atualizado
+    description: CADASTRO ESTÁ ATUALIZADO? (SIM OU NÃO)
+    meta:
+      colunas_planilha:
+      - 40
+  - name: nis_usuario
+    description: NIS DO USUÁRIO
+    meta:
+      colunas_planilha:
+      - 41
+  - name: flag_participacao_oficinas
+    description: USUÁRIO PARTICIPA DE OFICINA E/OU ATIVIDADES COLETIVAS? (SIM OU NÃO)
+    meta:
+      colunas_planilha:
+      - 42
+  - name: qtd_oficinas_participadas_mes
+    description: DE QUANTAS OFICINA E/OU ATIVIDADES COLETIVAS O USUÁRIO PARTICIPOU
+      NO MÊS DE REFERÊNCIA?
+    meta:
+      colunas_planilha:
+      - 43
+  - name: demandas
+    description: PROCEDIMENTO 1
+    meta:
+      colunas_planilha:
+      - 44
+  - name: encaminhamentos
+    description: ENCAMINHAMENTO 1
+    meta:
+      colunas_planilha:
+      - 45
+  - name: resultado_acesso
+    description: RESULTADO 1 / ACESSO
+    meta:
+      colunas_planilha:
+      - 46
+  - name: resultado_descricao
+    description: RESULTADO 1 / DESCRIÇÃO
+    meta:
+      colunas_planilha:
+      - 47
+  - name: data_desligamento
+    description: DATA DE DESLIGAMENTO DO ACOMPANHAMENTO
+    meta:
+      colunas_planilha:
+      - 48
+  - name: motivo_desligamento
+    description: MOTIVO DO DESLIGAMENTO
+    meta:
+      colunas_planilha:
+      - 49
+  - name: observacoes
+    description: OBSERVAÇÕES
+    meta:
+      colunas_planilha:
+      - 50
+  data_tests:
+  - pu_mensal_50_colunas
+  - pu_mensal_contagem
