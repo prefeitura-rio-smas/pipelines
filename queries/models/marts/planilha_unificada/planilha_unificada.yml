@@ -106,7 +106,7 @@ models:
         data_tests: [not_null]
       - name: escopos
         description: |
-          STRUCT com centro_pop.historico, centro_pop.participacoes e os 35 campos do perfil diretamente em centro_pop, sem
+          STRUCT com centro_pop.historico, centro_pop.participacoes e os campos do perfil e a lista de unidades atendidas diretamente em centro_pop, sem
           contagem mensal. Histórico com campos nomeados de PAI, atendimento social,
           saúde, situação de rua e desligamento; preserva origem, abrangência, datas
           de registro/resposta e datas declaradas. Participações comprovadas mantêm

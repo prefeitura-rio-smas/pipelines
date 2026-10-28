@@ -78,10 +78,13 @@ with atendimentos as (
     select id_usuario from {{ pu_ref('int_pu_registros_centro_pop') }}
     where tipo_registro in ('pai','atendimento_social','saude','situacao_rua','desligamento')
 )
+ , listas as (
+    select id_usuario, array_agg(distinct nome ignore nulls order by nome) unidades
+    from atendimentos group by id_usuario
+)
 select coalesce(e.id_usuario, m.id_usuario) id_usuario
 from esperado e full join {{ model }} m using(id_usuario)
+left join listas l on l.id_usuario = e.id_usuario
 where e.id_usuario is null or m.id_usuario is null
-    or to_json_string(m.unidades_atendimento) != to_json_string(array(
-        select distinct a.nome from atendimentos a where a.id_usuario=m.id_usuario and a.nome is not null order by a.nome
-    ))
+    or to_json_string(m.unidades_atendimento) != to_json_string(coalesce(l.unidades, []))
 {% endtest %}
