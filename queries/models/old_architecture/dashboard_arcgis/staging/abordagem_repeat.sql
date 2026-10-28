@@ -284,7 +284,7 @@ SELECT
    ELSE unidade_destino
    END AS unidade_destino_tratada,
 
-  CASE equipamento_destino
+  CASE
     WHEN equipamento_destino = 'Craf Tom Jobim' THEN 'CRAF Tom Jobim'
     WHEN equipamento_destino IS NULL THEN 'Não informado'
     WHEN equipamento_destino = 'Instituto Social Marca de Cristo' THEN 'Instituto Social Marca de Cristo'
