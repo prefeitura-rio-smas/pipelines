@@ -1,4 +1,3 @@
 packages:
-  - name: dbt_utils
-    package: dbt-labs/dbt_utils
+  - package: dbt-labs/dbt_utils
     version: 1.3.1
