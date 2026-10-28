@@ -6,6 +6,7 @@ models:
     não geram vínculo artificial com unidades.
   data_tests:
   - pu_cpop_integridade
+  - pu_fonte_evolucoes_atualizada
   columns:
   - name: id_usuario
     data_tests:

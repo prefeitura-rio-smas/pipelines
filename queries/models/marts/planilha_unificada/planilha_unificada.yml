@@ -36,6 +36,10 @@ models:
           evolucoes.quantidade_centro_pop: INT64
           evolucoes.quantidade_outros: INT64
         identificadores_permitidos:
+          - atendimentos.registros.id_unidade
+          - evolucoes.registros.id_unidade
+          - escopos.centro_pop.historico.id_unidade
+          - escopos.centro_pop.participacoes.id_unidade
           - id_usuario
           - id_familia
           - id_atendimento_modulo

@@ -39,3 +39,7 @@ where e.id_usuario is null or m.id_usuario is null or e.quantidade != m.quantida
     or nullif(m.id_unidade,'') is null or m.mes_referencia is null
     or m.ultimo_tecnico > last_day(m.mes_referencia)
 {% endtest %}
+
+{% test pu_fonte_evolucoes_atualizada(model) %}
+    {{ test_pu_evolucoes_cobertura(ref('int_evolucoes')) }}
+{% endtest %}
