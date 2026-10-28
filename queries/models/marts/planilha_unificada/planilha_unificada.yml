@@ -45,6 +45,14 @@ models:
           - atendimentos.registros.profissionais.id_familia_referencia
           - atendimentos.registros.profissionais.id_atendimento_legado
     columns:
+      - name: atendimentos.registros.id_unidade
+        description: Chave da unidade do atendimento, como texto, para agrupamento sem associação pelo nome.
+      - name: evolucoes.registros.id_unidade
+        description: Chave da unidade da evolução, como texto.
+      - name: escopos.centro_pop.historico.id_unidade
+        description: Chave da unidade do registro; vazio quando a ocorrência é de abrangência pessoa sem unidade.
+      - name: escopos.centro_pop.participacoes.id_unidade
+        description: Chave da unidade da participação.
       - name: escopos.centro_pop.unidades_atendimento
         description: Lista de nomes das unidades com atendimento Centro POP registrado para o usuário.
         data_type: "ARRAY<STRING>"

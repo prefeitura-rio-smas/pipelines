@@ -74,6 +74,7 @@ escopo_centro_pop as (
         s.id_usuario,
         array_agg(if(s.tipo_registro != 'participacao', struct({{ pu_cpop_historico_publico('s') }}), null) ignore nulls order by s.data_registro, s.data_resposta, s.id_registro) as historico,
         array_agg(if(s.tipo_registro = 'participacao', struct(
+            coalesce(cast(s.id_unidade as string), '') as id_unidade,
             coalesce(cast(s.id_atividade as string), '') as id_atividade,
             coalesce(s.nome_atividade, '') as nome_atividade,
             coalesce(s.nome_unidade, '') as nome_unidade,
@@ -333,6 +334,7 @@ select
             select as struct
                 coalesce(cast(item1.id_atendimento_modulo as string), '') as id_atendimento_modulo,
                 coalesce(cast(item1.origem_modulo as string), '') as origem_modulo,
+                coalesce(cast(item1.id_unidade as string), '') as id_unidade,
                 coalesce(item1.nome_unidade, '') as nome_unidade,
                 coalesce(cast(item1.tipo_atendimento_descricao as string), '') as tipo_atendimento_descricao,
                 coalesce(cast(item1.data_atendimento as string), '') as data_atendimento,
@@ -372,6 +374,7 @@ select
                 coalesce(cast(item1.id_evolucao_modulo as string), '') as id_evolucao_modulo,
                 coalesce(cast(item1.origem_modulo as string), '') as origem_modulo,
                 coalesce(cast(item1.id_familia as string), '') as id_familia,
+                coalesce(cast(item1.id_unidade as string), '') as id_unidade,
                 coalesce(item1.nome_unidade, '') as nome_unidade,
                 coalesce(cast(item1.data_evolucao as string), '') as data_evolucao,
                 coalesce(cast(item1.data_cancelamento as string), '') as data_cancelamento,

@@ -184,6 +184,7 @@ from registros r left join {{ pu_ref('dim_unidades') }} u on r.id_unidade = u.id
 
 {% macro pu_cpop_historico_publico(alias) %}
 {{ alias }}.origem, {{ alias }}.tipo_registro, {{ alias }}.abrangencia,
+    coalesce(cast({{ alias }}.id_unidade as string), '') as id_unidade,
     coalesce({{ alias }}.id_evolucao_modulo, '') as id_evolucao_modulo,
     coalesce({{ alias }}.titulo_formulario, '') as titulo_formulario,
     coalesce({{ alias }}.nome_unidade, '') as nome_unidade,
