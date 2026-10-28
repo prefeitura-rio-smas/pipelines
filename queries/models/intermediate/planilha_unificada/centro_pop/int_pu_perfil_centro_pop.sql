@@ -10,12 +10,28 @@ with ultimos as (
     ) = 1
 ),
 
+unidades_atendimento as (
+    select
+        p.id_usuario,
+        array_agg(
+            distinct nullif(trim(a.nome_unidade), '') ignore nulls
+            order by nullif(trim(a.nome_unidade), '')
+        ) as unidades_atendimento
+    from {{ pu_ref('int_pu_atendimentos') }} as p, unnest(p.atendimentos) as a
+    inner join {{ pu_ref('dim_usuarios') }} as u on p.id_usuario = u.id_usuario
+    where a.tipo_servico = 'centro_pop'
+    group by p.id_usuario
+),
+
 usuarios as (
-    select distinct id_usuario from ultimos
+    select id_usuario from ultimos
+    union distinct
+    select id_usuario from unidades_atendimento
 )
 
 select
     u.id_usuario,
+    coalesce(unidades.unidades_atendimento, []) as unidades_atendimento,
     if(pai.id_registro is not null, 'Sim', '') as possui_registro_pai
     {% for assunto, campos in pu_cpop_perfil_assuntos().items() %}
         , {{ assunto }}.data_registro as data_registro_{{ assunto }},
@@ -33,6 +49,7 @@ select
         {% endfor %}
     {% endfor %}
 from usuarios as u
+left join unidades_atendimento as unidades on u.id_usuario = unidades.id_usuario
 {% for assunto in pu_cpop_perfil_assuntos() %}
     left join ultimos as {{ assunto }} on u.id_usuario = {{ assunto }}.id_usuario and {{ assunto }}.tipo_registro = '{{ assunto }}'
 {% endfor %}

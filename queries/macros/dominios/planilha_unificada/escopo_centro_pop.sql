@@ -214,6 +214,7 @@ from registros r left join {{ pu_ref('dim_unidades') }} u on r.id_unidade = u.id
 
 
 {% macro pu_cpop_perfil_publico(alias) %}
+    coalesce({{ alias }}.unidades_atendimento, []) as unidades_atendimento,
     coalesce({{ alias }}.possui_registro_pai, '') as possui_registro_pai
     {% for assunto, campos in pu_cpop_perfil_assuntos().items() %}
         , coalesce(cast({{ alias }}.data_registro_{{ assunto }} as string), '') as data_registro_{{ assunto }}

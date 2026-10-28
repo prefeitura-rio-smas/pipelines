@@ -61,7 +61,27 @@ left join ultimos {{ assunto }} on u.id_usuario = {{ assunto }}.id_usuario and {
 ), comparacao as (
 select id_usuario, to_json_string(e) valor, 1 origem from esperado e
 union all
-select id_usuario, to_json_string(o) valor, -1 origem from {{ model }} o
+select id_usuario, to_json_string((select as struct o.* except(unidades_atendimento))) valor, -1 origem from {{ model }} o where id_usuario in (select id_usuario from esperado)
 )
 select id_usuario from comparacao group by id_usuario, valor having sum(origem) != 0
+{% endtest %}
+
+{% test pu_cpop_unidades(model) %}
+with atendimentos as (
+    select distinct p.id_usuario, nullif(trim(a.nome_unidade), '') nome
+    from {{ pu_ref('int_pu_atendimentos') }} p, unnest(p.atendimentos) a
+    join {{ pu_ref('dim_usuarios') }} u on p.id_usuario = u.id_usuario
+    where a.tipo_servico = 'centro_pop'
+), esperado as (
+    select id_usuario from atendimentos
+    union distinct
+    select id_usuario from {{ pu_ref('int_pu_registros_centro_pop') }}
+    where tipo_registro in ('pai','atendimento_social','saude','situacao_rua','desligamento')
+)
+select coalesce(e.id_usuario, m.id_usuario) id_usuario
+from esperado e full join {{ model }} m using(id_usuario)
+where e.id_usuario is null or m.id_usuario is null
+    or to_json_string(m.unidades_atendimento) != to_json_string(array(
+        select distinct a.nome from atendimentos a where a.id_usuario=m.id_usuario and a.nome is not null order by a.nome
+    ))
 {% endtest %}

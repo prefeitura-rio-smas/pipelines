@@ -17,8 +17,8 @@ models:
     - not_null
     - unique
 - name: int_pu_perfil_centro_pop
-  data_tests: [pu_cpop_selecao]
-  description: Último perfil inteiro por usuário e assunto.
+  data_tests: [pu_cpop_selecao, pu_cpop_unidades]
+  description: Perfil por usuário com registro específico ou atendimento Centro POP; sem formulário, respostas permanecem vazias.
   columns:
   - name: id_usuario
     data_tests:

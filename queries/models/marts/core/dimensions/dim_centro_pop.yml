@@ -6,6 +6,8 @@ models:
     por assunto, sem preencher lacunas com formulários anteriores. Registro PAI não
     implica acompanhamento ativo.
   columns:
+  - name: unidades_atendimento
+    description: Unidades com atendimento Centro POP registrado, sem nomes vazios ou repetidos e em ordem alfabética.
   - name: id_usuario
     data_tests:
     - not_null

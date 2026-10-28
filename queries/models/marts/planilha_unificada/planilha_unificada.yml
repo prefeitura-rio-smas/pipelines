@@ -45,6 +45,9 @@ models:
           - atendimentos.registros.profissionais.id_familia_referencia
           - atendimentos.registros.profissionais.id_atendimento_legado
     columns:
+      - name: escopos.centro_pop.unidades_atendimento
+        description: Lista de nomes das unidades com atendimento Centro POP registrado para o usuário.
+        data_type: "ARRAY<STRING>"
       - name: usuario
         description: |
           STRUCT com os atributos cadastrais, documentos e endereço em campos diretos,

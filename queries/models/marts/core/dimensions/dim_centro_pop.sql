@@ -1,6 +1,7 @@
 {{ config(enabled=target.name != 'prod', tags=['planilha_unificada', 'pu_dimensoes']) }}
 select
     id_usuario,
+    unidades_atendimento,
     possui_registro_pai,
     data_registro_pai,
     data_resposta_pai,
