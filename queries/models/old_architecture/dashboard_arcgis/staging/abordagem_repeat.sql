@@ -290,7 +290,7 @@ SELECT
     WHEN equipamento_destino = 'Instituto Social Marca de Cristo' THEN 'Instituto Social Marca de Cristo'
     WHEN equipamento_destino = 'Associação Maranatha RJ Madureira' THEN 'Associação Maranatha RJ Madureira'
     WHEN equipamento_destino = 'Associação Maranatha RJ Padre Miguel' THEN 'Associação Maranatha RJ Padre Miguel'
-    WHEN equipamento_destino = 'urs_ilha' THEN 'URS Ilha do Governador
+    WHEN equipamento_destino = 'urs_ilha' THEN 'URS Ilha do Governador'
     WHEN equipamento_destino = 'base_abordagem_social' THEN 'Base Abordagem Social'
     WHEN equipamento_destino = 'Instituto Social Manassés Campo Grande 2' THEN 'Instituto Social Manassés Campo Grande 2'
     WHEN equipamento_destino = 'centr_transformacao_manasses' THEN 'Centro de Transformação Manassés'
