@@ -50,7 +50,3 @@ jobs:
       - name: DBT Parse
         run: uv run dbt parse --project-dir queries --profiles-dir queries --target ci
 
-      - name: DBT Compile planilha unificada (offline)
-        run: >-
-          uv run dbt compile --project-dir queries --profiles-dir queries --target ci
-          --select tag:planilha_unificada --no-introspect --no-populate-cache
