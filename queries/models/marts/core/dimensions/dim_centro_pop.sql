@@ -1,4 +1,4 @@
-{{ config(materialized='table', schema=var('pu_candidato_schema', 'pu_candidatos'), tags=['pu_dimensoes']) }}
+{{ config(enabled=target.name != 'prod', tags=['planilha_unificada', 'pu_dimensoes']) }}
 select
     id_usuario,
     possui_registro_pai,
