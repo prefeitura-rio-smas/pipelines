@@ -1,0 +1,15 @@
+version: 2
+models:
+- name: dim_centro_pop
+  description: Último perfil Centro POP por usuário, considerando todas as unidades
+    e sem corte mensal. Colunas simples e listas de texto; uma ocorrência inteira
+    por assunto, sem preencher lacunas com formulários anteriores. Registro PAI não
+    implica acompanhamento ativo.
+  columns:
+  - name: id_usuario
+    data_tests:
+    - not_null
+    - unique
+  data_tests:
+  - pu_cpop_perfil
+  - pu_cpop_sem_structs

@@ -1,0 +1,26 @@
+version: 2
+models:
+- name: int_pu_registros_centro_pop
+  description: Uma ocorrência datada de resposta ou presença; preserva as regras de
+    extração já validadas, sem consolidar por usuário ou mês. Dados gerais de pessoa
+    não geram vínculo artificial com unidades.
+  data_tests:
+  - pu_cpop_integridade
+  columns:
+  - name: id_usuario
+    data_tests:
+    - not_null
+  - name: id_registro
+    description: Identidade técnica estável da ocorrência, preservada na separação
+      do antigo model.
+    data_tests:
+    - not_null
+    - unique
+- name: int_pu_perfil_centro_pop
+  data_tests: [pu_cpop_selecao]
+  description: Último perfil inteiro por usuário e assunto.
+  columns:
+  - name: id_usuario
+    data_tests:
+    - not_null
+    - unique
