@@ -50,3 +50,17 @@ models:
         data_tests: [not_null, unique]
     data_tests:
       - pu_bi_profissionais_unicos
+
+  - name: int_pu_eventos_por_servico
+    description: Eventos por usuário e serviço, sem consolidação de perfil.
+    data_tests:
+      - pu_preservacao_eventos
+      - pu_formularios_eventos
+      - dbt_utils.unique_combination_of_columns:
+          arguments:
+            combination_of_columns: [id_usuario, tipo_servico]
+    columns:
+      - name: id_usuario
+        data_tests: [not_null]
+      - name: tipo_servico
+        data_tests: [not_null]
