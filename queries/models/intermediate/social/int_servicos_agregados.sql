@@ -19,6 +19,7 @@ dominios as (
     from {{ ref('acolherio_dominios') }}
     where
         dominio = 'servassist'
+        and (vigente_desde is null or vigente_desde <= current_date())
         and (vigente_ate is null or vigente_ate >= current_date())
 ),
 

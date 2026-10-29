@@ -13,6 +13,7 @@ seeds:
       sistema (`gh_servassist.dscservassist`) não é sincronizada para o BigQuery.
       Enquanto o rótulo não existir, `int_servicos_agregados` emite
       `Serviço não mapeado (código <N>)` — o fallback torna a lacuna visível.
+      Intervalos do mesmo domínio/código não podem se sobrepor, inclusive no futuro.
     config:
       column_types:
         codigo: string
@@ -31,9 +32,9 @@ seeds:
       - name: ordem
         description: "Ordem de apresentação; default `safe_cast(codigo as int64)`."
       - name: vigente_desde
-        description: "Início da vigência do rótulo; NULL = sem limite inferior."
+        description: "Início inclusivo da vigência do rótulo; NULL = sem limite inferior."
       - name: vigente_ate
-        description: "Fim da vigência do rótulo; NULL = vigente."
+        description: "Fim inclusivo da vigência do rótulo; NULL = sem limite superior."
       - name: fonte
         description: "Origem da curadoria (catálogo, modelo legacy, curadoria manual)."
       - name: observacao
