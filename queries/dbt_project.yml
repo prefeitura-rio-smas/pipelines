@@ -11,6 +11,13 @@ vars:
   corte_extrema_pobreza: 218
   id_vulnerabilidade_descumprimento_condicionalidades: 1
 
+seeds:
+  queries:
+    # Catálogos código→rótulo (dado, não macro). Em prod ficam no dataset raw,
+    # junto das views de origem que eles traduzem. Entram nos builds tag-driven
+    # como ancestral dos modelos que os consomem.
+    +schema: "{{ 'raw' if target.name == 'prod' else 'gerenciamento__dbt' }}"
+
 models:
   queries:
     # --- Nova Arquitetura Medallion ---
