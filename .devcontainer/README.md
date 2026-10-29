@@ -7,7 +7,15 @@ fica isolado como ferramenta uv na versão 4.3.0.
 Após atualizar a branch, execute **Codespaces: Rebuild Container** e conecte o
 editor. O script postAttach instala e confere sete versões específicas de
 extensões; falhas identificam a versão indisponível. As demais extensões do
-projeto não são fixadas. Atualizações automáticas ficam desativadas por padrão.
+projeto não são fixadas. A cada conexão, o script restabelece as sete versões
+especificadas quando necessário; ele não bloqueia atualizações globais do editor.
+
+Para desativar atualizações automáticas, cada pessoa deve configurar essa opção
+nas preferências de **Usuário** do VS Code, e não nas configurações remotas do
+container. Procure “Extensions: Auto Update” e desative a opção (ou selecione
+“off”, conforme a versão do editor). Opcionalmente, desative também
+“Extensions: Auto Check Updates”. Essas preferências afetam outras extensões do
+usuário; o repositório não as impõe.
 
 O visual usa Sweet Dracula, perspectiva dbt Vintage, barra secundária oculta e
 nenhuma dica inicial do terminal. Preferências pessoais podem sobrescrever esses

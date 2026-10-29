@@ -36,9 +36,7 @@
         "workbench.colorTheme": "Sweet Dracula",
         "workbench.secondarySideBar.defaultVisibility": "hidden",
         "terminal.integrated.initialHint": false,
-        "dbt.perspectiveTheme": "Vintage",
-        "extensions.autoUpdate": false,
-        "extensions.autoCheckUpdates": false
+        "dbt.perspectiveTheme": "Vintage"
       },
       "extensions": [
         "ms-python.python",
