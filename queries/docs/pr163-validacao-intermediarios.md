@@ -40,3 +40,18 @@ idêntica. A planilha mudou para 2889 usuários exclusivamente no campo
 `nome_servico`: desconsiderando esse campo, zero diferenças nas linhas completas.
 Essa alteração incorpora a taxonomia vigente da main, preservando seu seed e seu
 contrato de histórico. Não houve mudança de população nem de quantidade de eventos.
+
+## Arquitetura final: dimensões e supertabela
+
+Os dois modelos de mart Centro POP e o intermediário mensal foram removidos.
+O fluxo permanece intermediários → dimensões → supertabela. O Looker deverá
+consultar `planilha_unificada`, aplicar filtros por unidade, período e tipo de
+atendimento e calcular agregações, evitando multiplicar eventos ao expandir arrays.
+A configuração do Looker será migrada em etapa própria, fora deste repositório.
+As tabelas físicas antigas foram preservadas temporariamente; não serão mais
+reconstruídas pelo dbt. As validações mensais acima são evidências históricas,
+não contratos da arquitetura final. Cobertura das evoluções permanece obrigatória.
+
+Validação final após remover as marts: três tabelas e 17 testes aprovados.
+Comparação integral antes/depois: 592938 linhas da supertabela e 1528 linhas da
+dimensão Centro POP, com zero adições, remoções ou alterações de conteúdo.
