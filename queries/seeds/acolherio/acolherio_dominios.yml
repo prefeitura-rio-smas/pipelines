@@ -1,0 +1,45 @@
+version: 2
+
+seeds:
+  - name: acolherio_dominios
+    description: |
+      Catálogo código→rótulo do AcolheRio (código do sistema → descrição legível).
+      É DADO, não macro: ver `ops/macros/taxonomia-macros.md` §3. Consumido por
+      `ref('acolherio_dominios')` + LEFT JOIN na camada intermediate.
+
+      **Cobertura atual:** só `dominio = 'servassist'`, com os códigos 1 (PAIF) e
+      6 (PAEFI). Os códigos 2, 3, 4, 5, 7, 8, 9 e 10 (~34% dos vínculos ativos de
+      `gh_famil_servassist`) ainda não têm rótulo porque a tabela de domínio do
+      sistema (`gh_servassist.dscservassist`) não é sincronizada para o BigQuery.
+      Enquanto o rótulo não existir, `int_servicos_agregados` emite
+      `Serviço não mapeado (código <N>)` — o fallback torna a lacuna visível.
+      Intervalos do mesmo domínio/código não podem se sobrepor, inclusive no futuro.
+    config:
+      column_types:
+        codigo: string
+        vigente_desde: date
+        vigente_ate: date
+    columns:
+      - name: dominio
+        description: "Nome do domínio no catálogo (ex.: servassist)."
+        tests: [not_null]
+      - name: codigo
+        description: "Código do sistema como STRING, preservando zeros à esquerda."
+        tests: [not_null]
+      - name: rotulo
+        description: "Rótulo legível do código."
+        tests: [not_null]
+      - name: ordem
+        description: "Ordem de apresentação; default `safe_cast(codigo as int64)`."
+      - name: vigente_desde
+        description: "Início inclusivo da vigência do rótulo; NULL = sem limite inferior."
+      - name: vigente_ate
+        description: "Fim inclusivo da vigência do rótulo; NULL = sem limite superior."
+      - name: fonte
+        description: "Origem da curadoria (catálogo, modelo legacy, curadoria manual)."
+      - name: observacao
+        description: "Nota de curadoria."
+    tests:
+      - dbt_utils.unique_combination_of_columns:
+          arguments:
+            combination_of_columns: [dominio, codigo, vigente_desde]

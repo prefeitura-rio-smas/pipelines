@@ -1,0 +1,98 @@
+version: 2
+
+unit_tests:
+  - name: servicos_vigencia_atual_e_futuro
+    model: int_servicos_agregados
+    given:
+      - input: ref('raw_familias_servicos_assistenciais')
+        format: sql
+        rows: |
+          select 1 as id_familia, 1 as id_servico_assistencial, 1 as id_unidade,
+                 1 as id_login_cadastro, date '2020-01-01' as data_cadastro,
+                 cast(null as date) as data_cancelamento
+          union all
+          select 1, 2, 1, 1, date '2020-01-01', date '2021-01-01'
+      - input: ref('acolherio_dominios')
+        format: sql
+        rows: |
+          select '1' as codigo, 'Atual' as rotulo, cast(null as date) as vigente_desde, current_date() as vigente_ate, 'servassist' as dominio union all select '1', 'Futuro', date_add(current_date(), interval 1 day), null, 'servassist'
+    expect:
+      rows:
+        - id_familia: 1
+          servicos_ativos: "Atual"
+  - name: servicos_vigencia_expirado
+    model: int_servicos_agregados
+    given:
+      - input: ref('raw_familias_servicos_assistenciais')
+        format: sql
+        rows: |
+          select 1 as id_familia, 1 as id_servico_assistencial, 1 as id_unidade,
+                 1 as id_login_cadastro, date '2020-01-01' as data_cadastro,
+                 cast(null as date) as data_cancelamento
+          union all
+          select 1, 2, 1, 1, date '2020-01-01', date '2021-01-01'
+      - input: ref('acolherio_dominios')
+        format: sql
+        rows: |
+          select '1' as codigo, 'Antigo' as rotulo, cast(null as date) as vigente_desde, date_sub(current_date(), interval 1 day) as vigente_ate, 'servassist' as dominio
+    expect:
+      rows:
+        - id_familia: 1
+          servicos_ativos: "Serviço não mapeado (código 1)"
+  - name: servicos_vigencia_futuro
+    model: int_servicos_agregados
+    given:
+      - input: ref('raw_familias_servicos_assistenciais')
+        format: sql
+        rows: |
+          select 1 as id_familia, 1 as id_servico_assistencial, 1 as id_unidade,
+                 1 as id_login_cadastro, date '2020-01-01' as data_cadastro,
+                 cast(null as date) as data_cancelamento
+          union all
+          select 1, 2, 1, 1, date '2020-01-01', date '2021-01-01'
+      - input: ref('acolherio_dominios')
+        format: sql
+        rows: |
+          select '1' as codigo, 'Futuro' as rotulo, date_add(current_date(), interval 1 day) as vigente_desde, cast(null as date) as vigente_ate, 'servassist' as dominio
+    expect:
+      rows:
+        - id_familia: 1
+          servicos_ativos: "Serviço não mapeado (código 1)"
+  - name: servicos_vigencia_limites_hoje
+    model: int_servicos_agregados
+    given:
+      - input: ref('raw_familias_servicos_assistenciais')
+        format: sql
+        rows: |
+          select 1 as id_familia, 1 as id_servico_assistencial, 1 as id_unidade,
+                 1 as id_login_cadastro, date '2020-01-01' as data_cadastro,
+                 cast(null as date) as data_cancelamento
+          union all
+          select 1, 2, 1, 1, date '2020-01-01', date '2021-01-01'
+      - input: ref('acolherio_dominios')
+        format: sql
+        rows: |
+          select '1' as codigo, 'Hoje' as rotulo, current_date() as vigente_desde, current_date() as vigente_ate, 'servassist' as dominio
+    expect:
+      rows:
+        - id_familia: 1
+          servicos_ativos: "Hoje"
+  - name: servicos_vigencia_aberto
+    model: int_servicos_agregados
+    given:
+      - input: ref('raw_familias_servicos_assistenciais')
+        format: sql
+        rows: |
+          select 1 as id_familia, 1 as id_servico_assistencial, 1 as id_unidade,
+                 1 as id_login_cadastro, date '2020-01-01' as data_cadastro,
+                 cast(null as date) as data_cancelamento
+          union all
+          select 1, 2, 1, 1, date '2020-01-01', date '2021-01-01'
+      - input: ref('acolherio_dominios')
+        format: sql
+        rows: |
+          select '1' as codigo, 'Aberto' as rotulo, cast(null as date) as vigente_desde, cast(null as date) as vigente_ate, 'servassist' as dominio
+    expect:
+      rows:
+        - id_familia: 1
+          servicos_ativos: "Aberto"

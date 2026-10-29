@@ -99,9 +99,20 @@ composicao_familiar as (
 
 servicos as (
     select
-        id_familia,
-        servicos_historico as servicos
-    from {{ pu_ref('int_servicos_agregados') }}
+        s.id_familia,
+        array_agg(struct(
+            h.id_servico_assistencial,
+            h.id_unidade,
+            u.nome_unidade,
+            h.id_profissional as id_login_cadastro,
+            h.data_cadastro,
+            h.data_cancelamento,
+            h.nome_servico_socioassistencial as nome_servico
+        ) order by h.data_cadastro, h.id_servico_assistencial, h.id_unidade, h.data_cancelamento, h.id_profissional) as servicos
+    from {{ pu_ref('int_servicos_agregados') }} as s,
+        unnest(s.servicos_historico) as h
+    left join {{ pu_ref('dim_unidades') }} as u on h.id_unidade = u.id_unidade
+    group by s.id_familia
 )
 
 select

@@ -1,0 +1,3 @@
+dominio,codigo,rotulo,ordem,vigente_desde,vigente_ate,fonte,observacao
+servassist,1,PAIF,1,,,curadoria manual (raw_servassist — RMA CRAS),seqservassist = 1 confirmado em old_architecture/rma/cras/raw/raw_servassist.sql
+servassist,6,PAEFI,6,,,curadoria manual (raw_servassist_creas — RMA CREAS),seqservassist = 6 confirmado em raw_servassist_creas.sql e marts/rma_cras/demandas_cvs.md
