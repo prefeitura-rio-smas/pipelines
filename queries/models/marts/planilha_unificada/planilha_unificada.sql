@@ -49,7 +49,7 @@ formularios_por_evolucao as (
     select
         p.id_usuario,
         f.id_evolucao_modulo,
-        array_agg(struct(f.titulo_formulario, f.observacoes, f.campos) order by posicao) as formularios
+        array_agg(struct(f.titulo_formulario, f.observacoes, f.campos, f.data_ocorrencia, f.origem_data_ocorrencia, f.situacao_data_ocorrencia) order by posicao) as formularios
     from {{ pu_ref('int_formularios_por_usuario') }} as p, unnest(p.formularios) as f with offset as posicao
     group by p.id_usuario, f.id_evolucao_modulo
 ),
@@ -384,6 +384,9 @@ select
                 array(
                     select as struct
                         coalesce(cast(item2.titulo_formulario as string), '') as titulo_formulario,
+                        coalesce(cast(item2.data_ocorrencia as string), '') as data_ocorrencia,
+                        item2.origem_data_ocorrencia,
+                        item2.situacao_data_ocorrencia,
                         coalesce(cast(item2.observacoes as string), '') as observacoes,
                         array(
                             select concat(coalesce(cast(item3.label as string), ''), ': ', coalesce(cast(item3.valor as string), ''))

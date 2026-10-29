@@ -40,7 +40,7 @@ with esperado as (
         on p.id_usuario=e.id_usuario and f.id_evolucao_modulo=e.id_evolucao_modulo
 ), obtido as (
     select d.usuario.id_usuario as id_usuario, e.id_evolucao_modulo, posicao,
-        to_json_string(f) as formulario
+        to_json_string(struct(f.titulo_formulario, f.observacoes, f.campos)) as formulario
     from {{ model }} as d, unnest(d.evolucoes.registros) as e,
         unnest(e.formularios) as f with offset as posicao
 )

@@ -19,7 +19,7 @@ models:
     config:
       meta:
         granularidade: [usuario.id_usuario]
-        contrato: por_assunto_v9_campos_diretos_formularios_texto
+        contrato: por_assunto_v10_datas_ocorrencia
         execucao: modelo_dbt
         publicacao: desenvolvimento
         valores_ausentes: texto_vazio
@@ -50,6 +50,12 @@ models:
           - atendimentos.registros.profissionais.id_familia_referencia
           - atendimentos.registros.profissionais.id_atendimento_legado
     columns:
+      - name: evolucoes.registros.formularios.data_ocorrencia
+        description: Data informada válida e única do formulário; usa data_evolucao como alternativa.
+      - name: evolucoes.registros.formularios.origem_data_ocorrencia
+        description: formulario ou fonte; preserva a procedência da data efetiva.
+      - name: evolucoes.registros.formularios.situacao_data_ocorrencia
+        description: valida, ausente, invalida, conflitante ou nao_mapeado.
       - name: atendimentos.registros.id_unidade
         description: Chave da unidade do atendimento, como texto, para agrupamento sem associação pelo nome.
       - name: evolucoes.registros.id_unidade

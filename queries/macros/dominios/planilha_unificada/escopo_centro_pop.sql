@@ -103,6 +103,7 @@ html as (
         case v.titulo_formulario when 'Situação de Saúde' then 'saude' when 'Centro POP - Plano de Atendimento Individual (PAI)' then 'pai' when 'Centro POP - Desligamento PAI' then 'desligamento' else 'atendimento_social' end tipo_registro,
         if(v.titulo_formulario = 'Situação de Saúde', 'pessoa', 'unidade') abrangencia,
         v.id_evolucao_modulo, v.titulo_formulario,
+        v.data_ocorrencia, v.origem_data_ocorrencia, v.situacao_data_ocorrencia,
         cast(v.data_evolucao as datetime) data_registro, cast(v.data_evolucao as datetime) data_resposta,
         to_json_string(struct(v.id_evolucao_modulo, v.id_unidade, v.titulo_formulario, v.observacoes, v.campos)) chave_origem,
         {% set valores_html = {
@@ -151,6 +152,7 @@ questionarios as (
     select distinct q.id_prontuario id_usuario, cast(null as int64) id_unidade, 'questionario_estruturado' origem,
         'situacao_rua' tipo_registro, 'pessoa' abrangencia, cast(null as string) id_evolucao_modulo,
         'Situação do usuário / motivo da ida às ruas' titulo_formulario,
+        cast(q.data_evolucao as date) data_ocorrencia, 'fonte' origem_data_ocorrencia, 'nao_mapeado' situacao_data_ocorrencia,
         cast(q.data_evolucao as datetime) data_registro, cast(r.data_resposta as datetime) data_resposta,
         to_json_string(struct(q.id_modulo, q.id_template, q.id_evolucao, r.id_questao, r.data_resposta, r.resposta)) chave_origem,
         {% for campo, tipo in pu_cpop_campos().items() %}
@@ -166,6 +168,7 @@ questionarios as (
 atividades as (
     select p.id_usuario, p.id_unidade, 'presenca' origem, 'participacao' tipo_registro, 'unidade' abrangencia,
         cast(null as string) id_evolucao_modulo, 'Presença em atividade coletiva' titulo_formulario,
+        cast(p.data_presenca as date) data_ocorrencia, 'fonte' origem_data_ocorrencia, 'nao_mapeado' situacao_data_ocorrencia,
         cast(p.data_presenca as datetime) data_registro, cast(p.data_presenca as datetime) data_resposta,
         to_json_string(struct(p.id_atividade, p.data_presenca, p.hora_presenca, p.id_unidade)) chave_origem,
         {% for campo, tipo in pu_cpop_campos().items() %}
@@ -184,6 +187,8 @@ from registros r left join {{ pu_ref('dim_unidades') }} u on r.id_unidade = u.id
 
 {% macro pu_cpop_historico_publico(alias) %}
 {{ alias }}.origem, {{ alias }}.tipo_registro, {{ alias }}.abrangencia,
+    coalesce(cast({{ alias }}.data_ocorrencia as string), '') as data_ocorrencia,
+    {{ alias }}.origem_data_ocorrencia, {{ alias }}.situacao_data_ocorrencia,
     coalesce(cast({{ alias }}.id_unidade as string), '') as id_unidade,
     coalesce({{ alias }}.id_evolucao_modulo, '') as id_evolucao_modulo,
     coalesce({{ alias }}.titulo_formulario, '') as titulo_formulario,
@@ -215,6 +220,8 @@ from registros r left join {{ pu_ref('dim_unidades') }} u on r.id_unidade = u.id
     coalesce({{ alias }}.unidades_atendimento, []) as unidades_atendimento,
     coalesce({{ alias }}.possui_registro_pai, '') as possui_registro_pai
     {% for assunto, campos in pu_cpop_perfil_assuntos().items() %}
+        , coalesce(cast({{ alias }}.data_ocorrencia_{{ assunto }} as string), '') as data_ocorrencia_{{ assunto }}
+        , {{ alias }}.origem_data_ocorrencia_{{ assunto }}, {{ alias }}.situacao_data_ocorrencia_{{ assunto }}
         , coalesce(cast({{ alias }}.data_registro_{{ assunto }} as string), '') as data_registro_{{ assunto }}
         , coalesce(cast({{ alias }}.data_resposta_{{ assunto }} as string), '') as data_resposta_{{ assunto }}
 {% for campo in campos %}

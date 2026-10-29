@@ -7,11 +7,52 @@ models:
     implica acompanhamento ativo.
   columns:
   - name: unidades_atendimento
-    description: Unidades com atendimento Centro POP registrado, sem nomes vazios ou repetidos e em ordem alfabética.
+    description: Unidades com atendimento Centro POP registrado, sem nomes vazios
+      ou repetidos e em ordem alfabética.
   - name: id_usuario
     data_tests:
     - not_null
     - unique
+  - name: data_ocorrencia_pai
+    description: Data efetiva usada para selecionar o perfil; preserva a data original
+      separadamente.
+  - name: origem_data_ocorrencia_pai
+    description: 'Procedência da data efetiva: formulario ou fonte.'
+  - name: situacao_data_ocorrencia_pai
+    description: 'Validação da data informada: valida, ausente, invalida, conflitante
+      ou nao_mapeado.'
+  - name: data_ocorrencia_atendimento_social
+    description: Data efetiva usada para selecionar o perfil; preserva a data original
+      separadamente.
+  - name: origem_data_ocorrencia_atendimento_social
+    description: 'Procedência da data efetiva: formulario ou fonte.'
+  - name: situacao_data_ocorrencia_atendimento_social
+    description: 'Validação da data informada: valida, ausente, invalida, conflitante
+      ou nao_mapeado.'
+  - name: data_ocorrencia_saude
+    description: Data efetiva usada para selecionar o perfil; preserva a data original
+      separadamente.
+  - name: origem_data_ocorrencia_saude
+    description: 'Procedência da data efetiva: formulario ou fonte.'
+  - name: situacao_data_ocorrencia_saude
+    description: 'Validação da data informada: valida, ausente, invalida, conflitante
+      ou nao_mapeado.'
+  - name: data_ocorrencia_situacao_rua
+    description: Data efetiva usada para selecionar o perfil; preserva a data original
+      separadamente.
+  - name: origem_data_ocorrencia_situacao_rua
+    description: 'Procedência da data efetiva: formulario ou fonte.'
+  - name: situacao_data_ocorrencia_situacao_rua
+    description: 'Validação da data informada: valida, ausente, invalida, conflitante
+      ou nao_mapeado.'
+  - name: data_ocorrencia_desligamento
+    description: Data efetiva usada para selecionar o perfil; preserva a data original
+      separadamente.
+  - name: origem_data_ocorrencia_desligamento
+    description: 'Procedência da data efetiva: formulario ou fonte.'
+  - name: situacao_data_ocorrencia_desligamento
+    description: 'Validação da data informada: valida, ausente, invalida, conflitante
+      ou nao_mapeado.'
   data_tests:
   - pu_cpop_perfil
   - pu_cpop_sem_structs

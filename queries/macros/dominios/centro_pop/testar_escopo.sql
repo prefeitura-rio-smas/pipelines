@@ -31,7 +31,7 @@ with esperado as (
 with ultimos as (
     -- Selecionar a ocorrência inteira antes de projetar respostas, inclusive vazias.
     select selecionado.* from (
-        select array_agg(r order by data_registro desc nulls last,
+        select array_agg(r order by data_ocorrencia desc nulls last, data_registro desc nulls last,
             data_resposta desc nulls last, id_registro desc limit 1)[offset(0)] as selecionado
         from {{ pu_ref('int_registros_centro_pop') }} r
         where tipo_registro in ({% for assunto in pu_cpop_perfil_assuntos() %}'{{ assunto }}'{% if not loop.last %}, {% endif %}{% endfor %})
@@ -43,7 +43,10 @@ with ultimos as (
 select u.id_usuario,
     if(pai.id_registro is not null, 'Sim', '') as possui_registro_pai
     {% for assunto, campos in pu_cpop_perfil_assuntos().items() %}
-        , {{ assunto }}.data_registro as data_registro_{{ assunto }}
+        , {{ assunto }}.data_ocorrencia as data_ocorrencia_{{ assunto }},
+        {{ assunto }}.origem_data_ocorrencia as origem_data_ocorrencia_{{ assunto }},
+        {{ assunto }}.situacao_data_ocorrencia as situacao_data_ocorrencia_{{ assunto }},
+        {{ assunto }}.data_registro as data_registro_{{ assunto }}
         , {{ assunto }}.data_resposta as data_resposta_{{ assunto }}
 {% for campo in campos %}
         , {% if campo == 'encaminhamentos' %}

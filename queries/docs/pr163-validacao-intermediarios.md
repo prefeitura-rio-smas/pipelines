@@ -55,3 +55,24 @@ não contratos da arquitetura final. Cobertura das evoluções permanece obrigat
 Validação final após remover as marts: três tabelas e 17 testes aprovados.
 Comparação integral antes/depois: 592938 linhas da supertabela e 1528 linhas da
 dimensão Centro POP, com zero adições, remoções ou alterações de conteúdo.
+
+## Datas da ocorrência
+
+Formulários passam a expor `data_ocorrencia`, `origem_data_ocorrencia` e
+`situacao_data_ocorrencia`. As datas originais continuam disponíveis.
+O seed `formularios_datas_ocorrencia` define títulos e campos elegíveis; não há
+inferência por texto livre, nascimento ou agendamento. Datas preenchidas inválidas
+ou conflitantes levam à data da fonte. Na locação, os dois marcos mapeados devem
+concordar; não se escolhe arbitrariamente entre assinatura e entrada.
+O perfil Centro POP ordena pela ocorrência, registro original, resposta e ID.
+Uma evolução pode conter formulários com ocorrências distintas.
+
+Validação das datas: três tabelas e 18 testes aprovados, mais quatro testes de
+parser/mapeamento. As contagens permaneceram em 592938 usuários, 1017861
+atendimentos, 663544 evoluções e 398571 formulários. 9212 formulários usam uma
+data informada válida; 5614 têm ocorrência anterior à data da fonte e 2874
+passam a ter mês de ocorrência diferente. Foram sinalizados 50 valores inválidos
+com alternativa da fonte; nenhum conflito de datas apareceu nesta base.
+A seleção do perfil mudou para três dos 1528 usuários Centro POP, sem mudança
+de população. Eventos e conteúdo original dos formulários passaram nos testes
+de preservação. A tabela publicada não foi substituída.
