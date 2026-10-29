@@ -24,9 +24,6 @@ models:
 
     intermediate:
       +materialized: ephemeral
-      planilha_unificada:
-        +enabled: "{{ target.name != 'prod' }}"
-        +tags: ["planilha_unificada"]
       core:
         +materialized: table
         +schema: "{{ 'core' if target.name == 'prod' else 'gerenciamento__dbt' }}"

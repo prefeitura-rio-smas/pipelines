@@ -1,3 +1,4 @@
+{{ config(materialized='ephemeral', enabled=target.name != 'prod', tags=['planilha_unificada']) }}
 with fonte as (
     select * from {{ ref('planilha_unificada') }}
 ),

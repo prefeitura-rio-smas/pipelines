@@ -11,7 +11,7 @@ where conflitos != 0 or id_usuario is null or id_registro is null
 {% endtest %}
 
 {% test pu_cpop_perfil(model) %}
-with esperado as (select * from {{ ref('int_pu_perfil_centro_pop') }}),
+with esperado as (select * from {{ ref('int_perfil_centro_pop') }}),
 comparacao as (
     select id_usuario, to_json_string(e) valor, 'esperado' origem from esperado e
     union all
@@ -33,7 +33,7 @@ with ultimos as (
     select selecionado.* from (
         select array_agg(r order by data_registro desc nulls last,
             data_resposta desc nulls last, id_registro desc limit 1)[offset(0)] as selecionado
-        from {{ pu_ref('int_pu_registros_centro_pop') }} r
+        from {{ pu_ref('int_registros_centro_pop') }} r
         where tipo_registro in ({% for assunto in pu_cpop_perfil_assuntos() %}'{{ assunto }}'{% if not loop.last %}, {% endif %}{% endfor %})
         group by id_usuario, tipo_registro
     )
@@ -69,13 +69,13 @@ select id_usuario from comparacao group by id_usuario, valor having sum(origem) 
 {% test pu_cpop_unidades(model) %}
 with atendimentos as (
     select distinct p.id_usuario, nullif(trim(a.nome_unidade), '') nome
-    from {{ pu_ref('int_pu_atendimentos') }} p, unnest(p.atendimentos) a
+    from {{ pu_ref('int_atendimentos_por_usuario') }} p, unnest(p.atendimentos) a
     join {{ pu_ref('dim_usuarios') }} u on p.id_usuario = u.id_usuario
     where a.tipo_servico = 'centro_pop'
 ), esperado as (
     select id_usuario from atendimentos
     union distinct
-    select id_usuario from {{ pu_ref('int_pu_registros_centro_pop') }}
+    select id_usuario from {{ pu_ref('int_registros_centro_pop') }}
     where tipo_registro in ('pai','atendimento_social','saude','situacao_rua','desligamento')
 )
  , listas as (

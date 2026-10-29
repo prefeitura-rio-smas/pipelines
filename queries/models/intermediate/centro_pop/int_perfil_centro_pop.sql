@@ -1,8 +1,9 @@
+{{ config(materialized='ephemeral', enabled=target.name != 'prod', tags=['planilha_unificada']) }}
 -- Commas precede dynamically generated Jinja projections.
 -- noqa: disable=LT04
 with ultimos as (
     -- Selecionar a ocorrência inteira antes de projetar respostas, inclusive vazias.
-    select * from {{ pu_ref('int_pu_registros_centro_pop') }}
+    select * from {{ pu_ref('int_registros_centro_pop') }}
     where tipo_registro in ({% for assunto in pu_cpop_perfil_assuntos() %}'{{ assunto }}'{% if not loop.last %}, {% endif %}{% endfor %})
     qualify row_number() over (
         partition by id_usuario, tipo_registro
@@ -17,7 +18,7 @@ unidades_atendimento as (
             distinct nullif(trim(a.nome_unidade), '') ignore nulls
             order by nullif(trim(a.nome_unidade), '')
         ) as unidades_atendimento
-    from {{ pu_ref('int_pu_atendimentos') }} as p, unnest(p.atendimentos) as a
+    from {{ pu_ref('int_atendimentos_por_usuario') }} as p, unnest(p.atendimentos) as a
     inner join {{ pu_ref('dim_usuarios') }} as u on p.id_usuario = u.id_usuario
     where a.tipo_servico = 'centro_pop'
     group by p.id_usuario

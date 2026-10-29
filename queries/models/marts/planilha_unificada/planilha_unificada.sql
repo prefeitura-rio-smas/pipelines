@@ -40,8 +40,8 @@ atendimentos_por_usuario as (
                 a.data_atendimento, a.hora_atendimento, a.id_atendimento_modulo,
                 a.id_unidade, a.id_tipo_atendimento, a.tipo_atendimento_descricao, a.flag_cancelado
         ) as atendimentos
-    from {{ pu_ref('int_pu_atendimentos') }} as d, unnest(d.atendimentos) as a
-    left join {{ pu_ref('int_pu_complementos_bi') }} as c on a.id_atendimento_modulo = c.id_atendimento_modulo and d.id_usuario = c.id_usuario
+    from {{ pu_ref('int_atendimentos_por_usuario') }} as d, unnest(d.atendimentos) as a
+    left join {{ pu_ref('int_atendimentos_complementos_referencia') }} as c on a.id_atendimento_modulo = c.id_atendimento_modulo and d.id_usuario = c.id_usuario
     group by d.id_usuario
 ),
 
@@ -50,7 +50,7 @@ formularios_por_evolucao as (
         p.id_usuario,
         f.id_evolucao_modulo,
         array_agg(struct(f.titulo_formulario, f.observacoes, f.campos) order by posicao) as formularios
-    from {{ pu_ref('int_pu_formularios') }} as p, unnest(p.formularios) as f with offset as posicao
+    from {{ pu_ref('int_formularios_por_usuario') }} as p, unnest(p.formularios) as f with offset as posicao
     group by p.id_usuario, f.id_evolucao_modulo
 ),
 
@@ -64,7 +64,7 @@ registros_evolucoes as (
             {{ texto_html_legivel('e.descricao_evolucao') }} as descricao_evolucao,
             coalesce(f.formularios, []) as formularios
         ) order by e.data_evolucao, e.id_evolucao_modulo) as evolucoes
-    from {{ pu_ref('int_pu_evolucoes') }} as e
+    from {{ pu_ref('int_evolucoes_por_usuario') }} as e
     left join formularios_por_evolucao as f on e.id_usuario = f.id_usuario and e.id_evolucao_modulo = f.id_evolucao_modulo
     group by e.id_usuario
 ),
@@ -81,7 +81,7 @@ escopo_centro_pop as (
             coalesce(cast(s.data_presenca as string), '') as data_presenca,
             coalesce(s.hora_presenca, '') as hora_presenca
         ), null) ignore nulls order by s.data_presenca, s.hora_presenca, s.id_atividade, s.id_registro) as participacoes
-    from {{ pu_ref('int_pu_registros_centro_pop') }} as s
+    from {{ pu_ref('int_registros_centro_pop') }} as s
     group by s.id_usuario
 ),
 
@@ -146,7 +146,7 @@ base as (
             order by posicao
         ) as beneficio,
         coalesce(proj.projetos_sociais, []) as projetos_sociais,
-        c.cadastro_complementar,
+        struct(u.uf_nascimento, u.serie_escolar, u.data_cadunico_informada) as cadastro_complementar,
         end_bi.endereco,
         if(d.documentos_cadunico is null, null, (
             select as struct d.documentos_cadunico.* except (cpf_normalizado, id_familia_cadunico)
@@ -191,12 +191,11 @@ base as (
         coalesce(e.evolucoes, []) as evolucoes
     from {{ pu_ref('dim_usuarios') }} as u
     left join projetos_por_usuario as proj on u.id_usuario = proj.id_usuario
-    left join {{ pu_ref('int_pu_cadastro') }} as c on u.id_usuario = c.id_usuario
-    left join {{ pu_ref('int_pu_enderecos_bi') }} as end_bi on u.id_usuario = end_bi.id_usuario
+    left join {{ pu_ref('int_usuarios_enderecos') }} as end_bi on u.id_usuario = end_bi.id_usuario
     left join
-        {{ pu_ref('int_pu_documentos_cadunico') }} as d
+        {{ pu_ref('int_usuarios_documentos_cadunico') }} as d
         on u.id_usuario = d.id_usuario
-    left join {{ pu_ref('int_pu_familias') }} as f on u.id_usuario = f.id_usuario
+    left join {{ pu_ref('int_usuarios_familias') }} as f on u.id_usuario = f.id_usuario
     left join
         atendimentos_por_usuario as a
         on u.id_usuario = a.id_usuario

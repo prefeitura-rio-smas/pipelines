@@ -1,3 +1,4 @@
+{{ config(materialized='ephemeral', enabled=target.name != 'prod', tags=['planilha_unificada']) }}
 -- Snapshot atual: CPF ambíguo não recebe um documento/família arbitrário.
 with documentos as (
     select distinct

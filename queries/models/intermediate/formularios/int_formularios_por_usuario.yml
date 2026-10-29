@@ -1,0 +1,11 @@
+version: 2
+models:
+- name: int_formularios_por_usuario
+  description: Formulários HTML extraídos das evoluções, com entidades decodificadas
+    nos textos antes da deduplicação, origem, unidade e datas; sem escolha do último
+    perfil.
+  columns:
+  - name: id_usuario
+    data_tests:
+    - not_null
+    - unique

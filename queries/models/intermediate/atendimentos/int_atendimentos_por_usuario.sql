@@ -1,3 +1,4 @@
+{{ config(materialized='ephemeral', enabled=target.name != 'prod', tags=['planilha_unificada']) }}
 {% if var('pu_referencia', false) %}
     {{ pu_atendimentos_referencia_sql() }}
 {% else %}

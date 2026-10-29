@@ -1,3 +1,4 @@
+{{ config(materialized='ephemeral', enabled=target.name != 'prod', tags=['planilha_unificada']) }}
 with membros as (
     select distinct
         m.id_paciente as id_usuario,
@@ -96,33 +97,11 @@ composicao_familiar as (
     group by m.id_familia
 ),
 
-servicos_distintos as (
-    select distinct
-        s.id_familia,
-        s.id_servico_assistencial,
-        s.id_unidade,
-        s.id_login_cadastro,
-        s.data_cadastro,
-        s.data_cancelamento,
-        un.nome_unidade
-    from {{ pu_ref('raw_familias_servicos_assistenciais') }} as s
-    left join {{ pu_ref('dim_unidades') }} as un on s.id_unidade = un.id_unidade
-),
-
 servicos as (
     select
         id_familia,
-        array_agg(struct(
-            id_servico_assistencial,
-            id_unidade,
-            nome_unidade,
-            id_login_cadastro,
-            data_cadastro,
-            data_cancelamento,
-            {{ map_nome_servico_assistencial('id_servico_assistencial') }} as nome_servico
-        ) order by data_cadastro, id_servico_assistencial, id_unidade, data_cancelamento, id_login_cadastro) as servicos
-    from servicos_distintos
-    group by id_familia
+        servicos_historico as servicos
+    from {{ pu_ref('int_servicos_agregados') }}
 )
 
 select

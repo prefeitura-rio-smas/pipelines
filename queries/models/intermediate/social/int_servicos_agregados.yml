@@ -1,0 +1,11 @@
+version: 2
+models:
+  - name: int_servicos_agregados
+    description: Serviços assistenciais por família; mantém o array original e fornece histórico enriquecido independente.
+    columns:
+      - name: id_familia
+        description: Identificador da família.
+      - name: servicos
+        description: Array original de serviços, datas de cadastro e profissionais.
+      - name: servicos_historico
+        description: Histórico deduplicado e ordenado, incluindo unidade, descrição do serviço e cancelamentos.

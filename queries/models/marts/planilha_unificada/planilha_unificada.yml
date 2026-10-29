@@ -2,6 +2,7 @@ version: 2
 
 models:
   - name: planilha_unificada
+    data_tests: [pu_preservacao_eventos, pu_formularios_eventos]
     description: |
       Uma linha por usuario.id_usuario, com a mesma população de dim_usuarios.
       Contrato por assunto: usuario, familias, projetos_sociais, atendimentos, evolucoes e escopos.

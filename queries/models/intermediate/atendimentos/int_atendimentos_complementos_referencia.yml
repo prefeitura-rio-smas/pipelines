@@ -1,0 +1,12 @@
+version: 2
+models:
+- name: int_atendimentos_complementos_referencia
+  description: Contexto único por evento e complementos por profissional da referência;
+    IDs de família diferentes são mantidos por linha profissional.
+  columns:
+  - name: id_atendimento_modulo
+    data_tests:
+    - not_null
+    - unique
+  data_tests:
+  - pu_bi_profissionais_unicos

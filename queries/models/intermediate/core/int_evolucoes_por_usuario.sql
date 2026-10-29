@@ -1,3 +1,4 @@
+{{ config(materialized='ephemeral', enabled=target.name != 'prod', tags=['planilha_unificada']) }}
 -- Evoluções familiares só pertencem ao paciente explicitamente indicado.
 -- Não converte id_familia em id_usuario nem distribui registros aos membros.
 select distinct

@@ -1,0 +1,10 @@
+version: 2
+models:
+- name: int_usuarios_documentos_cadunico
+  description: Documentos e controle do snapshot atual do CadÚnico por usuário, resolvendo
+    ambiguidades por CPF.
+  columns:
+  - name: id_usuario
+    data_tests:
+    - not_null
+    - unique

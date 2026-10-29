@@ -37,4 +37,4 @@ select
     motivo_desligamento,
     motivo_desligamento_outros,
     observacoes_desligamento
-from {{ ref('int_pu_perfil_centro_pop') }}
+from {{ ref('int_perfil_centro_pop') }}

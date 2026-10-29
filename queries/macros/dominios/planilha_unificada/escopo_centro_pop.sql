@@ -58,19 +58,19 @@
 {% macro pu_cpop_registros_sql() %}
 with formularios as (
     select p.id_usuario, f.*, posicao
-    from {{ pu_ref('int_pu_formularios') }} p, unnest(p.formularios) f with offset posicao
+    from {{ pu_ref('int_formularios_por_usuario') }} p, unnest(p.formularios) f with offset posicao
 ),
 presencas as (
     select distinct p.id_usuario, p.id_unidade, p.id_atividade,
         safe_cast(p.data_presenca as date) data_presenca,
         {{ normalizar_hora_atendimento('cast(p.hora_presenca as string)') }} hora_presenca, a.nome_atividade
-    from {{ pu_ref('raw_presencas_usuarios') }} p
+    from {{ pu_ref('fct_presencas_usuarios') }} p
     join {{ pu_ref('dim_unidades') }} u on p.id_unidade = u.id_unidade and u.tipo_unidade = 'Centro POP'
     join {{ pu_ref('dim_usuarios') }} c on p.id_usuario = c.id_usuario
     left join {{ pu_ref('raw_atividades_grupo') }} a on p.id_atividade = a.id_atividade
 ),
 publico as (
-    select p.id_usuario from {{ pu_ref('int_pu_atendimentos') }} p, unnest(p.atendimentos) a where a.tipo_servico = 'centro_pop'
+    select p.id_usuario from {{ pu_ref('int_atendimentos_por_usuario') }} p, unnest(p.atendimentos) a where a.tipo_servico = 'centro_pop'
     union distinct select id_usuario from formularios where titulo_formulario in ('Centro POP - Plano de Atendimento Individual (PAI)', 'Centro POP - Atendimento Social', 'Centro POP - Desligamento PAI')
     union distinct select id_usuario from presencas
 ),
@@ -197,7 +197,6 @@ from registros r left join {{ pu_ref('dim_unidades') }} u on r.id_unidade = u.id
 {% endfor %}
 {% endmacro %}
 
-
 {% macro pu_cpop_perfil_assuntos() %}
     {{ return({
         'pai': ['data_inclusao_pai', 'data_inclusao_informada', 'demandas', 'encaminhamentos', 'observacoes'],
@@ -211,8 +210,6 @@ from registros r left join {{ pu_ref('dim_unidades') }} u on r.id_unidade = u.id
 {% macro pu_cpop_perfil_nome(assunto, campo) -%}
 {{ campo ~ '_' ~ assunto if campo in ['demandas', 'encaminhamentos', 'observacoes'] else campo }}
 {%- endmacro %}
-
-
 
 {% macro pu_cpop_perfil_publico(alias) %}
     coalesce({{ alias }}.unidades_atendimento, []) as unidades_atendimento,

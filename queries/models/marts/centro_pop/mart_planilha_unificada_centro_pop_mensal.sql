@@ -79,4 +79,4 @@ select
         where h.id_unidade = c.id_unidade and date_trunc(safe_cast(substr(h.data_registro, 1, 10) as date), month) = c.mes_referencia and valor != ''
         order by valor
     ), ' | ') as observacoes
-from {{ ref('int_pu_centro_pop_mensal') }} as c
+from {{ ref('int_centro_pop_mensal') }} as c
