@@ -1,0 +1,12 @@
+version: 2
+models:
+- name: int_atendimentos_por_usuario
+  description: Eventos não cancelados de todos os tipos de unidade disponíveis no
+    fato, sem filtro de competência; exclui flag S após TRIM/UPPER antes de agregar
+    profissionais por evento. Hora original preservada para auditoria e formatação
+    na saída final.
+  columns:
+  - name: id_usuario
+    data_tests:
+    - not_null
+    - unique

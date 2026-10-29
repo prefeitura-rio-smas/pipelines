@@ -1,0 +1,13 @@
+version: 2
+seeds:
+  - name: formularios_datas_ocorrencia
+    description: Campos que representam a ocorrência principal por formulário; vários campos exigem concordância de datas.
+    data_tests:
+      - dbt_utils.unique_combination_of_columns:
+          arguments:
+            combination_of_columns: [titulo_formulario, label_data_ocorrencia]
+    columns:
+      - name: titulo_formulario
+        data_tests: [not_null]
+      - name: label_data_ocorrencia
+        data_tests: [not_null]

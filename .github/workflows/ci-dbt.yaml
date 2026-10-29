@@ -5,6 +5,8 @@ on:
     paths:
       - 'queries/**'
       - 'pyproject.toml'
+      - 'uv.lock'
+      - '.github/workflows/ci-dbt.yaml'
 
 concurrency:
   group: ci-dbt-${{ github.ref }}

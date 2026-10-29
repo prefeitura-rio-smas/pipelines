@@ -92,7 +92,10 @@ final as (
         b.beneficio,
         proj.projetos_sociais,
         base.id_unidade_referencia,
-        base.id_login_cadastro
+        base.id_login_cadastro,
+        base.uf_nascimento,
+        sm.serie_escolar,
+        safe_cast(det.data_cadunico as date) as data_cadunico_informada
     from base as base
     left join detalhes as det on base.id_paciente = det.id_paciente
     left join saude_mental as sm on base.id_paciente = sm.id_paciente
