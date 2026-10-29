@@ -24,3 +24,10 @@ Nenhuma credencial ou configuração pessoal da VPS é copiada.
 - Conferir `code --list-extensions --show-versions` contra extensions.sh.
 - Abrir um SQL dbt, conferir o tema e a integração com o Python do projeto.
 - Reconectar e abrir outro terminal: não deve haver aliases duplicados.
+
+## OpenCode
+
+O setup instala a CLI `opencode-ai@1.19.0` em `~/.local`, sem sudo, e verifica
+a versão. Em um terminal novo, execute `opencode --version` ou `opencode`.
+Cada pessoa autentica seus provedores; plugins, histórico e credenciais da VPS
+não são copiados. A segunda execução preserva a instalação da versão correta.
