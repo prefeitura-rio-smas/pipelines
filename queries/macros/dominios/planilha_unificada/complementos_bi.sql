@@ -26,6 +26,8 @@ with referencia as (
     select distinct concat(cast(seq_atendimento as string), modulo) as id_atendimento_modulo,
         id_usuario, cas, email_unidade, email_cas, email, cadastrante, data_cadastro_atendimento
     from referencia
+), contexto_familia as (
+    {{ pu_familia_no_atendimento_sql('referencia') }}
 ), profissionais as (
     select distinct concat(cast(seq_atendimento as string), modulo) as id_atendimento_modulo,
         profissional_id as id_profissional, id_familia as id_familia_referencia,
@@ -38,8 +40,11 @@ profissionais_por_evento as (
             order by id_profissional, id_familia_referencia, id_atendimento_legado) as profissionais
     from profissionais group by id_atendimento_modulo
 )
-select e.*, coalesce(p.profissionais, []) as profissionais
-from eventos e left join profissionais_por_evento p on e.id_atendimento_modulo = p.id_atendimento_modulo
+select e.* replace (c.email as email), c.id_familia,
+    coalesce(p.profissionais, []) as profissionais
+from eventos e
+join contexto_familia c on e.id_usuario = c.id_usuario and e.id_atendimento_modulo = c.id_atendimento_modulo
+left join profissionais_por_evento p on e.id_atendimento_modulo = p.id_atendimento_modulo
 {% endmacro %}
 
 {% test pu_bi_profissionais_unicos(model) %}

@@ -1,5 +1,8 @@
 # Famílias atendidas na supertabela
 
+Este bloco agora é compatibilidade temporária. Para novos cartões e migração,
+usar o [campo direto no atendimento](pr163-familia-no-atendimento.md).
+
 A fonte continua `rj-smas-dev.dashboard_acolherio.planilha_unificada`.
 O novo bloco `atendimentos.familias_atendidas` reproduz as associações da
 programada `dashboard_acolherio.dev_atendimentos`, sem depender de o profissional

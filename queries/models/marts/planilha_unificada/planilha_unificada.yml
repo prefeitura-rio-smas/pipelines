@@ -2,7 +2,7 @@ version: 2
 
 models:
   - name: planilha_unificada
-    data_tests: [pu_preservacao_eventos, pu_formularios_eventos, pu_familias_atendidas_unicas, pu_familias_atendidas_paridade]
+    data_tests: [pu_preservacao_eventos, pu_formularios_eventos, pu_familias_atendidas_unicas, pu_familias_atendidas_paridade, pu_familia_no_atendimento_paridade]
     description: |
       Uma linha por usuario.id_usuario, com a mesma população de dim_usuarios.
       Contrato por assunto: usuario, familias, projetos_sociais, atendimentos, evolucoes e escopos.
@@ -19,7 +19,7 @@ models:
     config:
       meta:
         granularidade: [usuario.id_usuario]
-        contrato: por_assunto_v11_familias_atendidas
+        contrato: por_assunto_v12_familia_no_atendimento
         execucao: modelo_dbt
         publicacao: desenvolvimento
         valores_ausentes: texto_vazio
@@ -50,8 +50,17 @@ models:
           - atendimentos.registros.profissionais.id_familia_referencia
           - atendimentos.registros.profissionais.id_atendimento_legado
     columns:
+      - name: atendimentos.registros.id_familia
+        description: |
+          Família da programada para usuário e atendimento com módulo, independente
+          do profissional. STRING vazia quando não há família ou evento na referência.
+          Mais de uma família conhecida ou e-mails conflitantes bloqueiam a construção.
+          Para o indicador: contagem distinta deste campo, excluindo '', com período,
+          tipo_servico em cras/creas/centro_pop, unidade diferente de Negado e acesso
+          pelo email deste mesmo atendimento. O email do visualizador é obrigatório.
       - name: atendimentos.familias_atendidas
         description: |
+          Compatibilidade temporária: migrar o BI para atendimentos.registros.id_familia.
           ARRAY<STRUCT> por usuário, id_atendimento_modulo e id_familia da programada.
           Campos STRING: id_atendimento_modulo, id_familia, data_atendimento,
           nome_unidade, tipo_unidade, email e elegivel_indicador (S/N).

@@ -28,6 +28,7 @@ atendimentos_por_usuario as (
             (
                 select as struct
                     a.* except (profissionais),
+                    c.id_familia,
                     c.cas,
                     c.email_unidade,
                     c.email_cas,
@@ -333,6 +334,7 @@ select
         array(
             select as struct
                 coalesce(cast(item1.id_atendimento_modulo as string), '') as id_atendimento_modulo,
+                coalesce(item1.id_familia, '') as id_familia,
                 coalesce(cast(item1.origem_modulo as string), '') as origem_modulo,
                 coalesce(cast(item1.id_unidade as string), '') as id_unidade,
                 coalesce(item1.nome_unidade, '') as nome_unidade,
