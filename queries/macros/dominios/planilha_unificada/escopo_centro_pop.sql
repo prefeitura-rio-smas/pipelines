@@ -105,7 +105,7 @@ html as (
         v.id_evolucao_modulo, v.titulo_formulario,
         v.data_ocorrencia, v.origem_data_ocorrencia, v.situacao_data_ocorrencia,
         cast(v.data_evolucao as datetime) data_registro, cast(v.data_evolucao as datetime) data_resposta,
-        to_json_string(struct(v.id_evolucao_modulo, v.id_unidade, v.titulo_formulario, v.observacoes, v.campos)) chave_origem,
+        to_json_string(struct(v.id_evolucao_modulo, v.id_unidade, v.titulo_formulario, v.observacoes_html as observacoes, v.campos)) chave_origem,
         {% set valores_html = {
             'data_inclusao_pai': "if(v.titulo_formulario = 'Centro POP - Plano de Atendimento Individual (PAI)', safe_cast(if(array_length(v.inclusoes) = 1, v.inclusoes[safe_offset(0)], null) as date), null)",
             'data_inclusao_informada': "if(v.titulo_formulario = 'Centro POP - Plano de Atendimento Individual (PAI)', array_to_string(v.inclusoes_originais, ' | '), null)",
@@ -130,7 +130,7 @@ html as (
                 {% set respostas = 'v.situacoes' if campo == 'possui_problema_saude' else 'v.tratamentos' %}
                 case (select logical_or({{ interpretar_resposta_saude('resposta') }}) from unnest({{ respostas }}) resposta) when true then 'Sim' when false then 'Não' end
             {% elif campo == 'observacoes' %}
-                {{ pu_cpop_texto(texto_html_legivel('v.observacoes')) }}
+                {{ pu_cpop_texto('v.observacoes') }}
             {% elif campo in valores_html %}
 {% if campo in grupos_html %}if(v.titulo_formulario = '{{ grupos_html[campo] }}', {{ valores_html[campo] }}, cast(null as {{ tipo }})){% else %}{{ valores_html[campo] }}{% endif %}
             {% else %}cast(null as {{ tipo }}){% endif %} as {{ campo }},

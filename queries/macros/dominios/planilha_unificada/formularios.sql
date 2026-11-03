@@ -17,8 +17,7 @@ campos as (
         c.* replace (
             {{ decodificar_entidades_html('c.titulo_formulario') }} as titulo_formulario,
             {{ decodificar_entidades_html('c.label') }} as label,
-            {{ decodificar_entidades_html('c.valor') }} as valor,
-            {{ decodificar_entidades_html('c.observacoes') }} as observacoes
+            {{ decodificar_entidades_html('c.valor') }} as valor
         )
     from campos_extraidos as c
 ),
@@ -91,7 +90,9 @@ select
         nome_profissional,
         nome_atividade,
         titulo_formulario,
-        observacoes,
+        -- A identidade usa o HTML original; a apresentação é normalizada uma vez.
+        observacoes as observacoes_html,
+        {{ texto_html_legivel('observacoes') }} as observacoes,
         campos,
         if(situacao_data_ocorrencia = 'valida', (select min(data) from unnest(datas)), cast(data_evolucao as date)) as data_ocorrencia,
         if(situacao_data_ocorrencia = 'valida', 'formulario', 'fonte') as origem_data_ocorrencia,

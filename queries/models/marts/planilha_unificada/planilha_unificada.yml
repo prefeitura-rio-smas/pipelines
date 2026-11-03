@@ -114,6 +114,7 @@ models:
           usuário e id_evolucao_modulo não cancelado. Contém origem, família,
           nome_unidade, datas, tipo, profissional, atividade, descricao_evolucao
           legível e formularios ARRAY<STRUCT<titulo_formulario STRING, observacoes STRING, campos ARRAY<STRING>>>.
+          Observações são texto legível: tags removidas antes da decodificação de uma camada de entidades HTML.
           Formulários pertencem à evolução, mantêm os textos já normalizados e cada resposta como rótulo: valor, com ordem e repetições preservadas
           e não multiplicam sua quantidade. Sem HTML extraível, formularios é [].
           Evoluções familiares pertencem apenas ao paciente explicitamente indicado.

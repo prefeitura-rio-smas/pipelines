@@ -1,9 +1,12 @@
 version: 2
 models:
 - name: int_formularios_por_usuario
-  description: Formulários HTML extraídos das evoluções, com entidades decodificadas
-    nos textos antes da deduplicação, origem, unidade e datas; sem escolha do último
-    perfil.
+  description: |
+    Formulários HTML extraídos das evoluções, com entidades decodificadas
+    nos títulos e campos, origem, unidade e datas; sem escolha do último perfil.
+    Observações são agrupadas pelo HTML original antes da conversão em texto legível:
+    remove marcação e depois decodifica uma camada de entidades. observacoes_html
+    preserva a identidade interna e não é exposto na supertabela.
   columns:
   - name: id_usuario
     data_tests:
