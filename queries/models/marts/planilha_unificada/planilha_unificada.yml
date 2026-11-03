@@ -2,7 +2,7 @@ version: 2
 
 models:
   - name: planilha_unificada
-    data_tests: [pu_preservacao_eventos, pu_formularios_eventos]
+    data_tests: [pu_preservacao_eventos, pu_formularios_eventos, pu_familias_atendidas_unicas, pu_familias_atendidas_paridade]
     description: |
       Uma linha por usuario.id_usuario, com a mesma população de dim_usuarios.
       Contrato por assunto: usuario, familias, projetos_sociais, atendimentos, evolucoes e escopos.
@@ -19,7 +19,7 @@ models:
     config:
       meta:
         granularidade: [usuario.id_usuario]
-        contrato: por_assunto_v10_datas_ocorrencia
+        contrato: por_assunto_v11_familias_atendidas
         execucao: modelo_dbt
         publicacao: desenvolvimento
         valores_ausentes: texto_vazio
@@ -50,6 +50,21 @@ models:
           - atendimentos.registros.profissionais.id_familia_referencia
           - atendimentos.registros.profissionais.id_atendimento_legado
     columns:
+      - name: atendimentos.familias_atendidas
+        description: |
+          ARRAY<STRUCT> por usuário, id_atendimento_modulo e id_familia da programada.
+          Campos STRING: id_atendimento_modulo, id_familia, data_atendimento,
+          nome_unidade, tipo_unidade, email e elegivel_indicador (S/N).
+          Famílias nulas são omitidas; repetições por profissional são deduplicadas.
+          Preserva múltiplas famílias no evento e eventos da referência mesmo sem
+          profissional no fato novo. Não é a lista cadastral/histórica de familias.
+          Elegível quando TIPO_UNIDADE é CRAS, CREAS ou CENTRO POP e a unidade
+          satisfaz a condição da programada (nome não nulo e diferente de Negado).
+          No BI: contar distintamente id_familia deste bloco, filtrar elegivel_indicador=S,
+          período por data_atendimento e acesso pelo email deste mesmo bloco.
+          O e-mail deve conter o endereço do usuário conectado, seguindo a regra
+          legada. Usuário/e-mail ausente não tem acesso. Nenhuma identidade de
+          visualizador nem período fixo é gravado na tabela.
       - name: evolucoes.registros.formularios.data_ocorrencia
         description: Data informada válida e única do formulário; usa data_evolucao como alternativa.
       - name: evolucoes.registros.formularios.origem_data_ocorrencia

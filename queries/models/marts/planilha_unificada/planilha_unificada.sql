@@ -327,6 +327,7 @@ select
         order by posicao
     ) as projetos_sociais,
     struct(
+        coalesce(fa.familias_atendidas, []) as familias_atendidas,
         array_length(p.atendimentos) as quantidade,
         {{ pu_contagens_diretas('p.atendimentos') }},
         array(
@@ -403,6 +404,7 @@ select
     ) as evolucoes,
     struct(struct(coalesce(esc.historico, []) as historico, coalesce(esc.participacoes, []) as participacoes, {{ pu_cpop_perfil_publico('perfil_cp') }}) as centro_pop) as escopos
 from base as p
+left join {{ ref('int_familias_atendidas_por_usuario') }} as fa on p.id_usuario = fa.id_usuario
 left join escopo_centro_pop as esc on p.id_usuario = esc.id_usuario
 left join {{ pu_ref('dim_centro_pop') }} as perfil_cp on p.id_usuario = perfil_cp.id_usuario
 left join unidades as unidade_referencia on safe_cast(p.id_unidade_referencia as int64) = unidade_referencia.id_unidade
