@@ -19,7 +19,7 @@ de validação. O filtro de acesso continua vindo da configuração da programad
 
 O desempate das duas implementações passa a ser data de cadastro, módulo,
 sequencial do atendimento, usuário, família, código CBO, profissional e JSON da
-linha completa, em ordem crescente com NULL primeiro. Cópias integralmente iguais
+linha completa com campos e aliases em ordem explícita, em ordem crescente com NULL primeiro. Cópias integralmente iguais
 são removidas antes dos rankings. Assim, não existe disputa entre cópias idênticas
 nos dois `ROW_NUMBER` calculados antes do `QUALIFY`.
 
@@ -75,7 +75,7 @@ CBO iniciado em 2, substituída pela regra por linha profissional da programada.
 
 A fixture `validar_selecao_atendimentos_bi` executa a macro completa e cobre
 profissionais compartilhados/repetidos, múltiplos CBOs, precedência de recepção,
-deduplicação natural, colisão entre módulos, operador ausente, usuário de teste,
+deduplicação natural, empate de nomes na mesma chave técnica, colisão entre módulos, operador ausente, usuário de teste,
 vínculo encerrado, cancelamento, profissional desconhecido e projetos cancelados,
 inativos e sem rótulo conhecido.
 
@@ -143,3 +143,8 @@ A paridade exata demonstrada acima é entre a consulta **revisada** e o dbt.
 Os testes permanentes de famílias comparam os structs à seleção dbt, evitando
 falhas por defasagem da consulta agendada. Somente o teste opcional dos 39 campos
 consulta o oráculo materializado da programada.
+
+O refinamento final fixa explicitamente a ordem dos 40 campos usados no JSON de
+último desempate. A fixture com dois nomes para a mesma chave técnica passou;
+a seleção foi reconstruída e comparada novamente ao SQL independente, e os
+structs existentes continuaram passando na comparação com a seleção refinada.

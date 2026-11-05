@@ -121,6 +121,10 @@ fixture_raw_profissionais as (
     select
         2,
         'Educador'
+    union all
+    select
+        1,
+        'ZZZ'
 ),
 
 fixture_raw_profissionais_ocupacoes as (
@@ -212,6 +216,9 @@ falhas as (
     union all
     select 'projetos_sociais' from obtido
     where id_familia = 101 and projetos_sociais != 'Projeto não mapeado (ID 99)'
+    union all
+    select 'desempate_nome' from obtido
+    where profissional_id = 1 and profissional != 'ASSISTENTE'
 )
 
 select * from falhas
