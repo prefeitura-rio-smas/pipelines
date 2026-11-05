@@ -25,7 +25,7 @@ with esperado as (
         concat(cast(seq_atendimento as string), modulo) as id_atendimento_modulo,
         coalesce(string_agg(distinct cast(id_familia as string)), '') as id_familia,
         max(coalesce(email, '')) as email
-    from {{ pu_programada() }}
+    from {{ ref('int_atendimentos_bi') }}
     group by id_usuario, id_atendimento_modulo
 ), obtido as (
     select p.usuario.id_usuario, a.id_atendimento_modulo, a.id_familia, a.email

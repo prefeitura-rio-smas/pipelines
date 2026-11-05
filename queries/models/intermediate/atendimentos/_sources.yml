@@ -7,3 +7,6 @@ sources:
       - name: atendimentos_programada
         identifier: dev_atendimentos
         description: Referência materializada da consulta programada, somente leitura.
+      - name: filtro_email
+        identifier: filtro_email_dev
+        description: Configuração de acesso por unidade usada pela programada.

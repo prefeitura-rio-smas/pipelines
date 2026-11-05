@@ -2,7 +2,7 @@ version: 2
 models:
   - name: int_familias_atendidas_por_usuario
     description: >
-      Associações da programada por usuário, atendimento com módulo e família.
+      Associações selecionadas pelas regras da programada no dbt por usuário, atendimento com módulo e família.
       Deduplica repetições por profissional; não usa a composição familiar cadastral.
       Contextos conflitantes para a mesma associação são detectados pelo teste da saída.
     columns:

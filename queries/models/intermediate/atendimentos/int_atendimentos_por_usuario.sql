@@ -1,102 +1,61 @@
 {{ config(materialized='ephemeral', enabled=target.name != 'prod', tags=['planilha_unificada']) }}
-{% if var('pu_referencia', false) %}
-    {{ pu_atendimentos_referencia_sql() }}
-{% else %}
-    with candidatos as (
-        select
-            a.id_usuario,
-            a.id_atendimento_modulo,
-            a.id_atendimento,
-            a.origem_modulo,
-            a.id_unidade,
-            un.nome_unidade,
-            {{ pu_tipo_servico('un.tipo_unidade') }} as tipo_servico,
-            a.id_tipo_atendimento,
-            a.tipo_atendimento_descricao,
-            a.data_atendimento,
-            a.hora_atendimento,
-            a.flag_cancelado,
-            a.id_profissional,
-            p.nome as nome_profissional,
-            coalesce(p.codigos_cbo, []) as codigos_cbo,
-            p.cbo_principal_codigo,
-            p.cbo_principal_descricao,
-            coalesce(p.descricoes_cbo, []) as descricoes_cbo
-        from {{ pu_ref('fct_atendimentos') }} as a
-        left join {{ pu_ref('dim_profissionais') }} as p on a.id_profissional_sk = p.id_profissional_sk
-        left join {{ pu_ref('dim_unidades') }} as un on a.id_unidade = un.id_unidade
-        where
-            a.id_usuario is not null
-            and upper(trim(coalesce(a.flag_cancelado, ''))) != 'S'
-    ),
-
-    -- Deduplica apenas cópias idênticas dos atributos do evento. Conflitos
-    -- permanecem visíveis nos testes de identidade, sem escolha arbitrária.
-    eventos as (
-        select distinct
-            id_usuario,
-            id_atendimento_modulo,
-            id_atendimento,
-            origem_modulo,
-            id_unidade,
-            nome_unidade,
-            tipo_servico,
-            id_tipo_atendimento,
-            tipo_atendimento_descricao,
-            data_atendimento,
-            hora_atendimento,
-            flag_cancelado
-        from candidatos
-    ),
-
-    profissionais_distintos as (
-        select distinct
-            id_usuario,
-            id_atendimento_modulo,
-            id_profissional,
-            nome_profissional,
-            codigos_cbo,
-            descricoes_cbo,
-            cbo_principal_codigo,
-            cbo_principal_descricao
-        from candidatos
-        where id_profissional is not null
-    ),
-
-    profissionais as (
-        select
-            id_usuario,
-            id_atendimento_modulo,
-            array_agg(struct(
-                id_profissional,
-                nome_profissional,
-                codigos_cbo,
-                descricoes_cbo,
-                cbo_principal_codigo,
-                cbo_principal_descricao
-            ) order by id_profissional, nome_profissional, to_json_string(codigos_cbo), cbo_principal_codigo, cbo_principal_descricao) as profissionais
-        from profissionais_distintos
-        group by id_usuario, id_atendimento_modulo
-    )
-
+with eventos as (
     select
-        e.id_usuario,
+        id_usuario,
+        seq_atendimento as id_atendimento,
+        _id_unidade as id_unidade,
+        unidade_atendimento as nome_unidade,
+        _id_tipo_atendimento as id_tipo_atendimento,
+        nome_atendimento_original as tipo_atendimento_descricao,
+        data_de_atendimento as data_atendimento,
+        hora_de_atendimento as hora_atendimento,
+        _flag_cancelado as flag_cancelado,
+        cas,
+        email_unidade,
+        email_cas,
+        email,
+        cadastrante,
+        data_cadastro_atendimento,
+        concat(cast(seq_atendimento as string), modulo) as id_atendimento_modulo,
+        case modulo when 'u' then 'usuario' when 'f' then 'familia' end as origem_modulo,
+        case tipo_unidade
+            when 'CRAS' then 'cras' when 'CREAS' then 'creas'
+            when 'CENTRO POP' then 'centro_pop' else 'outros'
+        end as tipo_servico,
+        if(count(distinct id_familia) > 1, error('Mais de uma familia no atendimento selecionado'), coalesce(max(cast(id_familia as string)), '')) as id_familia,
+        max(projetos_sociais) as projetos_sociais_familia,
+        if(count(distinct tipo_atendimento) = 1, max(tipo_atendimento), 'Misto') as classificacao_atendimento,
         array_agg(struct(
-            e.id_atendimento_modulo,
-            e.id_atendimento,
-            e.origem_modulo,
-            e.id_unidade,
-            e.nome_unidade,
-            e.tipo_servico,
-            e.id_tipo_atendimento,
-            e.tipo_atendimento_descricao,
-            e.data_atendimento,
-            e.hora_atendimento,
-            e.flag_cancelado,
-            coalesce(p.profissionais, []) as profissionais
-        ) order by e.data_atendimento, e.hora_atendimento, e.id_atendimento_modulo, e.id_unidade, e.id_tipo_atendimento, e.tipo_atendimento_descricao, e.flag_cancelado) as atendimentos
-    from eventos as e
-    left join profissionais as p on e.id_usuario = p.id_usuario and e.id_atendimento_modulo = p.id_atendimento_modulo
-    group by e.id_usuario
+            profissional_id as id_profissional,
+            profissional as nome_profissional,
+            array(
+                select cast(codigo as string)
+                from unnest([_codigo_cbo]) as codigo
+                where codigo is not null
+            ) as codigos_cbo,
+            array(
+                select descricao
+                from unnest([profissional_cbo_original]) as descricao
+                where descricao is not null
+            ) as descricoes_cbo,
+            cast(_codigo_cbo as string) as cbo_principal_codigo,
+            profissional_cbo_original as cbo_principal_descricao,
+            profissional_cbo,
+            tipo_atendimento as classificacao_atendimento,
+            nome_atendimento,
+            id_familia as id_familia_referencia,
+            id_atendimento as id_atendimento_legado
+        ) order by profissional_id, id_atendimento) as profissionais
+    from {{ ref('int_atendimentos_bi') }}
+    group by
+        id_usuario, id_atendimento_modulo, id_atendimento, origem_modulo,
+        id_unidade, nome_unidade, tipo_servico, id_tipo_atendimento,
+        tipo_atendimento_descricao, data_atendimento, hora_atendimento, flag_cancelado,
+        cas, email_unidade, email_cas, email, cadastrante, data_cadastro_atendimento
+)
 
-{% endif %}
+select
+    id_usuario,
+    array_agg((select as struct e.* except (id_usuario)) order by data_atendimento, hora_atendimento, id_atendimento_modulo) as atendimentos
+from eventos as e
+group by id_usuario

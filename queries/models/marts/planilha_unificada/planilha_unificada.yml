@@ -2,7 +2,7 @@ version: 2
 
 models:
   - name: planilha_unificada
-    data_tests: [pu_preservacao_eventos, pu_formularios_eventos, pu_familias_atendidas_unicas, pu_familias_atendidas_paridade, pu_familia_no_atendimento_paridade]
+    data_tests: [pu_linhas_bi_preservadas, pu_quantidades_bi, pu_preservacao_eventos, pu_formularios_eventos, pu_familias_atendidas_unicas, pu_familias_atendidas_paridade, pu_familia_no_atendimento_paridade]
     description: |
       Uma linha por usuario.id_usuario, com a mesma população de dim_usuarios.
       Contrato por assunto: usuario, familias, projetos_sociais, atendimentos, evolucoes e escopos.
@@ -19,13 +19,14 @@ models:
     config:
       meta:
         granularidade: [usuario.id_usuario]
-        contrato: por_assunto_v12_familia_no_atendimento
+        contrato: por_assunto_v13_paridade_programada
         execucao: modelo_dbt
         publicacao: desenvolvimento
         valores_ausentes: texto_vazio
         structs_ausentes: campos_vazios
         tipos_escalares: STRING
         excecoes_tipos:
+          atendimentos.quantidade_linhas_bi: INT64
           atendimentos.quantidade: INT64
           evolucoes.quantidade: INT64
           atendimentos.quantidade_cras: INT64
@@ -50,6 +51,17 @@ models:
           - atendimentos.registros.profissionais.id_familia_referencia
           - atendimentos.registros.profissionais.id_atendimento_legado
     columns:
+      - name: atendimentos.quantidade_linhas_bi
+        data_type: INT64
+        description: Total das linhas de atendimento/profissional aceitas pela programada; soma do tamanho das listas de profissionais. Não equivale ao número de eventos.
+      - name: atendimentos.registros.profissionais.classificacao_atendimento
+        description: Tipo da linha do BI, com recepção antes das quatro ocupações técnicas da programada.
+      - name: atendimentos.registros.profissionais.profissional_cbo
+        description: Descrição normalizada do CBO selecionado pelos rankings legados.
+      - name: atendimentos.registros.profissionais.nome_atendimento
+        description: Nome ajustado da linha profissional, incluindo recepção de CadÚnico em CRAS e CREAS.
+      - name: atendimentos.registros.projetos_sociais_familia
+        description: Projetos vigentes da família do atendimento, com a mesma lista ordenada e fallback da programada. Não usar projetos cadastrais do usuário para reproduzir esse filtro.
       - name: atendimentos.registros.id_familia
         description: |
           Família da programada para usuário e atendimento com módulo, independente
@@ -122,8 +134,8 @@ models:
         description: |
           STRUCT com quantidade INT64, quantidade_cras, quantidade_creas, quantidade_centro_pop, quantidade_outros e registros ARRAY<STRUCT>. Um evento por
           id_atendimento_modulo, com origem, nome_unidade, tipo, data, hora HH:MM,
-          flag_cancelado, profissionais e tipo_servico. Preserva os eventos publicados
-          na referência materializada da programada, sem filtro adicional de cancelamento.
+          flag_cancelado, profissionais e tipo_servico. Preserva somente os eventos e profissionais aceitos pelas regras da programada,
+          reproduzidas no dbt com desempates estáveis e sem filtro adicional de cancelamento.
           Profissionais homônimos não são deduplicados após retirar seus IDs.
       - name: atendimentos.quantidade
         description: Igual ao tamanho de atendimentos.registros, em todo o histórico disponível; zero sem eventos.
@@ -131,7 +143,7 @@ models:
       - name: atendimentos.registros.tipo_servico
         description: Serviço de origem do evento (cras, creas, centro_pop ou outros), preservado do intermediário comum para futuras marts.
       - name: atendimentos.registros.classificacao_atendimento
-        description: Classificação Centro POP para futuras consultas de último técnico e totais por tipo. Técnico tem precedência quando algum profissional tem CBO do grupo 2; depois recepção pelas regras da mart existente; demais Outros Atendimentos. Vazio para outros serviços. Não substitui tipo_atendimento_descricao.
+        description: Classificação comum aos profissionais selecionados, ou Misto quando divergem. Para métricas por tipo, usar profissionais.classificacao_atendimento; recepção tem precedência conforme a programada. Aplica-se a todos os serviços.
       - name: evolucoes
         description: |
           STRUCT com quantidade INT64 e registros ARRAY<STRUCT>, uma entrada por

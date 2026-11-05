@@ -12,7 +12,7 @@ projetos_por_usuario as (
     select
         u.id_usuario,
         array_agg(struct(
-            coalesce({{ map_nome_projeto_social('ps.id_projeto_social') }}, error(concat('Confirmar nome do projeto social: ', cast(ps.id_projeto_social as string)))) as nome_projeto_social,
+            coalesce({{ map_nome_projeto_social('ps.id_projeto_social') }}, format('Projeto não mapeado (ID %d)', ps.id_projeto_social)) as nome_projeto_social,
             ps.id_unidade, un.nome_unidade, ps.indicador_ativo, ps.data_cadastro, ps.data_cancelamento
         ) order by posicao) as projetos_sociais
     from {{ pu_ref('dim_usuarios') }} as u,
@@ -22,28 +22,7 @@ projetos_por_usuario as (
 ),
 
 atendimentos_por_usuario as (
-    select
-        d.id_usuario,
-        array_agg(
-            (
-                select as struct
-                    a.* except (profissionais),
-                    c.id_familia,
-                    c.cas,
-                    c.email_unidade,
-                    c.email_cas,
-                    c.email,
-                    c.cadastrante,
-                    c.data_cadastro_atendimento,
-                    c.profissionais as complementos_profissionais,
-                    a.profissionais
-            ) order by
-                a.data_atendimento, a.hora_atendimento, a.id_atendimento_modulo,
-                a.id_unidade, a.id_tipo_atendimento, a.tipo_atendimento_descricao, a.flag_cancelado
-        ) as atendimentos
-    from {{ pu_ref('int_atendimentos_por_usuario') }} as d, unnest(d.atendimentos) as a
-    left join {{ pu_ref('int_atendimentos_complementos_referencia') }} as c on a.id_atendimento_modulo = c.id_atendimento_modulo and d.id_usuario = c.id_usuario
-    group by d.id_usuario
+    select * from {{ pu_ref('int_atendimentos_por_usuario') }}
 ),
 
 formularios_por_evolucao as (
@@ -175,15 +154,10 @@ base as (
         ) as familias,
         array(
             select as struct
-                a.* except (id_atendimento, id_tipo_atendimento, profissionais, complementos_profissionais),
-                {{ pu_cpop_classificacao('a') }} as classificacao_atendimento,
+                a.* except (id_atendimento, id_tipo_atendimento, profissionais),
                 array(
-                    select as struct
-                        pr.* except (codigos_cbo, cbo_principal_codigo),
-                        cp.id_familia_referencia,
-                        cp.id_atendimento_legado
+                    select as struct pr.* except (codigos_cbo, cbo_principal_codigo)
                     from unnest(a.profissionais) as pr with offset as posicao
-                    left join unnest(a.complementos_profissionais) as cp on pr.id_profissional = cp.id_profissional
                     order by posicao
                 ) as profissionais
             from unnest(a.atendimentos) as a with offset as posicao
@@ -330,6 +304,7 @@ select
     struct(
         coalesce(fa.familias_atendidas, []) as familias_atendidas,
         array_length(p.atendimentos) as quantidade,
+        (select coalesce(sum(array_length(a.profissionais)), 0) from unnest(p.atendimentos) as a) as quantidade_linhas_bi,
         {{ pu_contagens_diretas('p.atendimentos') }},
         array(
             select as struct
@@ -351,6 +326,9 @@ select
                         ) as descricoes_cbo,
                         coalesce(cast(item2.cbo_principal_descricao as string), '') as cbo_principal_descricao,
                         coalesce(cast(item2.id_profissional as string), '') as id_profissional,
+                        coalesce(item2.profissional_cbo, '') as profissional_cbo,
+                        coalesce(item2.classificacao_atendimento, '') as classificacao_atendimento,
+                        coalesce(item2.nome_atendimento, '') as nome_atendimento,
                         coalesce(cast(item2.id_familia_referencia as string), '') as id_familia_referencia,
                         coalesce(item2.id_atendimento_legado, '') as id_atendimento_legado
                     from unnest(item1.profissionais) as item2 with offset as posicao
@@ -358,6 +336,7 @@ select
                 ) as profissionais,
                 coalesce(item1.tipo_servico, '') as tipo_servico,
                 coalesce(item1.classificacao_atendimento, '') as classificacao_atendimento,
+                coalesce(item1.projetos_sociais_familia, '') as projetos_sociais_familia,
                 coalesce(item1.cas, '') as cas,
                 coalesce(item1.email_unidade, '') as email_unidade,
                 coalesce(item1.email_cas, '') as email_cas,

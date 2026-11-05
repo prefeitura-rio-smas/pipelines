@@ -45,16 +45,6 @@
     }) }}
 {% endmacro %}
 
-{% macro pu_cpop_classificacao(evento) %}
-    case when {{ evento }}.tipo_servico != 'centro_pop' then ''
-        when exists (select 1 from unnest({{ evento }}.profissionais) p, unnest(p.codigos_cbo) codigo where starts_with(trim(codigo), '2')) then 'Atendimento Técnico'
-        when {{ evento }}.tipo_atendimento_descricao like '%Recepção%'
-            or exists (select 1 from unnest({{ evento }}.profissionais) p where p.nome_profissional = 'ATENDIMENTO RECEPÇÃO'
-                or (p.cbo_principal_descricao in ('Administrador', 'Articulador Comunitário', 'Assistente administrativo', 'Educador social', 'Orientador social', 'Recepcionista') and {{ evento }}.tipo_atendimento_descricao like '%CadÚnico%')) then 'Atendimento Recepção'
-        else 'Outros Atendimentos'
-    end
-{% endmacro %}
-
 {% macro pu_cpop_registros_sql() %}
 with formularios as (
     select p.id_usuario, f.*, posicao
@@ -221,7 +211,7 @@ from registros r left join {{ pu_ref('dim_unidades') }} u on r.id_unidade = u.id
     coalesce({{ alias }}.possui_registro_pai, '') as possui_registro_pai
     {% for assunto, campos in pu_cpop_perfil_assuntos().items() %}
         , coalesce(cast({{ alias }}.data_ocorrencia_{{ assunto }} as string), '') as data_ocorrencia_{{ assunto }}
-        , {{ alias }}.origem_data_ocorrencia_{{ assunto }}, {{ alias }}.situacao_data_ocorrencia_{{ assunto }}
+        , coalesce({{ alias }}.origem_data_ocorrencia_{{ assunto }}, '') as origem_data_ocorrencia_{{ assunto }}, coalesce({{ alias }}.situacao_data_ocorrencia_{{ assunto }}, '') as situacao_data_ocorrencia_{{ assunto }}
         , coalesce(cast({{ alias }}.data_registro_{{ assunto }} as string), '') as data_registro_{{ assunto }}
         , coalesce(cast({{ alias }}.data_resposta_{{ assunto }} as string), '') as data_resposta_{{ assunto }}
 {% for campo in campos %}

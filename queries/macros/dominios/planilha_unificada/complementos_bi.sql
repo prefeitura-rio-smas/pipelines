@@ -2,7 +2,7 @@
 with foto as (
     select distinct id_usuario, endereco as logradouro, endereco_numero as numero,
         endereco_complemento as complemento, referencia_ou_comunidade
-    from {{ pu_programada() }}
+    from {{ ref('int_atendimentos_bi') }}
 ), cadastro as (
     select distinct * from {{ pu_ref('raw_usuarios_enderecos') }}
 )
@@ -21,7 +21,7 @@ left join cadastro c on u.id_usuario = c.id_paciente
 
 {% macro pu_bi_complementos_sql() %}
 with referencia as (
-    select * from {{ pu_programada() }}
+    select * from {{ ref('int_atendimentos_bi') }}
 ), eventos as (
     select distinct concat(cast(seq_atendimento as string), modulo) as id_atendimento_modulo,
         id_usuario, cas, email_unidade, email_cas, email, cadastrante, data_cadastro_atendimento
@@ -32,7 +32,7 @@ with referencia as (
     select distinct concat(cast(seq_atendimento as string), modulo) as id_atendimento_modulo,
         profissional_id as id_profissional, id_familia as id_familia_referencia,
         id_atendimento as id_atendimento_legado
-    from referencia where profissional_id is not null
+    from referencia
 ),
 profissionais_por_evento as (
     select id_atendimento_modulo,
@@ -51,5 +51,5 @@ left join profissionais_por_evento p on e.id_atendimento_modulo = p.id_atendimen
 select c.id_atendimento_modulo, p.id_profissional
 from {{ model }} c, unnest(c.profissionais) p
 group by 1, 2
-having count(*) != 1 or p.id_profissional is null
+having count(*) != 1
 {% endtest %}

@@ -55,7 +55,7 @@ with esperado as (
             when tipo_unidade in ('CRAS', 'CREAS', 'CENTRO POP') and unidade_atendimento != 'Negado' then 'S'
             else 'N'
         end as elegivel_indicador
-    from {{ pu_programada() }}
+    from {{ ref('int_atendimentos_bi') }}
     where id_familia is not null
 ), obtido as (
     select p.usuario.id_usuario, f.*
