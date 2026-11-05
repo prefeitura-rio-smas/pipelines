@@ -1,0 +1,9 @@
+version: 2
+models:
+- name: int_atendimentos_por_usuario
+  description: Eventos aceitos pelas regras da programada, com os profissionais selecionados aninhados. Sem filtro adicional de cancelamento; classificação por profissional e Misto no evento quando divergente.
+  columns:
+  - name: id_usuario
+    data_tests:
+    - not_null
+    - unique

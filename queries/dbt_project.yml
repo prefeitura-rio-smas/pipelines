@@ -46,6 +46,10 @@ models:
       +materialized: table
       +schema: "{{ 'marts' if target.name == 'prod' else 'relatorio' }}"
 
+      planilha_unificada:
+        +enabled: "{{ target.name != 'prod' }}"
+        +tags: ["planilha_unificada"]
+
       core:
         dimensions:
           +schema: "{{ 'core' if target.name == 'prod' else 'gerenciamento__dbt' }}"

@@ -1,6 +1,7 @@
 version: 2
 models:
   - name: int_evolucoes
+    data_tests: [pu_evolucoes_cobertura]
     description: >
       União das evoluções das 4 origens do prontuário (administrativa, usuário,
       família e grupo), explodida por usuário (grupo via lista_pacientes).

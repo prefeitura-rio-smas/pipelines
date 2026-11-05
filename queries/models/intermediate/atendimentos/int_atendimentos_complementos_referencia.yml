@@ -1,0 +1,13 @@
+version: 2
+models:
+- name: int_atendimentos_complementos_referencia
+  description: Contexto único por evento e complementos por profissional selecionados no dbt;
+    IDs de família legados são mantidos por linha profissional; id_familia direto
+    e email usam a mesma seleção por usuário/atendimento. Conflitos bloqueiam a construção.
+  columns:
+  - name: id_atendimento_modulo
+    data_tests:
+    - not_null
+    - unique
+  data_tests:
+  - pu_bi_profissionais_unicos

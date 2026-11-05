@@ -1,0 +1,11 @@
+version: 2
+models:
+- name: int_usuarios_familias
+  description: Famílias, membros atuais, vínculos históricos e serviços, inclusive
+    encerrados, por usuário. Composição inclui responsável atual sem vínculo próprio
+    e mantém membros sem cadastro. Responsabilidade e estado familiar são atuais.
+  columns:
+  - name: id_usuario
+    data_tests:
+    - not_null
+    - unique

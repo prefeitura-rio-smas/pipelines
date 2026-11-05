@@ -1,0 +1,13 @@
+version: 2
+models:
+- name: int_perfil_centro_pop
+  data_tests:
+  - pu_cpop_selecao
+  - pu_cpop_unidades
+  description: Perfil por usuário com registro específico ou atendimento Centro POP;
+    sem formulário, respostas permanecem vazias.
+  columns:
+  - name: id_usuario
+    data_tests:
+    - not_null
+    - unique

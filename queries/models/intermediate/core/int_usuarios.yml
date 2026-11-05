@@ -12,6 +12,12 @@ models:
       É a fonte única de atributos do usuário para a dim_usuarios (mart),
       que apenas adiciona a surrogate key.
     columns:
+      - name: uf_nascimento
+        description: "UF de nascimento informada no cadastro atual."
+      - name: serie_escolar
+        description: "Série escolar informada no cadastro atual."
+      - name: data_cadunico_informada
+        description: "Data do CadÚnico informada no prontuário, convertida para DATE."
       - name: id_usuario
         description: "ID original do usuário (seqpac). Chave natural. Grão do modelo."
         tests: [unique, not_null]
