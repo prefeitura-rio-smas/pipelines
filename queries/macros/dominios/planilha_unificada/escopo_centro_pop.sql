@@ -209,6 +209,7 @@ from registros r left join {{ pu_ref('dim_unidades') }} u on r.id_unidade = u.id
 {% macro pu_cpop_perfil_publico(alias) %}
     coalesce({{ alias }}.unidades_atendimento, []) as unidades_atendimento,
     coalesce({{ alias }}.possui_registro_pai, '') as possui_registro_pai
+    , if(nullif(trim(cast({{ alias }}.data_inclusao_pai as string)), '') is not null, 'Sim', 'Não') as flag_incluido_acompanhamento_pai
     {% for assunto, campos in pu_cpop_perfil_assuntos().items() %}
         , coalesce(cast({{ alias }}.data_ocorrencia_{{ assunto }} as string), '') as data_ocorrencia_{{ assunto }}
         , coalesce({{ alias }}.origem_data_ocorrencia_{{ assunto }}, '') as origem_data_ocorrencia_{{ assunto }}, coalesce({{ alias }}.situacao_data_ocorrencia_{{ assunto }}, '') as situacao_data_ocorrencia_{{ assunto }}

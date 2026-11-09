@@ -226,6 +226,10 @@ models:
         data_type: "STRING"
         description: "Data de resposta do último formulário inteiro de pai; vazia sem evidência."
 
+      - name: escopos.centro_pop.flag_incluido_acompanhamento_pai
+        data_type: "STRING"
+        description: "Sim quando a data de inclusão PAI do perfil estiver preenchida; Não quando nula ou vazia. Usa somente a data atual do perfil, independentemente de desligamento ou período."
+
       - name: escopos.centro_pop.data_inclusao_pai
         data_type: "STRING"
         description: "Campo do último registro de pai em todas as unidades, preservado integralmente da dimensão; ausência como texto vazio."
