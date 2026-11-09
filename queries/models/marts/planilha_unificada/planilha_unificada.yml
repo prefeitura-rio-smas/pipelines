@@ -56,6 +56,8 @@ models:
           - atendimentos.registros.profissionais.id_familia_referencia
           - atendimentos.registros.profissionais.id_atendimento_legado
     columns:
+      - name: usuario.idade_faixa
+        description: Faixa da idade atual, com os limites e rótulos da programada; Não Informado sem nascimento válido.
       - name: nome_unidade
         description: Nomes distintos das unidades dos atendimentos, ordenados e separados por vírgula e espaço.
       - name: usuario.possui_cpf

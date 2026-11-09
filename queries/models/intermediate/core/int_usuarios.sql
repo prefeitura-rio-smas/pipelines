@@ -109,4 +109,4 @@ final as (
     where base.nome not like "%TESTE%"
 )
 
-select * from final
+select *, {{ idade_faixa("case when safe_cast(data_nascimento as date) <= current_date('America/Sao_Paulo') then " ~ calc_idade('safe_cast(data_nascimento as date)', "current_date('America/Sao_Paulo')") ~ " end") }} as idade_faixa from final

@@ -12,6 +12,8 @@ models:
       É a fonte única de atributos do usuário para a dim_usuarios (mart),
       que apenas adiciona a surrogate key.
     columns:
+      - name: idade_faixa
+        description: Faixa da idade atual, com os limites e rótulos da programada; Não Informado sem nascimento válido.
       - name: uf_nascimento
         description: "UF de nascimento informada no cadastro atual."
       - name: serie_escolar
