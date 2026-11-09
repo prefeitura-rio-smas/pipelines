@@ -4,26 +4,33 @@ models:
   - name: mart_pic_prontuario_carioca
     description: |
       Mart Prontuário Carioca para PIC.
-      Grão: 1 linha por família identificada como PIC.
-      Duas origens de identificação: (1) projeto social PIC via dim_familias.projetos_sociais,
-      (2) evolução aba Pequenos Cariocas (codigo_abrangencia=20) via fct_evolucoes.
+      Grão: 1 linha por família.
+      Universo: famílias com ao menos uma criança ativa de 0 a 6 anos incompletos (< 7),
+      identificadas por ao menos uma origem. Famílias sem criança 0-6 são excluídas.
+      Origens de identificação: (1) projeto social PIC via dim_familias.projetos_sociais,
+      (2) evolução aba Pequenos Cariocas (codigo_abrangencia=20) via fct_evolucoes,
+      (3) violação de direito e (4) situação de rua, ambas via membros com vínculo atual
+      na família (dim_usuarios.id_familia).
       Indicadores propagam para toda a família via LOGICAL_OR entre membros ativos.
-      Famílias sem crianças 0-6 permanecem com membros = [].
+      membros inclui todas as crianças 0-6 ativas, mesmo sem CPF (cpf pode ser NULL),
+      via dim_usuarios.id_familia.
       Busca Ativa: coluna busca_ativa = ARRAY<STRUCT> com TODAS as buscas ativas da
       família (todas as evoluções do formulário '1. Pequenos Cariocas - Busca Ativa',
       codigo_abrangencia=20), em ordem cronológica (data_evolucao, id_evolucao).
       possui_busca deriva de ARRAY_LENGTH(busca_ativa) > 0.
     columns:
       - name: responsavel_familiar
-        description: "Struct com CPF e nome do responsável familiar (dado por dim_familias.id_usuario_responsavel -> dim_usuarios)."
+        description: "Struct com CPF e nome do responsável familiar (dado por dim_familias.id_usuario_responsavel -> dim_usuarios). O CPF pode ser NULL."
       - name: origem_identificacao
-        description: "Array de strings identificando por quais origens a familia foi capturada: 'projeto_social' e/ou 'evolucao_aba_20'."
+        description: "Array de strings identificando por quais origens a familia foi capturada: 'projeto_social', 'evolucao_aba_20', 'violacao_direito' e/ou 'situacao_rua'."
       - name: membros
-        description: "Array de structs com nome, idade e CPF das criancas de 0 a 6 anos ativas na familia (data_saida IS NULL). Vazio se nao houver criancas nessa faixa."
+        description: "Array de structs com nome, idade e CPF das criancas de 0 a 6 anos ativas na familia (via dim_usuarios.id_familia). Inclui criancas sem CPF (cpf NULL). Nao deve ser vazio no universo atual (a familia so entra com ao menos uma crianca 0-6)."
       - name: indicador_violacao_direito
-        description: "Booleano. True se algum membro ativo da familia possui flag_possui_violacao_direito = 'Sim'. Propagado via LOGICAL_OR."
+        description: "Booleano. True se algum membro com vinculo atual na familia possui flag_possui_violacao_direito = 'Sim'. Propagado via LOGICAL_OR."
+      - name: indicador_situacao_rua
+        description: "Booleano. True se algum membro com vinculo atual na familia possui flag_situacao_rua = 'Sim' (origem: gh_pacientes_sm.indmoradi = 5). Propagado via LOGICAL_OR."
       - name: violacao_direito
-        description: "Array de strings com descricoes distintas de violacoes de direito de todos os membros ativos da familia."
+        description: "Array de strings com descricoes distintas de violacoes de direito dos membros com vinculo atual na familia."
       - name: possui_filiacao_completa
         description: "Booleano. True se algum membro ativo da familia possui filiacao completa na certidao (ultima evolucao codigo_abrangencia=24). Propagado via LOGICAL_OR."
       - name: interesse_filiacao_completa

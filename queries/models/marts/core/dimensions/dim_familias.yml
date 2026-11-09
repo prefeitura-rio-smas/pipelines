@@ -1,0 +1,14 @@
+version: 2
+
+models:
+  - name: dim_familias
+    description: |
+      Dimensão de famílias (mart, thin). Grão: 1 linha por família.
+      Consome int_familias e adiciona a surrogate key.
+    columns:
+      - name: id_familia_sk
+        description: "Surrogate key da família."
+        tests: [unique, not_null]
+      - name: id_familia
+        description: "Chave natural da família."
+        tests: [unique, not_null]
