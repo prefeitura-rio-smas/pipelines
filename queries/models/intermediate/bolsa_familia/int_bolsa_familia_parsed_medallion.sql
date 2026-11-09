@@ -23,13 +23,14 @@ layout_version as (
         *,
         array_length(colunas) as qtd_cols
     from c
-    -- Descarta linhas que não são registros. Algumas competências trazem uma
-    -- linha de cabeçalho ("PROG;REF_FOLHA;...") no início do arquivo; sem este
-    -- filtro ela entrava como registro e gerava 1 linha fantasma por partição.
-    -- PROG é sempre numérico nos registros reais.
-    where
-        array_length(colunas) between 34 and 35
-        and safe_cast(trim(colunas[safe_offset(0)]) as int64) is not null
+    -- Descarta a linha de cabeçalho ("PROG;REF_FOLHA;...") que aparece em
+    -- algumas competências. Sem este filtro ela entrava como registro e gerava
+    -- 1 linha fantasma por partição. O teste `not_null_ref_folha_todas_as_linhas`
+    -- cobre variações futuras do cabeçalho.
+    where not (
+        trim(colunas[safe_offset(0)]) = 'PROG'
+        and trim(colunas[safe_offset(1)]) = 'REF_FOLHA'
+    )
 ),
 
 parsed as (
