@@ -1,11 +1,11 @@
 -- Gold: folha consolidada do Bolsa Família.
--- O alias `folha_medallion` é mantido porque a tabela legada `folha` ainda
--- existe no BigQuery; o modelo legado que a materializava foi removido do dbt.
+-- Produz a tabela canônica `folha` (o alias medallion era temporário durante a
+-- validação em paralelo; o cutover foi feito em 2026-11-09).
 -- depends_on: {{ ref('raw_bolsa_familia__folha') }}
 -- noqa: disable=CP02
 
 {{ config(
-    alias='folha_medallion',
+    alias='folha',
     materialized='incremental',
     partition_by={
       "field": "data_particao",
