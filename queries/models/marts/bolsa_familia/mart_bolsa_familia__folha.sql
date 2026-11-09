@@ -1,5 +1,6 @@
 -- Gold: folha consolidada do Bolsa Família.
--- O alias temporário evita colisão com a tabela física legada `folha`.
+-- O alias `folha_medallion` é mantido porque a tabela legada `folha` ainda
+-- existe no BigQuery; o modelo legado que a materializava foi removido do dbt.
 -- depends_on: {{ ref('raw_bolsa_familia__folha') }}
 -- noqa: disable=CP02
 

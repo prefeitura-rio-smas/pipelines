@@ -121,8 +121,3 @@ models:
             mart:
               +materialized: incremental
               +schema: "{{ 'dashboard_arcgis' if target.name == 'prod' else 'relatorio' }}"
-
-      bolsa_familia:
-        +enabled: true  # Mantido ativo durante a comparação com a nova arquitetura.
-        +materialized: table
-        +schema: "{{ 'bolsa_familia' if target.name == 'prod' else 'gerenciamento__dbt' }}"
