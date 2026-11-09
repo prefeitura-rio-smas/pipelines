@@ -323,10 +323,6 @@ select
         else 'Não informada'
     end                                   as faixa_etaria,
 
-    concat(
-        coalesce(email_cas, ''), ',',
-        coalesce(email_planilha, ''), ', ',
-        coalesce(email_unidade, '')
-    )                                     as email
+    {{ filtro_email('email_cas', 'email_planilha', 'email_unidade') }} as email
 
 from final

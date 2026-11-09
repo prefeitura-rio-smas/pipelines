@@ -1,12 +1,10 @@
 {% test pu_selecao_bi_paridade(model) %}
--- Habilitar somente sobre as mesmas fontes congeladas e com a programada estabilizada.
+-- Preserva a seleção e os campos da programada, exceto os três e-mails recalculados.
 {% set colunas = [
     'modulo',
     'cas',
     'tipo_unidade',
     'unidade_atendimento',
-    'email_unidade',
-    'email_cas',
     'seq_atendimento',
     'data_de_atendimento',
     'hora_de_atendimento_original',
@@ -36,13 +34,12 @@
     'nome_atendimento',
     'idade_faixa',
     'id_atendimento',
-    'email',
     'cbo_unico_rank',
     'atendimento_unico_rank',
     'projetos_sociais'
 ] %}
 with comparacao as (
-    {% for relacao, delta in [(pu_programada(), 1), (model, -1)] %}
+    {% for relacao, delta in [(ref('raw_atendimentos_programada'), 1), (model, -1)] %}
     {% if not loop.first %}union all{% endif %}
     select to_json_string(struct(
         {% for coluna in colunas %}

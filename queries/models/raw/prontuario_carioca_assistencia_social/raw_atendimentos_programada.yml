@@ -1,0 +1,7 @@
+version: 2
+models:
+  - name: raw_atendimentos_programada
+    description: Fotografia materializada da programada original, preservando campos e multiplicidade. Executar após a conclusão da programada.
+    columns:
+      - name: id_usuario
+        data_tests: [not_null]
