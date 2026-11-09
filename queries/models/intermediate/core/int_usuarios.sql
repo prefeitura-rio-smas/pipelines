@@ -63,6 +63,7 @@ final as (
         det.nome_apoiador,
         det.numero_processo_decisao_apoiada,
         det.renda_ativa,
+        ativ.tipo_atividade_remunerada,
         case
             when det.renda_ativa != 0 then "Sim"
             else "Não"
@@ -98,6 +99,7 @@ final as (
         safe_cast(det.data_cadunico as date) as data_cadunico_informada
     from base as base
     left join detalhes as det on base.id_paciente = det.id_paciente
+    left join {{ ref('int_usuarios_atividades_trabalho') }} as ativ on base.id_paciente = ativ.id_paciente
     left join saude_mental as sm on base.id_paciente = sm.id_paciente
     left join origens as ori on sm.codigo_origem = ori.id_origem
     left join violacoes as v on base.id_paciente = v.id_usuario

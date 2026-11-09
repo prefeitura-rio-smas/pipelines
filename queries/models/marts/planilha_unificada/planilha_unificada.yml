@@ -56,6 +56,9 @@ models:
           - atendimentos.registros.profissionais.id_familia_referencia
           - atendimentos.registros.profissionais.id_atendimento_legado
     columns:
+      - name: usuario.tipo_atividade_remunerada
+        data_type: STRING
+        description: Tipo de atividade cadastrado em indqualativ, traduzido pelo catálogo de confiança inferida. Valores distintos ordenados e separados por vírgula e espaço; vazio na ausência, código desconhecido explicitamente sinalizado. Não modifica o indicador de renda.
       - name: usuario.idade
         data_type: INT64
         description: Idade em anos completos na data de atualização da tabela, no fuso America/Sao_Paulo. NULL para nascimento ausente, inválido ou futuro. Permanece fixa até a próxima atualização.
