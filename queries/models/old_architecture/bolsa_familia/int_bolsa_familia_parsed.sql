@@ -1,3 +1,4 @@
+-- noqa: disable=CP02
 {{ config(
     materialized='view'
 ) }}
@@ -27,8 +28,9 @@ layout_version AS (
     -- linha de cabeçalho ("PROG;REF_FOLHA;...") no início do arquivo; sem este
     -- filtro ela entrava como registro e gerava 1 linha fantasma por partição.
     -- PROG é sempre numérico nos registros reais.
-    WHERE ARRAY_LENGTH(colunas) BETWEEN 34 AND 35
-      AND SAFE_CAST(TRIM(colunas[SAFE_OFFSET(0)]) AS INT64) IS NOT NULL
+    WHERE
+        ARRAY_LENGTH(colunas) BETWEEN 34 AND 35
+        AND SAFE_CAST(TRIM(colunas[SAFE_OFFSET(0)]) AS INT64) IS NOT NULL
 ),
 
 parsed AS (
