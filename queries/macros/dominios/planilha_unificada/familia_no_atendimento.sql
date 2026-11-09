@@ -23,21 +23,20 @@ with esperado as (
     select
         cast(id_usuario as string) as id_usuario,
         concat(cast(seq_atendimento as string), modulo) as id_atendimento_modulo,
-        coalesce(string_agg(distinct cast(id_familia as string)), '') as id_familia,
-        max(coalesce(email, '')) as email
+        coalesce(string_agg(distinct cast(id_familia as string)), '') as id_familia
     from {{ ref('int_atendimentos_bi') }}
     group by id_usuario, id_atendimento_modulo
 ), obtido as (
-    select p.usuario.id_usuario, a.id_atendimento_modulo, a.id_familia, a.email
+    select p.usuario.id_usuario, a.id_atendimento_modulo, a.id_familia
     from {{ model }} as p, unnest(p.atendimentos.registros) as a
 ), comparacao as (
     -- A referência precisa estar integralmente representada no fato existente.
     select e.id_usuario, e.id_atendimento_modulo
     from esperado as e
     left join obtido as o using (id_usuario, id_atendimento_modulo)
-    group by e.id_usuario, e.id_atendimento_modulo, e.id_familia, e.email
+    group by e.id_usuario, e.id_atendimento_modulo, e.id_familia
     having count(o.id_atendimento_modulo) != 1
-        or countif(o.id_familia = e.id_familia and o.email = e.email) != 1
+        or countif(o.id_familia = e.id_familia) != 1
     union all
     select o.id_usuario, o.id_atendimento_modulo
     from obtido as o

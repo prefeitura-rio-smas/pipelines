@@ -181,6 +181,8 @@ base as (
 )
 
 select
+    {{ consolidar_unidades("p.atendimentos") }} as nome_unidade,
+    {{ consolidar_emails("p.atendimentos") }} as email,
     struct(
         coalesce(cast(p.id_usuario as string), '') as id_usuario,
         coalesce(cast(p.nome as string), '') as nome,
@@ -344,7 +346,6 @@ select
                 coalesce(item1.cas, '') as cas,
                 coalesce(item1.email_unidade, '') as email_unidade,
                 coalesce(item1.email_cas, '') as email_cas,
-                coalesce(item1.email, '') as email,
                 coalesce(item1.cadastrante, '') as cadastrante,
                 coalesce(cast(item1.data_cadastro_atendimento as string), '') as data_cadastro_atendimento
             from unnest(p.atendimentos) as item1 with offset as posicao

@@ -56,6 +56,8 @@ models:
           - atendimentos.registros.profissionais.id_familia_referencia
           - atendimentos.registros.profissionais.id_atendimento_legado
     columns:
+      - name: nome_unidade
+        description: Nomes distintos das unidades dos atendimentos, ordenados e separados por vírgula e espaço.
       - name: usuario.possui_cpf
         data_type: STRING
         description: Sim quando o CPF está preenchido; Não quando nulo, vazio ou somente espaços. Indicador de presença de informação, preservando o CPF original.
@@ -215,8 +217,8 @@ models:
         description: E-mail da unidade no prontuário, associado pelo ID da unidade do atendimento.
       - name: atendimentos.registros.email_cas
         description: E-mail calculado a partir de apus da unidade no prontuário; CAS 01 a 10 correspondem a cas1@prefeitura.rio até cas10@prefeitura.rio. Demais valores usam gdados.smas@prefeitura.rio, como na programada.
-      - name: atendimentos.registros.email
-        description: "Formato da programada na ordem email_cas, email_unidade, email_planilha, separados por vírgula. Partes nulas viram vazio. Preserva espaços, quebras de linha, ordem e repetições do EMAIL original de dashboard_acolherio.filtro_email_dev; consolida linhas idênticas por unidade normalizada e rejeita valores conflitantes para não multiplicar atendimentos."
+      - name: email
+        description: "Endereços de todos os atendimentos do usuário, em minúsculas, distintos e ordenados, separados por vírgula e espaço. Ausência como texto vazio. Autoriza acesso ao histórico completo do usuário."
       - name: atendimentos.registros.cadastrante
         description: Nome apresentado na referência para a pessoa que cadastrou o atendimento; não equivale ao profissional executor.
       - name: atendimentos.registros.data_cadastro_atendimento
