@@ -5,7 +5,6 @@ with source as (
         sequsref as id_unidade_referencia,
         seqlogin as id_login_cadastro,
         sigufnasc as uf_nascimento,
-        nullif(trim(muninasc), '') as naturalidade,
         dscnomepac as nome,
         dscnomsoci as nome_social,
         dscnmmae as nome_mae,

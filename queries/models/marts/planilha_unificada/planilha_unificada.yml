@@ -52,9 +52,6 @@ models:
           - atendimentos.registros.profissionais.id_familia_referencia
           - atendimentos.registros.profissionais.id_atendimento_legado
     columns:
-      - name: usuario.naturalidade
-        data_type: STRING
-        description: Município de nascimento informado em muninasc do AcolheRio; sem inferência pela UF ou endereço. Vazio quando ausente.
       - name: usuario.idade
         data_type: INT64
         description: Idade em anos completos na data de atualização da tabela, no fuso America/Sao_Paulo. NULL para nascimento ausente, inválido ou futuro. Permanece fixa até a próxima atualização.
