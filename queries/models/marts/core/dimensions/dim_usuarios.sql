@@ -6,15 +6,17 @@ with usuarios as (
 ),
 
 familias as (
-    select m.id_usuario, f.id_familia
-    from {{ ref('int_familias') }} f,
-    unnest(f.membros) as m
+    select
+        m.id_usuario,
+        f.id_familia
+    from {{ ref('int_familias') }} as f,
+        unnest(f.membros) as m
     where m.is_atual
 )
 
 select
     {{ dbt_utils.generate_surrogate_key(['u.id_usuario']) }} as id_usuario_sk,
-    u.*,
+    u.*,  -- noqa: AM04
     f.id_familia
-from usuarios u
-left join familias f on u.id_usuario = f.id_usuario
+from usuarios as u
+left join familias as f on u.id_usuario = f.id_usuario

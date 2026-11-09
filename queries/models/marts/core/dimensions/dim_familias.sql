@@ -6,5 +6,13 @@ with familias as (
 
 select
     {{ dbt_utils.generate_surrogate_key(['id_familia']) }} as id_familia_sk,
-    *
+    id_familia,
+    id_usuario_responsavel,
+    nome_responsavel,
+    data_ultima_modificacao,
+    flag_ativo,
+    vulnerabilidades,
+    servicos,
+    projetos_sociais,
+    membros
 from familias

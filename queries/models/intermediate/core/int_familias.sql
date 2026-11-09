@@ -18,8 +18,8 @@ membros as (
             partition by u.id_usuario
             order by m.data_entrada desc, m.id_familia desc
         ) = 1 as is_atual
-    from {{ ref('raw_membros_familia') }} m
-    inner join {{ ref('int_usuarios') }} u
+    from {{ ref('raw_membros_familia') }} as m
+    inner join {{ ref('int_usuarios') }} as u
         on m.id_paciente = u.id_usuario
     where m.data_saida is null
 ),
@@ -63,11 +63,11 @@ final as (
         p.projetos_sociais,
         m.membros
     from base
-    inner join responsavel r on base.id_usuario_responsavel = r.id_usuario
-    left join vulnerabilidades v on base.id_familia = v.id_familia
-    left join servicos s on base.id_familia = s.id_familia
-    left join projetos p on base.id_familia = p.id_familia
-    left join membros_por_familia m on base.id_familia = m.id_familia
+    inner join responsavel as r on base.id_usuario_responsavel = r.id_usuario
+    left join vulnerabilidades as v on base.id_familia = v.id_familia
+    left join servicos as s on base.id_familia = s.id_familia
+    left join projetos as p on base.id_familia = p.id_familia
+    left join membros_por_familia as m on base.id_familia = m.id_familia
 )
 
 select * from final

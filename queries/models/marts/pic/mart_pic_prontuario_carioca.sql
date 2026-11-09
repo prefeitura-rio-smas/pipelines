@@ -57,24 +57,32 @@ flags_familia as (
         u.id_familia,
         logical_or(u.flag_possui_violacao_direito = 'Sim') as indicador_violacao_direito,
         logical_or(u.flag_situacao_rua = 'Sim') as indicador_situacao_rua
-    from {{ ref('dim_usuarios') }} u
+    from {{ ref('dim_usuarios') }} as u
     where u.id_familia is not null
     group by u.id_familia
 ),
 
 -- UNIÃO das origens de identificação (PIC, aba 20, violação, situação de rua)
 familias_uniao as (
-    select id_familia, 'projeto_social' as origem
+    select
+        id_familia,
+        'projeto_social' as origem
     from familias_projeto_social
     union all
-    select id_familia, 'evolucao_aba_20' as origem
+    select
+        id_familia,
+        'evolucao_aba_20' as origem
     from familias_evolucao_aba20
     union all
-    select id_familia, 'violacao_direito' as origem
+    select
+        id_familia,
+        'violacao_direito' as origem
     from flags_familia
     where indicador_violacao_direito
     union all
-    select id_familia, 'situacao_rua' as origem
+    select
+        id_familia,
+        'situacao_rua' as origem
     from flags_familia
     where indicador_situacao_rua
 ),
@@ -113,10 +121,11 @@ membros_familia as (
             )
             order by u.data_nascimento, u.nome
         ) as membros
-    from {{ ref('dim_usuarios') }} u
-    where u.id_familia is not null
-      and upper(trim(u.nome)) not like 'TESTE%'
-      and {{ calc_idade('u.data_nascimento') }} between 0 and 6
+    from {{ ref('dim_usuarios') }} as u
+    where
+        u.id_familia is not null
+        and upper(trim(u.nome)) not like 'TESTE%'
+        and {{ calc_idade('u.data_nascimento') }} between 0 and 6
     group by u.id_familia
 ),
 
@@ -125,8 +134,8 @@ violacoes_descricoes as (
     select
         u.id_familia,
         array_agg(distinct v.descricao ignore nulls) as violacao_direito
-    from {{ ref('dim_usuarios') }} u,
-    unnest(u.violacoes) as v
+    from {{ ref('dim_usuarios') }} as u,
+        unnest(u.violacoes) as v
     where u.id_familia is not null
     group by u.id_familia
 ),
@@ -243,14 +252,14 @@ final as (
         coalesce(dce.encaminhamentos_documentacao_civil, []) as encaminhamentos_documentacao_civil,
         coalesce(baf.busca_ativa, []) as busca_ativa,
         {{ extrair_ultima_atualizacao('raw_configuracoes_sistema') }} as ultima_atualizacao
-    from familias_origens fo
-    inner join membros_familia mf on fo.id_familia = mf.id_familia
-    left join responsavel_familiar rf on fo.id_familia = rf.id_familia
-    left join flags_familia fi on fo.id_familia = fi.id_familia
-    left join violacoes_descricoes vd on fo.id_familia = vd.id_familia
-    left join filiacao_familia ff on fo.id_familia = ff.id_familia
-    left join documentacao_civil_encaminhamentos dce on fo.id_familia = dce.id_familia
-    left join buscas_ativas_por_familia baf on fo.id_familia = baf.id_familia
+    from familias_origens as fo
+    inner join membros_familia as mf on fo.id_familia = mf.id_familia
+    left join responsavel_familiar as rf on fo.id_familia = rf.id_familia
+    left join flags_familia as fi on fo.id_familia = fi.id_familia
+    left join violacoes_descricoes as vd on fo.id_familia = vd.id_familia
+    left join filiacao_familia as ff on fo.id_familia = ff.id_familia
+    left join documentacao_civil_encaminhamentos as dce on fo.id_familia = dce.id_familia
+    left join buscas_ativas_por_familia as baf on fo.id_familia = baf.id_familia
 )
 
 select * from final
