@@ -23,6 +23,12 @@ layout_version AS (
         *,
         ARRAY_LENGTH(colunas) AS qtd_cols
     FROM c
+    -- Descarta linhas que não são registros. Algumas competências trazem uma
+    -- linha de cabeçalho ("PROG;REF_FOLHA;...") no início do arquivo; sem este
+    -- filtro ela entrava como registro e gerava 1 linha fantasma por partição.
+    -- PROG é sempre numérico nos registros reais.
+    WHERE ARRAY_LENGTH(colunas) BETWEEN 34 AND 35
+      AND SAFE_CAST(TRIM(colunas[SAFE_OFFSET(0)]) AS INT64) IS NOT NULL
 ),
 
 parsed AS (
@@ -39,9 +45,11 @@ parsed AS (
         -- colunas 25+ (RENDA_PER_CAPITA em diante) ganham +1 no layout 35-col.
         
         -- Colunas 0-24: mesmos offsets para 34 e 35 colunas
+        -- A coluna extra (posição 25) ainda não tem semântica documentada pelo
+        -- órgão; assume S/N/vazio e não é exposta nesta camada.
         TRIM(colunas[SAFE_OFFSET(0)]) AS PROG,
         
-        SAFE.PARSE_DATE('%Y%m%d', CONCAT(TRIM(colunas[SAFE_OFFSET(1)]), '01')) AS REF_FOLHA,
+        SAFE.PARSE_DATE('%Y%m', TRIM(colunas[SAFE_OFFSET(1)])) AS REF_FOLHA,
         TRIM(colunas[SAFE_OFFSET(2)]) AS UF,
         TRIM(colunas[SAFE_OFFSET(3)]) AS IBGE,
         TRIM(colunas[SAFE_OFFSET(4)]) AS COD_FAMILIAR,
@@ -54,7 +62,7 @@ parsed AS (
         -- Colunas sobre o pagamento e benefício
         TRIM(colunas[SAFE_OFFSET(8)]) AS TIPO_PGTO_PREVISTO,
         TRIM(colunas[SAFE_OFFSET(9)]) AS PACTO,
-        SAFE.PARSE_DATE('%Y%m%d', CONCAT(TRIM(colunas[SAFE_OFFSET(10)]), '01')) AS COMPET_PARCELA,
+        SAFE.PARSE_DATE('%Y%m', TRIM(colunas[SAFE_OFFSET(10)])) AS COMPET_PARCELA,
         TRIM(colunas[SAFE_OFFSET(11)]) AS TP_BENEF,
         SAFE_CAST(REPLACE(TRIM(colunas[SAFE_OFFSET(12)]), ',', '.') AS NUMERIC) AS VLRBENEF,
         SAFE_CAST(REPLACE(TRIM(colunas[SAFE_OFFSET(13)]), ',', '.') AS NUMERIC) AS VLRTOTAL,
@@ -63,8 +71,9 @@ parsed AS (
         TRIM(colunas[SAFE_OFFSET(14)]) AS SITBENEFICIO,
         TRIM(colunas[SAFE_OFFSET(15)]) AS SITBENEFICIARIO,
         TRIM(colunas[SAFE_OFFSET(16)]) AS SITFAM,
-        SAFE.PARSE_DATE('%Y%m%d', TRIM(colunas[SAFE_OFFSET(17)])) AS INICIO_VIG_BENEF,
-        SAFE.PARSE_DATE('%Y%m%d', TRIM(colunas[SAFE_OFFSET(18)])) AS FIM_VIG_BENEF,
+        -- Vigências vêm como AAAAMM (ex.: 202306), não AAAAMMDD.
+        SAFE.PARSE_DATE('%Y%m', TRIM(colunas[SAFE_OFFSET(17)])) AS INICIO_VIG_BENEF,
+        SAFE.PARSE_DATE('%Y%m', TRIM(colunas[SAFE_OFFSET(18)])) AS FIM_VIG_BENEF,
         
         -- Marcadores sociais e de renda
         TRIM(colunas[SAFE_OFFSET(19)]) AS MARCA_RF,
@@ -80,7 +89,8 @@ parsed AS (
         SAFE_CAST(TRIM(colunas[SAFE_OFFSET(CASE WHEN qtd_cols = 35 THEN 28 ELSE 27 END)]) AS INTEGER) AS QTD_PESSOAS,
         
         -- Colunas cadastrais e de contato
-        SAFE.PARSE_DATE('%Y%m%d', TRIM(colunas[SAFE_OFFSET(CASE WHEN qtd_cols = 35 THEN 29 ELSE 28 END)])) AS DT_ATU_CADASTRAL,
+        -- Data de atualização cadastral vem como DD/MM/AAAA (ex.: 30/01/2026).
+        SAFE.PARSE_DATE('%d/%m/%Y', TRIM(colunas[SAFE_OFFSET(CASE WHEN qtd_cols = 35 THEN 29 ELSE 28 END)])) AS DT_ATU_CADASTRAL,
         TRIM(colunas[SAFE_OFFSET(CASE WHEN qtd_cols = 35 THEN 30 ELSE 29 END)]) AS ENDERECO,
         TRIM(colunas[SAFE_OFFSET(CASE WHEN qtd_cols = 35 THEN 31 ELSE 30 END)]) AS BAIRRO,
         TRIM(colunas[SAFE_OFFSET(CASE WHEN qtd_cols = 35 THEN 32 ELSE 31 END)]) AS CEP,

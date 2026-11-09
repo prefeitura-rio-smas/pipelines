@@ -21,6 +21,9 @@ models:
         description: "Mês de referência da folha."
         tests:
           - not_null:
+              name: not_null_ref_folha_todas_as_linhas
+          - not_null:
+              name: not_null_ref_folha_rf
               config:
                 where: "MARCA_RF = 'S'"
                 severity: warn
@@ -31,3 +34,26 @@ models:
               config:
                 where: "MARCA_RF = 'S'"
                 severity: warn
+      - name: INICIO_VIG_BENEF
+        description: |
+          Início da vigência do benefício (AAAA-MM, dia 1). A fonte traz
+          AAAAMM; o parsing usa `%Y%m`. Preenchido nas linhas de membros
+          (MARCA_RF = 'N'); as linhas do responsável familiar vêm em branco.
+        tests:
+          - not_null:
+              name: not_null_inicio_vig_membros
+              config:
+                where: "MARCA_RF = 'N'"
+      - name: FIM_VIG_BENEF
+        description: |
+          Fim da vigência do benefício (AAAA-MM, dia 1), quando informado.
+          Pode ser nulo para benefícios sem data de encerramento.
+      - name: DT_ATU_CADASTRAL
+        description: |
+          Data de atualização cadastral (DD/MM/AAAA). Preenchida apenas nas
+          linhas do responsável familiar (MARCA_RF = 'S').
+        tests:
+          - not_null:
+              name: not_null_dt_atu_rf
+              config:
+                where: "MARCA_RF = 'S'"

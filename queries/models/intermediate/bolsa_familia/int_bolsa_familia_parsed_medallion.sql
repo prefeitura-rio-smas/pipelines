@@ -23,6 +23,13 @@ layout_version as (
         *,
         array_length(colunas) as qtd_cols
     from c
+    -- Descarta linhas que não são registros. Algumas competências trazem uma
+    -- linha de cabeçalho ("PROG;REF_FOLHA;...") no início do arquivo; sem este
+    -- filtro ela entrava como registro e gerava 1 linha fantasma por partição.
+    -- PROG é sempre numérico nos registros reais.
+    where
+        array_length(colunas) between 34 and 35
+        and safe_cast(trim(colunas[safe_offset(0)]) as int64) is not null
 ),
 
 parsed as (
@@ -33,8 +40,10 @@ parsed as (
 
         -- Layout de 34 colunas (2025 e anteriores) e layout de 35 colunas
         -- (2026+), com uma coluna adicional antes da renda per capita.
+        -- A coluna extra (posição 25) ainda não tem semântica documentada pelo
+        -- órgão; assume S/N/vazio e não é exposta nesta camada.
         trim(colunas[safe_offset(0)]) as PROG,
-        safe.parse_date('%Y%m%d', concat(trim(colunas[safe_offset(1)]), '01')) as REF_FOLHA,
+        safe.parse_date('%Y%m', trim(colunas[safe_offset(1)])) as REF_FOLHA,
         trim(colunas[safe_offset(2)]) as UF,
         trim(colunas[safe_offset(3)]) as IBGE,
         trim(colunas[safe_offset(4)]) as COD_FAMILIAR,
@@ -47,7 +56,7 @@ parsed as (
         -- Pagamento e benefício
         trim(colunas[safe_offset(8)]) as TIPO_PGTO_PREVISTO,
         trim(colunas[safe_offset(9)]) as PACTO,
-        safe.parse_date('%Y%m%d', concat(trim(colunas[safe_offset(10)]), '01')) as COMPET_PARCELA,
+        safe.parse_date('%Y%m', trim(colunas[safe_offset(10)])) as COMPET_PARCELA,
         trim(colunas[safe_offset(11)]) as TP_BENEF,
         safe_cast(replace(trim(colunas[safe_offset(12)]), ',', '.') as numeric) as VLRBENEF,
         safe_cast(replace(trim(colunas[safe_offset(13)]), ',', '.') as numeric) as VLRTOTAL,
@@ -56,8 +65,9 @@ parsed as (
         trim(colunas[safe_offset(14)]) as SITBENEFICIO,
         trim(colunas[safe_offset(15)]) as SITBENEFICIARIO,
         trim(colunas[safe_offset(16)]) as SITFAM,
-        safe.parse_date('%Y%m%d', trim(colunas[safe_offset(17)])) as INICIO_VIG_BENEF,
-        safe.parse_date('%Y%m%d', trim(colunas[safe_offset(18)])) as FIM_VIG_BENEF,
+        -- Vigências vêm como AAAAMM (ex.: 202306), não AAAAMMDD.
+        safe.parse_date('%Y%m', trim(colunas[safe_offset(17)])) as INICIO_VIG_BENEF,
+        safe.parse_date('%Y%m', trim(colunas[safe_offset(18)])) as FIM_VIG_BENEF,
 
         -- Marcadores sociais e de renda
         trim(colunas[safe_offset(19)]) as MARCA_RF,
@@ -73,7 +83,8 @@ parsed as (
         safe_cast(trim(colunas[safe_offset(case when qtd_cols = 35 then 28 else 27 end)]) as integer) as QTD_PESSOAS,
 
         -- Dados cadastrais e de contato
-        safe.parse_date('%Y%m%d', trim(colunas[safe_offset(case when qtd_cols = 35 then 29 else 28 end)])) as DT_ATU_CADASTRAL,
+        -- Data de atualização cadastral vem como DD/MM/AAAA (ex.: 30/01/2026).
+        safe.parse_date('%d/%m/%Y', trim(colunas[safe_offset(case when qtd_cols = 35 then 29 else 28 end)])) as DT_ATU_CADASTRAL,
         trim(colunas[safe_offset(case when qtd_cols = 35 then 30 else 29 end)]) as ENDERECO,
         trim(colunas[safe_offset(case when qtd_cols = 35 then 31 else 30 end)]) as BAIRRO,
         trim(colunas[safe_offset(case when qtd_cols = 35 then 32 else 31 end)]) as CEP,
