@@ -26,6 +26,10 @@ models:
         structs_ausentes: campos_vazios
         tipos_escalares: STRING
         excecoes_tipos:
+          escopos.centro_pop.data_ocorrencia_desligamento_pai: DATE
+          escopos.centro_pop.data_hora_resposta_desligamento_pai: DATETIME
+          escopos.centro_pop.data_hora_registro_desligamento_pai: DATETIME
+          escopos.centro_pop.data_desligamento_pai: DATE
           usuario.idade: INT64
           atendimentos.quantidade_linhas_bi: INT64
           atendimentos.quantidade: INT64
@@ -334,30 +338,30 @@ models:
         data_type: "STRING"
         description: "Campo do último registro de situacao_rua em todas as unidades, preservado integralmente da dimensão; ausência como texto vazio."
 
-      - name: escopos.centro_pop.data_registro_desligamento
-        data_type: "STRING"
+      - name: escopos.centro_pop.data_hora_registro_desligamento_pai
+        data_type: "DATETIME"
         description: "Data de registro do último formulário inteiro de desligamento; vazia sem evidência."
 
-      - name: escopos.centro_pop.data_resposta_desligamento
-        data_type: "STRING"
+      - name: escopos.centro_pop.data_hora_resposta_desligamento_pai
+        data_type: "DATETIME"
         description: "Data de resposta do último formulário inteiro de desligamento; vazia sem evidência."
 
-      - name: escopos.centro_pop.data_desligamento
+      - name: escopos.centro_pop.data_desligamento_pai
+        data_type: "DATE"
+        description: "Campo do último registro de desligamento em todas as unidades, preservado integralmente da dimensão; ausência como texto vazio."
+
+      - name: escopos.centro_pop.data_desligamento_pai_informada
         data_type: "STRING"
         description: "Campo do último registro de desligamento em todas as unidades, preservado integralmente da dimensão; ausência como texto vazio."
 
-      - name: escopos.centro_pop.data_desligamento_informada
+      - name: escopos.centro_pop.motivo_desligamento_pai
         data_type: "STRING"
         description: "Campo do último registro de desligamento em todas as unidades, preservado integralmente da dimensão; ausência como texto vazio."
 
-      - name: escopos.centro_pop.motivo_desligamento
+      - name: escopos.centro_pop.complemento_motivo_desligamento_pai
         data_type: "STRING"
         description: "Campo do último registro de desligamento em todas as unidades, preservado integralmente da dimensão; ausência como texto vazio."
 
-      - name: escopos.centro_pop.motivo_desligamento_outros
-        data_type: "STRING"
-        description: "Campo do último registro de desligamento em todas as unidades, preservado integralmente da dimensão; ausência como texto vazio."
-
-      - name: escopos.centro_pop.observacoes_desligamento
+      - name: escopos.centro_pop.observacoes_desligamento_pai
         data_type: "STRING"
         description: "Campo do último registro de desligamento em todas as unidades, preservado integralmente da dimensão; ausência como texto vazio."
