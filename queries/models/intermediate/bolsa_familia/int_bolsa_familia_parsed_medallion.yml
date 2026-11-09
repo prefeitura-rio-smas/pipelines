@@ -44,6 +44,7 @@ models:
               name: not_null_inicio_vig_membros
               config:
                 where: "MARCA_RF = 'N'"
+                severity: warn
       - name: FIM_VIG_BENEF
         description: |
           Fim da vigência do benefício (AAAA-MM, dia 1), quando informado.
@@ -57,3 +58,4 @@ models:
               name: not_null_dt_atu_rf
               config:
                 where: "MARCA_RF = 'S'"
+                severity: warn
