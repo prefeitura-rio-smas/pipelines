@@ -214,9 +214,9 @@ models:
       - name: atendimentos.registros.email_unidade
         description: E-mail da unidade no prontuário, associado pelo ID da unidade do atendimento.
       - name: atendimentos.registros.email_cas
-        description: E-mail calculado a partir de apus da unidade no prontuário; CAS 01 a 10 correspondem a cas1@prefeitura.rio até cas10@prefeitura.rio.
+        description: E-mail calculado a partir de apus da unidade no prontuário; CAS 01 a 10 correspondem a cas1@prefeitura.rio até cas10@prefeitura.rio. Demais valores usam gdados.smas@prefeitura.rio, como na programada.
       - name: atendimentos.registros.email
-        description: "Composição de três fontes na ordem email_cas, email_planilha, email_unidade, com separadores vírgula e vírgula seguida de espaço. Partes nulas viram vazio. email_planilha vem de dashboard_acolherio.filtro_email_dev, consolidado por nome de unidade normalizado para não multiplicar atendimentos."
+        description: "Formato da programada na ordem email_cas, email_unidade, email_planilha, separados por vírgula. Partes nulas viram vazio. Preserva espaços, quebras de linha, ordem e repetições do EMAIL original de dashboard_acolherio.filtro_email_dev; consolida linhas idênticas por unidade normalizada e rejeita valores conflitantes para não multiplicar atendimentos."
       - name: atendimentos.registros.cadastrante
         description: Nome apresentado na referência para a pessoa que cadastrou o atendimento; não equivale ao profissional executor.
       - name: atendimentos.registros.data_cadastro_atendimento

@@ -11,6 +11,6 @@ models:
             combination_of_columns: [seq_atendimento, modulo, id_usuario, profissional_id]
     columns:
       - name: email
-        description: "Concatenação de email_cas, vírgula, e-mails da planilha, vírgula e espaço, email_unidade. Partes nulas viram vazio. A planilha é consolidada por unidade normalizada, com e-mails distintos em ordem alfabética."
+        description: "Formato da programada: email_cas, email_unidade, email_planilha, separados por vírgula. Preserva o texto original da planilha, incluindo espaços, quebras de linha e repetições. CAS fora de 01 a 10 usa gdados.smas@prefeitura.rio; partes nulas viram vazio. Linhas idênticas da planilha são consolidadas; valores conflitantes interrompem a execução."
       - name: id_usuario
         data_tests: [not_null]
