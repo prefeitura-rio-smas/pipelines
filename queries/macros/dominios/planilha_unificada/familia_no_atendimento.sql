@@ -1,14 +1,14 @@
+{% macro pu_ids_familias(coluna) -%}
+coalesce(string_agg(distinct cast({{ coluna }} as string), ', ' order by cast({{ coluna }} as string)), '')
+{%- endmacro %}
+
 {% macro pu_familia_no_atendimento_sql(source_relation) %}
--- Só publica um valor escalar quando os valores conhecidos concordam.
+-- Preserva todas as famílias distintas; o vínculo de cada profissional permanece no registro.
 -- Repetições por profissional e família ausente não escolhem uma família nova.
 select
     id_usuario,
     concat(cast(seq_atendimento as string), modulo) as id_atendimento_modulo,
-    if(
-        count(distinct id_familia) > 1,
-        error('Mais de uma familia na referencia do atendimento'),
-        coalesce(max(cast(id_familia as string)), '')
-    ) as id_familia,
+    {{ pu_ids_familias('id_familia') }} as id_familia,
     if(
         count(distinct coalesce(email, '')) > 1,
         error('Emails conflitantes na referencia do atendimento'),
@@ -23,7 +23,7 @@ with esperado as (
     select
         cast(id_usuario as string) as id_usuario,
         concat(cast(seq_atendimento as string), modulo) as id_atendimento_modulo,
-        coalesce(string_agg(distinct cast(id_familia as string)), '') as id_familia
+        {{ pu_ids_familias('id_familia') }} as id_familia
     from {{ ref('int_atendimentos_bi') }}
     group by id_usuario, id_atendimento_modulo
 ), obtido as (

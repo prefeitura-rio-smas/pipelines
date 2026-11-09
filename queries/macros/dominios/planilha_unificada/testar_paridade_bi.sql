@@ -80,7 +80,7 @@ with esperado as (
     select
         p.usuario.id_usuario as id_usuario,
         a.id_atendimento_modulo as id_atendimento_modulo,
-        a.id_familia as id_familia,
+        coalesce(cast(pr.id_familia_referencia as string), '') as id_familia,
         a.data_atendimento as data_atendimento,
         a.hora_atendimento as hora_atendimento,
         a.nome_unidade as nome_unidade,

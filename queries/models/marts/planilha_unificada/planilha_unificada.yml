@@ -82,12 +82,11 @@ models:
         description: Projetos vigentes da família do atendimento, com a mesma lista ordenada e fallback da programada. Não usar projetos cadastrais do usuário para reproduzir esse filtro.
       - name: atendimentos.registros.id_familia
         description: |
-          Família da programada para usuário e atendimento com módulo, independente
-          do profissional. STRING vazia quando não há família ou evento na referência.
-          Mais de uma família conhecida ou e-mails conflitantes bloqueiam a construção.
-          Para o indicador: contagem distinta deste campo, excluindo '', com período,
-          tipo_servico em cras/creas/centro_pop, unidade diferente de Negado e acesso
-          pelo email deste mesmo atendimento. O email do visualizador é obrigatório.
+          IDs distintos de famílias da programada para usuário e atendimento,
+          ordenados e separados por vírgula e espaço. Vazio sem família.
+          O vínculo individual permanece em profissionais.id_familia_referencia.
+          Para contar famílias, usar os IDs individuais em familias_atendidas ou
+          profissionais.id_familia_referencia, nunca a lista concatenada.
       - name: atendimentos.familias_atendidas
         description: |
           Compatibilidade temporária: migrar o BI para atendimentos.registros.id_familia.

@@ -9,7 +9,9 @@ with referencia as (
         (1, 1, 'u', cast(null as int64), 'permitido@example.test'),
         (1, 1, 'f', 20, 'permitido@example.test'),
         (2, 2, 'u', cast(null as int64), cast(null as string)),
-        (3, 3, 'f', 30, 'outro@example.test')
+        (3, 3, 'f', 30, 'outro@example.test'),
+        (4, 4, 'u', 54771, 'familia@example.test'),
+        (4, 4, 'u', 54424, 'familia@example.test')
     ])
 ),
 
@@ -33,7 +35,8 @@ obtido as (
         ),
         (1, '1f', '20', 'permitido@example.test'),
         (2, '2u', '', ''),
-        (3, '3f', '30', 'outro@example.test')
+        (3, '3f', '30', 'outro@example.test'),
+        (4, '4u', '54424, 54771', 'familia@example.test')
     ]) as e
 )
 

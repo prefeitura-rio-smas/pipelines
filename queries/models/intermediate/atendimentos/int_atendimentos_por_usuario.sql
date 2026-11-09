@@ -22,7 +22,7 @@ with eventos as (
             when 'CRAS' then 'cras' when 'CREAS' then 'creas'
             when 'CENTRO POP' then 'centro_pop' else 'outros'
         end as tipo_servico,
-        if(count(distinct id_familia) > 1, error('Mais de uma familia no atendimento selecionado'), coalesce(max(cast(id_familia as string)), '')) as id_familia,
+        {{ pu_ids_familias('id_familia') }} as id_familia,
         max(projetos_sociais) as projetos_sociais_familia,
         if(count(distinct tipo_atendimento) = 1, max(tipo_atendimento), 'Misto') as classificacao_atendimento,
         array_agg(struct(
