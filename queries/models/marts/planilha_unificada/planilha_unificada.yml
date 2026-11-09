@@ -8,8 +8,8 @@ models:
       Contrato por assunto: usuario, familias, projetos_sociais, atendimentos, evolucoes e escopos.
       Dados pessoais e perfil ficam em usuario; eventos têm quantidade, quantidade por serviço em campos diretos e registros.
       Evoluções não canceladas incluem registros sem formulário, com descrição legível.
-      Campos escalares são STRING com ausência como ''; as exceções são as quantidades totais e por serviço,
-      INT64 com zero sem registros.
+      Campos escalares são STRING com ausência como ''; as exceções são usuario.idade,
+      INT64 com NULL sem nascimento válido, e as quantidades totais e por serviço, INT64 com zero sem registros.
       STRUCTs ausentes têm campos vazios e listas sem registros são []. Não são
       criados itens para simular ausência. As chaves e os tipos originais permanecem
       nos intermediários; a saída apresenta nomes de unidades associados a cada serviço.
@@ -26,6 +26,7 @@ models:
         structs_ausentes: campos_vazios
         tipos_escalares: STRING
         excecoes_tipos:
+          usuario.idade: INT64
           atendimentos.quantidade_linhas_bi: INT64
           atendimentos.quantidade: INT64
           evolucoes.quantidade: INT64
@@ -51,6 +52,12 @@ models:
           - atendimentos.registros.profissionais.id_familia_referencia
           - atendimentos.registros.profissionais.id_atendimento_legado
     columns:
+      - name: usuario.naturalidade
+        data_type: STRING
+        description: Município de nascimento informado em muninasc do AcolheRio; sem inferência pela UF ou endereço. Vazio quando ausente.
+      - name: usuario.idade
+        data_type: INT64
+        description: Idade em anos completos na data de atualização da tabela, no fuso America/Sao_Paulo. NULL para nascimento ausente, inválido ou futuro. Permanece fixa até a próxima atualização.
       - name: atendimentos.quantidade_linhas_bi
         data_type: INT64
         description: Total das linhas de atendimento/profissional aceitas pela programada; soma do tamanho das listas de profissionais. Não equivale ao número de eventos.

@@ -94,6 +94,7 @@ final as (
         base.id_unidade_referencia,
         base.id_login_cadastro,
         base.uf_nascimento,
+        base.naturalidade,
         sm.serie_escolar,
         safe_cast(det.data_cadunico as date) as data_cadunico_informada
     from base as base
