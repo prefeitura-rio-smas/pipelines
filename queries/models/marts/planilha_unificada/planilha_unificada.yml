@@ -56,6 +56,9 @@ models:
           - atendimentos.registros.profissionais.id_familia_referencia
           - atendimentos.registros.profissionais.id_atendimento_legado
     columns:
+      - name: usuario.possui_cpf
+        data_type: STRING
+        description: Sim quando o CPF está preenchido; Não quando nulo, vazio ou somente espaços. Indicador de presença de informação, preservando o CPF original.
       - name: usuario.tipo_atividade_remunerada
         data_type: STRING
         description: Tipo de atividade cadastrado em indqualativ, traduzido pelo catálogo de confiança inferida. Valores distintos ordenados e separados por vírgula e espaço; vazio na ausência, código desconhecido explicitamente sinalizado. Não modifica o indicador de renda.

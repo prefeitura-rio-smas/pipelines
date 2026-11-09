@@ -190,6 +190,7 @@ select
         coalesce(cast(p.condicao_estrangeira as string), '') as condicao_estrangeira,
         coalesce(cast(p.pais_origem as string), '') as pais_origem,
         coalesce(cast(p.cpf as string), '') as cpf,
+        if(nullif(trim(cast(p.cpf as string)), '') is not null, 'Sim', 'Não') as possui_cpf,
         coalesce(cast(p.data_nascimento as string), '') as data_nascimento,
         case when safe_cast(p.data_nascimento as date) <= current_date('America/Sao_Paulo') then {{ calc_idade('safe_cast(p.data_nascimento as date)', "current_date('America/Sao_Paulo')") }} end as idade,
         coalesce(cast(p.sexo as string), '') as sexo,
