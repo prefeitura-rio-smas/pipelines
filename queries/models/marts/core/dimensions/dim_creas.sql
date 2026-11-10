@@ -2,4 +2,5 @@
 select
     id_usuario,
     historico,
-    participacoes from {{ ref('int_perfil_creas') }}
+    participacoes
+from {{ ref('int_perfil_creas') }}
