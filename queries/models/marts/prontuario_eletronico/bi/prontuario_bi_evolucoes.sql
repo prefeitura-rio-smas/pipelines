@@ -1,6 +1,6 @@
 {{ config(materialized='table', enabled=target.name != 'prod', tags=['prontuario_bi_unidade']) }}
 select
-    e.id_usuario,
+    cast(e.id_usuario as string) as id_usuario,
     e.id_evolucao,
     e.id_evolucao_modulo,
     e.origem_modulo,

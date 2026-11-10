@@ -28,7 +28,15 @@ where table_name = '{{ model.identifier }}' and regexp_contains(data_type, r'STR
 
 {% test pu_cpop_selecao(model) %}
 with esperado as (
-with ultimos as (
+with historico_encaminhamentos as (
+    select r.id_usuario, r.tipo_registro,
+        array_agg(distinct concat(trim(e.label), ': ', trim(e.valor))
+            order by concat(trim(e.label), ': ', trim(e.valor))) valores
+    from {{ pu_ref('int_registros_centro_pop') }} r, unnest(r.encaminhamentos) e
+    where r.tipo_registro in ('pai', 'atendimento_social')
+      and nullif(trim(e.label), '') is not null and nullif(trim(e.valor), '') is not null
+    group by r.id_usuario, r.tipo_registro
+), ultimos as (
     -- Selecionar a ocorrência inteira antes de projetar respostas, inclusive vazias.
     select selecionado.* from (
         select array_agg(r order by data_ocorrencia desc nulls last, data_registro desc nulls last,
@@ -50,9 +58,7 @@ select u.id_usuario,
         , {{ assunto }}.data_resposta as data_resposta_{{ assunto }}
 {% for campo in campos %}
         , {% if campo == 'encaminhamentos' %}
-            array(select distinct concat(trim(e.label), ': ', trim(e.valor)) from {{ pu_ref('int_registros_centro_pop') }} r, unnest(r.encaminhamentos) e
-                where r.id_usuario = u.id_usuario and r.tipo_registro = '{{ assunto }}'
-                  and nullif(trim(e.label), '') is not null and nullif(trim(e.valor), '') is not null order by 1)
+            coalesce(enc_{{ assunto }}.valores, [])
           {% elif campo == 'demandas' %}coalesce({{ assunto }}.{{ campo }}, [])
           {% elif pu_cpop_campos()[campo] == 'DATE' %}{{ assunto }}.{{ campo }}
           {% else %}coalesce({{ assunto }}.{{ campo }}, ''){% endif %} as {{ pu_cpop_perfil_nome(assunto, campo) }}
@@ -62,6 +68,8 @@ from usuarios u
 {% for assunto in pu_cpop_perfil_assuntos() %}
 left join ultimos {{ assunto }} on u.id_usuario = {{ assunto }}.id_usuario and {{ assunto }}.tipo_registro = '{{ assunto }}'
 {% endfor %}
+left join historico_encaminhamentos enc_pai on u.id_usuario = enc_pai.id_usuario and enc_pai.tipo_registro = 'pai'
+left join historico_encaminhamentos enc_atendimento_social on u.id_usuario = enc_atendimento_social.id_usuario and enc_atendimento_social.tipo_registro = 'atendimento_social'
 ), comparacao as (
 select id_usuario, to_json_string(e) valor, 1 origem from esperado e
 union all

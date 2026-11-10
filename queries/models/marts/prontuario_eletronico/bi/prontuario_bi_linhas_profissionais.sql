@@ -7,7 +7,7 @@ select
     b.seq_atendimento,
     b.data_de_atendimento,
     b.hora_de_atendimento,
-    b.id_usuario,
+    cast(b.id_usuario as string) as id_usuario,
     b.id_familia,
     b.nome_usuario,
     b.data_nascimento,

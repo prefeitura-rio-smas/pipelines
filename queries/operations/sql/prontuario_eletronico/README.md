@@ -22,3 +22,5 @@ dbt build --target staging --select +tag:prontuario_bi_unidade --project-dir que
 ```
 
 O seletor com `+` inclui as dependências necessárias. A publicação inicial das tabelas de revisão pode usar a candidata validada, desde que a captura de permissões seja conferida com a planilha vigente imediatamente antes da publicação. Isso não migra as fontes do relatório operacional.
+
+As quatro fontes usam `id_usuario` STRING e `id_unidade` INT64. Usar essas chaves para os controles entre fontes, mantendo os identificadores de campo correspondentes no Studio.

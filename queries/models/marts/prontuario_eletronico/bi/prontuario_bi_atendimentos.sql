@@ -1,6 +1,6 @@
 {{ config(materialized='table', enabled=target.name != 'prod', tags=['prontuario_bi_unidade']) }}
 select
-    p.id_usuario,
+    cast(p.id_usuario as string) as id_usuario,
     a.id_atendimento,
     a.id_unidade,
     a.nome_unidade,

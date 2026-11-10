@@ -168,11 +168,14 @@ jobs:
           # (unrendered_schema / unrendered_database), evitando falso-positivo do
           # state:modified com configs env-aware
           # (ex: "{{ 'marts' if target.name == 'prod' else 'relatorio' }}").
+          # Incluir os ancestrais core dos descendentes modificados: após a migração
+          # para marts/core, o baseline pode conhecer int_* ainda ausentes em prod.
+          # A interseção limita o bootstrap ao core e preserva o defer dos demais inputs.
           # --state resolve relativo ao --project-dir (queries/target-base).
           # --defer resolve upstream NÃO selecionado para as relações de prod (sem rebuild).
           # --favor-state: upstream não selecionado resolve SEMPRE para prod (dataset dedicado do PR ainda não existe).
           uv run dbt build \
-            --select "state:modified+" \
+            --select "state:modified+" "@state:modified,path:models/intermediate/core" \
             --exclude "encaminhamentos_unidade gestao_vagas" \
             --defer \
             --favor-state \
@@ -186,7 +189,7 @@ jobs:
         if: steps.changed-models.outputs.has_changes == 'true' && steps.check-creds.outputs.has_creds == 'true'
         run: |
           uv run dbt docs generate \
-            --select "state:modified+" \
+            --select "state:modified+" "@state:modified,path:models/intermediate/core" \
             --exclude "encaminhamentos_unidade gestao_vagas" \
             --defer \
             --favor-state \
