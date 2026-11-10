@@ -36,11 +36,3 @@ case safe_cast({{ coluna }} as int64)
     when 32 then "Tô de Boa"
 end
 {% endmacro %}
-
-{% macro map_nome_servico_assistencial(coluna) %}
--- Só descrições confirmadas. Os demais códigos bloqueiam a publicação da base.
-case safe_cast({{ coluna }} as int64)
-    when 1 then 'PAIF'
-    when 6 then 'PAEFI'
-end
-{% endmacro %}
