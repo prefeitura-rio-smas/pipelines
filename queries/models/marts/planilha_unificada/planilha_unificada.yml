@@ -2,15 +2,15 @@ version: 2
 
 models:
   - name: planilha_unificada
-    data_tests: [pu_contrato_publico, pu_campos_topo, pu_escopos_preservados, pu_linhas_bi_preservadas, pu_quantidades_bi, pu_preservacao_eventos, pu_formularios_eventos, pu_familia_no_atendimento_paridade]
+    data_tests: [pu_contrato_publico, pu_mapeamento_creas, pu_campos_topo, pu_perfis_preservados, pu_linhas_bi_preservadas, pu_quantidades_bi, pu_preservacao_eventos, pu_formularios_eventos, pu_familia_no_atendimento_paridade]
     description: |
       Uma linha por usuario.id_usuario, com a mesma população de dim_usuarios.
-      Contrato por assunto: usuario, familias, projetos_sociais, atendimentos, evolucoes e escopos.
+      Contrato por assunto: usuario, familias, projetos_sociais, atendimentos, evolucoes, centro_pop, creas e alta_complexidade.
       nome_unidade e email são campos STRING no topo, consolidados por usuário.
       O filtro de e-mail libera o histórico completo quando o endereço pertence à lista.
       Dados pessoais e perfil ficam em usuario; eventos têm quantidade, quantidade por serviço em campos diretos e registros.
       Evoluções não canceladas incluem registros sem formulário, com descrição legível.
-      Campos escalares são STRING com ausência como ''; bairro e raça/cor nulos
+      No cadastro, campos escalares são STRING com ausência como ''; no CREAS e alta, ausência é NULL. Bairro e raça/cor nulos
       recebem NÃO INFORMADO e idade_faixa sem nascimento válido recebe Não Informado.
       As exceções de tipo incluem datas do desligamento PAI, usuario.idade,
       INT64 com NULL sem nascimento válido, e as quantidades totais e por serviço, INT64 com zero sem registros.
@@ -18,24 +18,44 @@ models:
       criados itens para simular ausência. As chaves e os tipos originais permanecem
       nos intermediários; a saída apresenta nomes de unidades associados a cada serviço.
       Base em validação paralela, com atualização explícita em desenvolvimento;
-      inclui os históricos de Centro POP, CREAS e alta complexidade. Cadastros e
+      inclui perfis resumidos de Centro POP, CREAS e alta complexidade; históricos permanecem nas dimensões. Cadastros e
       documentos são o estado atual; cada consumidor define competência e população.
     config:
       meta:
         granularidade: [usuario.id_usuario]
-        contrato: por_assunto_v14_filtro_por_usuario
-        quantidade_campos: 298
-        campos_raiz: [usuario, familias, projetos_sociais, atendimentos, evolucoes, escopos, nome_unidade, email]
+        contrato: por_assunto_v15_perfis_simples
+        campos_raiz: [usuario, familias, projetos_sociais, atendimentos, evolucoes, centro_pop, creas, alta_complexidade, nome_unidade, email]
         execucao: modelo_dbt
         publicacao: desenvolvimento
         valores_ausentes: texto_vazio
         structs_ausentes: campos_vazios
         tipos_escalares: STRING
         excecoes_tipos:
-          escopos.centro_pop.data_ocorrencia_desligamento_pai: DATE
-          escopos.centro_pop.data_hora_resposta_desligamento_pai: DATETIME
-          escopos.centro_pop.data_hora_registro_desligamento_pai: DATETIME
-          escopos.centro_pop.data_desligamento_pai: DATE
+          centro_pop.data_ocorrencia_desligamento_pai: DATE
+          centro_pop.data_hora_resposta_desligamento_pai: DATETIME
+          centro_pop.data_hora_registro_desligamento_pai: DATETIME
+          centro_pop.data_desligamento_pai: DATE
+          creas.mse_data_ocorrencia: DATE
+          creas.mse_data_registro: DATETIME
+          creas.mse_id_unidade: INT64
+          creas.mse_retorno_data_ocorrencia: DATE
+          creas.mse_retorno_data_registro: DATETIME
+          creas.mse_retorno_id_unidade: INT64
+          creas.peti_data_ocorrencia: DATE
+          creas.peti_data_registro: DATETIME
+          creas.peti_id_unidade: INT64
+          creas.scfv_data_ocorrencia: DATE
+          creas.scfv_data_registro: DATETIME
+          creas.scfv_id_unidade: INT64
+          creas.peti_desligamento_data_ocorrencia: DATE
+          creas.peti_desligamento_data_registro: DATETIME
+          creas.peti_desligamento_id_unidade: INT64
+          creas.passo_a_passo_ultima_data: DATE
+          alta_complexidade.id_ciclo: INT64
+          alta_complexidade.id_unidade: INT64
+          alta_complexidade.data_entrada: DATE
+          alta_complexidade.data_saida: DATE
+          alta_complexidade.tempo_permanencia_dias: INT64
           usuario.idade: INT64
           atendimentos.quantidade_linhas_bi: INT64
           atendimentos.quantidade: INT64
@@ -48,33 +68,13 @@ models:
           evolucoes.quantidade_creas: INT64
           evolucoes.quantidade_centro_pop: INT64
           evolucoes.quantidade_outros: INT64
-          escopos.creas.historico.id_evolucao: INT64
-          escopos.creas.historico.id_familia: INT64
-          escopos.creas.historico.id_unidade: INT64
-          escopos.creas.historico.id_profissional: INT64
-          escopos.creas.historico.codigo_abrangencia: INT64
-          escopos.creas.historico.id_atividade: INT64
-          escopos.creas.historico.data_evolucao: DATETIME
-          escopos.creas.historico.data_cancelamento: DATETIME
-          escopos.creas.historico.data_ocorrencia: DATE
-          escopos.creas.participacoes.id_unidade: INT64
-          escopos.creas.participacoes.id_atividade: INT64
-          escopos.creas.participacoes.data_presenca: DATE
-          escopos.alta_complexidade.historico.id_ciclo: INT64
-          escopos.alta_complexidade.historico.id_unidade: INT64
-          escopos.alta_complexidade.historico.data_entrada: DATE
-          escopos.alta_complexidade.historico.data_saida: DATE
-          escopos.alta_complexidade.historico.tempo_permanencia_dias: INT64
         identificadores_permitidos:
           - atendimentos.registros.id_unidade
           - evolucoes.registros.id_unidade
-          - escopos.centro_pop.historico.id_unidade
-          - escopos.centro_pop.participacoes.id_unidade
           - id_usuario
           - id_familia
           - id_atendimento_modulo
           - id_evolucao_modulo
-          - escopos.centro_pop.participacoes.id_atividade
           - atendimentos.registros.profissionais.id_profissional
           - atendimentos.registros.profissionais.id_familia_referencia
           - atendimentos.registros.profissionais.id_atendimento_legado
@@ -87,10 +87,10 @@ models:
         description: Bairro informado no cadastro atual; NÃO INFORMADO quando nulo.
       - name: usuario.raca_cor
         description: Raça/cor traduzida do cadastro atual; NÃO INFORMADO quando nula.
-      - name: escopos.creas
-        description: Histórico de formulários CREAS e participações Passo a Passo; sem escolha arbitrária de ocorrência.
-      - name: escopos.alta_complexidade
-        description: Histórico de ciclos de acolhimento por usuário, preservando unidade e datas de entrada e saída.
+      - name: creas
+        description: Último formulário integral de cada assunto e última participação Passo a Passo.
+      - name: alta_complexidade
+        description: Ciclo sem saída prioritário; na ausência, o ciclo mais recente.
       - name: usuario.idade_faixa
         description: Faixa da idade atual, com os limites e rótulos da programada; Não Informado sem nascimento válido.
       - name: nome_unidade
@@ -132,13 +132,9 @@ models:
         description: Chave da unidade do atendimento, como texto, para agrupamento sem associação pelo nome.
       - name: evolucoes.registros.id_unidade
         description: Chave da unidade da evolução, como texto.
-      - name: escopos.centro_pop.historico.id_unidade
-        description: Chave da unidade do registro; vazio quando a ocorrência é de abrangência pessoa sem unidade.
-      - name: escopos.centro_pop.participacoes.id_unidade
-        description: Chave da unidade da participação.
-      - name: escopos.centro_pop.unidades_atendimento
-        description: Lista de nomes das unidades com atendimento Centro POP registrado para o usuário.
-        data_type: "ARRAY<STRING>"
+      - name: centro_pop.unidades_atendimento
+        description: Nomes das unidades com atendimento Centro POP, separados por vírgula.
+        data_type: STRING
       - name: usuario
         description: |
           STRUCT com os atributos cadastrais, documentos e endereço em campos diretos,
@@ -196,14 +192,8 @@ models:
       - name: evolucoes.quantidade
         description: Igual ao tamanho de evolucoes.registros, incluindo evoluções sem formulário; zero sem registros.
         data_tests: [not_null]
-      - name: escopos
-        description: |
-          STRUCT com centro_pop.historico, centro_pop.participacoes e os campos do perfil e a lista de unidades atendidas diretamente em centro_pop, sem
-          contagem mensal. Histórico com campos nomeados de PAI, atendimento social,
-          saúde, situação de rua e desligamento; preserva origem, abrangência, datas
-          de registro/resposta e datas declaradas. Participações comprovadas mantêm
-          id_atividade STRING, nome, unidade, data e hora. Cadastro não é replicado;
-          campos sem coleta ficam vazios, sem criar ocorrências fictícias.
+      - name: centro_pop
+        description: Perfil do Centro POP, com campos diretos e última participação.
 
       - name: atendimentos.quantidade_cras
         description: Contagem INT64 de registros do serviço cras; zero sem registros.
@@ -250,146 +240,146 @@ models:
       - name: atendimentos.registros.profissionais.id_atendimento_legado
         description: Valor original de ID_ATENDIMENTO da referência, referente à linha atendimento/profissional e sem módulo. Não substitui a chave canônica id_atendimento_modulo nem deve ser usado como identidade global do evento.
 
-      - name: escopos.centro_pop.possui_registro_pai
+      - name: centro_pop.possui_registro_pai
         data_type: "STRING"
         description: "Evidência de registro de PAI: Sim ou vazio. Não indica acompanhamento ativo."
 
-      - name: escopos.centro_pop.data_registro_pai
+      - name: centro_pop.data_registro_pai
         data_type: "STRING"
         description: "Data de registro do último formulário inteiro de pai; vazia sem evidência."
 
-      - name: escopos.centro_pop.data_resposta_pai
+      - name: centro_pop.data_resposta_pai
         data_type: "STRING"
         description: "Data de resposta do último formulário inteiro de pai; vazia sem evidência."
 
-      - name: escopos.centro_pop.flag_incluido_acompanhamento_pai
+      - name: centro_pop.flag_incluido_acompanhamento_pai
         data_type: "STRING"
         description: "Sim quando a data de inclusão PAI do perfil estiver preenchida; Não quando nula ou vazia. Usa somente a data atual do perfil, independentemente de desligamento ou período."
 
-      - name: escopos.centro_pop.data_inclusao_pai
+      - name: centro_pop.data_inclusao_pai
         data_type: "STRING"
         description: "Campo do último registro de pai em todas as unidades, preservado integralmente da dimensão; ausência como texto vazio."
 
-      - name: escopos.centro_pop.data_inclusao_informada
+      - name: centro_pop.data_inclusao_informada
         data_type: "STRING"
         description: "Campo do último registro de pai em todas as unidades, preservado integralmente da dimensão; ausência como texto vazio."
 
-      - name: escopos.centro_pop.demandas_pai
-        data_type: "ARRAY<STRING>"
-        description: "Campo do último registro de pai em todas as unidades, preservado integralmente da dimensão; ausência como lista vazia."
+      - name: centro_pop.demandas_pai
+        data_type: STRING
+        description: "Campo do último registro de pai em todas as unidades, preservado integralmente da dimensão; valores separados por vírgula; ausência como texto vazio."
 
-      - name: escopos.centro_pop.encaminhamentos_pai
-        data_type: "ARRAY<STRING>"
-        description: "Campo do último registro de pai em todas as unidades, preservado integralmente da dimensão; ausência como lista vazia."
+      - name: centro_pop.encaminhamentos_pai
+        data_type: STRING
+        description: "Campo do último registro de pai em todas as unidades, preservado integralmente da dimensão; valores separados por vírgula; ausência como texto vazio."
 
-      - name: escopos.centro_pop.observacoes_pai
+      - name: centro_pop.observacoes_pai
         data_type: "STRING"
         description: "Campo do último registro de pai em todas as unidades, preservado integralmente da dimensão; ausência como texto vazio."
 
-      - name: escopos.centro_pop.data_registro_atendimento_social
+      - name: centro_pop.data_registro_atendimento_social
         data_type: "STRING"
         description: "Data de registro do último formulário inteiro de atendimento_social; vazia sem evidência."
 
-      - name: escopos.centro_pop.data_resposta_atendimento_social
+      - name: centro_pop.data_resposta_atendimento_social
         data_type: "STRING"
         description: "Data de resposta do último formulário inteiro de atendimento_social; vazia sem evidência."
 
-      - name: escopos.centro_pop.motivo_secundario_permanencia_rua
+      - name: centro_pop.motivo_secundario_permanencia_rua
         data_type: "STRING"
         description: "Campo do último registro de atendimento_social em todas as unidades, preservado integralmente da dimensão; ausência como texto vazio."
 
-      - name: escopos.centro_pop.possui_referencias_familiares
+      - name: centro_pop.possui_referencias_familiares
         data_type: "STRING"
         description: "Campo do último registro de atendimento_social em todas as unidades, preservado integralmente da dimensão; ausência como texto vazio."
 
-      - name: escopos.centro_pop.territorio_referencia_familia
+      - name: centro_pop.territorio_referencia_familia
         data_type: "STRING"
         description: "Campo do último registro de atendimento_social em todas as unidades, preservado integralmente da dimensão; ausência como texto vazio."
 
-      - name: escopos.centro_pop.possibilidade_reinsercao_familiar
+      - name: centro_pop.possibilidade_reinsercao_familiar
         data_type: "STRING"
         description: "Campo do último registro de atendimento_social em todas as unidades, preservado integralmente da dimensão; ausência como texto vazio."
 
-      - name: escopos.centro_pop.demandas_atendimento_social
-        data_type: "ARRAY<STRING>"
-        description: "Campo do último registro de atendimento_social em todas as unidades, preservado integralmente da dimensão; ausência como lista vazia."
+      - name: centro_pop.demandas_atendimento_social
+        data_type: STRING
+        description: "Campo do último registro de atendimento_social em todas as unidades, preservado integralmente da dimensão; valores separados por vírgula; ausência como texto vazio."
 
-      - name: escopos.centro_pop.encaminhamentos_atendimento_social
-        data_type: "ARRAY<STRING>"
-        description: "Campo do último registro de atendimento_social em todas as unidades, preservado integralmente da dimensão; ausência como lista vazia."
+      - name: centro_pop.encaminhamentos_atendimento_social
+        data_type: STRING
+        description: "Campo do último registro de atendimento_social em todas as unidades, preservado integralmente da dimensão; valores separados por vírgula; ausência como texto vazio."
 
-      - name: escopos.centro_pop.observacoes_atendimento_social
+      - name: centro_pop.observacoes_atendimento_social
         data_type: "STRING"
         description: "Campo do último registro de atendimento_social em todas as unidades, preservado integralmente da dimensão; ausência como texto vazio."
 
-      - name: escopos.centro_pop.data_registro_saude
+      - name: centro_pop.data_registro_saude
         data_type: "STRING"
         description: "Data de registro do último formulário inteiro de saude; vazia sem evidência."
 
-      - name: escopos.centro_pop.data_resposta_saude
+      - name: centro_pop.data_resposta_saude
         data_type: "STRING"
         description: "Data de resposta do último formulário inteiro de saude; vazia sem evidência."
 
-      - name: escopos.centro_pop.uso_substancias_psicoativas
+      - name: centro_pop.uso_substancias_psicoativas
         data_type: "STRING"
         description: "Campo do último registro de saude em todas as unidades, preservado integralmente da dimensão; ausência como texto vazio."
 
-      - name: escopos.centro_pop.situacao_saude
+      - name: centro_pop.situacao_saude
         data_type: "STRING"
         description: "Campo do último registro de saude em todas as unidades, preservado integralmente da dimensão; ausência como texto vazio."
 
-      - name: escopos.centro_pop.local_tratamento
+      - name: centro_pop.local_tratamento
         data_type: "STRING"
         description: "Campo do último registro de saude em todas as unidades, preservado integralmente da dimensão; ausência como texto vazio."
 
-      - name: escopos.centro_pop.possui_problema_saude
+      - name: centro_pop.possui_problema_saude
         data_type: "STRING"
         description: "Campo do último registro de saude em todas as unidades, preservado integralmente da dimensão; ausência como texto vazio."
 
-      - name: escopos.centro_pop.realiza_acompanhamento_saude
+      - name: centro_pop.realiza_acompanhamento_saude
         data_type: "STRING"
         description: "Campo do último registro de saude em todas as unidades, preservado integralmente da dimensão; ausência como texto vazio."
 
-      - name: escopos.centro_pop.observacoes_saude
+      - name: centro_pop.observacoes_saude
         data_type: "STRING"
         description: "Campo do último registro de saude em todas as unidades, preservado integralmente da dimensão; ausência como texto vazio."
 
-      - name: escopos.centro_pop.data_registro_situacao_rua
+      - name: centro_pop.data_registro_situacao_rua
         data_type: "STRING"
         description: "Data de registro do último formulário inteiro de situacao_rua; vazia sem evidência."
 
-      - name: escopos.centro_pop.data_resposta_situacao_rua
+      - name: centro_pop.data_resposta_situacao_rua
         data_type: "STRING"
         description: "Data de resposta do último formulário inteiro de situacao_rua; vazia sem evidência."
 
-      - name: escopos.centro_pop.motivo_principal_permanencia_rua
+      - name: centro_pop.motivo_principal_permanencia_rua
         data_type: "STRING"
         description: "Campo do último registro de situacao_rua em todas as unidades, preservado integralmente da dimensão; ausência como texto vazio."
 
-      - name: escopos.centro_pop.data_hora_registro_desligamento_pai
+      - name: centro_pop.data_hora_registro_desligamento_pai
         data_type: "DATETIME"
         description: "Data de registro do último formulário inteiro de desligamento; vazia sem evidência."
 
-      - name: escopos.centro_pop.data_hora_resposta_desligamento_pai
+      - name: centro_pop.data_hora_resposta_desligamento_pai
         data_type: "DATETIME"
         description: "Data de resposta do último formulário inteiro de desligamento; vazia sem evidência."
 
-      - name: escopos.centro_pop.data_desligamento_pai
+      - name: centro_pop.data_desligamento_pai
         data_type: "DATE"
         description: "Campo do último registro de desligamento em todas as unidades, preservado integralmente da dimensão; ausência como texto vazio."
 
-      - name: escopos.centro_pop.data_desligamento_pai_informada
+      - name: centro_pop.data_desligamento_pai_informada
         data_type: "STRING"
         description: "Campo do último registro de desligamento em todas as unidades, preservado integralmente da dimensão; ausência como texto vazio."
 
-      - name: escopos.centro_pop.motivo_desligamento_pai
+      - name: centro_pop.motivo_desligamento_pai
         data_type: "STRING"
         description: "Campo do último registro de desligamento em todas as unidades, preservado integralmente da dimensão; ausência como texto vazio."
 
-      - name: escopos.centro_pop.complemento_motivo_desligamento_pai
+      - name: centro_pop.complemento_motivo_desligamento_pai
         data_type: "STRING"
         description: "Campo do último registro de desligamento em todas as unidades, preservado integralmente da dimensão; ausência como texto vazio."
 
-      - name: escopos.centro_pop.observacoes_desligamento_pai
+      - name: centro_pop.observacoes_desligamento_pai
         data_type: "STRING"
         description: "Campo do último registro de desligamento em todas as unidades, preservado integralmente da dimensão; ausência como texto vazio."

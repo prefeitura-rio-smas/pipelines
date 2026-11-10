@@ -206,8 +206,8 @@ from registros r left join {{ pu_ref('dim_unidades') }} u on r.id_unidade = u.id
 {{ campo ~ '_' ~ assunto if campo in ['demandas', 'encaminhamentos', 'observacoes'] else campo }}
 {%- endmacro %}
 
-{% macro pu_cpop_perfil_publico(alias) %}
-    coalesce({{ alias }}.unidades_atendimento, []) as unidades_atendimento,
+{% macro pu_cpop_perfil_publico(alias, listas_em_texto=false) %}
+    {% if listas_em_texto %}array_to_string(coalesce({{ alias }}.unidades_atendimento, []), ', '){% else %}coalesce({{ alias }}.unidades_atendimento, []){% endif %} as unidades_atendimento,
     coalesce({{ alias }}.possui_registro_pai, '') as possui_registro_pai
     {% for assunto, campos in pu_cpop_perfil_assuntos().items() %}
 {% if assunto == 'desligamento' %}
@@ -228,7 +228,7 @@ from registros r left join {{ pu_ref('dim_unidades') }} u on r.id_unidade = u.id
         , coalesce(cast({{ alias }}.data_resposta_{{ assunto }} as string), '') as data_resposta_{{ assunto }}
 {% for campo in campos %}
 {% set nome = pu_cpop_perfil_nome(assunto, campo) %}
-            , {% if campo in ['demandas', 'encaminhamentos'] %}coalesce({{ alias }}.{{ nome }}, [])
+            , {% if campo in ['demandas', 'encaminhamentos'] %}{% if listas_em_texto %}array_to_string(coalesce({{ alias }}.{{ nome }}, []), ', '){% else %}coalesce({{ alias }}.{{ nome }}, []){% endif %}
               {% else %}coalesce(cast({{ alias }}.{{ nome }} as string), ''){% endif %} as {{ nome }}
 {% endfor %}
 {% endif %}
