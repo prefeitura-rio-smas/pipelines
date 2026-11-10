@@ -34,7 +34,7 @@ final as (
         regulacao.data_regulacao,
         (date_diff(a.data_saida, a.data_entrada, day) + 1) as dias_acolhimento,
         case when a.data_saida is null then 1 else 0 end as flag_em_acolhimento
-    from acolhimentos a
+    from acolhimentos as a
     left join datas_solicitacao as solicitacao
         on a.id_ciclo = solicitacao.id_ciclo
     left join datas_regulacao as regulacao

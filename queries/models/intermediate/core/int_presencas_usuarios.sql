@@ -7,9 +7,11 @@
 with presencas as (
     select * from {{ ref('raw_presencas_usuarios') }}
 ),
+
 usuarios as (
     select id_usuario from {{ ref('int_usuarios') }}
 )
+
 select
     p.id_atividade,
     p.id_usuario,
@@ -17,5 +19,5 @@ select
     p.hora_presenca,
     p.id_unidade,
     p.id_setor
-from presencas p
-inner join usuarios u on p.id_usuario = u.id_usuario
+from presencas as p
+inner join usuarios as u on p.id_usuario = u.id_usuario

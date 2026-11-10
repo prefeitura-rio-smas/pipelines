@@ -16,8 +16,8 @@ profissionais_ocupacoes_detalhadas as (
         poc.id_profissional,
         poc.codigo_cbo,
         c.descricao
-    from {{ ref('raw_profissionais_ocupacoes') }} poc
-    left join {{ ref('raw_cbo') }} c on poc.codigo_cbo = c.codigo_cbo
+    from {{ ref('raw_profissionais_ocupacoes') }} as poc
+    left join {{ ref('raw_cbo') }} as c on poc.codigo_cbo = c.codigo_cbo
 ),
 
 ocupacoes as (
@@ -32,7 +32,7 @@ ocupacoes as (
         array_agg(cast(codigo_cbo as string) order by codigo_cbo)[safe_offset(0)] as cbo_principal_codigo,
         array_agg(descricao order by codigo_cbo)[safe_offset(0)] as cbo_principal_descricao
     from profissionais_ocupacoes_detalhadas
-    group by 1
+    group by id_profissional
 ),
 
 unidades_atuacao as (
@@ -41,7 +41,7 @@ unidades_atuacao as (
         string_agg(u.nome_unidade, ', ' order by u.nome_unidade) as unidades_atuacao,
         count(distinct u.id_unidade) as qtde_unidades,
         array_agg(op_unid.id_unidade order by u.nome_unidade) as ids_unidade
-    from {{ ref('raw_operadores_unidades') }} op_unid
+    from {{ ref('raw_operadores_unidades') }} as op_unid
     left join {{ ref('int_unidades') }} as u on op_unid.id_unidade = u.id_unidade
     where u.id_unidade is not null
     group by op_unid.id_login
@@ -53,8 +53,8 @@ final as (
         ope.id_login,
         coalesce(ope.nome_operador, p.nome) as nome,
         p.nome as nome_cadastral,
-        ope.nome_operador as nome_operador,
-        (p.id_login IS NULL) as flag_sem_conta,
+        ope.nome_operador,
+        (p.id_login is null) as flag_sem_conta,
         p.cpf,
         p.matricula,
         p.email as email_profissional,
@@ -64,7 +64,7 @@ final as (
         ope.login as login_operador,
         ope.tipo_acesso_codigo,
         ope.data_cadastro as data_cadastro_conta,
-        ope.data_ultimo_acesso as data_ultimo_acesso,
+        ope.data_ultimo_acesso,
 
         -- CBOs (agregados)
         coalesce(ocu.qtde_cbos, 0) as qtde_cbos,
@@ -79,11 +79,11 @@ final as (
         -- Perfil de acesso (com a macro map_coluna_perfil_acesso)
         -- Refinamento: nível 8 (Customizado) pode ter subtipo em tipo_acesso_codigo (D=Diretor, M=Master)
         ope.nivel_conta,
-        CASE
-            WHEN ope.nivel_conta = 8 AND ope.tipo_acesso_codigo = 'D' THEN 'Acesso Personalizado (Diretor)'
-            WHEN ope.nivel_conta = 8 AND ope.tipo_acesso_codigo = 'M' THEN 'Acesso Personalizado (Master)'
-            ELSE {{ map_coluna_perfil_acesso('ope.nivel_conta') }}
-        END AS perfil_acesso,
+        case
+            when ope.nivel_conta = 8 and ope.tipo_acesso_codigo = 'D' then 'Acesso Personalizado (Diretor)'
+            when ope.nivel_conta = 8 and ope.tipo_acesso_codigo = 'M' then 'Acesso Personalizado (Master)'
+            else {{ map_coluna_perfil_acesso('ope.nivel_conta') }}
+        end as perfil_acesso,
 
         -- Perfil de acesso personalizado (nome real via raw_contas_modulos → raw_perfis_grupos)
         pa.id_perfil_acesso,
@@ -94,19 +94,19 @@ final as (
         {{ map_coluna_status_conta('ope.status_conta_codigo') }},
 
         -- Dias desde o último acesso
-        DATE_DIFF(CURRENT_DATE(), ope.data_ultimo_acesso, DAY) as dias_ultimo_acesso,
+        date_diff(current_date(), ope.data_ultimo_acesso, day) as dias_ultimo_acesso,
 
         -- Unidades de atuação
         ua.unidades_atuacao,
         coalesce(ua.qtde_unidades, 0) as qtde_unidades,
         ua.ids_unidade
 
-    from profissionais p
-    left join operadores ope on p.id_login = ope.id_login
+    from profissionais as p
+    left join operadores as ope on p.id_login = ope.id_login
     left join {{ ref('raw_contas_modulos') }} as cm on ope.id_login = cm.id_login
     left join {{ ref('raw_perfis_grupos') }} as pa on cm.id_perfil_acesso = pa.id_perfil_acesso
-    left join ocupacoes ocu on p.id_profissional = ocu.id_profissional
-    left join unidades_atuacao ua on p.id_login = ua.id_login
+    left join ocupacoes as ocu on p.id_profissional = ocu.id_profissional
+    left join unidades_atuacao as ua on p.id_login = ua.id_login
     where upper(p.nome) not like '%TESTE%'
 )
 

@@ -4,12 +4,15 @@
 with atividades as (
     select * from {{ ref('raw_atividades_grupo') }}
 ),
+
 tipos as (
     select * from {{ ref('raw_tipos_atividade') }}
 ),
+
 unidades as (
     select * from {{ ref('int_unidades') }}
 )
+
 select
     a.id_atividade,
     a.nome_atividade,
@@ -25,6 +28,6 @@ select
     a.indicador_matricula,
     a.observacao_matricula,
     a.id_local
-from atividades a
-left join tipos t on a.id_tipo_atividade = t.id_tipo_atividade
-left join unidades u on a.id_unidade = u.id_unidade
+from atividades as a
+left join tipos as t on a.id_tipo_atividade = t.id_tipo_atividade
+left join unidades as u on a.id_unidade = u.id_unidade

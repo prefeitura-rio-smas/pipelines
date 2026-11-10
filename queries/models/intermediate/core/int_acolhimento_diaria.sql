@@ -23,13 +23,14 @@ explodido as (
         c.indicador_ciclo,
         c.motivo_saida,
         data_referencia
-    from ciclos c
-    cross join unnest(
-        generate_date_array(
-            c.data_entrada,
-            coalesce(c.data_saida, current_date())
-        )
-    ) as data_referencia
+    from ciclos as c
+    cross join
+        unnest(
+            generate_date_array(
+                c.data_entrada,
+                coalesce(c.data_saida, current_date())
+            )
+        ) as data_referencia
     where data_referencia <= current_date()
 )
 

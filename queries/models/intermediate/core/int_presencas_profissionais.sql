@@ -6,15 +6,17 @@
 with presencas as (
     select * from {{ ref('raw_presencas_profissionais') }}
 ),
+
 profissionais as (
     select id_profissional from {{ ref('int_profissionais') }}
     where lower(nome) not like '%teste%'
 )
+
 select
     p.id_atividade,
     p.id_profissional,
     p.data_presenca,
     p.hora_presenca,
     p.codigo_cbo
-from presencas p
-inner join profissionais pr on p.id_profissional = pr.id_profissional
+from presencas as p
+inner join profissionais as pr on p.id_profissional = pr.id_profissional
