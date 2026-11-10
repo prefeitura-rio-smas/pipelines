@@ -50,8 +50,9 @@ select u.id_usuario,
         , {{ assunto }}.data_resposta as data_resposta_{{ assunto }}
 {% for campo in campos %}
         , {% if campo == 'encaminhamentos' %}
-            array(select distinct concat(e.label, ': ', e.valor) from unnest({{ assunto }}.encaminhamentos) e
-                where nullif(trim(e.label), '') is not null and nullif(trim(e.valor), '') is not null order by 1)
+            array(select distinct concat(trim(e.label), ': ', trim(e.valor)) from {{ pu_ref('int_registros_centro_pop') }} r, unnest(r.encaminhamentos) e
+                where r.id_usuario = u.id_usuario and r.tipo_registro = '{{ assunto }}'
+                  and nullif(trim(e.label), '') is not null and nullif(trim(e.valor), '') is not null order by 1)
           {% elif campo == 'demandas' %}coalesce({{ assunto }}.{{ campo }}, [])
           {% elif pu_cpop_campos()[campo] == 'DATE' %}{{ assunto }}.{{ campo }}
           {% else %}coalesce({{ assunto }}.{{ campo }}, ''){% endif %} as {{ pu_cpop_perfil_nome(assunto, campo) }}

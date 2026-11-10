@@ -270,7 +270,7 @@ models:
 
       - name: centro_pop.encaminhamentos_pai
         data_type: STRING
-        description: "Campo do último registro de pai em todas as unidades, preservado integralmente da dimensão; valores separados por vírgula; ausência como texto vazio."
+        description: Encaminhamentos distintos de todo o histórico não cancelado deste tipo de formulário, ordenados; na supertabela, separados por vírgula.
 
       - name: centro_pop.observacoes_pai
         data_type: "STRING"
@@ -306,7 +306,7 @@ models:
 
       - name: centro_pop.encaminhamentos_atendimento_social
         data_type: STRING
-        description: "Campo do último registro de atendimento_social em todas as unidades, preservado integralmente da dimensão; valores separados por vírgula; ausência como texto vazio."
+        description: Encaminhamentos distintos de todo o histórico não cancelado deste tipo de formulário, ordenados; na supertabela, separados por vírgula.
 
       - name: centro_pop.observacoes_atendimento_social
         data_type: "STRING"
@@ -383,3 +383,13 @@ models:
       - name: centro_pop.observacoes_desligamento_pai
         data_type: "STRING"
         description: "Campo do último registro de desligamento em todas as unidades, preservado integralmente da dimensão; ausência como texto vazio."
+
+      - name: centro_pop.flag_empregabilidade_imediata
+        description: Não Informado; pergunta ainda sem fonte de respostas identificada no Atendimento Social.
+        data_type: STRING
+      - name: centro_pop.capacidade_habilidades
+        description: Não Informado; não substitui esta resposta por potencialidades do PAI.
+        data_type: STRING
+      - name: centro_pop.flag_interesse_curso
+        description: Não Informado; interesse em atividades coletivas não equivale a interesse em curso.
+        data_type: STRING

@@ -233,5 +233,8 @@ from registros r left join {{ pu_ref('dim_unidades') }} u on r.id_unidade = u.id
 {% endfor %}
 {% endif %}
 {% endfor %}
+    , 'Não Informado' as flag_empregabilidade_imediata
+    , 'Não Informado' as capacidade_habilidades
+    , 'Não Informado' as flag_interesse_curso
     , if(nullif(trim(cast({{ alias }}.data_inclusao_pai as string)), '') is not null, 'Sim', 'Não') as flag_incluido_acompanhamento_pai
 {% endmacro %}
