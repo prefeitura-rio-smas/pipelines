@@ -1,6 +1,4 @@
-import os
 from prefect import flow
-from prefect_dbt.cli.commands import trigger_dbt_cli_command
 
 from pipelines.arcgis.tasks import load_arcgis_to_bigquery
 
@@ -9,6 +7,11 @@ from pipelines.arcgis.tasks import load_arcgis_to_bigquery
 def equipamento_flow() -> None:
     """
     Fluxo para carregar dados do ArcGIS para o BigQuery para o produto equipamento.
+
+    Só extrai para `arcgis_raw.equipamento_raw`. A transformação não roda mais
+    aqui: o antigo modelo legado `unidade` (rj-smas.equipamento.unidade) foi
+    substituído por `raw/arcgis/raw_unidade` na medallion, que é materializado
+    pelo pipeline dbt (tag weekly).
     """
     # Configuration for this product
     job_name = "equipamento"
@@ -22,13 +25,6 @@ def equipamento_flow() -> None:
         item_id=item_id,
         layer_idx=layer_idx,
         return_geometry=return_geometry,
-    )
-
-    dbt_target = os.getenv("MODE", "staging")
-    trigger_dbt_cli_command(
-        command=f"dbt run --select unidade --target {dbt_target}",
-        project_dir="queries",
-        profiles_dir="queries",
     )
 
 if __name__ == "__main__":
