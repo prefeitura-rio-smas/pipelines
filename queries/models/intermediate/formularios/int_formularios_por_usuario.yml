@@ -6,7 +6,8 @@ models:
     nos títulos e campos, origem, unidade e datas; sem escolha do último perfil.
     Observações são agrupadas pelo HTML original antes da conversão em texto legível:
     remove marcação e depois decodifica uma camada de entidades. observacoes_html
-    preserva a identidade interna e não é exposto na supertabela.
+    preserva a identidade da resposta. O bloco de evoluções publica o texto legível;
+    o histórico CREAS mantém a ocorrência completa.
   columns:
   - name: id_usuario
     data_tests:

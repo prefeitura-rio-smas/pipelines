@@ -1,8 +1,10 @@
 {% test pu_contrato_publico(model) %}
 {% set tipos = {} %}
+{% set contrato = {} %}
 {% if execute %}
     {% for node in graph.nodes.values() if node.resource_type == 'model' and node.name == 'planilha_unificada' %}
         {% set _ = tipos.update(node.config.meta.get('excecoes_tipos', {})) %}
+        {% set _ = contrato.update(node.config.meta) %}
     {% endfor %}
 {% endif %}
 with campos as (
@@ -33,6 +35,14 @@ where c.field_path is null or not starts_with(c.data_type, e.tipo)
 union all
 select field_path as falha from campos
 where field_path in ('atendimentos.registros.email', 'atendimentos.familias_atendidas')
+union all
+select 'quantidade_campos' as falha from campos
+having count(*) != {{ contrato.get('quantidade_campos', 298) }}
+union all
+select 'campos_raiz' as falha
+from `{{ model.database }}.{{ model.schema }}.INFORMATION_SCHEMA.COLUMNS`
+where table_name = '{{ model.identifier }}'
+having count(*) != {{ contrato.get('campos_raiz', ['usuario', 'familias', 'projetos_sociais', 'atendimentos', 'evolucoes', 'escopos', 'nome_unidade', 'email']) | length }}
 {% endtest %}
 
 {% test pu_campos_topo(model) %}

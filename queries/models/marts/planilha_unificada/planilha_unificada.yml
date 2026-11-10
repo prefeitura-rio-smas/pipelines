@@ -24,6 +24,8 @@ models:
       meta:
         granularidade: [usuario.id_usuario]
         contrato: por_assunto_v14_filtro_por_usuario
+        quantidade_campos: 298
+        campos_raiz: [usuario, familias, projetos_sociais, atendimentos, evolucoes, escopos, nome_unidade, email]
         execucao: modelo_dbt
         publicacao: desenvolvimento
         valores_ausentes: texto_vazio
