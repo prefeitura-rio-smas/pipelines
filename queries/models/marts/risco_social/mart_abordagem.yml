@@ -26,6 +26,11 @@ models:
       (mesmo nome e mesmas colunas da antiga tabela do old_architecture) porque o
       dashboard lê essa relação direto. Não renomear/remover coluna sem repontar
       o BI.
+    config:
+      # Contrato transitório (ver comentário no .sql): em prod mantém a relação
+      # antiga; em dev/CI o macro generate_schema_name já força o dataset do target.
+      database: "{{ 'rj-smas-dev' if target.name == 'prod' else target.database }}"
+      schema: "{{ 'dashboard_arcgis' if target.name == 'prod' else target.schema }}"
     columns:
       - name: globalid
         description: "GUID da abordagem (chave da mart)."

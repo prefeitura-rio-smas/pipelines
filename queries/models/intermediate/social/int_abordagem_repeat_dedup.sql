@@ -13,69 +13,95 @@
 
 WITH RECURSIVE
 
-BaseDados AS (
-  SELECT
-    globalid as id,
-    key_cpf,
-    key_nome_usuario as key_nm,
-    key_nome_mae      as key_mae,
-    key_nome_pai      as key_pai,
-    repeat_data_nascimento,
-    ano_num_data_abordagem as ano
-  FROM {{ ref('raw_abordagem_repeat') }}
+BASEDADOS AS (
+    SELECT
+        GLOBALID AS ID,
+        KEY_CPF,
+        KEY_NOME_USUARIO AS KEY_NM,
+        KEY_NOME_MAE AS KEY_MAE,
+        KEY_NOME_PAI AS KEY_PAI,
+        REPEAT_DATA_NASCIMENTO,
+        ANO_NUM_DATA_ABORDAGEM AS ANO
+    FROM {{ ref('raw_abordagem_repeat') }}
 ),
 
-Matches AS (
-  -- REGRA 1: CPF
-  SELECT id AS id_origem, MIN(id) OVER (PARTITION BY key_cpf, ano) AS id_destino
-  FROM BaseDados WHERE key_cpf NOT IN ('99999999999','00000000000','11111111111') AND LENGTH(key_cpf)=11 QUALIFY id != id_destino
+MATCHES AS (
+    -- REGRA 1: CPF
+    SELECT
+        ID AS ID_ORIGEM,
+        MIN(ID) OVER (PARTITION BY KEY_CPF, ANO) AS ID_DESTINO
+    FROM BASEDADOS
+    WHERE KEY_CPF NOT IN ('99999999999', '00000000000', '11111111111') AND LENGTH(KEY_CPF) = 11 QUALIFY ID != ID_DESTINO
 
-  UNION ALL
+    UNION ALL
 
-  -- REGRA 2: NOME USUARIO + NOME MAE
-  SELECT id AS id_origem, MIN(id) OVER (PARTITION BY key_nm, key_mae, ano) AS id_destino
-  FROM BaseDados WHERE key_nm!='' AND key_mae!='' QUALIFY id != id_destino
+    -- REGRA 2: NOME USUARIO + NOME MAE
+    SELECT
+        ID AS ID_ORIGEM,
+        MIN(ID) OVER (PARTITION BY KEY_NM, KEY_MAE, ANO) AS ID_DESTINO
+    FROM BASEDADOS
+    WHERE KEY_NM != '' AND KEY_MAE != '' QUALIFY ID != ID_DESTINO
 
-  UNION ALL
+    UNION ALL
 
-  -- REGRA 3: NOME + CPF + DATA NASCIMENTO
-  SELECT id AS id_origem, MIN(id) OVER (PARTITION BY key_nm, key_cpf, repeat_data_nascimento, ano) AS id_destino
-  FROM BaseDados WHERE key_nm!='' AND LENGTH(key_cpf)=11 AND repeat_data_nascimento IS NOT NULL QUALIFY id != id_destino
+    -- REGRA 3: NOME + CPF + DATA NASCIMENTO
+    SELECT
+        ID AS ID_ORIGEM,
+        MIN(ID) OVER (PARTITION BY KEY_NM, KEY_CPF, REPEAT_DATA_NASCIMENTO, ANO) AS ID_DESTINO
+    FROM BASEDADOS
+    WHERE KEY_NM != '' AND LENGTH(KEY_CPF) = 11 AND REPEAT_DATA_NASCIMENTO IS NOT NULL QUALIFY ID != ID_DESTINO
 
-  UNION ALL
+    UNION ALL
 
-  -- REGRA 4: NOME MAE + CPF + DATA NASCIMENTO
-  SELECT id AS id_origem, MIN(id) OVER (PARTITION BY key_mae, key_cpf, repeat_data_nascimento, ano) AS id_destino
-  FROM BaseDados WHERE key_mae!='' AND LENGTH(key_cpf)=11 AND repeat_data_nascimento IS NOT NULL QUALIFY id != id_destino
+    -- REGRA 4: NOME MAE + CPF + DATA NASCIMENTO
+    SELECT
+        ID AS ID_ORIGEM,
+        MIN(ID) OVER (PARTITION BY KEY_MAE, KEY_CPF, REPEAT_DATA_NASCIMENTO, ANO) AS ID_DESTINO
+    FROM BASEDADOS
+    WHERE KEY_MAE != '' AND LENGTH(KEY_CPF) = 11 AND REPEAT_DATA_NASCIMENTO IS NOT NULL QUALIFY ID != ID_DESTINO
 
-  UNION ALL
+    UNION ALL
 
-  -- REGRA 5: NOME MAE + NOME PAI + DATA NASCIMENTO
-  SELECT id AS id_origem, MIN(id) OVER (PARTITION BY key_mae, key_pai, repeat_data_nascimento, ano) AS id_destino
-  FROM BaseDados WHERE key_mae!='' AND key_pai!='' AND repeat_data_nascimento IS NOT NULL QUALIFY id != id_destino
+    -- REGRA 5: NOME MAE + NOME PAI + DATA NASCIMENTO
+    SELECT
+        ID AS ID_ORIGEM,
+        MIN(ID) OVER (PARTITION BY KEY_MAE, KEY_PAI, REPEAT_DATA_NASCIMENTO, ANO) AS ID_DESTINO
+    FROM BASEDADOS
+    WHERE KEY_MAE != '' AND KEY_PAI != '' AND REPEAT_DATA_NASCIMENTO IS NOT NULL QUALIFY ID != ID_DESTINO
 
-  UNION ALL
+    UNION ALL
 
-  -- REGRA 6: NOME MAE + NOME PAI + CPF
-  SELECT id AS id_origem, MIN(id) OVER (PARTITION BY key_mae, key_pai, key_cpf, ano) AS id_destino
-  FROM BaseDados WHERE key_mae!='' AND key_pai!='' AND LENGTH(key_cpf)=11 QUALIFY id != id_destino
+    -- REGRA 6: NOME MAE + NOME PAI + CPF
+    SELECT
+        ID AS ID_ORIGEM,
+        MIN(ID) OVER (PARTITION BY KEY_MAE, KEY_PAI, KEY_CPF, ANO) AS ID_DESTINO
+    FROM BASEDADOS
+    WHERE KEY_MAE != '' AND KEY_PAI != '' AND LENGTH(KEY_CPF) = 11 QUALIFY ID != ID_DESTINO
 ),
 
-GrafoConexo AS (
-  SELECT id_origem, id_destino FROM Matches
-  UNION ALL
-  SELECT G.id_origem, M.id_destino
-  FROM GrafoConexo G JOIN Matches M ON G.id_destino = M.id_origem
+GRAFOCONEXO AS (
+    SELECT
+        ID_ORIGEM,
+        ID_DESTINO
+    FROM MATCHES
+    UNION ALL
+    SELECT
+        G.ID_ORIGEM,
+        M.ID_DESTINO
+    FROM GRAFOCONEXO AS G INNER JOIN MATCHES AS M ON G.ID_DESTINO = M.ID_ORIGEM
 ),
 
-Mapa_De_Para AS (
-  SELECT id_origem AS ID_Cliente, MIN(id_destino) AS ID_Mestre
-  FROM GrafoConexo GROUP BY id_origem
+MAPA_DE_PARA AS (
+    SELECT
+        ID_ORIGEM AS ID_CLIENTE,
+        MIN(ID_DESTINO) AS ID_MESTRE
+    FROM GRAFOCONEXO
+    GROUP BY ID_ORIGEM
 )
 
 SELECT
-  Orig.id AS globalid,
-  COALESCE(Mapa.ID_Mestre, Orig.id) AS cluster_id,
-  Mapa.ID_Mestre IS NOT NULL AND Mapa.ID_Mestre != Orig.id AS is_duplicado
-FROM BaseDados Orig
-LEFT JOIN Mapa_De_Para Mapa ON Orig.id = Mapa.ID_Cliente
+    ORIG.ID AS `globalid`,
+    COALESCE(MAPA.ID_MESTRE, ORIG.ID) AS `cluster_id`,
+    MAPA.ID_MESTRE IS NOT NULL AND MAPA.ID_MESTRE != ORIG.ID AS `is_duplicado`
+FROM BASEDADOS AS ORIG
+LEFT JOIN MAPA_DE_PARA AS MAPA ON ORIG.ID = MAPA.ID_CLIENTE
