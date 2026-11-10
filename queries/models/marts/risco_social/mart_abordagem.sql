@@ -10,6 +10,9 @@
 -- mart_abordagem.yml e servem só para preservar esse contrato em prod; em
 -- dev/CI o modelo escreve no dataset do target. Quando o BI for repontado,
 -- remover as duas linhas do yml e o modelo volta ao schema padrão de marts.
+--
+-- O `r.*` é intencional: contrato das 148 colunas da raw de abordagem.
+-- noqa: disable=AM04
 
 {{ config(
     materialized = 'table',
@@ -18,7 +21,7 @@
 ) }}
 
 SELECT
-    r.*,  -- noqa: AM04 (contrato: as 148 colunas da raw de abordagem)
+    r.*,
     e.cas,
     e.e_mail,
     c.cluster_id,
