@@ -18,7 +18,7 @@
 ) }}
 
 SELECT
-    r.*,
+    r.*,  -- noqa: AM04 (contrato: as 148 colunas da raw de abordagem)
     e.cas,
     e.e_mail,
     c.cluster_id,
