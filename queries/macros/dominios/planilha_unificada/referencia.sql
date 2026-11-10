@@ -13,7 +13,3 @@
         {{ api.Relation.create(database=target.database, schema=var('pu_base_schema'), identifier='filtro_email') }}
     {% else %}{{ origem }}{% endif %}
 {% endmacro %}
-
-{% macro pu_bi_input(nome, fontes) %}
-    {% if nome in fontes %}{{ fontes[nome] }}{% else %}{{ pu_ref(nome) }}{% endif %}
-{% endmacro %}
