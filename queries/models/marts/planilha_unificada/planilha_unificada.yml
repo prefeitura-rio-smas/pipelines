@@ -2,24 +2,28 @@ version: 2
 
 models:
   - name: planilha_unificada
-    data_tests: [pu_linhas_bi_preservadas, pu_quantidades_bi, pu_preservacao_eventos, pu_formularios_eventos, pu_familias_atendidas_unicas, pu_familias_atendidas_paridade, pu_familia_no_atendimento_paridade]
+    data_tests: [pu_contrato_publico, pu_campos_topo, pu_escopos_preservados, pu_linhas_bi_preservadas, pu_quantidades_bi, pu_preservacao_eventos, pu_formularios_eventos, pu_familia_no_atendimento_paridade]
     description: |
       Uma linha por usuario.id_usuario, com a mesma população de dim_usuarios.
       Contrato por assunto: usuario, familias, projetos_sociais, atendimentos, evolucoes e escopos.
+      nome_unidade e email são campos STRING no topo, consolidados por usuário.
+      O filtro de e-mail libera o histórico completo quando o endereço pertence à lista.
       Dados pessoais e perfil ficam em usuario; eventos têm quantidade, quantidade por serviço em campos diretos e registros.
       Evoluções não canceladas incluem registros sem formulário, com descrição legível.
-      Campos escalares são STRING com ausência como ''; as exceções são usuario.idade,
+      Campos escalares são STRING com ausência como ''; bairro e raça/cor nulos
+      recebem NÃO INFORMADO e idade_faixa sem nascimento válido recebe Não Informado.
+      As exceções de tipo incluem datas do desligamento PAI, usuario.idade,
       INT64 com NULL sem nascimento válido, e as quantidades totais e por serviço, INT64 com zero sem registros.
       STRUCTs ausentes têm campos vazios e listas sem registros são []. Não são
       criados itens para simular ausência. As chaves e os tipos originais permanecem
       nos intermediários; a saída apresenta nomes de unidades associados a cada serviço.
       Base em validação paralela, com atualização explícita em desenvolvimento;
-      não substitui a mart Centro POP nem implementa indicadores RMA. Cadastros e
+      inclui os históricos de Centro POP, CREAS e alta complexidade. Cadastros e
       documentos são o estado atual; cada consumidor define competência e população.
     config:
       meta:
         granularidade: [usuario.id_usuario]
-        contrato: por_assunto_v13_paridade_programada
+        contrato: por_assunto_v14_filtro_por_usuario
         execucao: modelo_dbt
         publicacao: desenvolvimento
         valores_ausentes: texto_vazio
@@ -42,6 +46,23 @@ models:
           evolucoes.quantidade_creas: INT64
           evolucoes.quantidade_centro_pop: INT64
           evolucoes.quantidade_outros: INT64
+          escopos.creas.historico.id_evolucao: INT64
+          escopos.creas.historico.id_familia: INT64
+          escopos.creas.historico.id_unidade: INT64
+          escopos.creas.historico.id_profissional: INT64
+          escopos.creas.historico.codigo_abrangencia: INT64
+          escopos.creas.historico.id_atividade: INT64
+          escopos.creas.historico.data_evolucao: DATETIME
+          escopos.creas.historico.data_cancelamento: DATETIME
+          escopos.creas.historico.data_ocorrencia: DATE
+          escopos.creas.participacoes.id_unidade: INT64
+          escopos.creas.participacoes.id_atividade: INT64
+          escopos.creas.participacoes.data_presenca: DATE
+          escopos.alta_complexidade.historico.id_ciclo: INT64
+          escopos.alta_complexidade.historico.id_unidade: INT64
+          escopos.alta_complexidade.historico.data_entrada: DATE
+          escopos.alta_complexidade.historico.data_saida: DATE
+          escopos.alta_complexidade.historico.tempo_permanencia_dias: INT64
         identificadores_permitidos:
           - atendimentos.registros.id_unidade
           - evolucoes.registros.id_unidade
@@ -56,6 +77,18 @@ models:
           - atendimentos.registros.profissionais.id_familia_referencia
           - atendimentos.registros.profissionais.id_atendimento_legado
     columns:
+      - name: atendimentos.registros.tipo_unidade
+        description: Tipo original da unidade do atendimento na captura da programada.
+      - name: atendimentos.registros.elegivel_indicador
+        description: Sim para CRAS, CREAS e CENTRO POP com unidade diferente de Negado; Não nos demais casos. Aplicar também os filtros do indicador.
+      - name: usuario.bairro
+        description: Bairro informado no cadastro atual; NÃO INFORMADO quando nulo.
+      - name: usuario.raca_cor
+        description: Raça/cor traduzida do cadastro atual; NÃO INFORMADO quando nula.
+      - name: escopos.creas
+        description: Histórico de formulários CREAS e participações Passo a Passo; sem escolha arbitrária de ocorrência.
+      - name: escopos.alta_complexidade
+        description: Histórico de ciclos de acolhimento por usuário, preservando unidade e datas de entrada e saída.
       - name: usuario.idade_faixa
         description: Faixa da idade atual, com os limites e rótulos da programada; Não Informado sem nascimento válido.
       - name: nome_unidade
@@ -85,24 +118,8 @@ models:
           IDs distintos de famílias da programada para usuário e atendimento,
           ordenados e separados por vírgula e espaço. Vazio sem família.
           O vínculo individual permanece em profissionais.id_familia_referencia.
-          Para contar famílias, usar os IDs individuais em familias_atendidas ou
+          Para contar famílias, usar os IDs individuais em
           profissionais.id_familia_referencia, nunca a lista concatenada.
-      - name: atendimentos.familias_atendidas
-        description: |
-          Compatibilidade temporária: migrar o BI para atendimentos.registros.id_familia.
-          ARRAY<STRUCT> por usuário, id_atendimento_modulo e id_familia da programada.
-          Campos STRING: id_atendimento_modulo, id_familia, data_atendimento,
-          nome_unidade, tipo_unidade, email e elegivel_indicador (S/N).
-          Famílias nulas são omitidas; repetições por profissional são deduplicadas.
-          Preserva múltiplas famílias no evento e eventos da referência mesmo sem
-          profissional no fato novo. Não é a lista cadastral/histórica de familias.
-          Elegível quando TIPO_UNIDADE é CRAS, CREAS ou CENTRO POP e a unidade
-          satisfaz a condição da programada (nome não nulo e diferente de Negado).
-          No BI: contar distintamente id_familia deste bloco, filtrar elegivel_indicador=S,
-          período por data_atendimento e acesso pelo email deste mesmo bloco.
-          O e-mail deve conter o endereço do usuário conectado, seguindo a regra
-          legada. Usuário/e-mail ausente não tem acesso. Nenhuma identidade de
-          visualizador nem período fixo é gravado na tabela.
       - name: evolucoes.registros.formularios.data_ocorrencia
         description: Data informada válida e única do formulário; usa data_evolucao como alternativa.
       - name: evolucoes.registros.formularios.origem_data_ocorrencia

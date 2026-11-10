@@ -84,3 +84,10 @@ sources:
         description: "Respostas de lista dos questionários estruturados do prontuário."
       - name: sys_config
         description: "Configurações globais do sistema (sys_config), utilizada como heartbeat de atualização da pipeline."
+  - name: acolherio_referencia
+    database: rj-smas-dev
+    schema: dashboard_acolherio
+    tables:
+    - name: atendimentos_programada
+      identifier: dev_atendimentos
+      description: Referência materializada da consulta programada, somente leitura.

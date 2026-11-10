@@ -2,22 +2,6 @@
 coalesce(string_agg(distinct cast({{ coluna }} as string), ', ' order by cast({{ coluna }} as string)), '')
 {%- endmacro %}
 
-{% macro pu_familia_no_atendimento_sql(source_relation) %}
--- Preserva todas as famílias distintas; o vínculo de cada profissional permanece no registro.
--- Repetições por profissional e família ausente não escolhem uma família nova.
-select
-    id_usuario,
-    concat(cast(seq_atendimento as string), modulo) as id_atendimento_modulo,
-    {{ pu_ids_familias('id_familia') }} as id_familia,
-    if(
-        count(distinct coalesce(email, '')) > 1,
-        error('Emails conflitantes na referencia do atendimento'),
-        max(coalesce(email, ''))
-    ) as email
-from {{ source_relation }}
-group by id_usuario, id_atendimento_modulo
-{% endmacro %}
-
 {% test pu_familia_no_atendimento_paridade(model) %}
 with esperado as (
     select

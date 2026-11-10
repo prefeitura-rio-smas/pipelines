@@ -14,6 +14,8 @@ with eventos as (
         email_unidade,
         email_cas,
         email,
+        tipo_unidade,
+        if(tipo_unidade in ('CRAS', 'CREAS', 'CENTRO POP') and unidade_atendimento != 'Negado', 'Sim', 'Não') as elegivel_indicador,
         cadastrante,
         data_cadastro_atendimento,
         concat(cast(seq_atendimento as string), modulo) as id_atendimento_modulo,
@@ -51,7 +53,7 @@ with eventos as (
         id_usuario, id_atendimento_modulo, id_atendimento, origem_modulo,
         id_unidade, nome_unidade, tipo_servico, id_tipo_atendimento,
         tipo_atendimento_descricao, data_atendimento, hora_atendimento, flag_cancelado,
-        cas, email_unidade, email_cas, email, cadastrante, data_cadastro_atendimento
+        cas, email_unidade, email_cas, email, cadastrante, data_cadastro_atendimento, tipo_unidade
 )
 
 select

@@ -181,8 +181,6 @@ base as (
 )
 
 select
-    {{ consolidar_unidades("p.atendimentos") }} as nome_unidade,
-    {{ consolidar_emails("p.atendimentos") }} as email,
     struct(
         coalesce(cast(p.id_usuario as string), '') as id_usuario,
         coalesce(cast(p.nome as string), '') as nome,
@@ -192,10 +190,7 @@ select
         coalesce(cast(p.condicao_estrangeira as string), '') as condicao_estrangeira,
         coalesce(cast(p.pais_origem as string), '') as pais_origem,
         coalesce(cast(p.cpf as string), '') as cpf,
-        if(nullif(trim(cast(p.cpf as string)), '') is not null, 'Sim', 'Não') as possui_cpf,
         coalesce(cast(p.data_nascimento as string), '') as data_nascimento,
-        case when safe_cast(p.data_nascimento as date) <= current_date('America/Sao_Paulo') then {{ calc_idade('safe_cast(p.data_nascimento as date)', "current_date('America/Sao_Paulo')") }} end as idade,
-        {{ idade_faixa("case when safe_cast(p.data_nascimento as date) <= current_date('America/Sao_Paulo') then " ~ calc_idade('safe_cast(p.data_nascimento as date)', "current_date('America/Sao_Paulo')") ~ " end") }} as idade_faixa,
         coalesce(cast(p.sexo as string), '') as sexo,
         coalesce(cast(p.raca_cor as string), 'NÃO INFORMADO') as raca_cor,
         coalesce(cast(p.genero as string), '') as genero,
@@ -207,7 +202,6 @@ select
         coalesce(cast(p.nome_apoiador as string), '') as nome_apoiador,
         coalesce(cast(p.numero_processo_decisao_apoiada as string), '') as numero_processo_decisao_apoiada,
         coalesce(cast(p.renda_ativa as string), '') as renda_ativa,
-        coalesce(p.tipo_atividade_remunerada, '') as tipo_atividade_remunerada,
         {{ pu_flag_sim_nao("coalesce(cast(p.atvd_remunerada as string), '')") }} as atvd_remunerada,
         {{ pu_flag_sim_nao("coalesce(cast(p.flag_decisao_apoiada as string), '')") }} as flag_decisao_apoiada,
         {{ pu_flag_sim_nao("coalesce(cast(p.flag_saude_mental_comprometida as string), '')") }} as flag_saude_mental_comprometida,
@@ -260,7 +254,11 @@ select
         coalesce(p.endereco.logradouro, '') as logradouro,
         coalesce(p.endereco.numero, '') as numero,
         coalesce(p.endereco.complemento, '') as complemento,
-        coalesce(p.endereco.referencia_ou_comunidade, '') as referencia_ou_comunidade
+        coalesce(p.endereco.referencia_ou_comunidade, '') as referencia_ou_comunidade,
+        case when safe_cast(p.data_nascimento as date) <= current_date('America/Sao_Paulo') then {{ calc_idade('safe_cast(p.data_nascimento as date)', "current_date('America/Sao_Paulo')") }} end as idade,
+        coalesce(p.tipo_atividade_remunerada, '') as tipo_atividade_remunerada,
+        if(nullif(trim(cast(p.cpf as string)), '') is not null, 'Sim', 'Não') as possui_cpf,
+        {{ idade_faixa("case when safe_cast(p.data_nascimento as date) <= current_date('America/Sao_Paulo') then " ~ calc_idade('safe_cast(p.data_nascimento as date)', "current_date('America/Sao_Paulo')") ~ " end") }} as idade_faixa
     ) as usuario,
     array(
         select as struct
@@ -309,7 +307,6 @@ select
         order by posicao
     ) as projetos_sociais,
     struct(
-        coalesce(fa.familias_atendidas, []) as familias_atendidas,
         array_length(p.atendimentos) as quantidade,
         (select coalesce(sum(array_length(a.profissionais)), 0) from unnest(p.atendimentos) as a) as quantidade_linhas_bi,
         {{ pu_contagens_diretas('p.atendimentos') }},
@@ -348,7 +345,9 @@ select
                 coalesce(item1.email_unidade, '') as email_unidade,
                 coalesce(item1.email_cas, '') as email_cas,
                 coalesce(item1.cadastrante, '') as cadastrante,
-                coalesce(cast(item1.data_cadastro_atendimento as string), '') as data_cadastro_atendimento
+                coalesce(cast(item1.data_cadastro_atendimento as string), '') as data_cadastro_atendimento,
+                coalesce(item1.tipo_unidade, '') as tipo_unidade,
+                item1.elegivel_indicador
             from unnest(p.atendimentos) as item1 with offset as posicao
             order by posicao
         ) as registros
@@ -389,9 +388,17 @@ select
             order by posicao
         ) as registros
     ) as evolucoes,
-    struct(struct(coalesce(esc.historico, []) as historico, coalesce(esc.participacoes, []) as participacoes, {{ pu_cpop_perfil_publico('perfil_cp') }}) as centro_pop) as escopos
+    struct(
+        struct(coalesce(esc.historico, []) as historico, coalesce(esc.participacoes, []) as participacoes, {{ pu_cpop_perfil_publico('perfil_cp') }}) as centro_pop,
+        struct(coalesce(perfil_creas.historico, []) as historico, coalesce(perfil_creas.participacoes, []) as participacoes) as creas,
+        struct(coalesce(perfil_alta.historico, []) as historico) as alta_complexidade
+    ) as escopos,
+    {{ consolidar_unidades("p.atendimentos") }} as nome_unidade,
+    {{ consolidar_emails("p.atendimentos") }} as email
 from base as p
-left join {{ ref('int_familias_atendidas_por_usuario') }} as fa on p.id_usuario = fa.id_usuario
 left join escopo_centro_pop as esc on p.id_usuario = esc.id_usuario
 left join {{ pu_ref('dim_centro_pop') }} as perfil_cp on p.id_usuario = perfil_cp.id_usuario
 left join unidades as unidade_referencia on safe_cast(p.id_unidade_referencia as int64) = unidade_referencia.id_unidade
+
+left join {{ pu_ref('dim_creas') }} as perfil_creas on p.id_usuario = perfil_creas.id_usuario
+left join {{ pu_ref('dim_alta_complexidade') }} as perfil_alta on p.id_usuario = perfil_alta.id_usuario

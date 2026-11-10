@@ -1,8 +1,3 @@
-{% macro pu_tipo_servico(expressao) %}
-    case {{ expressao }} when 'CRAS' then 'cras' when 'CREAS' then 'creas'
-        when 'Centro POP' then 'centro_pop' else 'outros' end
-{% endmacro %}
-
 {% macro pu_ref(nome) %}
     {# Register the real dependency even when its input is redirected. #}
     {% set dependencia = ref(nome) %}
@@ -11,10 +6,6 @@
     {% else %}
         {{ dependencia }}
     {% endif %}
-{% endmacro %}
-
-{% macro pu_contagens_servico(registros) %}
-    struct({% for servico in ['cras', 'creas', 'centro_pop', 'outros'] %}(select count(*) from unnest({{ registros }}) as r where r.tipo_servico = '{{ servico }}') as {{ servico }}{% if not loop.last %}, {% endif %}{% endfor %})
 {% endmacro %}
 
 {% macro pu_contagens_diretas(registros) %}

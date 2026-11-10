@@ -209,16 +209,15 @@ from registros r left join {{ pu_ref('dim_unidades') }} u on r.id_unidade = u.id
 {% macro pu_cpop_perfil_publico(alias) %}
     coalesce({{ alias }}.unidades_atendimento, []) as unidades_atendimento,
     coalesce({{ alias }}.possui_registro_pai, '') as possui_registro_pai
-    , if(nullif(trim(cast({{ alias }}.data_inclusao_pai as string)), '') is not null, 'Sim', 'Não') as flag_incluido_acompanhamento_pai
     {% for assunto, campos in pu_cpop_perfil_assuntos().items() %}
 {% if assunto == 'desligamento' %}
-, safe_cast({{ alias }}.data_desligamento as DATE) as data_desligamento_pai
-, coalesce({{ alias }}.data_desligamento_informada, '') as data_desligamento_pai_informada
-, safe_cast({{ alias }}.data_registro_desligamento as DATETIME) as data_hora_registro_desligamento_pai
-, safe_cast({{ alias }}.data_resposta_desligamento as DATETIME) as data_hora_resposta_desligamento_pai
 , safe_cast({{ alias }}.data_ocorrencia_desligamento as DATE) as data_ocorrencia_desligamento_pai
 , coalesce({{ alias }}.origem_data_ocorrencia_desligamento, '') as origem_data_ocorrencia_desligamento_pai
 , coalesce({{ alias }}.situacao_data_ocorrencia_desligamento, '') as situacao_data_ocorrencia_desligamento_pai
+, safe_cast({{ alias }}.data_registro_desligamento as DATETIME) as data_hora_registro_desligamento_pai
+, safe_cast({{ alias }}.data_resposta_desligamento as DATETIME) as data_hora_resposta_desligamento_pai
+, safe_cast({{ alias }}.data_desligamento as DATE) as data_desligamento_pai
+, coalesce({{ alias }}.data_desligamento_informada, '') as data_desligamento_pai_informada
 , coalesce({{ alias }}.motivo_desligamento, '') as motivo_desligamento_pai
 , coalesce({{ alias }}.motivo_desligamento_outros, '') as complemento_motivo_desligamento_pai
 , coalesce({{ alias }}.observacoes_desligamento, '') as observacoes_desligamento_pai
@@ -234,4 +233,5 @@ from registros r left join {{ pu_ref('dim_unidades') }} u on r.id_unidade = u.id
 {% endfor %}
 {% endif %}
 {% endfor %}
+    , if(nullif(trim(cast({{ alias }}.data_inclusao_pai as string)), '') is not null, 'Sim', 'Não') as flag_incluido_acompanhamento_pai
 {% endmacro %}

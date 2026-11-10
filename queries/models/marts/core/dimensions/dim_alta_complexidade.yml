@@ -1,0 +1,7 @@
+version: 2
+models:
+  - name: dim_alta_complexidade
+    description: Histórico por usuário; preparação no intermediário do escopo.
+    columns:
+      - name: id_usuario
+        data_tests: [unique, not_null]

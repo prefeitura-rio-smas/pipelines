@@ -16,7 +16,13 @@ with referencia as (
 ),
 
 contexto as (
-    {{ pu_familia_no_atendimento_sql('referencia') }}
+    select
+        id_usuario,
+        concat(cast(seq_atendimento as string), modulo) as id_atendimento_modulo,
+        {{ pu_ids_familias('id_familia') }} as id_familia,
+        max(coalesce(email, '')) as email
+    from referencia
+    group by id_usuario, id_atendimento_modulo
 ),
 
 obtido as (

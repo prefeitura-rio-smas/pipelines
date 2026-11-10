@@ -80,9 +80,6 @@ models:
       rma_cras:
         +tags: ["monthly"]
 
-      centro_pop:
-        +tags: ["daily"]
-
       poc_paif:
         +materialized: table
         +schema: "{{ 'marts' if target.name == 'prod' else 'relatorio' }}"

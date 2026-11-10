@@ -6,3 +6,14 @@
         {{ origem }}
     {% endif %}
 {% endmacro %}
+
+{% macro pu_filtro_email() %}
+    {% set origem = source('dashboard_acolherio', 'filtro_email_dev') %}
+    {% if execute and var('pu_base_schema', false) %}
+        {{ api.Relation.create(database=target.database, schema=var('pu_base_schema'), identifier='filtro_email') }}
+    {% else %}{{ origem }}{% endif %}
+{% endmacro %}
+
+{% macro pu_bi_input(nome, fontes) %}
+    {% if nome in fontes %}{{ fontes[nome] }}{% else %}{{ pu_ref(nome) }}{% endif %}
+{% endmacro %}
