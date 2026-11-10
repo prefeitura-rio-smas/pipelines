@@ -1,0 +1,30 @@
+{{ config(materialized='table', enabled=target.name != 'prod', tags=['prontuario_bi_unidade']) }}
+select
+    b.modulo,
+    b.cas,
+    b.tipo_unidade,
+    b.unidade_atendimento,
+    b.seq_atendimento,
+    b.data_de_atendimento,
+    b.hora_de_atendimento,
+    b.id_usuario,
+    b.id_familia,
+    b.nome_usuario,
+    b.data_nascimento,
+    b.idade,
+    b.idade_faixa,
+    b.raca_cor,
+    b.sexo,
+    b.profissional_id,
+    b.profissional,
+    b.profissional_cbo_original,
+    b.profissional_cbo,
+    b.tipo_atendimento,
+    b.nome_atendimento,
+    b.nome_atendimento_original,
+    b.id_atendimento,
+    b.cadastrante,
+    b.data_cadastro_atendimento,
+    b._id_unidade as id_unidade
+from {{ ref('int_atendimentos_bi') }} as b
+where b._id_unidade is not null
