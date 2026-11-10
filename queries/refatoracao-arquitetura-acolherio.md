@@ -24,7 +24,7 @@ models/
 │   ├── social/        # int_ por domínio
 │   └── atividades/
 ├── marts/
-└── old_architecture/  # legado preservado, desabilitado no dbt_project.yml
+└── old_architecture/  # só dashboard_arcgis/abordagem (último legado ativo)
 ```
 
 ### Princípios por Camada
@@ -169,9 +169,13 @@ models:
       +materialized: table
     old_architecture:
       +enabled: false
+      dashboard_arcgis:   # única exceção: pipeline abordagem ainda ativo
+        +enabled: true
+        +database: rj-smas-dev
 ```
 
-A `old_architecture` está desabilitada (`+enabled: false`) para não conflitar com os novos modelos durante a migração.
+A `old_architecture` está desabilitada (`+enabled: false`); só `dashboard_arcgis`
+sobrescreve para `true` porque o pipeline de abordagem ainda não foi migrado.
 
 ---
 
@@ -185,11 +189,20 @@ A `old_architecture` está desabilitada (`+enabled: false`) para não conflitar 
 
 ## Pontos Pendentes
 
-- [ ] Criar modelos **marts** para dashboards e relatórios
-- [ ] Migrar sistema **bolsa_familia** para a nova arquitetura
-- [ ] Migrar sistema **arcgis** para a nova arquitetura
-- [ ] Migrar **rma/cras** para a nova arquitetura
+- [x] Criar modelos **marts** para dashboards e relatórios
+- [x] Migrar sistema **bolsa_familia** para a nova arquitetura
+- [ ] Migrar sistema **arcgis** para a nova arquitetura — resta só `dashboard_arcgis/abordagem` (pipeline ativo 6/6h, 143 colunas)
+- [x] Migrar **rma/cras** para a nova arquitetura (`marts/rma_cras/`)
 - [ ] Configurar **snapshots** para histórico (SCD Type 2)
 - [ ] Revisar e completar `ARCHITECTURE.md`
-- [ ] Remover `old_architecture/` quando migração estiver completa
+- [ ] Remover `old_architecture/` quando migração estiver completa — restam 7 arquivos (`dashboard_arcgis`)
 - [ ] Padronizar flags (transformar 'N' em 'Não' na raw para facilitar consumo)
+
+### Removidos do legado (2026-11-10)
+
+`dashboard_acolherio/` (49 arquivos) e `rma/` (29) já estavam desabilitados e foram
+substituídos por `marts/acolhimento`, `marts/atendimentos_acolherio`,
+`marts/risco_social` e `marts/rma_cras`. `equipamentos/` (3) saiu junto: `unidade`
+não tinha nenhum consumidor no BigQuery e foi substituído por
+`raw/arcgis/raw_unidade` (mesmas colunas, fonte `arcgis_raw.equipamento_raw`);
+`poligonos_rmi` não rodava desde 03/2026.
