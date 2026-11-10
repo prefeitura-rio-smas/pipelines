@@ -1,18 +1,26 @@
 -- Mart: Prontuário Carioca para PIC
 -- Grão: 1 linha por família
 --
--- Universo: famílias com ao menos uma criança ativa de 0 a 6 anos incompletos
---   (< 7 anos completos), identificadas por ao menos uma origem.
+-- Universo (filtro duplo):
+--   PIC: famílias com projeto social PIC ativo ou evolução aba 20, desde que o
+--        responsável familiar tenha CPF (comportamento histórico). Família PIC
+--        sem criança 0-6 permanece com membros = [].
+--   Novas origens: famílias fora do PIC com ao menos uma criança 0-6 que tenha
+--        violação de direito e/ou situação de rua (qualquer CPF).
 --
 -- Origens de identificação (origem_identificacao):
 --   1. Projeto social PIC (id_projeto_social = 2) via dim_familias.projetos_sociais
 --   2. Evolução aba Pequenos Cariocas (codigo_abrangencia = 20) via fct_evolucoes
---   3. Violação de direito (qualquer membro ativo com flag_possui_violacao_direito = 'Sim')
---   4. Situação de rua (qualquer membro ativo com flag_situacao_rua = 'Sim')
+--   3. Violação de direito (criança 0-6 com flag_possui_violacao_direito = 'Sim')
+--   4. Situação de rua (criança 0-6 com flag_situacao_rua = 'Sim')
 --
--- Membros: todas as crianças de 0 a 6 anos ativas na família (CPF pode ser NULL),
---   via dim_usuarios.id_familia (vínculo ativo mais recente).
--- Indicadores propagam para toda a família (LOGICAL_OR)
+-- Membros:
+--   PIC: crianças 0-6 com CPF (comportamento histórico).
+--   Novas origens: crianças 0-6, com ou sem CPF.
+--   Cada struct traz indicador_violacao_direito e indicador_situacao_rua da criança.
+--   Via dim_usuarios.id_familia (vínculo ativo mais recente).
+-- Indicadores de violação/rua são no nível da criança 0-6 (LOGICAL_OR por família);
+-- os demais indicadores seguem a família.
 -- Busca Ativa: coluna busca_ativa = ARRAY<STRUCT> com TODAS as buscas ativas
 --   feitas pela família (todas as evoluções do formulário
 --   '1. Pequenos Cariocas - Busca Ativa', codigo_abrangencia=20), em ordem
@@ -51,15 +59,38 @@ familias_evolucao_aba20 as (
       and e.id_familia is not null
 ),
 
--- Indicadores por família (qualquer membro ativo): violação e situação de rua
-flags_familia as (
+-- Universo PIC (projeto social + aba 20), sem filtro de idade/CPF
+familias_pic as (
+    select id_familia from familias_projeto_social
+    union distinct
+    select id_familia from familias_evolucao_aba20
+),
+
+-- Crianças 0-6 com os tratamentos do usuário; flags no nível da criança
+criancas_0_6 as (
     select
         u.id_familia,
-        logical_or(u.flag_possui_violacao_direito = 'Sim') as indicador_violacao_direito,
-        logical_or(u.flag_situacao_rua = 'Sim') as indicador_situacao_rua
+        u.id_usuario,
+        u.nome,
+        u.data_nascimento,
+        u.cpf,
+        coalesce(u.flag_possui_violacao_direito = 'Sim', false) as indicador_violacao_direito,
+        coalesce(u.flag_situacao_rua = 'Sim', false) as indicador_situacao_rua,
+        u.violacoes
     from {{ ref('dim_usuarios') }} as u
-    where u.id_familia is not null
-    group by u.id_familia
+    where
+        u.id_familia is not null
+        and {{ calc_idade('u.data_nascimento') }} between 0 and 6
+),
+
+-- Indicadores por família, restritos às crianças 0-6
+flags_criancas as (
+    select
+        id_familia,
+        logical_or(indicador_violacao_direito) as indicador_violacao_direito,
+        logical_or(indicador_situacao_rua) as indicador_situacao_rua
+    from criancas_0_6
+    group by id_familia
 ),
 
 -- UNIÃO das origens de identificação (PIC, aba 20, violação, situação de rua)
@@ -77,13 +108,13 @@ familias_uniao as (
     select
         id_familia,
         'violacao_direito' as origem
-    from flags_familia
+    from flags_criancas
     where indicador_violacao_direito
     union all
     select
         id_familia,
         'situacao_rua' as origem
-    from flags_familia
+    from flags_criancas
     where indicador_situacao_rua
 ),
 
@@ -109,35 +140,61 @@ responsavel_familiar as (
         on f.id_usuario_responsavel = r.id_usuario
 ),
 
--- Membros da família: crianças 0-6 ativas
-membros_familia as (
-    select
-        u.id_familia,
-        array_agg(
-            struct(
-                u.nome as nome,
-                {{ calc_idade('u.data_nascimento') }} as idade,
-                u.cpf as cpf
-            )
-            order by u.data_nascimento, u.nome
-        ) as membros
-    from {{ ref('dim_usuarios') }} as u
-    where
-        u.id_familia is not null
-        and upper(trim(u.nome)) not like 'TESTE%'
-        and {{ calc_idade('u.data_nascimento') }} between 0 and 6
-    group by u.id_familia
+-- Ramo PIC: mesma regra histórica (responsável com CPF)
+familias_pic_com_rf as (
+    select p.id_familia
+    from familias_pic as p
+    inner join responsavel_familiar as rf on p.id_familia = rf.id_familia
+    where rf.responsavel_familiar.cpf is not null
 ),
 
--- Descrições de violações por família (unnest dos arrays de cada membro)
+-- Novas origens: fora do PIC, com criança 0-6 com violação e/ou situação de rua
+familias_novas as (
+    select f.id_familia
+    from flags_criancas as f
+    left join familias_pic as p on f.id_familia = p.id_familia
+    where
+        p.id_familia is null
+        and (f.indicador_violacao_direito or f.indicador_situacao_rua)
+),
+
+-- Universo final: PIC histórico + novas origens com criança 0-6
+familias_universo as (
+    select id_familia from familias_pic_com_rf
+    union distinct
+    select id_familia from familias_novas
+),
+
+-- Membros: PIC exige CPF da criança; novas origens aceitam sem CPF
+membros_familia as (
+    select
+        c.id_familia,
+        array_agg(
+            struct(
+                c.nome as nome,
+                {{ calc_idade('c.data_nascimento') }} as idade,
+                c.cpf as cpf,
+                c.indicador_violacao_direito,
+                c.indicador_situacao_rua
+            )
+            order by c.data_nascimento, c.nome
+        ) as membros
+    from criancas_0_6 as c
+    left join familias_pic as p on c.id_familia = p.id_familia
+    where
+        p.id_familia is null
+        or (c.cpf is not null and c.cpf != '')
+    group by c.id_familia
+),
+
+-- Descrições de violações por família, restritas às crianças 0-6
 violacoes_descricoes as (
     select
-        u.id_familia,
+        c.id_familia,
         array_agg(distinct v.descricao ignore nulls) as violacao_direito
-    from {{ ref('dim_usuarios') }} as u,
-        unnest(u.violacoes) as v
-    where u.id_familia is not null
-    group by u.id_familia
+    from criancas_0_6 as c,
+        unnest(c.violacoes) as v
+    group by c.id_familia
 ),
 
 -- Filiação documental (última evolução codigo_abrangencia=24 por família)
@@ -241,8 +298,8 @@ buscas_ativas_por_familia as (
 final as (
     select
         rf.responsavel_familiar,
-        fo.origem_identificacao,
-        mf.membros,
+        o.origem_identificacao,
+        coalesce(mf.membros, []) as membros,
         coalesce(fi.indicador_violacao_direito, false) as indicador_violacao_direito,
         coalesce(fi.indicador_situacao_rua, false) as indicador_situacao_rua,
         coalesce(vd.violacao_direito, []) as violacao_direito,
@@ -252,10 +309,11 @@ final as (
         coalesce(dce.encaminhamentos_documentacao_civil, []) as encaminhamentos_documentacao_civil,
         coalesce(baf.busca_ativa, []) as busca_ativa,
         {{ extrair_ultima_atualizacao('raw_configuracoes_sistema') }} as ultima_atualizacao
-    from familias_origens as fo
-    inner join membros_familia as mf on fo.id_familia = mf.id_familia
+    from familias_universo as fo
+    left join familias_origens as o on fo.id_familia = o.id_familia
+    left join membros_familia as mf on fo.id_familia = mf.id_familia
     left join responsavel_familiar as rf on fo.id_familia = rf.id_familia
-    left join flags_familia as fi on fo.id_familia = fi.id_familia
+    left join flags_criancas as fi on fo.id_familia = fi.id_familia
     left join violacoes_descricoes as vd on fo.id_familia = vd.id_familia
     left join filiacao_familia as ff on fo.id_familia = ff.id_familia
     left join documentacao_civil_encaminhamentos as dce on fo.id_familia = dce.id_familia
