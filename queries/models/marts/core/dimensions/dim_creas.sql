@@ -1,2 +1,5 @@
 {{ config(enabled=target.name != 'prod', tags=['planilha_unificada', 'pu_dimensoes']) }}
-select * from {{ ref('int_perfil_creas') }}
+select
+    id_usuario,
+    historico,
+    participacoes from {{ ref('int_perfil_creas') }}
