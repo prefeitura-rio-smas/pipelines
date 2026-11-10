@@ -6,8 +6,9 @@ models:
       Camada Gold da folha do Bolsa Família.
       Consolida o valor total de benefício por família, competência e
       partição e classifica a faixa do benefício familiar.
-      A tabela física usa temporariamente o alias `folha_medallion` para
-      permitir a comparação com o modelo legado `folha`.
+      A tabela física é `folha` (nome canônico de prod). O alias
+      `folha_medallion` era temporário durante a validação em paralelo;
+      o cutover foi feito em 2026-11-09.
     tests:
       - dbt_utils.unique_combination_of_columns:
           arguments:

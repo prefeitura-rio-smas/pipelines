@@ -105,3 +105,5 @@ models:
         description: "Unidade de referência do usuário (raw_usuarios.sequsref)."
       - name: id_login_cadastro
         description: "ID da conta que cadastrou o usuário (raw_usuarios.id_login_cadastro, seqlogin). FK para dim_profissionais.id_login."
+      - name: id_familia
+        description: "FK nullable para dim_familias.id_familia: família atual do usuário (vínculo ativo mais recente via int_familias.membros.is_atual). Resolvida na dim; NULL quando o usuário não tem família no sistema. Não faz parte da PK (id_usuario)."

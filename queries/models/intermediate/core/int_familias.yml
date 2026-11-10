@@ -1,0 +1,34 @@
+version: 2
+
+models:
+  - name: int_familias
+    description: |
+      Famílias do Prontuário Carioca (intermediate core).
+      Grão: 1 linha por família.
+      membros = ARRAY<STRUCT<id_usuario, data_entrada, is_atual>> com os vínculos
+      ativos. is_atual = vínculo ativo mais recente do usuário (data_entrada DESC,
+      id_familia DESC), usado por int_usuarios para resolver o id_familia atual.
+    columns:
+      - name: id_familia
+        description: "Chave natural da família."
+        tests: [unique, not_null]
+      - name: id_usuario_responsavel
+        description: "FK para int_usuarios.id_usuario (responsável familiar)."
+        tests: [not_null]
+      - name: nome_responsavel
+        description: "Nome do responsável familiar (via int_usuarios)."
+      - name: data_ultima_modificacao
+        description: "Data da última modificação da família."
+      - name: flag_ativo
+        description: "Indica se a família está ativa."
+      - name: vulnerabilidades
+        description: "Array de vulnerabilidades agregadas da família."
+      - name: servicos
+        description: "Array de serviços agregados da família."
+      - name: projetos_sociais
+        description: "Array de projetos sociais da família."
+      - name: membros
+        description: |
+          Array de vínculos ativos da família (id_usuario, data_entrada, is_atual).
+          is_atual = True para o vínculo ativo mais recente do usuário; consumido
+          por int_usuarios (unnest + filtro is_atual) para resolver o id_familia.

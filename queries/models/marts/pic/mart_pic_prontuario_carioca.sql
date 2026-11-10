@@ -1,11 +1,17 @@
 -- Mart: Prontuário Carioca para PIC
 -- Grão: 1 linha por família
 --
--- Origens de identificação:
+-- Universo: famílias com ao menos uma criança ativa de 0 a 6 anos incompletos
+--   (< 7 anos completos), identificadas por ao menos uma origem.
+--
+-- Origens de identificação (origem_identificacao):
 --   1. Projeto social PIC (id_projeto_social = 2) via dim_familias.projetos_sociais
 --   2. Evolução aba Pequenos Cariocas (codigo_abrangencia = 20) via fct_evolucoes
+--   3. Violação de direito (qualquer membro ativo com flag_possui_violacao_direito = 'Sim')
+--   4. Situação de rua (qualquer membro ativo com flag_situacao_rua = 'Sim')
 --
--- Membros: crianças de 0 a 6 anos ativas na família
+-- Membros: todas as crianças de 0 a 6 anos ativas na família (CPF pode ser NULL),
+--   via dim_usuarios.id_familia (vínculo ativo mais recente).
 -- Indicadores propagam para toda a família (LOGICAL_OR)
 -- Busca Ativa: coluna busca_ativa = ARRAY<STRUCT> com TODAS as buscas ativas
 --   feitas pela família (todas as evoluções do formulário
@@ -45,13 +51,40 @@ familias_evolucao_aba20 as (
       and e.id_familia is not null
 ),
 
--- UNIÃO das duas origens com identificação
+-- Indicadores por família (qualquer membro ativo): violação e situação de rua
+flags_familia as (
+    select
+        u.id_familia,
+        logical_or(u.flag_possui_violacao_direito = 'Sim') as indicador_violacao_direito,
+        logical_or(u.flag_situacao_rua = 'Sim') as indicador_situacao_rua
+    from {{ ref('dim_usuarios') }} as u
+    where u.id_familia is not null
+    group by u.id_familia
+),
+
+-- UNIÃO das origens de identificação (PIC, aba 20, violação, situação de rua)
 familias_uniao as (
-    select id_familia, 'projeto_social' as origem
+    select
+        id_familia,
+        'projeto_social' as origem
     from familias_projeto_social
     union all
-    select id_familia, 'evolucao_aba_20' as origem
+    select
+        id_familia,
+        'evolucao_aba_20' as origem
     from familias_evolucao_aba20
+    union all
+    select
+        id_familia,
+        'violacao_direito' as origem
+    from flags_familia
+    where indicador_violacao_direito
+    union all
+    select
+        id_familia,
+        'situacao_rua' as origem
+    from flags_familia
+    where indicador_situacao_rua
 ),
 
 -- Agrega origens por família
@@ -79,7 +112,7 @@ responsavel_familiar as (
 -- Membros da família: crianças 0-6 ativas
 membros_familia as (
     select
-        m.id_familia,
+        u.id_familia,
         array_agg(
             struct(
                 u.nome as nome,
@@ -88,40 +121,23 @@ membros_familia as (
             )
             order by u.data_nascimento, u.nome
         ) as membros
-    from {{ ref('raw_membros_familia') }} m
-    inner join {{ ref('raw_usuarios') }} u
-        on m.id_paciente = u.id_paciente
-    where m.data_saida is null
-      and u.cpf is not null
-      and u.cpf != ''
-      and upper(trim(u.nome)) not like 'TESTE%'
-      and {{ calc_idade('u.data_nascimento') }} between 0 and 6
-    group by m.id_familia
-),
-
--- Indicador de violação de direito por família (LOGICAL_OR entre membros)
-violacoes_indicador as (
-    select
-        m.id_familia,
-        logical_or(du.flag_possui_violacao_direito = 'Sim') as indicador_violacao_direito
-    from {{ ref('raw_membros_familia') }} m
-    inner join {{ ref('dim_usuarios') }} du
-        on m.id_paciente = du.id_usuario
-    where m.data_saida is null
-    group by m.id_familia
+    from {{ ref('dim_usuarios') }} as u
+    where
+        u.id_familia is not null
+        and upper(trim(u.nome)) not like 'TESTE%'
+        and {{ calc_idade('u.data_nascimento') }} between 0 and 6
+    group by u.id_familia
 ),
 
 -- Descrições de violações por família (unnest dos arrays de cada membro)
 violacoes_descricoes as (
     select
-        m.id_familia,
+        u.id_familia,
         array_agg(distinct v.descricao ignore nulls) as violacao_direito
-    from {{ ref('raw_membros_familia') }} m
-    inner join {{ ref('dim_usuarios') }} du
-        on m.id_paciente = du.id_usuario,
-    unnest(du.violacoes) as v
-    where m.data_saida is null
-    group by m.id_familia
+    from {{ ref('dim_usuarios') }} as u,
+        unnest(u.violacoes) as v
+    where u.id_familia is not null
+    group by u.id_familia
 ),
 
 -- Filiação documental (última evolução codigo_abrangencia=24 por família)
@@ -226,8 +242,9 @@ final as (
     select
         rf.responsavel_familiar,
         fo.origem_identificacao,
-        coalesce(mf.membros, []) as membros,
-        coalesce(vi.indicador_violacao_direito, false) as indicador_violacao_direito,
+        mf.membros,
+        coalesce(fi.indicador_violacao_direito, false) as indicador_violacao_direito,
+        coalesce(fi.indicador_situacao_rua, false) as indicador_situacao_rua,
         coalesce(vd.violacao_direito, []) as violacao_direito,
         ff.possui_filiacao_completa,
         coalesce(ff.interesse_filiacao_completa, false) as interesse_filiacao_completa,
@@ -235,15 +252,14 @@ final as (
         coalesce(dce.encaminhamentos_documentacao_civil, []) as encaminhamentos_documentacao_civil,
         coalesce(baf.busca_ativa, []) as busca_ativa,
         {{ extrair_ultima_atualizacao('raw_configuracoes_sistema') }} as ultima_atualizacao
-    from familias_origens fo
-    left join responsavel_familiar rf on fo.id_familia = rf.id_familia
-    left join membros_familia mf on fo.id_familia = mf.id_familia
-    left join violacoes_indicador vi on fo.id_familia = vi.id_familia
-    left join violacoes_descricoes vd on fo.id_familia = vd.id_familia
-    left join filiacao_familia ff on fo.id_familia = ff.id_familia
-    left join documentacao_civil_encaminhamentos dce on fo.id_familia = dce.id_familia
-    left join buscas_ativas_por_familia baf on fo.id_familia = baf.id_familia
-    where rf.responsavel_familiar.cpf is not null
+    from familias_origens as fo
+    inner join membros_familia as mf on fo.id_familia = mf.id_familia
+    left join responsavel_familiar as rf on fo.id_familia = rf.id_familia
+    left join flags_familia as fi on fo.id_familia = fi.id_familia
+    left join violacoes_descricoes as vd on fo.id_familia = vd.id_familia
+    left join filiacao_familia as ff on fo.id_familia = ff.id_familia
+    left join documentacao_civil_encaminhamentos as dce on fo.id_familia = dce.id_familia
+    left join buscas_ativas_por_familia as baf on fo.id_familia = baf.id_familia
 )
 
 select * from final
