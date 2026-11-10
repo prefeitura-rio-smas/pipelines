@@ -101,7 +101,7 @@ final as (
     left join deficiencias as d on base.id_paciente = d.id_usuario
     left join beneficios as b on base.id_paciente = b.id_usuario
     left join projetos as proj on base.id_paciente = proj.id_usuario
-    where base.nome not like "%TESTE%"
+    where upper(trim(base.nome)) not like "TESTE%"
 )
 
 select * from final
