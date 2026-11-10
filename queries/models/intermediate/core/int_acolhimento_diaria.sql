@@ -1,27 +1,16 @@
--- Fato de acolhimentos no grao (id_ciclo x data_referencia).
--- Faz a explosao temporal via GENERATE_DATE_ARRAY (cada dia = 1 linha por ciclo).
--- Inclui datas do ciclo enriquecidas em fct_acolhimento_ciclos e JOINs com
--- dim_usuarios/dim_unidades para expor cpf e tipo_publico.
+-- Camada Intermediate: Acolhimentos no grao (id_ciclo x data_referencia).
+-- Faz a explosao temporal via GENERATE_DATE_ARRAY (cada dia = 1 linha por ciclo)
+-- sobre int_acolhimento_ciclos. A fct_acolhimento_diaria (mart) adiciona as
+-- surrogate keys e os joins com dim_usuarios (cpf) e dim_unidades (tipo_publico).
 -- Filtro: data_referencia <= current_date() (descarta datas futuras de ciclos em aberto
 --   e ciclos corrompidos com data_entrada ~0202).
 
 with ciclos as (
-    select * from {{ ref('fct_acolhimento_ciclos') }}
-),
-
-usuarios as (
-    select * from {{ ref('dim_usuarios') }}
-),
-
-unidades as (
-    select * from {{ ref('dim_unidades') }}
+    select * from {{ ref('int_acolhimento_ciclos') }}
 ),
 
 explodido as (
     select
-        c.id_acolhimento_sk,
-        c.id_usuario_sk,
-        c.id_unidade_sk,
         c.id_ciclo,
         c.id_usuario,
         c.id_unidade,
@@ -33,12 +22,8 @@ explodido as (
         c.flag_em_acolhimento,
         c.indicador_ciclo,
         c.motivo_saida,
-        usr.cpf,
-        un.tipo_publico,
         data_referencia
     from ciclos c
-    left join usuarios usr on c.id_usuario_sk = usr.id_usuario_sk
-    left join unidades un  on c.id_unidade_sk = un.id_unidade_sk
     cross join unnest(
         generate_date_array(
             c.data_entrada,

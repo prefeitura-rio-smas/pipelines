@@ -1,0 +1,12 @@
+version: 2
+
+models:
+  - name: int_profissionais
+    description: |
+      Camada intermediate: entidade de profissionais do Prontuário Carioca.
+      Concentra a lógica de negócio (operador, CBOs, perfil de acesso, status e
+      unidades de atuação). A dim_profissionais (mart) adiciona a surrogate key.
+    columns:
+      - name: id_profissional
+        description: "ID natural do profissional (seqprof da gh_prof)."
+        tests: [unique, not_null]

@@ -1,7 +1,7 @@
--- Camada Intermediate: Dimensão Profissionais
+-- Camada Intermediate: Entidade Profissionais (input da dim_profissionais)
 -- Grão: 1 linha por profissional
 -- Inclui dados do operador (conta de login), CBOs agregados,
--- perfil de acesso e status da conta
+-- perfil de acesso e status da conta. A surrogate key fica na dim_profissionais.
 with profissionais as (
     select * from {{ ref('raw_profissionais') }}
 ),
@@ -42,14 +42,13 @@ unidades_atuacao as (
         count(distinct u.id_unidade) as qtde_unidades,
         array_agg(op_unid.id_unidade order by u.nome_unidade) as ids_unidade
     from {{ ref('raw_operadores_unidades') }} op_unid
-    left join {{ ref('dim_unidades') }} u on op_unid.id_unidade = u.id_unidade
+    left join {{ ref('int_unidades') }} as u on op_unid.id_unidade = u.id_unidade
     where u.id_unidade is not null
     group by op_unid.id_login
 ),
 
 final as (
     select
-        {{ dbt_utils.generate_surrogate_key(['p.id_profissional']) }} as id_profissional_sk,
         p.id_profissional,
         ope.id_login,
         coalesce(ope.nome_operador, p.nome) as nome,

@@ -1,5 +1,5 @@
--- Dimensão: Catálogo de Atividades de Grupo
--- Grão: 1 linha por atividade de grupo
+-- Camada Intermediate: Entidade Catálogo de Atividades de Grupo (input da dim_atividades_grupo)
+-- Grão: 1 linha por atividade de grupo. A dim_atividades_grupo é um passthrough thin.
 
 with atividades as (
     select * from {{ ref('raw_atividades_grupo') }}
@@ -8,7 +8,7 @@ tipos as (
     select * from {{ ref('raw_tipos_atividade') }}
 ),
 unidades as (
-    select * from {{ ref('dim_unidades') }}
+    select * from {{ ref('int_unidades') }}
 )
 select
     a.id_atividade,

@@ -1,3 +1,5 @@
+-- Camada Intermediate: Entidade Unidades (input da dim_unidades)
+-- Grão: 1 linha por unidade. A surrogate key fica na dim_unidades.
 with base as (
     select * from {{ ref('raw_unidades') }}
 ),
@@ -20,7 +22,6 @@ planilha_email as (
 
 final as (
     select
-        {{ dbt_utils.generate_surrogate_key(['b.id_unidade']) }} as id_unidade_sk,
         b.id_unidade,
         b.nome_unidade,
         b.cas,

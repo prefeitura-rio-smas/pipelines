@@ -1,0 +1,21 @@
+version: 2
+
+models:
+  - name: int_acolhimento_diaria
+    description: |
+      Camada intermediate: acolhimentos no grão (id_ciclo × data_referencia).
+      Faz a explosão temporal sobre int_acolhimento_ciclos.
+      A fct_acolhimento_diaria (mart) adiciona surrogate keys, joins de dimensão
+      e os campos cpf/tipo_publico.
+    tests:
+      - dbt_utils.unique_combination_of_columns:
+          combination_of_columns:
+            - id_ciclo
+            - data_referencia
+    columns:
+      - name: id_ciclo
+        description: "ID original do ciclo (seqciclo)."
+        tests: [not_null]
+      - name: data_referencia
+        description: "Dia da explosão temporal do ciclo."
+        tests: [not_null]
