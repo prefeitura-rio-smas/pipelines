@@ -32,6 +32,8 @@ models:
     intermediate:
       +materialized: ephemeral
       core:
+        # Somente modelos int_: lógica das entidades conformadas (sem surrogate key).
+        # As dimensões/fatos finais ficam em marts/core/{dimensions,facts}.
         +materialized: table
         +schema: "{{ 'core' if target.name == 'prod' else 'gerenciamento__dbt' }}"
 
@@ -47,6 +49,8 @@ models:
       +schema: "{{ 'marts' if target.name == 'prod' else 'relatorio' }}"
 
       core:
+        # Star schema conformado: dims em dimensions/ e fatos em facts/ (thin
+        # sobre os int_ de intermediate/core, com surrogate keys).
         dimensions:
           +schema: "{{ 'core' if target.name == 'prod' else 'gerenciamento__dbt' }}"
         facts:

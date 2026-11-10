@@ -1,0 +1,13 @@
+version: 2
+
+models:
+  - name: int_atendimentos
+    description: |
+      Camada intermediate: atendimentos (UNION de família + usuário), uma linha
+      por atendimento e profissional. A fct_atendimentos (mart) adiciona a
+      surrogate key e os joins de dimensão.
+    tests:
+      - dbt_utils.unique_combination_of_columns:
+          combination_of_columns:
+            - id_atendimento_modulo
+            - id_profissional

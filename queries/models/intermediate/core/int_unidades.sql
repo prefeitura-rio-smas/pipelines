@@ -1,3 +1,5 @@
+-- Camada Intermediate: Entidade Unidades (input da dim_unidades)
+-- Grão: 1 linha por unidade. A surrogate key fica na dim_unidades.
 with base as (
     select * from {{ ref('raw_unidades') }}
 ),
@@ -19,8 +21,8 @@ planilha_email as (
 ),
 
 final as (
-    select
-        {{ dbt_utils.generate_surrogate_key(['b.id_unidade']) }} as id_unidade_sk,
+    -- ST06: mantém a ordem de colunas do contrato atual.
+    select  -- noqa: ST06
         b.id_unidade,
         b.nome_unidade,
         b.cas,
@@ -51,19 +53,19 @@ final as (
         t.classe,
         t.descricao_classe,
         case
-            when nome_tipo is null then 'Não Informado'
-            when lower(nome_tipo) like 'albergue%' then 'Albergue'
-            when lower(nome_tipo) like 'central de recepção%' then 'Central de Recepção'
-            when lower(nome_tipo) like '%cras%' then 'CRAS'
-            when lower(nome_tipo) like '%creas%' then 'CREAS'
-            when lower(nome_tipo) like 'centro de ref.espec.popula%' then 'Centro POP'
-            when lower(nome_tipo) like 'complexo da urs%' then 'URS'
-            when lower(nome_tipo) like 'urs%' then 'URS'
-            when lower(nome_tipo) = 'república' then 'República'
-            when lower(nome_tipo) = 'moradia primeiro' then 'Lares Cariocas'
-            when lower(nome_tipo) like '%unid.de acolhi.institucional conveniadas%' then 'Conveniada'
-            when nome_tipo = 'Unid.de Acolhi.Inst.Conv.Pess.Deficiência- Adultos' then 'Conveniada'
-            else nome_tipo
+            when t.nome_tipo is null then 'Não Informado'
+            when lower(t.nome_tipo) like 'albergue%' then 'Albergue'
+            when lower(t.nome_tipo) like 'central de recepção%' then 'Central de Recepção'
+            when lower(t.nome_tipo) like '%cras%' then 'CRAS'
+            when lower(t.nome_tipo) like '%creas%' then 'CREAS'
+            when lower(t.nome_tipo) like 'centro de ref.espec.popula%' then 'Centro POP'
+            when lower(t.nome_tipo) like 'complexo da urs%' then 'URS'
+            when lower(t.nome_tipo) like 'urs%' then 'URS'
+            when lower(t.nome_tipo) = 'república' then 'República'
+            when lower(t.nome_tipo) = 'moradia primeiro' then 'Lares Cariocas'
+            when lower(t.nome_tipo) like '%unid.de acolhi.institucional conveniadas%' then 'Conveniada'
+            when t.nome_tipo = 'Unid.de Acolhi.Inst.Conv.Pess.Deficiência- Adultos' then 'Conveniada'
+            else t.nome_tipo
         end as tipo_unidade,
         cap.total_vagas,
         cap.vagas_disponiveis,
@@ -81,10 +83,10 @@ final as (
         cap.flag_eixo_adulto,
         cap.flag_eixo_familia,
         cap.flag_eixo_idoso
-    from base b
-    left join tipo t on b.id_tipo_unidade = t.id_tipo_unidade
-    left join capacidade cap on b.id_unidade = cap.id_unidade
-    left join planilha_email pe on lower(trim(b.nome_unidade)) = pe.nome_unidade
+    from base as b
+    left join tipo as t on b.id_tipo_unidade = t.id_tipo_unidade
+    left join capacidade as cap on b.id_unidade = cap.id_unidade
+    left join planilha_email as pe on lower(trim(b.nome_unidade)) = pe.nome_unidade
     where b.nome_unidade not like '%TESTE%'
 )
 

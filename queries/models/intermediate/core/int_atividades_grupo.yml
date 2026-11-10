@@ -1,0 +1,11 @@
+version: 2
+
+models:
+  - name: int_atividades_grupo
+    description: |
+      Camada intermediate: catálogo de atividades de grupo.
+      Grão: 1 linha por atividade. A dim_atividades_grupo (mart) é passthrough.
+    columns:
+      - name: id_atividade
+        description: "Identificador único da atividade (PK natural)."
+        tests: [unique, not_null]

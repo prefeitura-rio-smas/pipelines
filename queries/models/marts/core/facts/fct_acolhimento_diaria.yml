@@ -2,17 +2,17 @@ version: 2
 models:
   - name: fct_acolhimento_diaria
     description: |
-      Fato de acolhimentos no grão (id_ciclo × data_referencia).
-      Explosão temporal via GENERATE_DATE_ARRAY sobre `fct_acolhimento_ciclos`.
-      Contém JOINs com `dim_usuarios` (cpf) e `dim_unidades` (tipo_publico),
-      que são os únicos campos downstream que a `mart_acolhimento_diaria` e a
-      `mart_meta_acolhimento` precisam além das chaves de ciclo/datas.
+      Fato de acolhimentos no grão (id_ciclo × data_referencia) — camada Mart (thin).
+      Consome `int_acolhimento_diaria` e adiciona a surrogate key e os JOINs com
+      `dim_usuarios` (cpf) e `dim_unidades` (tipo_publico), que são os únicos
+      campos downstream que a `mart_acolhimento_diaria` e a `mart_meta_acolhimento`
+      precisam além das chaves de ciclo/datas.
 
-      Filtro: `data_referencia <= current_date()` (descarta datas futuras
-      de ciclos em aberto e ciclos corrompidos com data_entrada ~0202).
+      A explosão temporal e o filtro `data_referencia <= current_date()` ficam na
+      `int_acolhimento_diaria`.
     columns:
       - name: id_acolhimento_sk
-        description: "Surrogate key do acolhimento (FK para fct_acolhimento_ciclos)."
+        description: "Surrogate key do acolhimento (mesmo hash de id_ciclo da fct_acolhimento_ciclos)."
         tests: [not_null]
       - name: id_usuario_sk
       - name: id_unidade_sk

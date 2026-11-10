@@ -1,0 +1,12 @@
+version: 2
+
+models:
+  - name: int_acolhimento_ciclos
+    description: |
+      Camada intermediate: acolhimentos institucionais por ciclo.
+      Grão: 1 linha por id_ciclo (sem explosão temporal).
+      A fct_acolhimento_ciclos (mart) adiciona surrogate keys e joins de dimensão.
+    columns:
+      - name: id_ciclo
+        description: "ID original do ciclo (seqciclo)."
+        tests: [unique, not_null]

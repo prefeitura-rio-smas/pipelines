@@ -35,7 +35,7 @@ membros as (
         d.renda_ativa,
         d.renda_beneficio
     from {{ ref('raw_membros_familia') }} as m
-    inner join {{ ref('dim_usuarios') }} as u
+    inner join {{ ref('int_usuarios') }} as u
         on m.id_paciente = u.id_usuario
     left join detalhes as d
         on m.id_paciente = d.id_paciente

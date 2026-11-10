@@ -1,0 +1,12 @@
+version: 2
+
+models:
+  - name: int_unidades
+    description: |
+      Camada intermediate: entidade de unidades de assistência/acolhimento.
+      Concentra a lógica de negócio (cadastro, classificação, capacidade e eixos).
+      A dim_unidades (mart) adiciona apenas a surrogate key.
+    columns:
+      - name: id_unidade
+        description: "ID natural da unidade."
+        tests: [unique, not_null]

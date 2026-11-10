@@ -1,3 +1,6 @@
+-- Camada Intermediate: Atendimentos (input da fct_atendimentos)
+-- Grão: 1 linha por atendimento e profissional. A surrogate key e os joins de
+-- dimensão ficam na fct_atendimentos (mart).
 with atendimentos_familias as (
     select * from {{ ref('raw_atendimentos_familias') }}
 ),
@@ -89,12 +92,7 @@ operadores as (
 
 final as (
     select
-        -- A chave inclui o módulo e o profissional para preservar o grão do fato.
-        {{ dbt_utils.generate_surrogate_key(['u.id_atendimento_modulo', 'u.id_profissional']) }} as id_atendimento_sk,
         u.id_atendimento_modulo,
-        dim_u.id_usuario_sk,
-        dim_p.id_profissional_sk,
-        dim_un.id_unidade_sk,
 
         -- Identificadores da origem.
         u.id_usuario,
@@ -111,9 +109,6 @@ final as (
         u.flag_cancelado
 
     from uniao_atendimentos as u
-    left join {{ ref('dim_usuarios') }} as dim_u on u.id_usuario = dim_u.id_usuario
-    left join {{ ref('dim_profissionais') }} as dim_p on u.id_profissional = dim_p.id_profissional
-    left join {{ ref('dim_unidades') }} as dim_un on u.id_unidade = dim_un.id_unidade
     left join tipos_atendimento as ta on u.id_tipo_atendimento = ta.id_tipo_atendimento
     left join operadores as s on u.id_login_cadastro = s.id_login
     where s.nome_operador is null or s.nome_operador not like '%TESTE%'
