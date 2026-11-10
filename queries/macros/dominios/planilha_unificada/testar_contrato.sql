@@ -78,7 +78,7 @@ with ciclo as (
         array(select as struct c.* from unnest(historico) c
               order by if(c.data_saida is null, 0, 1), c.data_entrada desc nulls last,
                        c.id_ciclo desc, to_json_string(c) desc limit 1)[safe_offset(0)] as ultimo
-    from {{ ref('dim_alta_complexidade') }}
+    from {{ ref('alta_complexidade') }}
 )
 select p.usuario.id_usuario
 from {{ model }} p

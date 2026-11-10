@@ -10,7 +10,7 @@ with registros as (
             when h.titulo_formulario = 'CREAS - Participação em SCFV - Público prioritário / MSE e Trab. Infantil' then 'scfv'
             when h.titulo_formulario = 'CREAS - PETI - DESLIGAMENTO - Programa de Erradicação do Trabalho Infantil' then 'peti_desligamento'
         end as assunto
-    from {{ pu_ref('dim_creas') }} as p, unnest(p.historico) as h
+    from {{ pu_ref('creas') }} as p, unnest(p.historico) as h
 ),
 
 ultimos as (
@@ -214,7 +214,7 @@ select
     p.participacoes[safe_offset(array_length(p.participacoes) - 1)].nome_atividade as passo_a_passo_ultima_atividade,
     p.participacoes[safe_offset(array_length(p.participacoes) - 1)].data_presenca as passo_a_passo_ultima_data,
     p.participacoes[safe_offset(array_length(p.participacoes) - 1)].hora_presenca as passo_a_passo_ultima_hora
-from {{ pu_ref('dim_creas') }} as p
+from {{ pu_ref('creas') }} as p
 left join respostas on p.id_usuario = respostas.id_usuario
 left join ultimos as r_mse on p.id_usuario = r_mse.id_usuario and r_mse.assunto = 'mse'
 left join {{ pu_ref('dim_unidades') }} as u_mse on r_mse.id_unidade = u_mse.id_unidade

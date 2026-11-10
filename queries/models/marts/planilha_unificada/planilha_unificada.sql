@@ -75,7 +75,7 @@ perfil_alta as (
                 ciclo.id_ciclo desc, to_json_string(ciclo) desc
             limit 1
         )[safe_offset(0)] as ultimo_ciclo
-    from {{ pu_ref('dim_alta_complexidade') }}
+    from {{ pu_ref('alta_complexidade') }}
 ),
 
 base as (
@@ -524,7 +524,7 @@ select
     {{ consolidar_emails("p.atendimentos") }} as email
 from base as p
 left join escopo_centro_pop as esc on p.id_usuario = esc.id_usuario
-left join {{ pu_ref('dim_centro_pop') }} as perfil_cp on p.id_usuario = perfil_cp.id_usuario
+left join {{ pu_ref('centro_pop') }} as perfil_cp on p.id_usuario = perfil_cp.id_usuario
 left join unidades as unidade_referencia on safe_cast(p.id_unidade_referencia as int64) = unidade_referencia.id_unidade
 
 left join {{ ref('int_perfil_creas_simples') }} as perfil_creas_simples on p.id_usuario = perfil_creas_simples.id_usuario

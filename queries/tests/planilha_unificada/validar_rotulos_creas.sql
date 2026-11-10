@@ -3,7 +3,7 @@
 select distinct
     h.titulo_formulario,
     c.label
-from {{ ref('dim_creas') }} as p, unnest(p.historico) as h, unnest(h.campos) as c
+from {{ ref('creas') }} as p, unnest(p.historico) as h, unnest(h.campos) as c
 left join {{ ref('creas_campos') }} as mapa
     on
         h.titulo_formulario = mapa.titulo
