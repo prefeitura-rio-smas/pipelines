@@ -1,4 +1,4 @@
-{{ config(schema='gerenciamento__dbt', enabled=target.name != 'prod', tags=['planilha_unificada', 'pu_dimensoes']) }}
+{{ config(alias='dim_centro_pop', schema='gerenciamento__dbt', enabled=target.name != 'prod', tags=['planilha_unificada', 'pu_dimensoes']) }}
 select
     id_usuario,
     unidades_atendimento,

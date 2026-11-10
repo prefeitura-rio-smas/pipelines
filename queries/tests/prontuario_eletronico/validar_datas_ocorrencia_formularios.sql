@@ -2,7 +2,7 @@
 select
     p.usuario.id_usuario,
     e.id_evolucao_modulo
-from {{ ref('planilha_unificada') }} as p,
+from {{ ref('prontuario_eletronico') }} as p,
     unnest(p.evolucoes.registros) as e,
     unnest(e.formularios) as f
 where

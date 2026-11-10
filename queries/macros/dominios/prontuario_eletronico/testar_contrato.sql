@@ -2,7 +2,7 @@
 {% set tipos = {} %}
 {% set contrato = {} %}
 {% if execute %}
-    {% for node in graph.nodes.values() if node.resource_type == 'model' and node.name == 'planilha_unificada' %}
+    {% for node in graph.nodes.values() if node.resource_type == 'model' and node.name == 'prontuario_eletronico' %}
         {% set _ = tipos.update(node.config.meta.get('excecoes_tipos', {})) %}
         {% set _ = contrato.update(node.config.meta) %}
     {% endfor %}

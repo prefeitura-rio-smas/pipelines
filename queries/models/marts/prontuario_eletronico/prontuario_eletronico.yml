@@ -1,7 +1,7 @@
 version: 2
 
 models:
-  - name: planilha_unificada
+  - name: prontuario_eletronico
     data_tests: [pu_contrato_publico, pu_mapeamento_creas, pu_campos_topo, pu_perfis_preservados, pu_linhas_bi_preservadas, pu_quantidades_bi, pu_preservacao_eventos, pu_formularios_eventos, pu_familia_no_atendimento_paridade]
     description: |
       Uma linha por usuario.id_usuario, com a mesma população de dim_usuarios.

@@ -1,4 +1,4 @@
-{{ config(schema=var('pu_candidato_schema', 'pu_candidatos')) }}
+{{ config(alias='planilha_unificada', schema=var('pu_candidato_schema', 'pu_candidatos')) }}
 -- noqa: disable=ST06
 -- Contrato por assunto; identificadores públicos restritos aos campos autorizados.
 with unidades as (
