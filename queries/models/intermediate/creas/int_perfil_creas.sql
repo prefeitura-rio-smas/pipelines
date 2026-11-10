@@ -19,12 +19,12 @@ participacoes as (
         ) as participacoes
     from {{ pu_ref('fct_presencas_usuarios') }} as p
     inner join {{ pu_ref('raw_atividades_grupo') }} as a on p.id_atividade = a.id_atividade
-where regexp_contains(a.nome_atividade, r'(?i)passo[ -]+a[ -]+passo')
-group by p.id_usuario
+    where regexp_contains(a.nome_atividade, r'(?i)passo[ -]+a[ -]+passo')
+    group by p.id_usuario
 )
 
 select
-coalesce(f.id_usuario, p.id_usuario) as id_usuario,
-coalesce(f.historico, []) as historico,
-coalesce(p.participacoes, []) as participacoes
+    coalesce(f.id_usuario, p.id_usuario) as id_usuario,
+    coalesce(f.historico, []) as historico,
+    coalesce(p.participacoes, []) as participacoes
 from formularios as f full outer join participacoes as p on f.id_usuario = p.id_usuario
