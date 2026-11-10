@@ -82,16 +82,3 @@ models:
       poc_paif:
         +materialized: table
         +schema: "{{ 'marts' if target.name == 'prod' else 'relatorio' }}"
-
-    # --- Arquitetura Antiga (Legacy) ---
-    old_architecture:
-      +enabled: false  # Default: disabled. Subgrupos com pipeline ativa sobrescrevem abaixo.
-
-      dashboard_arcgis:
-        +enabled: true  # Pipeline ArcGIS Abordagem (6/6h)
-        +database: rj-smas-dev
-        +materialized: table
-        +schema: "{{ 'dashboard_arcgis' if target.name == 'prod' else 'gerenciamento__dbt' }}"
-
-      # Legado removido: dashboard_acolherio, rma (migrados para marts/) e
-      # equipamentos/unidade (substituído por raw/arcgis/raw_unidade).

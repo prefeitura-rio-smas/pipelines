@@ -1,5 +1,11 @@
 {{ config(materialized = 'table') }}
 
+-- Agrupamento de abordagens da mesma pessoa (clusters de duplicidade).
+-- Grão: 1 linha por globalid (= 1 abordagem), com o cluster_id do registro
+-- mestre e a flag is_duplicado. Grafo recursivo com 6 regras de match exato
+-- dentro do mesmo ano (ver CTE Matches); substituiu a versão com SOUNDEX.
+-- Consumido pela mart_abordagem (dashboard de Abordagem).
+
 -- ==========================================================
 -- Dedup via grafo recursivo com 6 regras de matching exato
 -- Substitui o modelo anterior baseado em SOUNDEX
@@ -16,7 +22,7 @@ BaseDados AS (
     key_nome_pai      as key_pai,
     repeat_data_nascimento,
     ano_num_data_abordagem as ano
-  FROM {{ ref('abordagem_repeat') }}
+  FROM {{ ref('raw_abordagem_repeat') }}
 ),
 
 Matches AS (

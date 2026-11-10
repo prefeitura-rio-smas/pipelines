@@ -39,10 +39,10 @@ def abordagem_flow() -> None:
         order_by_field=order_by_field,
     )
 
-    # 3. Executa dbt
+    # 3. Executa dbt (medallion: raw -> intermediate -> mart_abordagem)
     dbt_target = os.getenv("MODE", "staging")
     trigger_dbt_cli_command(
-        command=f"dbt run --select +abordagem --target {dbt_target}",
+        command=f"dbt run --select +mart_abordagem --target {dbt_target}",
         project_dir="queries",
         profiles_dir="queries",
     )

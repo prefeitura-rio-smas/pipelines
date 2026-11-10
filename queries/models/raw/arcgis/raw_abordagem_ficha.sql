@@ -1,4 +1,8 @@
-{{ config(materialized = 'ephemeral') }}
+-- Camada Raw: ficha principal da abordagem (layer 0 do Feature Service).
+-- Fonte: arcgis_raw.abordagem_raw (flow `abordagem | Carga ArcGIS`, 6/6h).
+-- Grão: 1 linha por ficha (objectid). Só renomeação/typing — sem filtro.
+-- Usada pela mart só para recuperar o `objectid` da ficha de origem (ficha_objectid).
+{{ config(materialized = 'view') }}
 
 SELECT
   -- Chaves da ficha (layer 0)

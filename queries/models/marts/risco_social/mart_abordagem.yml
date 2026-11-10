@@ -1,0 +1,60 @@
+version: 2
+
+sources:
+  - name: dashboard_arcgis_manuais
+    description: >
+      Tabelas mantidas fora do dbt no dataset `dashboard_arcgis` (de/para
+      operacional usado pelo BI na transição). Não versionadas neste repo.
+    database: rj-smas-dev
+    schema: dashboard_arcgis
+    tables:
+      - name: abordagem_filtro_emails
+        description: >
+          De/para CAS → e-mail institucional usado no filtro de unidade do
+          dashboard de Abordagem (planilha Google Sheets exposta como tabela
+          externa; `cas` é a chave do join).
+
+models:
+  - name: mart_abordagem
+    description: >
+      Mart de Abordagem Social (situação de rua). Grão: 1 linha por abordagem
+      (globalid). Entrega a tabela consumida pelo Looker, com o cluster de
+      duplicidade da pessoa, o e-mail institucional da unidade e o objectid da
+      ficha de origem.
+
+      CONTRATO EXTERNO: materializada em `rj-smas-dev.dashboard_arcgis.abordagem`
+      (mesmo nome e mesmas colunas da antiga tabela do old_architecture) porque o
+      dashboard lê essa relação direto. Não renomear/remover coluna sem repontar
+      o BI.
+    columns:
+      - name: globalid
+        description: "GUID da abordagem (chave da mart)."
+        tests:
+          - not_null
+          - unique
+      - name: objectid
+        description: "ObjectID da abordagem no ArcGIS."
+      - name: parentrowid
+        description: "ObjectID da ficha de origem (layer 0)."
+      - name: ficha_objectid
+        description: "objectid da ficha recuperado em raw_abordagem_ficha (NULL quando a ficha não existe mais)."
+      - name: cas
+        description: "CAS da unidade, vindo do de/para de e-mails do BI (NULL quando o CAS não está mapeado)."
+      - name: e_mail
+        description: "E-mail institucional da unidade usado no filtro do dashboard."
+      - name: cluster_id
+        description: "globalid do registro mestre do cluster de duplicidade."
+        tests:
+          - not_null
+      - name: is_duplicado
+        description: "TRUE quando a abordagem é duplicata de outra do mesmo cluster."
+        tests:
+          - not_null
+      - name: data_abordagem
+        description: "Data da abordagem (DATE)."
+      - name: repeat_unidade_cas
+        description: "CAS informado na abordagem (usado no join com o de/para)."
+      - name: repeat_cpf
+        description: "CPF como preenchido na abordagem."
+      - name: geometry
+        description: "Geometria nativa (GEOGRAPHY) do ArcGIS."
