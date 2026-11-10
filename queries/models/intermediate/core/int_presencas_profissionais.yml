@@ -1,0 +1,15 @@
+version: 2
+
+models:
+  - name: int_presencas_profissionais
+    description: |
+      Camada intermediate: presenças de profissionais em atividades de grupo.
+      Grão: 1 linha por presença de um profissional em uma atividade/data/hora.
+      A fct_presencas_profissionais (mart) adiciona a surrogate key.
+    tests:
+      - dbt_utils.unique_combination_of_columns:
+          combination_of_columns:
+            - id_atividade
+            - id_profissional
+            - data_presenca
+            - hora_presenca

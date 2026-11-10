@@ -1,0 +1,15 @@
+version: 2
+
+models:
+  - name: int_presencas_usuarios
+    description: |
+      Camada intermediate: presenças de usuários em atividades de grupo.
+      Grão: 1 linha por presença de um usuário em uma atividade/data/hora.
+      A fct_presencas_usuarios (mart) adiciona a surrogate key.
+    tests:
+      - dbt_utils.unique_combination_of_columns:
+          combination_of_columns:
+            - id_atividade
+            - id_usuario
+            - data_presenca
+            - hora_presenca

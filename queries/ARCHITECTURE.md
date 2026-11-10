@@ -6,7 +6,7 @@ Este documento descreve a organização e os princípios da arquitetura de dados
 
 - **Orientação a Domínio:** A partir da camada `intermediate`, os dados são organizados por domínios de negócio (ex: Social, Território) e não por ferramentas ou dashboards.
 - **Blindagem da Fonte:** A camada `raw` é o único ponto de contato com os dados externos, protegendo o resto do pipeline de mudanças de schema na fonte.
-- **Unicidade da Verdade:** Lógicas complexas (como critérios de vulnerabilidade ou identificação de atendimento domiciliar) são calculadas uma única vez na camada `intermediate` e reusadas por múltiplos modelos.
+- **Unicidade da Verdade:** Lógicas complexas (como critérios de vulnerabilidade ou identificação de atendimento domiciliar) são calculadas uma única vez na camada `intermediate` (modelos `int_`) e reusadas por múltiplos modelos. As dimensões/fatos em `marts/core/` são thin: adicionam surrogate keys e joins de dimensão, sem duplicar a regra de negócio.
 
 ## 2. Estrutura de Pastas e Camadas
 
@@ -23,24 +23,35 @@ Este documento descreve a organização e os princípios da arquitetura de dados
 - **Objetivo:** Lógica modular e auxiliar.
 - **Responsabilidades:**
     - Cálculos intermediários e tabelas auxiliares.
-    - Modelos que preparam dados para o `core`.
-- **Materialização:** `ephemeral`.
+    - Regras de negócio reutilizáveis, sempre com prefixo `int_`.
+    - Não contém dimensões/fatos finais (sem surrogate keys).
+- **Materialização:** `ephemeral` por padrão.
 
-### `intermediate/core/` (Silver - Conformed)
-- **Objetivo:** Entidades integradas e definitivas (Fatos e Dimensões).
+### `intermediate/core/` (Silver - Entidades conformadas)
+- **Objetivo:** Lógica de negócio das entidades conformadas que alimentam o star schema.
 - **Responsabilidades:**
-    - Geração de Surrogate Keys.
     - Joins entre tabelas do mesmo domínio.
     - Deduplicação de registros.
-    - Definição de Dimensões Conformadas (ex: `dim_usuarios`, `dim_unidades`).
+    - Regras de classificação/cálculo (ex: `int_usuarios`, `int_unidades`).
+    - **Não** gera surrogate keys nem expõe a entidade final de consumo.
 - **Materialização:** `table`.
 
-### `marts/` (Gold)
-- **Objetivo:** Consumo final e Dashboards.
+### `marts/core/dimensions/` e `marts/core/facts/` (Gold - Star schema)
+- **Objetivo:** Dimensões e fatos conformados (Kimball), prontos para consumo.
+- **Responsabilidades:**
+    - Consumir os `int_` de `intermediate/core/` (modelos thin).
+    - Geração de Surrogate Keys.
+    - Joins com dimensões nos fatos.
+    - Contratos finais (colunas, grão, testes) expostos ao BI.
+- **Materialização:** `table`.
+
+### `marts/<dominio>/` (Gold - Consumo)
+- **Objetivo:** Agregações e produtos de consumo por domínio.
 - **Responsabilidades:**
     - Agregações de negócio (Somas, Médias, Contagens).
     - Filtros específicos para visões de BI (ex: Relatório RMA).
     - Métricas finais.
+    - Consome preferencialmente `marts/core/` e `intermediate/`.
 - **Materialização:** `table`.
 
 ## 3. Estratégia de Histórico e Auditoria
@@ -52,8 +63,8 @@ Este documento descreve a organização e os princípios da arquitetura de dados
 ## 4. Convenção de Nomenclatura
 
 - **Modelos Raw:** `raw_<sistema>__<tabela>.sql`
-- **Modelos Intermediate:** `int_<descricao>.sql`
-- **Modelos Core:** `dim_<entidade>.sql` ou `fct_<evento>.sql`
+- **Modelos Intermediate:** `int_<descricao>.sql` (lógica, sem surrogate key)
+- **Modelos Core:** `dim_<entidade>.sql` em `marts/core/dimensions/` e `fct_<evento>.sql` em `marts/core/facts/`
 - **Modelos Marts:** `mart_<produto>__<descricao>.sql`
 
 ---
