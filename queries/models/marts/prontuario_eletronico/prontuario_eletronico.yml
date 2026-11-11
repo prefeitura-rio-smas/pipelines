@@ -393,3 +393,7 @@ models:
       - name: centro_pop.flag_interesse_curso
         description: Não Informado; interesse em atividades coletivas não equivale a interesse em curso.
         data_type: STRING
+
+      - name: atendimentos.registros.data_atendimento
+        data_type: STRING
+        description: Data válida informada no formulário vinculado pelo atendimento, módulo, cidadão e unidade. Vazia sem formulário válido ou em caso de conflito; não usa data da evolução nem a data original da base.

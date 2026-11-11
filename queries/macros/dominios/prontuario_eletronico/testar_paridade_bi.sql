@@ -1,5 +1,5 @@
 {% test pu_selecao_bi_paridade(model) %}
--- Preserva a seleção e os campos da programada, exceto os três e-mails recalculados.
+-- Preserva a seleção e os campos originais; a data da base fica auditável, enquanto a data pública vem do formulário.
 {% set colunas = [
     'modulo',
     'cas',
@@ -43,7 +43,7 @@ with comparacao as (
     {% if not loop.first %}union all{% endif %}
     select to_json_string(struct(
         {% for coluna in colunas %}
-            {{ coluna }} as {{ coluna }}{% if not loop.last %},{% endif %}
+            {% if coluna == 'data_de_atendimento' and delta == -1 %}_data_de_atendimento_base{% else %}{{ coluna }}{% endif %} as {{ coluna }}{% if not loop.last %},{% endif %}
         {% endfor %}
     )) as conteudo, {{ delta }} as delta
     from {{ relacao }}
