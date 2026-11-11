@@ -35,6 +35,7 @@ final as (
     select
         a.id_usuario    as seqpac,
         a.id_ciclo      as seqciclo,
+        usr.id_familia,
 
         -- ===== USUARIO =====
         usr.nome                              as nome_usuario,
