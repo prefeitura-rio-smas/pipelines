@@ -23,8 +23,8 @@ models/
 │   ├── core/          # dim/fact finais
 │   ├── social/        # int_ por domínio
 │   └── atividades/
-├── marts/
-└── old_architecture/  # só dashboard_arcgis/abordagem (último legado ativo)
+├── marts/             # acolhimento, risco_social, estrutura_assistencial, pic, rma_cras...
+└── (old_architecture removida em 2026-11-10)
 ```
 
 ### Princípios por Camada
@@ -167,15 +167,10 @@ models:
         +materialized: table
     marts:
       +materialized: table
-    old_architecture:
-      +enabled: false
-      dashboard_arcgis:   # única exceção: pipeline abordagem ainda ativo
-        +enabled: true
-        +database: rj-smas-dev
 ```
 
-A `old_architecture` está desabilitada (`+enabled: false`); só `dashboard_arcgis`
-sobrescreve para `true` porque o pipeline de abordagem ainda não foi migrado.
+`old_architecture` foi removida em 2026-11-10 (últimos blocos migrados: abordagem
+para `raw/arcgis` + `intermediate/social` + `marts/risco_social`).
 
 ---
 
@@ -191,11 +186,11 @@ sobrescreve para `true` porque o pipeline de abordagem ainda não foi migrado.
 
 - [x] Criar modelos **marts** para dashboards e relatórios
 - [x] Migrar sistema **bolsa_familia** para a nova arquitetura
-- [ ] Migrar sistema **arcgis** para a nova arquitetura — resta só `dashboard_arcgis/abordagem` (pipeline ativo 6/6h, 143 colunas)
+- [x] Migrar sistema **arcgis** para a nova arquitetura (`raw/arcgis` + `marts/risco_social/mart_abordagem`)
 - [x] Migrar **rma/cras** para a nova arquitetura (`marts/rma_cras/`)
 - [ ] Configurar **snapshots** para histórico (SCD Type 2)
 - [ ] Revisar e completar `ARCHITECTURE.md`
-- [ ] Remover `old_architecture/` quando migração estiver completa — restam 7 arquivos (`dashboard_arcgis`)
+- [x] Remover `old_architecture/` (concluído em 2026-11-10)
 - [ ] Padronizar flags (transformar 'N' em 'Não' na raw para facilitar consumo)
 
 ### Removidos do legado (2026-11-10)
@@ -206,3 +201,17 @@ substituídos por `marts/acolhimento`, `marts/atendimentos_acolherio`,
 não tinha nenhum consumidor no BigQuery e foi substituído por
 `raw/arcgis/raw_unidade` (mesmas colunas, fonte `arcgis_raw.equipamento_raw`);
 `poligonos_rmi` não rodava desde 03/2026.
+
+`dashboard_arcgis/` (7 arquivos) foi migrado em 2026-11-10, na mesma data:
+`abordagem_repeat` → `raw/arcgis/raw_abordagem_repeat`, `abordagem_ficha` →
+`raw/arcgis/raw_abordagem_ficha`, `abordagem_repeat_dedup` →
+`intermediate/social/int_abordagem_repeat_dedup` e `abordagem` →
+`marts/risco_social/mart_abordagem`. `gestao_vagas` não tinha nenhuma consulta em
+7 dias e saiu junto.
+
+**Contrato transitório:** `mart_abordagem` mantém o nome físico
+`rj-smas-dev.dashboard_arcgis.abordagem` (mesmas 154 colunas, na mesma ordem)
+porque o Looker lê a relação direto. Paridade validada contra a tabela antiga:
+556.668 linhas nos dois lados, 0 diferenças em `cas`, `e_mail`, `cluster_id`,
+`is_duplicado` e `ficha_objectid`. Quando o BI for repontado, o modelo volta ao
+schema padrão de `marts`.

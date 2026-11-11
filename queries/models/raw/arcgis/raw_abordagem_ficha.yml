@@ -1,0 +1,39 @@
+version: 2
+
+sources:
+  - name: arcgis_raw
+    description: "Feature Services do ArcGIS (SIURB) carregados pelos flows de extração."
+    database: rj-smas
+    schema: arcgis_raw
+    tables:
+      - name: abordagem_raw
+        description: >
+          Layer 0 (ficha) do Feature Service de Abordagem Social: 1 linha por
+          ficha preenchida. Extraída pelo flow `abordagem | Carga ArcGIS` (6/6h).
+
+models:
+  - name: raw_abordagem_ficha
+    description: >
+      Camada Raw da ficha de abordagem (layer 0). Grão: 1 linha por ficha
+      (objectid), sem filtro. Usada pela mart_abordagem apenas para recuperar
+      o objectid da ficha de origem (ficha_objectid).
+    columns:
+      - name: objectid
+        description: "ObjectID da ficha (ArcGIS)."
+        tests:
+          - not_null
+          - unique
+      - name: globalid
+        description: "GUID da ficha."
+      - name: unidade_cas
+        description: "CAS da unidade de referência da ficha."
+      - name: nome_usuario
+        description: "Nome do usuário no cabeçalho da ficha."
+      - name: cpf
+        description: "CPF informado na ficha."
+      - name: data_abordagem
+        description: "Data de preenchimento/abordagem na ficha."
+      - name: excluir_ficha
+        description: "Flag de exclusão lógica da ficha no ArcGIS."
+      - name: timestamp_captura
+        description: "Timestamp de captura da extração."
