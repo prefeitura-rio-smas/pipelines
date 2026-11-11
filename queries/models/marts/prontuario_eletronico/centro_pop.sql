@@ -9,7 +9,7 @@ select
     data_registro_pai,
     data_resposta_pai,
     data_inclusao_pai,
-    data_inclusao_informada,
+    data_inclusao_pai_informada,
     demandas_pai,
     encaminhamentos_pai,
     observacoes_pai,

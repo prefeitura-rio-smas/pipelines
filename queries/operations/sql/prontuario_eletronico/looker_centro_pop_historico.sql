@@ -21,7 +21,7 @@ select
     h.data_registro_pai,
     h.data_resposta_pai,
     h.data_inclusao_pai,
-    h.data_inclusao_informada,
+    h.data_inclusao_pai_informada,
     h.demandas_pai,
     h.encaminhamentos_pai,
     h.observacoes_pai,

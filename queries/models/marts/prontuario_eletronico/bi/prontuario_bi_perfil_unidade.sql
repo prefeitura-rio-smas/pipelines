@@ -101,6 +101,7 @@ select
         cad.usuario.origem_demanda as origem_demanda,
         cad.usuario.flag_possui_violacao_direito as flag_possui_violacao_direito,
         cad.usuario.uf_nascimento as uf_nascimento,
+        cad.usuario.cidade_nascimento as cidade_nascimento,
         cad.usuario.serie_escolar as serie_escolar,
         cad.usuario.data_cadunico_informada as data_cadunico_informada,
         cad.usuario.nis as nis,

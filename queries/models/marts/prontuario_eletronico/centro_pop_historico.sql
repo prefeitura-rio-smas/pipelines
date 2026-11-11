@@ -1,12 +1,12 @@
 {{ config(materialized='ephemeral', tags=['centro_pop_mensal']) }}
 with fechados as (
-    select * from {{ ref('centro_pop_snapshots') }}
+    select {{ pu_cpop_mensal_colunas('s') }} from {{ ref('centro_pop_snapshots') }} as s
     qualify versao = max(versao) over (partition by mes_referencia)
 )
 
-select * from fechados
+select {{ pu_cpop_mensal_colunas('f') }} from fechados as f
 union all
-select p.* from {{ ref('centro_pop_mensal') }} as p
+select {{ pu_cpop_mensal_colunas('p') }} from {{ ref('centro_pop_mensal') }} as p
 where
     p.mes_referencia = date_trunc(current_date('America/Sao_Paulo'), month)
     and not exists (

@@ -1,5 +1,5 @@
 {% macro pu_ids_familias(coluna) -%}
-coalesce(string_agg(distinct cast({{ coluna }} as string), ', ' order by cast({{ coluna }} as string)), '')
+    coalesce(string_agg(distinct cast({{ coluna }} as string), ', ' order by cast({{ coluna }} as string)), '')
 {%- endmacro %}
 
 {% test pu_familia_no_atendimento_paridade(model) %}

@@ -50,14 +50,14 @@ select
         {{ assunto }}.situacao_data_ocorrencia as situacao_data_ocorrencia_{{ assunto }},
         {{ assunto }}.data_registro as data_registro_{{ assunto }},
         {{ assunto }}.data_resposta as data_resposta_{{ assunto }}
-        {% for campo in campos %}
+{% for campo in campos %}
             , {% if campo == 'encaminhamentos' %}
                 coalesce(enc_{{ assunto }}.valores, [])
             {% elif campo == 'demandas' %}coalesce({{ assunto }}.{{ campo }}, [])
             {% elif pu_cpop_campos()[campo] == 'DATE' %}{{ assunto }}.{{ campo }}
             {% else %}coalesce({{ assunto }}.{{ campo }}, ''){% endif %} as {{ pu_cpop_perfil_nome(assunto, campo) }}
-        {% endfor %}
-    {% endfor %}
+{% endfor %}
+{% endfor %}
 from usuarios as u
 left join unidades_atendimento as unidades on u.id_usuario = unidades.id_usuario
 {% for assunto in pu_cpop_perfil_assuntos() %}

@@ -148,7 +148,7 @@ base as (
             order by posicao
         ) as beneficio,
         coalesce(proj.projetos_sociais, []) as projetos_sociais,
-        struct(u.uf_nascimento, u.serie_escolar, u.data_cadunico_informada) as cadastro_complementar,
+        struct(u.uf_nascimento, u.cidade_nascimento, u.serie_escolar, u.data_cadunico_informada) as cadastro_complementar,
         end_bi.endereco,
         if(d.documentos_cadunico is null, null, (
             select as struct d.documentos_cadunico.* except (cpf_normalizado, id_familia_cadunico)
@@ -242,6 +242,7 @@ select
         {{ pu_flag_sim_nao("coalesce(cast(p.flag_possui_violacao_direito as string), '')") }} as flag_possui_violacao_direito,
         coalesce(unidade_referencia.nome_unidade, '') as nome_unidade_referencia,
         coalesce(cast(p.cadastro_complementar.uf_nascimento as string), '') as uf_nascimento,
+        coalesce(trim(cast(p.cadastro_complementar.cidade_nascimento as string)), '') as cidade_nascimento,
         coalesce(cast(p.cadastro_complementar.serie_escolar as string), '') as serie_escolar,
         coalesce(cast(p.cadastro_complementar.data_cadunico_informada as string), '') as data_cadunico_informada,
         coalesce(cast(p.documentos_cadunico.nis as string), '') as nis,
