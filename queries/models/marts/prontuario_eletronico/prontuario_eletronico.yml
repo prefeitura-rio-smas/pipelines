@@ -175,7 +175,7 @@ models:
       - name: atendimentos.registros.tipo_servico
         description: Serviço de origem do evento (cras, creas, centro_pop ou outros), preservado do intermediário comum para futuras marts.
       - name: atendimentos.registros.classificacao_atendimento
-        description: Classificação comum aos profissionais selecionados, ou Misto quando divergem. Para métricas por tipo, usar profissionais.classificacao_atendimento; recepção tem precedência conforme a programada. Aplica-se a todos os serviços.
+        description: Classificação consolidada com prioridade Atendimento Recepção > Atendimento Técnico > Outros Atendimentos. Para métricas por tipo, usar profissionais.classificacao_atendimento; recepção tem precedência conforme a programada. Aplica-se a todos os serviços.
       - name: evolucoes
         description: |
           STRUCT com quantidade INT64 e registros ARRAY<STRUCT>, uma entrada por

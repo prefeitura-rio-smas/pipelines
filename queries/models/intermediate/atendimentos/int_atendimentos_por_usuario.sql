@@ -26,7 +26,11 @@ with eventos as (
         end as tipo_servico,
         {{ pu_ids_familias('id_familia') }} as id_familia,
         max(projetos_sociais) as projetos_sociais_familia,
-        if(count(distinct tipo_atendimento) = 1, max(tipo_atendimento), 'Misto') as classificacao_atendimento,
+        case
+            when countif(tipo_atendimento = 'Atendimento Recepção') > 0 then 'Atendimento Recepção'
+            when countif(tipo_atendimento = 'Atendimento Técnico') > 0 then 'Atendimento Técnico'
+            else 'Outros Atendimentos'
+        end as classificacao_atendimento,
         array_agg(struct(
             profissional_id as id_profissional,
             profissional as nome_profissional,
