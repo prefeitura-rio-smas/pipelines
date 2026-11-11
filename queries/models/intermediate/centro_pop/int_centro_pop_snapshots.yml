@@ -1,0 +1,5 @@
+version: 2
+models:
+- name: int_centro_pop_snapshots
+  description: Fotos imutáveis versionadas, sem expiração, escritas exclusivamente
+    por fechar_centro_pop_mes. Full refresh desabilitado.

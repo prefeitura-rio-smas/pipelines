@@ -1,4 +1,4 @@
-{{ config(schema='relatorio', materialized='table', enabled=target.name != 'prod', tags=['centro_pop_mensal']) }}
+{{ config(alias='centro_pop_mensal', schema='relatorio', materialized='table', enabled=target.name != 'prod', tags=['centro_pop_mensal', 'planilha_unificada']) }}
 {% set mes = var('centro_pop_mes', none) %}
 with cargas as (
     {% for tabela in ['gh_atendimentos', 'gh_atend_familia', 'gh_evolupac', 'gh_evolufamil', 'gh_ativ_paciente'] %}

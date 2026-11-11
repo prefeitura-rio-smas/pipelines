@@ -6,8 +6,8 @@
     {% if not modules.re.match('^[A-Za-z0-9_-]{1,100}$', id_fechamento) %}
         {{ exceptions.raise_compiler_error('id_fechamento deve conter apenas letras, números, hífen ou sublinhado.') }}
     {% endif %}
-    {% set candidata = ref('centro_pop_mensal') %}
-    {% set destino = ref('centro_pop_snapshots') %}
+    {% set candidata = ref('int_centro_pop_mensal') %}
+    {% set destino = ref('int_centro_pop_snapshots') %}
     {% set sql %}
 create table if not exists `{{ destino.database }}.{{ destino.schema }}.centro_pop_fechamento_controle`
 options(description='Controle de concorrência dos fechamentos Centro POP') as select 1 as chave, '' as nonce;

@@ -5,7 +5,7 @@ with historico_centro_pop as (
     select
         h.id_usuario,
         array_agg((select as struct h.* except (id_usuario)) order by h.mes_referencia desc, h.id_unidade asc) as historico_mensal
-    from {{ ref('centro_pop_historico') }} as h
+    from {{ ref('int_centro_pop_historico_mensal') }} as h
     group by h.id_usuario
 ),
 

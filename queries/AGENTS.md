@@ -9,3 +9,5 @@ Nomes físicos do BigQuery são preservados por aliases explícitos:
 - `alta_complexidade` → `dim_alta_complexidade`.
 
 Reorganizações de arquivos não devem alterar datasets, nomes físicos, materializações ou regras. Alterar nomes físicos exige pedido explícito do usuário. Os três modelos de escopo continuam sendo dimensões; manter as tags existentes para compatibilidade.
+
+A mart prontuario_eletronico contém somente prontuario_eletronico, centro_pop, creas e alta_complexidade, com nomes simples e YAMLs correspondentes. Apoios mensais ficam em intermediate/centro_pop com prefixo int_, preservando aliases e configurações. O pacote prontuario_bi e suas consultas não fazem parte do produto.
