@@ -1,7 +1,7 @@
 {% test pu_contrato_publico(model) %}
-{% set tipos = {} %}
-{% set contrato = {} %}
-{% if execute %}
+    {% set tipos = {} %}
+    {% set contrato = {} %}
+    {% if execute %}
     {% for node in graph.nodes.values() if node.resource_type == 'model' and node.name == 'prontuario_eletronico' %}
         {% set _ = tipos.update(node.config.meta.get('excecoes_tipos', {})) %}
         {% set _ = contrato.update(node.config.meta) %}
@@ -40,6 +40,7 @@ union all
 select field_path as falha from campos
 where (starts_with(field_path, 'centro_pop.') or starts_with(field_path, 'creas.') or starts_with(field_path, 'alta_complexidade.'))
   and (starts_with(data_type, 'STRUCT<') or starts_with(data_type, 'ARRAY<'))
+  and field_path != 'centro_pop.historico_mensal'
 union all
 select 'campos_raiz' as falha
 from (

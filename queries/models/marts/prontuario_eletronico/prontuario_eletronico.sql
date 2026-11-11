@@ -1,7 +1,15 @@
 {{ config(alias='planilha_unificada', schema=var('pu_candidato_schema', 'pu_candidatos')) }}
 -- noqa: disable=ST06
 -- Contrato por assunto; identificadores públicos restritos aos campos autorizados.
-with unidades as (
+with historico_centro_pop as (
+    select
+        h.id_usuario,
+        array_agg((select as struct h.* except (id_usuario)) order by h.mes_referencia desc, h.id_unidade asc) as historico_mensal
+    from {{ ref('centro_pop_historico') }} as h
+    group by h.id_usuario
+),
+
+unidades as (
     select
         id_unidade,
         nome_unidade
@@ -403,6 +411,7 @@ select
     ) as evolucoes,
     struct(
         {{ pu_cpop_perfil_publico('perfil_cp', listas_em_texto=true) }},
+        coalesce(hist.historico_mensal, []) as historico_mensal,
         esc.participacoes[safe_offset(array_length(esc.participacoes) - 1)].nome_atividade as ultima_participacao_atividade,
         esc.participacoes[safe_offset(array_length(esc.participacoes) - 1)].nome_unidade as ultima_participacao_unidade,
         esc.participacoes[safe_offset(array_length(esc.participacoes) - 1)].data_presenca as ultima_participacao_data,
@@ -523,6 +532,7 @@ select
     {{ consolidar_unidades("p.atendimentos") }} as nome_unidade,
     {{ consolidar_emails("p.atendimentos") }} as email
 from base as p
+left join historico_centro_pop as hist on cast(p.id_usuario as string) = hist.id_usuario
 left join escopo_centro_pop as esc on p.id_usuario = esc.id_usuario
 left join {{ pu_ref('centro_pop') }} as perfil_cp on p.id_usuario = perfil_cp.id_usuario
 left join unidades as unidade_referencia on safe_cast(p.id_unidade_referencia as int64) = unidade_referencia.id_unidade
