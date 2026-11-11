@@ -65,7 +65,7 @@ datas as (
         id_unidade,
         data_atendimento,
         origem_data_atendimento
-    from {{ ref('int_datas_formularios_atendimento') }}
+    from {{ ref('int_datas_atendimento') }}
 )
 
 select
@@ -113,7 +113,7 @@ select
     b._flag_cancelado,
     b._codigo_cbo,
     b.data_de_atendimento as _data_de_atendimento_base,
-    coalesce(datas.origem_data_atendimento, 'sem_formulario') as _origem_data_atendimento
+    coalesce(datas.origem_data_atendimento, 'sem_correspondencia') as _origem_data_atendimento
 from enriquecidos as b
 left join datas on
     b.modulo = datas.modulo and b.seq_atendimento = datas.id_atendimento
