@@ -6,7 +6,7 @@ select
     registro.tipo_unidade,
     registro.unidade_atendimento,
     registro.seq_atendimento,
-    registro.data_de_atendimento,
+    registro.data_atendimento_informada,
     registro.hora_de_atendimento,
     registro.id_usuario,
     registro.id_familia,
@@ -25,7 +25,7 @@ select
     registro.nome_atendimento_original,
     registro.id_atendimento,
     registro.cadastrante,
-    registro.data_cadastro_atendimento,
+    registro.data_atendimento_sistema,
     registro.id_unidade
 from `rj-smas-dev.relatorio.prontuario_bi_linhas_profissionais` as registro
 where exists (

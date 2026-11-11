@@ -331,7 +331,7 @@ select
                 coalesce(cast(item1.id_unidade as string), '') as id_unidade,
                 coalesce(item1.nome_unidade, '') as nome_unidade,
                 coalesce(cast(item1.tipo_atendimento_descricao as string), '') as tipo_atendimento_descricao,
-                coalesce(cast(item1.data_atendimento as string), '') as data_atendimento,
+                coalesce(cast(item1.data_atendimento as string), '') as data_atendimento_informada,
                 {{ normalizar_hora_atendimento('item1.hora_atendimento') }} as hora_atendimento,
                 {{ pu_flag_sim_nao("coalesce(cast(item1.flag_cancelado as string), '')") }} as flag_cancelado,
                 array(
@@ -358,7 +358,7 @@ select
                 coalesce(item1.email_unidade, '') as email_unidade,
                 coalesce(item1.email_cas, '') as email_cas,
                 coalesce(item1.cadastrante, '') as cadastrante,
-                coalesce(cast(item1.data_cadastro_atendimento as string), '') as data_cadastro_atendimento,
+                coalesce(cast(item1.data_cadastro_atendimento as string), '') as data_atendimento_sistema,
                 coalesce(item1.tipo_unidade, '') as tipo_unidade,
                 item1.elegivel_indicador
             from unnest(p.atendimentos) as item1 with offset as posicao

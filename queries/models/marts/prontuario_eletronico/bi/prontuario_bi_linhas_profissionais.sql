@@ -5,7 +5,7 @@ select
     b.tipo_unidade,
     b.unidade_atendimento,
     b.seq_atendimento,
-    b.data_de_atendimento,
+    b.data_de_atendimento as data_atendimento_informada,
     b.hora_de_atendimento,
     cast(b.id_usuario as string) as id_usuario,
     b.id_familia,
@@ -24,7 +24,7 @@ select
     b.nome_atendimento_original,
     b.id_atendimento,
     b.cadastrante,
-    b.data_cadastro_atendimento,
+    b.data_cadastro_atendimento as data_atendimento_sistema,
     b._id_unidade as id_unidade
 from {{ ref('int_atendimentos_bi') }} as b
 where b._id_unidade is not null

@@ -231,7 +231,7 @@ models:
         description: "Endereços de todos os atendimentos do usuário, em minúsculas, distintos e ordenados, separados por vírgula e espaço. Ausência como texto vazio. Autoriza acesso ao histórico completo do usuário."
       - name: atendimentos.registros.cadastrante
         description: Nome apresentado na referência para a pessoa que cadastrou o atendimento; não equivale ao profissional executor.
-      - name: atendimentos.registros.data_cadastro_atendimento
+      - name: atendimentos.registros.data_atendimento_sistema
         description: Data de cadastro declarada na referência, como STRING, sem fallback pela data de realização.
       - name: atendimentos.registros.profissionais.id_profissional
         description: ID natural do profissional apresentado na linha do atendimento, como STRING; homônimos são preservados.
@@ -394,6 +394,6 @@ models:
         description: Não Informado; interesse em atividades coletivas não equivale a interesse em curso.
         data_type: STRING
 
-      - name: atendimentos.registros.data_atendimento
+      - name: atendimentos.registros.data_atendimento_informada
         data_type: STRING
         description: Data do atendimento originada de dtentrada, vinculada por módulo, atendimento, cidadão e unidade. Vazia sem data ou correspondência; não usa data da evolução nem data de cadastro.
