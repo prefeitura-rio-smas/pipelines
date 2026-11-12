@@ -16,7 +16,7 @@ with campos as (
     from `{{ model.database }}.{{ model.schema }}.INFORMATION_SCHEMA.COLUMNS`
     where table_name = '{{ model.identifier }}'
 ), esperado as (
-    select 'email' as campo, 'STRING' as tipo
+    select 'email_filtro' as campo, 'STRING' as tipo
     union all select 'nome_unidade', 'STRING'
     union all select 'usuario.id_usuario', 'STRING'
     union all select 'usuario.idade_faixa', 'STRING'
@@ -48,7 +48,7 @@ from (
     from `{{ model.database }}.{{ model.schema }}.INFORMATION_SCHEMA.COLUMNS`
     where table_name = '{{ model.identifier }}'
 )
-where total != {{ contrato.get('campos_raiz', ['usuario', 'familias', 'projetos_sociais', 'atendimentos', 'evolucoes', 'centro_pop', 'creas', 'alta_complexidade', 'nome_unidade', 'email']) | length }}
+where total != {{ contrato.get('campos_raiz', ['usuario', 'familias', 'projetos_sociais', 'atendimentos', 'evolucoes', 'centro_pop', 'creas', 'alta_complexidade', 'nome_unidade', 'email_filtro']) | length }}
 {% endtest %}
 
 {% test pu_campos_topo(model) %}
@@ -60,7 +60,7 @@ with esperado as (
     where nullif(trim(e), '') is not null
 ), obtido as (
     select p.usuario.id_usuario, trim(e) as email
-    from {{ model }} as p, unnest(split(p.email, ',')) as e
+    from {{ model }} as p, unnest(split(p.email_filtro, ',')) as e
     where nullif(trim(e), '') is not null
 ), comparacao as (
     select id_usuario, email, 1 as delta from esperado
@@ -70,7 +70,7 @@ with esperado as (
 select id_usuario from comparacao
 group by id_usuario, email having sum(delta) != 0
 union all
-select usuario.id_usuario from {{ model }} where email is null or nome_unidade is null
+select usuario.id_usuario from {{ model }} where email_filtro is null or nome_unidade is null
 {% endtest %}
 
 {% test pu_perfis_preservados(model) %}
@@ -85,8 +85,8 @@ select p.usuario.id_usuario
 from {{ model }} p
 left join {{ ref('int_perfil_creas_simples') }} c on p.usuario.id_usuario = cast(c.id_usuario as string)
 left join ciclo a on p.usuario.id_usuario = cast(a.id_usuario as string)
-where (c.id_usuario is not null and to_json_string(parse_json(to_json_string((select as struct p.creas.* except (email, registros))))) is distinct from to_json_string(parse_json(to_json_string((select as struct c.* except(id_usuario))))))
-   or to_json_string((select as struct p.alta_complexidade.* except (email, registros))) is distinct from to_json_string(struct(
+where (c.id_usuario is not null and to_json_string(parse_json(to_json_string((select as struct p.creas.* except (email_filtro, registros))))) is distinct from to_json_string(parse_json(to_json_string((select as struct c.* except(id_usuario))))))
+   or to_json_string((select as struct p.alta_complexidade.* except (email_filtro, registros))) is distinct from to_json_string(struct(
         a.ultimo.id_ciclo as id_ciclo, a.ultimo.id_unidade as id_unidade,
         a.ultimo.nome_unidade as nome_unidade, a.ultimo.data_entrada as data_entrada,
         a.ultimo.data_saida as data_saida, a.ultimo.motivo_saida as motivo_saida,

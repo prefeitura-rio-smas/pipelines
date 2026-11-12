@@ -6,7 +6,7 @@ models:
     description: |
       Uma linha por usuario.id_usuario, com a mesma população de dim_usuarios.
       Contrato por assunto: usuario, familias, projetos_sociais, atendimentos, evolucoes, centro_pop, creas e alta_complexidade.
-      nome_unidade e email são campos STRING no topo, consolidados por usuário.
+      nome_unidade e email_filtro são campos STRING no topo, consolidados por usuário.
       O filtro de e-mail libera o histórico completo quando o endereço pertence à lista.
       Dados pessoais e perfil ficam em usuario; eventos têm quantidade, quantidade por serviço em campos diretos e registros.
       Evoluções não canceladas incluem registros sem formulário, com descrição legível.
@@ -24,7 +24,7 @@ models:
       meta:
         granularidade: [usuario.id_usuario]
         contrato: por_assunto_v15_perfis_simples
-        campos_raiz: [usuario, familias, projetos_sociais, atendimentos, evolucoes, centro_pop, creas, alta_complexidade, nome_unidade, email]
+        campos_raiz: [usuario, familias, projetos_sociais, atendimentos, evolucoes, centro_pop, creas, alta_complexidade, nome_unidade, email_filtro]
         execucao: modelo_dbt
         publicacao: desenvolvimento
         valores_ausentes: texto_vazio
@@ -176,11 +176,11 @@ models:
         description: Serviço de origem do evento (cras, creas, centro_pop ou outros), preservado do intermediário comum para futuras marts.
       - name: usuario.cidade_nascimento
         description: Cidade de nascimento do prontuário (muninasc), com espaços nas extremidades removidos; STRING vazia quando ausente.
-      - name: atendimentos.email
+      - name: atendimentos.email_filtro
         description: Resumo do assunto; autorização usa o email de cada registro.
-      - name: atendimentos.registros.email
+      - name: atendimentos.registros.email_filtro
         description: Destinatários da unidade do atendimento; sem unidade identificada fica vazio.
-      - name: evolucoes.registros.email
+      - name: evolucoes.registros.email_filtro
         description: Destinatários da unidade da evolução, independentes dos atendimentos.
       - name: centro_pop.registros
         description: Perfis por unidade, com dados e destinatários próprios.
@@ -243,7 +243,7 @@ models:
         description: E-mail da unidade no prontuário, associado pelo ID da unidade do atendimento.
       - name: atendimentos.registros.email_cas
         description: E-mail calculado a partir de apus da unidade no prontuário; CAS 01 a 10 correspondem a cas1@prefeitura.rio até cas10@prefeitura.rio. Demais valores usam gdados.smas@prefeitura.rio, como na programada.
-      - name: email
+      - name: email_filtro
         description: "Endereços de todos os atendimentos do usuário, em minúsculas, distintos e ordenados, separados por vírgula e espaço. Ausência como texto vazio. Resumo legado para compatibilidade; as consultas por assunto autorizam cada registro pelo seu próprio email."
       - name: atendimentos.registros.cadastrante
         description: Nome apresentado na referência para a pessoa que cadastrou o atendimento; não equivale ao profissional executor.

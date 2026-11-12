@@ -36,7 +36,7 @@ select
                 coalesce(u.dados.email_unidade, ''), ',', coalesce(p.email, '')
             ), r'[;\r\n]', ','), ',')) as e
         where nullif(trim(e), '') is not null
-    ), '') as email
+    ), '') as email_filtro
 from unidades as u left join planilha as p on lower(trim(u.dados.nome_unidade)) = p.nome
 left join nomes on p.nome = nomes.nome
 where

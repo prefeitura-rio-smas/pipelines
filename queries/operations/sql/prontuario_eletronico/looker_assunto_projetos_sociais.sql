@@ -64,7 +64,7 @@ select
     r.nome_projeto_social,
     r.id_projeto_social,
     r.id_unidade,
-    r.email,
+    r.email_filtro,
     r.nome_unidade,
     r.indicador_ativo,
     r.data_cadastro,
@@ -86,6 +86,6 @@ from `rj-smas-dev.abordagem.planilha_unificada` as p,
 where
     nullif(trim(@DS_USER_EMAIL), '') is not null
     and exists (
-        select 1 from unnest(split(r.email, ',')) as destinatario
+        select 1 from unnest(split(r.email_filtro, ',')) as destinatario
         where lower(trim(destinatario)) = lower(trim(@DS_USER_EMAIL))
     )

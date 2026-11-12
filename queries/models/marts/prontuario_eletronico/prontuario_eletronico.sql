@@ -10,7 +10,7 @@ cp_unidades as (
         p.id_usuario,
         p.id_unidade,
         e.nome_unidade,
-        coalesce(e.email, '') as email,
+        coalesce(e.email_filtro, '') as email_filtro,
         p.centro_pop.*
     from {{ ref('int_perfil_centro_pop_por_unidade') }} as p
     left join emails_unidades as e on p.id_unidade = e.id_unidade
@@ -21,7 +21,7 @@ creas_unidades as (
         p.id_usuario,
         p.id_unidade,
         e.nome_unidade,
-        coalesce(e.email, '') as email,
+        coalesce(e.email_filtro, '') as email_filtro,
         p.creas.*
     from {{ ref('int_perfil_creas_por_unidade') }} as p
     left join emails_unidades as e on p.id_unidade = e.id_unidade
@@ -47,7 +47,7 @@ alta_unidades as (
     select
         p.id_usuario,
         h.*,
-        coalesce(e.email, '') as email
+        coalesce(e.email_filtro, '') as email_filtro
     from {{ pu_ref('alta_complexidade') }} as p, unnest(p.historico) as h
     left join emails_unidades as e on h.id_unidade = e.id_unidade
 ),
@@ -66,7 +66,7 @@ historico_centro_pop as (
         array_agg((
             select as struct
                 h.* except (id_usuario),
-                coalesce(e.email, '') as email
+                coalesce(e.email_filtro, '') as email_filtro
         ) order by h.mes_referencia desc, h.id_unidade asc) as historico_mensal
     from {{ ref('int_centro_pop_historico_mensal') }} as h
     left join emails_unidades as e on h.id_unidade = e.id_unidade
@@ -85,7 +85,7 @@ projetos_por_usuario as (
         u.id_usuario,
         array_agg(struct(
             coalesce({{ map_nome_projeto_social('ps.id_projeto_social') }}, format('Projeto não mapeado (ID %d)', ps.id_projeto_social)) as nome_projeto_social,
-            ps.id_projeto_social, ps.id_unidade, un.nome_unidade, coalesce(em.email, '') as email, ps.indicador_ativo, ps.data_cadastro, ps.data_cancelamento
+            ps.id_projeto_social, ps.id_unidade, un.nome_unidade, coalesce(em.email_filtro, '') as email_filtro, ps.indicador_ativo, ps.data_cadastro, ps.data_cancelamento
         ) order by ps.id_projeto_social, ps.id_unidade) as projetos_sociais
     from {{ ref('int_projetos_sociais_por_unidade') }} as ps
     inner join {{ pu_ref('dim_usuarios') }} as u on ps.id_usuario = u.id_usuario
@@ -100,7 +100,7 @@ atendimentos_por_usuario as (
         array_agg((
             select as struct
                 a.*,
-                coalesce(e.email, '') as email_assunto
+                coalesce(e.email_filtro, '') as email_assunto
         )
         order by a.data_atendimento, a.hora_atendimento, a.id_atendimento_modulo) as atendimentos
     from {{ pu_ref('int_atendimentos_por_usuario') }} as p, unnest(p.atendimentos) as a
@@ -122,7 +122,7 @@ registros_evolucoes as (
         e.id_usuario,
         array_agg(struct(
             e.id_evolucao_modulo, e.origem_modulo, e.id_familia, e.id_unidade, e.nome_unidade,
-            e.tipo_servico, coalesce(em.email, '') as email, e.data_evolucao, e.data_cancelamento, e.tipo_evolucao,
+            e.tipo_servico, coalesce(em.email_filtro, '') as email_filtro, e.data_evolucao, e.data_cancelamento, e.tipo_evolucao,
             e.nome_profissional, e.nome_atividade,
             {{ texto_html_legivel('e.descricao_evolucao') }} as descricao_evolucao,
             coalesce(f.formularios, []) as formularios
@@ -399,7 +399,7 @@ select
             coalesce(cast(item1.nome_projeto_social as string), '') as nome_projeto_social,
             item1.id_projeto_social,
             item1.id_unidade,
-            item1.email,
+            item1.email_filtro,
             coalesce(item1.nome_unidade, '') as nome_unidade,
             {{ pu_flag_sim_nao("coalesce(cast(item1.indicador_ativo as string), '')") }} as indicador_ativo,
             coalesce(cast(item1.data_cadastro as string), '') as data_cadastro,
@@ -408,14 +408,14 @@ select
         order by posicao
     ) as projetos_sociais,
     struct(
-        {{ consolidar_emails('p.atendimentos', campo='email_assunto') }} as email,
+        {{ consolidar_emails('p.atendimentos', campo='email_assunto') }} as email_filtro,
         array_length(p.atendimentos) as quantidade,
         (select coalesce(sum(array_length(a.profissionais)), 0) from unnest(p.atendimentos) as a) as quantidade_linhas_bi,
         {{ pu_contagens_diretas('p.atendimentos') }},
         array(
             select as struct
                 coalesce(cast(item1.id_atendimento_modulo as string), '') as id_atendimento_modulo,
-                item1.email_assunto as email,
+                item1.email_assunto as email_filtro,
                 coalesce(item1.id_familia, '') as id_familia,
                 coalesce(cast(item1.origem_modulo as string), '') as origem_modulo,
                 coalesce(cast(item1.id_unidade as string), '') as id_unidade,
@@ -456,13 +456,13 @@ select
         ) as registros
     ) as atendimentos,
     struct(
-        {{ consolidar_emails('p.evolucoes') }} as email,
+        {{ consolidar_emails('p.evolucoes', campo='email_filtro') }} as email_filtro,
         array_length(p.evolucoes) as quantidade,
         {{ pu_contagens_diretas('p.evolucoes') }},
         array(
             select as struct
                 coalesce(cast(item1.id_evolucao_modulo as string), '') as id_evolucao_modulo,
-                item1.email,
+                item1.email_filtro,
                 coalesce(cast(item1.origem_modulo as string), '') as origem_modulo,
                 coalesce(cast(item1.id_familia as string), '') as id_familia,
                 coalesce(cast(item1.id_unidade as string), '') as id_unidade,
@@ -495,7 +495,7 @@ select
     ) as evolucoes,
     struct(
         {{ pu_cpop_perfil_publico('perfil_cp', listas_em_texto=true) }},
-        {{ consolidar_emails('coalesce(cp_reg.registros, [])') }} as email,
+        {{ consolidar_emails('coalesce(cp_reg.registros, [])', campo='email_filtro') }} as email_filtro,
         coalesce(cp_reg.registros, []) as registros,
         coalesce(hist.historico_mensal, []) as historico_mensal,
         esc.participacoes[safe_offset(array_length(esc.participacoes) - 1)].nome_atividade as ultima_participacao_atividade,
@@ -504,7 +504,7 @@ select
         esc.participacoes[safe_offset(array_length(esc.participacoes) - 1)].hora_presenca as ultima_participacao_hora
     ) as centro_pop,
     struct(
-        {{ consolidar_emails('coalesce(cr_reg.registros, [])') }} as email,
+        {{ consolidar_emails('coalesce(cr_reg.registros, [])', campo='email_filtro') }} as email_filtro,
         coalesce(cr_reg.registros, []) as registros,
         perfil_creas_simples.mse_data_ocorrencia,
         perfil_creas_simples.mse_data_registro,
@@ -609,7 +609,7 @@ select
         perfil_creas_simples.passo_a_passo_ultima_unidade
     ) as creas,
     struct(
-        {{ consolidar_emails('coalesce(al_reg.registros, [])') }} as email,
+        {{ consolidar_emails('coalesce(al_reg.registros, [])', campo='email_filtro') }} as email_filtro,
         coalesce(al_reg.registros, []) as registros,
         perfil_alta.ultimo_ciclo.id_ciclo,
         perfil_alta.ultimo_ciclo.id_unidade,
@@ -620,7 +620,7 @@ select
         perfil_alta.ultimo_ciclo.tempo_permanencia_dias
     ) as alta_complexidade,
     {{ consolidar_unidades("p.atendimentos") }} as nome_unidade,
-    {{ consolidar_emails("p.atendimentos") }} as email
+    {{ consolidar_emails("p.atendimentos") }} as email_filtro
 from base as p
 left join cp_registros as cp_reg on cast(p.id_usuario as string) = cp_reg.id_usuario
 left join creas_registros as cr_reg on cast(p.id_usuario as string) = cr_reg.id_usuario

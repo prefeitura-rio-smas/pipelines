@@ -132,7 +132,7 @@ select
     r.ultima_participacao_unidade,
     r.ultima_participacao_data,
     r.ultima_participacao_hora,
-    r.email,
+    r.email_filtro,
     array_to_string(array(select b.descricao from unnest(p.usuario.beneficio) as b), ', ') as usuario_beneficios,
     array_to_string(array(select b.descricao from unnest(p.usuario.deficiencia) as b), ', ') as usuario_deficiencias,
     array_to_string(array(select concat(b.origem, ': ', b.descricao) from unnest(p.usuario.violacoes) as b), ', ') as usuario_violacoes,
@@ -150,6 +150,6 @@ from `rj-smas-dev.abordagem.planilha_unificada` as p,
 where
     nullif(trim(@DS_USER_EMAIL), '') is not null
     and exists (
-        select 1 from unnest(split(r.email, ',')) as destinatario
+        select 1 from unnest(split(r.email_filtro, ',')) as destinatario
         where lower(trim(destinatario)) = lower(trim(@DS_USER_EMAIL))
     )

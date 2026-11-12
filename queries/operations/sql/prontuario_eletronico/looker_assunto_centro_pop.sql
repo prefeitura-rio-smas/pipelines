@@ -63,7 +63,7 @@ select
     p.usuario.idade_faixa as usuario_idade_faixa,
     r.id_unidade,
     r.nome_unidade,
-    r.email,
+    r.email_filtro,
     r.unidades_atendimento,
     r.possui_registro_pai,
     r.data_ocorrencia_pai,
@@ -140,6 +140,6 @@ from `rj-smas-dev.abordagem.planilha_unificada` as p,
 where
     nullif(trim(@DS_USER_EMAIL), '') is not null
     and exists (
-        select 1 from unnest(split(r.email, ',')) as destinatario
+        select 1 from unnest(split(r.email_filtro, ',')) as destinatario
         where lower(trim(destinatario)) = lower(trim(@DS_USER_EMAIL))
     )
