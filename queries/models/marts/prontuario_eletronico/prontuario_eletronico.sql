@@ -5,42 +5,28 @@ with emails_unidades as (
     select * from {{ ref('int_filtro_email_unidades') }}
 ),
 
-cp_unidades as (
-    select
-        p.id_usuario,
-        p.id_unidade,
-        e.nome_unidade,
-        coalesce(e.email_filtro, '') as email_filtro,
-        p.centro_pop.*
-    from {{ ref('int_perfil_centro_pop_por_unidade') }} as p
-    left join emails_unidades as e on p.id_unidade = e.id_unidade
-),
 
-creas_unidades as (
-    select
-        p.id_usuario,
-        p.id_unidade,
-        e.nome_unidade,
-        coalesce(e.email_filtro, '') as email_filtro,
-        p.creas.*
-    from {{ ref('int_perfil_creas_por_unidade') }} as p
-    left join emails_unidades as e on p.id_unidade = e.id_unidade
-),
 
 cp_registros as (
     select
-        id_usuario,
-        array_agg((select as struct r.* except (id_usuario)) order by id_unidade) as registros
-    from cp_unidades as r
-    group by id_usuario
+        p.id_usuario,
+        array_agg((select as struct p.id_unidade, e.nome_unidade,
+            coalesce(e.email_filtro, '') as email_filtro, p.centro_pop.*)
+            order by p.id_unidade) as registros
+    from {{ ref('int_perfil_centro_pop_por_unidade') }} as p
+    left join emails_unidades as e on p.id_unidade = e.id_unidade
+    group by p.id_usuario
 ),
 
 creas_registros as (
     select
-        id_usuario,
-        array_agg((select as struct r.* except (id_usuario)) order by id_unidade) as registros
-    from creas_unidades as r
-    group by id_usuario
+        p.id_usuario,
+        array_agg((select as struct p.id_unidade, e.nome_unidade,
+            coalesce(e.email_filtro, '') as email_filtro, p.creas.*)
+            order by p.id_unidade) as registros
+    from {{ ref('int_perfil_creas_por_unidade') }} as p
+    left join emails_unidades as e on p.id_unidade = e.id_unidade
+    group by p.id_usuario
 ),
 
 alta_unidades as (
@@ -73,12 +59,6 @@ historico_centro_pop as (
     group by h.id_usuario
 ),
 
-unidades as (
-    select
-        id_unidade,
-        nome_unidade
-    from {{ pu_ref('dim_unidades') }}
-),
 
 projetos_por_usuario as (
     select
@@ -89,7 +69,7 @@ projetos_por_usuario as (
         ) order by ps.id_projeto_social, ps.id_unidade) as projetos_sociais
     from {{ ref('int_projetos_sociais_por_unidade') }} as ps
     inner join {{ pu_ref('dim_usuarios') }} as u on ps.id_usuario = u.id_usuario
-    left join unidades as un on ps.id_unidade = un.id_unidade
+    left join {{ pu_ref('dim_unidades') }} as un on ps.id_unidade = un.id_unidade
     left join emails_unidades as em on ps.id_unidade = em.id_unidade
     group by u.id_usuario
 ),
@@ -628,7 +608,7 @@ left join alta_registros as al_reg on p.id_usuario = al_reg.id_usuario
 left join historico_centro_pop as hist on cast(p.id_usuario as string) = hist.id_usuario
 left join escopo_centro_pop as esc on p.id_usuario = esc.id_usuario
 left join {{ pu_ref('centro_pop') }} as perfil_cp on p.id_usuario = perfil_cp.id_usuario
-left join unidades as unidade_referencia on safe_cast(p.id_unidade_referencia as int64) = unidade_referencia.id_unidade
+left join {{ pu_ref('dim_unidades') }} as unidade_referencia on safe_cast(p.id_unidade_referencia as int64) = unidade_referencia.id_unidade
 
 left join {{ ref('int_perfil_creas_simples') }} as perfil_creas_simples on p.id_usuario = perfil_creas_simples.id_usuario
 left join perfil_alta on p.id_usuario = perfil_alta.id_usuario
