@@ -176,6 +176,18 @@ models:
         description: Serviço de origem do evento (cras, creas, centro_pop ou outros), preservado do intermediário comum para futuras marts.
       - name: usuario.cidade_nascimento
         description: Cidade de nascimento do prontuário (muninasc), com espaços nas extremidades removidos; STRING vazia quando ausente.
+      - name: atendimentos.email
+        description: Resumo do assunto; autorização usa o email de cada registro.
+      - name: atendimentos.registros.email
+        description: Destinatários da unidade do atendimento; sem unidade identificada fica vazio.
+      - name: evolucoes.registros.email
+        description: Destinatários da unidade da evolução, independentes dos atendimentos.
+      - name: centro_pop.registros
+        description: Perfis por unidade, com dados e destinatários próprios.
+      - name: creas.registros
+        description: Perfis CREAS selecionados e autorizados dentro de cada unidade.
+      - name: alta_complexidade.registros
+        description: Ciclos com unidade e destinatários próprios.
       - name: centro_pop.historico_mensal
         description: Histórico por competência e unidade desde novembro/2026; inclui prévia corrente e última versão dos meses fechados. Cada entrada tem perfil escalar e contadores mensais. Consumir no Looker pela consulta autorizada por unidade.
       - name: atendimentos.registros.classificacao_atendimento
@@ -232,7 +244,7 @@ models:
       - name: atendimentos.registros.email_cas
         description: E-mail calculado a partir de apus da unidade no prontuário; CAS 01 a 10 correspondem a cas1@prefeitura.rio até cas10@prefeitura.rio. Demais valores usam gdados.smas@prefeitura.rio, como na programada.
       - name: email
-        description: "Endereços de todos os atendimentos do usuário, em minúsculas, distintos e ordenados, separados por vírgula e espaço. Ausência como texto vazio. Autoriza acesso ao histórico completo do usuário."
+        description: "Endereços de todos os atendimentos do usuário, em minúsculas, distintos e ordenados, separados por vírgula e espaço. Ausência como texto vazio. Resumo legado para compatibilidade; as consultas por assunto autorizam cada registro pelo seu próprio email."
       - name: atendimentos.registros.cadastrante
         description: Nome apresentado na referência para a pessoa que cadastrou o atendimento; não equivale ao profissional executor.
       - name: atendimentos.registros.data_atendimento_sistema

@@ -1,0 +1,4 @@
+version: 2
+models:
+  - name: int_projetos_sociais_por_unidade
+    description: Vínculos das famílias ativas por cidadão/projeto/unidade; deduplicação dentro da unidade para não apagar vínculo de outra unidade.

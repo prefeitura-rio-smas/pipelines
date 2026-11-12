@@ -35,12 +35,12 @@ left join campos as c on e.campo = c.field_path
 where c.field_path is null or not starts_with(c.data_type, e.tipo)
 union all
 select field_path as falha from campos
-where field_path in ('escopos', 'atendimentos.registros.email', 'atendimentos.familias_atendidas')
+where field_path in ('escopos', 'atendimentos.familias_atendidas')
 union all
 select field_path as falha from campos
 where (starts_with(field_path, 'centro_pop.') or starts_with(field_path, 'creas.') or starts_with(field_path, 'alta_complexidade.'))
   and (starts_with(data_type, 'STRUCT<') or starts_with(data_type, 'ARRAY<'))
-  and field_path != 'centro_pop.historico_mensal'
+  and field_path not in ('centro_pop.historico_mensal', 'centro_pop.registros', 'creas.registros', 'alta_complexidade.registros')
 union all
 select 'campos_raiz' as falha
 from (
@@ -85,8 +85,8 @@ select p.usuario.id_usuario
 from {{ model }} p
 left join {{ ref('int_perfil_creas_simples') }} c on p.usuario.id_usuario = cast(c.id_usuario as string)
 left join ciclo a on p.usuario.id_usuario = cast(a.id_usuario as string)
-where (c.id_usuario is not null and to_json_string(parse_json(to_json_string(p.creas))) is distinct from to_json_string(parse_json(to_json_string((select as struct c.* except(id_usuario))))))
-   or to_json_string(p.alta_complexidade) is distinct from to_json_string(struct(
+where (c.id_usuario is not null and to_json_string(parse_json(to_json_string((select as struct p.creas.* except (email, registros))))) is distinct from to_json_string(parse_json(to_json_string((select as struct c.* except(id_usuario))))))
+   or to_json_string((select as struct p.alta_complexidade.* except (email, registros))) is distinct from to_json_string(struct(
         a.ultimo.id_ciclo as id_ciclo, a.ultimo.id_unidade as id_unidade,
         a.ultimo.nome_unidade as nome_unidade, a.ultimo.data_entrada as data_entrada,
         a.ultimo.data_saida as data_saida, a.ultimo.motivo_saida as motivo_saida,
