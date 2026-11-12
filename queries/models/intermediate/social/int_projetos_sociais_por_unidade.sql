@@ -1,6 +1,11 @@
 {{ config(enabled=target.name != 'prod', materialized='ephemeral', tags=['planilha_unificada']) }}
 select
-    p.* except (id_familia),
+    p.id_projeto_social,
+    p.id_unidade,
+    p.id_login_cadastro,
+    p.data_cadastro,
+    p.data_cancelamento,
+    p.indicador_ativo,
     m.id_paciente as id_usuario
 from {{ ref('raw_membros_familia') }} as m
 inner join {{ ref('raw_familias_projetos_sociais') }} as p on m.id_familia = p.id_familia
