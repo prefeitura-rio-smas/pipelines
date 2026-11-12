@@ -5,3 +5,5 @@ models:
     columns:
       - name: id_usuario
         data_tests: [unique, not_null]
+      - name: registros
+        description: "Perfis por unidade com autorização, ordenados por id_unidade; histórico e participações originais preservados."

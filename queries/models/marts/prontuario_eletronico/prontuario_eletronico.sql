@@ -17,34 +17,6 @@ with cp_registros as (
     group by p.id_usuario
 ),
 
-creas_registros as (
-    select
-        p.id_usuario,
-        array_agg((
-            select as struct
-                p.id_unidade,
-                e.nome_unidade,
-                coalesce(e.email_filtro, '') as email_filtro,
-                p.creas.*
-        )
-        order by p.id_unidade) as registros
-    from {{ ref('int_perfil_creas_por_unidade') }} as p
-    left join {{ ref('int_filtro_email_unidades') }} as e on p.id_unidade = e.id_unidade
-    group by p.id_usuario
-),
-
-alta_registros as (
-    select
-        p.id_usuario,
-        array_agg((
-            select as struct
-                h.*,
-                coalesce(e.email_filtro, '') as email_filtro
-        ) order by h.data_entrada, h.id_ciclo) as registros
-    from {{ pu_ref('alta_complexidade') }} as p, unnest(p.historico) as h
-    left join {{ ref('int_filtro_email_unidades') }} as e on h.id_unidade = e.id_unidade
-    group by p.id_usuario
-),
 
 historico_centro_pop as (
     select
@@ -126,20 +98,6 @@ escopo_centro_pop as (
         ), null) ignore nulls order by s.data_presenca, s.hora_presenca, s.id_atividade, s.id_registro) as participacoes
     from {{ pu_ref('int_registros_centro_pop') }} as s
     group by s.id_usuario
-),
-
-perfil_alta as (
-    select
-        id_usuario,
-        array(
-            select as struct ciclo.*
-            from unnest(historico) as ciclo
-            order by
-                if(ciclo.data_saida is null, 0, 1), ciclo.data_entrada desc nulls last,
-                ciclo.id_ciclo desc, to_json_string(ciclo) desc
-            limit 1
-        )[safe_offset(0)] as ultimo_ciclo
-    from {{ pu_ref('alta_complexidade') }}
 )
 
 select
@@ -474,8 +432,8 @@ select
         perfil_creas_simples.passo_a_passo_ultima_unidade
     ) as creas,
     struct(
-        {{ consolidar_emails('coalesce(al_reg.registros, [])', campo='email_filtro') }} as email_filtro,
-        coalesce(al_reg.registros, []) as registros,
+        {{ consolidar_emails('coalesce(perfil_alta.registros, [])', campo='email_filtro') }} as email_filtro,
+        coalesce(perfil_alta.registros, []) as registros,
         perfil_alta.ultimo_ciclo.id_ciclo,
         perfil_alta.ultimo_ciclo.id_unidade,
         perfil_alta.ultimo_ciclo.nome_unidade,
@@ -494,12 +452,11 @@ left join {{ pu_ref('int_usuarios_familias') }} as f on p.id_usuario = f.id_usua
 left join atendimentos_por_usuario as a on p.id_usuario = a.id_usuario
 left join registros_evolucoes as e on p.id_usuario = e.id_usuario
 left join cp_registros as cp_reg on cast(p.id_usuario as string) = cp_reg.id_usuario
-left join creas_registros as cr_reg on cast(p.id_usuario as string) = cr_reg.id_usuario
-left join alta_registros as al_reg on p.id_usuario = al_reg.id_usuario
+left join {{ pu_ref('creas') }} as cr_reg on cast(p.id_usuario as string) = cr_reg.id_usuario
 left join historico_centro_pop as hist on cast(p.id_usuario as string) = hist.id_usuario
 left join escopo_centro_pop as esc on p.id_usuario = esc.id_usuario
 left join {{ pu_ref('centro_pop') }} as perfil_cp on p.id_usuario = perfil_cp.id_usuario
 left join {{ pu_ref('dim_unidades') }} as unidade_referencia on safe_cast(p.id_unidade_referencia as int64) = unidade_referencia.id_unidade
 
 left join {{ ref('int_perfil_creas_simples') }} as perfil_creas_simples on p.id_usuario = perfil_creas_simples.id_usuario
-left join perfil_alta on p.id_usuario = perfil_alta.id_usuario
+left join {{ pu_ref('alta_complexidade') }} as perfil_alta on p.id_usuario = perfil_alta.id_usuario
