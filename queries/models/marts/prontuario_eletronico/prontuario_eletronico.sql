@@ -4,9 +4,14 @@
 with cp_registros as (
     select
         p.id_usuario,
-        array_agg((select as struct p.id_unidade, e.nome_unidade,
-            coalesce(e.email_filtro, '') as email_filtro, p.centro_pop.*)
-            order by p.id_unidade) as registros
+        array_agg((
+            select as struct
+                p.id_unidade,
+                e.nome_unidade,
+                coalesce(e.email_filtro, '') as email_filtro,
+                p.centro_pop.*
+        )
+        order by p.id_unidade) as registros
     from {{ ref('int_perfil_centro_pop_por_unidade') }} as p
     left join {{ ref('int_filtro_email_unidades') }} as e on p.id_unidade = e.id_unidade
     group by p.id_usuario
@@ -15,9 +20,14 @@ with cp_registros as (
 creas_registros as (
     select
         p.id_usuario,
-        array_agg((select as struct p.id_unidade, e.nome_unidade,
-            coalesce(e.email_filtro, '') as email_filtro, p.creas.*)
-            order by p.id_unidade) as registros
+        array_agg((
+            select as struct
+                p.id_unidade,
+                e.nome_unidade,
+                coalesce(e.email_filtro, '') as email_filtro,
+                p.creas.*
+        )
+        order by p.id_unidade) as registros
     from {{ ref('int_perfil_creas_por_unidade') }} as p
     left join {{ ref('int_filtro_email_unidades') }} as e on p.id_unidade = e.id_unidade
     group by p.id_usuario
@@ -27,7 +37,9 @@ alta_registros as (
     select
         p.id_usuario,
         array_agg((
-            select as struct h.*, coalesce(e.email_filtro, '') as email_filtro
+            select as struct
+                h.*,
+                coalesce(e.email_filtro, '') as email_filtro
         ) order by h.data_entrada, h.id_ciclo) as registros
     from {{ pu_ref('alta_complexidade') }} as p, unnest(p.historico) as h
     left join {{ ref('int_filtro_email_unidades') }} as e on h.id_unidade = e.id_unidade
