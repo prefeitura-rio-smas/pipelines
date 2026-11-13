@@ -40,4 +40,4 @@ select
     cbo_unico_rank,
     atendimento_unico_rank,
     projetos_sociais
-from {{ pu_programada() }}
+from {{ source('acolherio_referencia', 'atendimentos_programada') }}

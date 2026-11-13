@@ -6,7 +6,7 @@ with eventos as (
         id_paciente as id_usuario,
         id_unidade,
         data_atendimento
-    from {{ pu_ref('raw_atendimentos_usuarios') }}
+    from {{ ref('raw_atendimentos_usuarios') }}
     union all
     select
         modulo,
@@ -14,7 +14,7 @@ with eventos as (
         id_paciente as id_usuario,
         id_unidade,
         data_atendimento
-    from {{ pu_ref('raw_atendimentos_familias') }}
+    from {{ ref('raw_atendimentos_familias') }}
 )
 
 select

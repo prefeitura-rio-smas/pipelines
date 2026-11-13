@@ -40,8 +40,8 @@ projetos_por_usuario as (
             ps.id_projeto_social, ps.id_unidade, un.nome_unidade, coalesce(em.email_filtro, '') as email_filtro, ps.indicador_ativo, ps.data_cadastro, ps.data_cancelamento
         ) order by ps.id_projeto_social, ps.id_unidade) as projetos_sociais
     from {{ ref('int_projetos_sociais_por_unidade') }} as ps
-    inner join {{ pu_ref('dim_usuarios') }} as u on ps.id_usuario = u.id_usuario
-    left join {{ pu_ref('dim_unidades') }} as un on ps.id_unidade = un.id_unidade
+    inner join {{ ref('dim_usuarios') }} as u on ps.id_usuario = u.id_usuario
+    left join {{ ref('dim_unidades') }} as un on ps.id_unidade = un.id_unidade
     left join {{ ref('int_filtro_email_unidades') }} as em on ps.id_unidade = em.id_unidade
     group by u.id_usuario
 ),
@@ -55,7 +55,7 @@ atendimentos_por_usuario as (
                 coalesce(e.email_filtro, '') as email_assunto
         )
         order by a.data_atendimento, a.hora_atendimento, a.id_atendimento_modulo) as atendimentos
-    from {{ pu_ref('int_atendimentos_por_usuario') }} as p, unnest(p.atendimentos) as a
+    from {{ ref('int_atendimentos_por_usuario') }} as p, unnest(p.atendimentos) as a
     left join {{ ref('int_filtro_email_unidades') }} as e on a.id_unidade = e.id_unidade
     group by p.id_usuario
 ),
@@ -65,7 +65,7 @@ formularios_por_evolucao as (
         p.id_usuario,
         f.id_evolucao_modulo,
         array_agg(struct(f.titulo_formulario, f.observacoes, f.campos, f.data_ocorrencia, f.origem_data_ocorrencia, f.situacao_data_ocorrencia) order by posicao) as formularios
-    from {{ pu_ref('int_formularios_por_usuario') }} as p, unnest(p.formularios) as f with offset as posicao
+    from {{ ref('int_formularios_por_usuario') }} as p, unnest(p.formularios) as f with offset as posicao
     group by p.id_usuario, f.id_evolucao_modulo
 ),
 
@@ -79,7 +79,7 @@ registros_evolucoes as (
             {{ texto_html_legivel('e.descricao_evolucao') }} as descricao_evolucao,
             coalesce(f.formularios, []) as formularios
         ) order by e.data_evolucao, e.id_evolucao_modulo) as evolucoes
-    from {{ pu_ref('int_evolucoes_por_usuario') }} as e
+    from {{ ref('int_evolucoes_por_usuario') }} as e
     left join {{ ref('int_filtro_email_unidades') }} as em on e.id_unidade = em.id_unidade
     left join formularios_por_evolucao as f on e.id_usuario = f.id_usuario and e.id_evolucao_modulo = f.id_evolucao_modulo
     group by e.id_usuario
@@ -96,7 +96,7 @@ escopo_centro_pop as (
             coalesce(cast(s.data_presenca as string), '') as data_presenca,
             coalesce(s.hora_presenca, '') as hora_presenca
         ), null) ignore nulls order by s.data_presenca, s.hora_presenca, s.id_atividade, s.id_registro) as participacoes
-    from {{ pu_ref('int_registros_centro_pop') }} as s
+    from {{ ref('int_registros_centro_pop') }} as s
     group by s.id_usuario
 )
 
@@ -447,22 +447,22 @@ select
     ) as alta_complexidade,
     {{ consolidar_unidades("coalesce(a.atendimentos, [])") }} as nome_unidade,
     {{ consolidar_emails("coalesce(a.atendimentos, [])") }} as email_filtro
-from {{ pu_ref('dim_usuarios') }} as p
+from {{ ref('dim_usuarios') }} as p
 left join projetos_por_usuario as proj on p.id_usuario = proj.id_usuario
-left join {{ pu_ref('int_usuarios_enderecos') }} as end_bi on p.id_usuario = end_bi.id_usuario
-left join {{ pu_ref('int_usuarios_documentos_cadunico') }} as d on p.id_usuario = d.id_usuario
-left join {{ pu_ref('int_usuarios_familias') }} as f on p.id_usuario = f.id_usuario
+left join {{ ref('int_usuarios_enderecos') }} as end_bi on p.id_usuario = end_bi.id_usuario
+left join {{ ref('int_usuarios_documentos_cadunico') }} as d on p.id_usuario = d.id_usuario
+left join {{ ref('int_usuarios_familias') }} as f on p.id_usuario = f.id_usuario
 left join atendimentos_por_usuario as a on p.id_usuario = a.id_usuario
 left join registros_evolucoes as e on p.id_usuario = e.id_usuario
 left join cp_registros as cp_reg on cast(p.id_usuario as string) = cp_reg.id_usuario
-left join {{ pu_ref('creas') }} as cr_reg on p.id_usuario = cr_reg.id_usuario
+left join {{ ref('creas') }} as cr_reg on p.id_usuario = cr_reg.id_usuario
 left join historico_centro_pop as hist on cast(p.id_usuario as string) = hist.id_usuario
 left join escopo_centro_pop as esc on p.id_usuario = esc.id_usuario
-left join {{ pu_ref('centro_pop') }} as perfil_cp on p.id_usuario = perfil_cp.id_usuario
-left join {{ pu_ref('dim_unidades') }} as unidade_referencia on safe_cast(p.id_unidade_referencia as int64) = unidade_referencia.id_unidade
+left join {{ ref('centro_pop') }} as perfil_cp on p.id_usuario = perfil_cp.id_usuario
+left join {{ ref('dim_unidades') }} as unidade_referencia on safe_cast(p.id_unidade_referencia as int64) = unidade_referencia.id_unidade
 
 left join {{ ref('int_perfil_creas_simples') }} as perfil_creas_simples on p.id_usuario = perfil_creas_simples.id_usuario
-left join {{ pu_ref('alta_complexidade') }} as perfil_alta on p.id_usuario = perfil_alta.id_usuario
+left join {{ ref('alta_complexidade') }} as perfil_alta on p.id_usuario = perfil_alta.id_usuario
 
 left join {{ ref('raw_usuarios') }} as cadastro on p.id_usuario = cadastro.id_paciente
 left join {{ ref('raw_usuarios_detalhes') }} as detalhes_cadastro on p.id_usuario = detalhes_cadastro.id_paciente

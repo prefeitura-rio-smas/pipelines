@@ -53,6 +53,3 @@ models:
   - name: situacao_data_ocorrencia_desligamento
     description: 'Validação da data informada: valida, ausente, invalida, conflitante
       ou nao_mapeado.'
-  data_tests:
-  - pu_cpop_perfil
-  - pu_cpop_sem_structs

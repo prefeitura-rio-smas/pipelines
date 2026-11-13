@@ -3,7 +3,7 @@ with formularios as (
     select
         p.id_usuario,
         array_agg(f order by f.data_evolucao, f.id_evolucao_modulo) as historico
-    from {{ pu_ref('int_formularios_por_usuario') }} as p, unnest(p.formularios) as f
+    from {{ ref('int_formularios_por_usuario') }} as p, unnest(p.formularios) as f
     where regexp_contains(f.titulo_formulario, r'(?i)CREAS.*(PETI|Adolescente em trabalho|MSE)')
     group by p.id_usuario
 ),
@@ -17,8 +17,8 @@ participacoes as (
                 p.data_presenca, p.hora_presenca
             ) order by p.data_presenca, p.hora_presenca, p.id_atividade
         ) as participacoes
-    from {{ pu_ref('fct_presencas_usuarios') }} as p
-    inner join {{ pu_ref('raw_atividades_grupo') }} as a on p.id_atividade = a.id_atividade
+    from {{ ref('fct_presencas_usuarios') }} as p
+    inner join {{ ref('raw_atividades_grupo') }} as a on p.id_atividade = a.id_atividade
     where regexp_contains(a.nome_atividade, r'(?i)passo[ -]+a[ -]+passo')
     group by p.id_usuario
 )

@@ -48,19 +48,19 @@
 {% macro pu_cpop_registros_sql() %}
 with formularios as (
     select p.id_usuario, f.*, posicao
-    from {{ pu_ref('int_formularios_por_usuario') }} p, unnest(p.formularios) f with offset posicao
+    from {{ ref('int_formularios_por_usuario') }} p, unnest(p.formularios) f with offset posicao
 ),
 presencas as (
     select distinct p.id_usuario, p.id_unidade, p.id_atividade,
         safe_cast(p.data_presenca as date) data_presenca,
         {{ normalizar_hora_atendimento('cast(p.hora_presenca as string)') }} hora_presenca, a.nome_atividade
-    from {{ pu_ref('fct_presencas_usuarios') }} p
-    join {{ pu_ref('dim_unidades') }} u on p.id_unidade = u.id_unidade and u.tipo_unidade = 'Centro POP'
-    join {{ pu_ref('dim_usuarios') }} c on p.id_usuario = c.id_usuario
-    left join {{ pu_ref('raw_atividades_grupo') }} a on p.id_atividade = a.id_atividade
+    from {{ ref('fct_presencas_usuarios') }} p
+    join {{ ref('dim_unidades') }} u on p.id_unidade = u.id_unidade and u.tipo_unidade = 'Centro POP'
+    join {{ ref('dim_usuarios') }} c on p.id_usuario = c.id_usuario
+    left join {{ ref('raw_atividades_grupo') }} a on p.id_atividade = a.id_atividade
 ),
 publico as (
-    select p.id_usuario from {{ pu_ref('int_atendimentos_por_usuario') }} p, unnest(p.atendimentos) a where a.tipo_servico = 'centro_pop'
+    select p.id_usuario from {{ ref('int_atendimentos_por_usuario') }} p, unnest(p.atendimentos) a where a.tipo_servico = 'centro_pop'
     union distinct select id_usuario from formularios where titulo_formulario in ('Centro POP - Plano de Atendimento Individual (PAI)', 'Centro POP - Atendimento Social', 'Centro POP - Desligamento PAI')
     union distinct select id_usuario from presencas
 ),
@@ -83,7 +83,7 @@ valores as (
         array(select distinct as struct regexp_replace(trim(c.label), r':\s*$', '') label, {{ pu_cpop_texto('c.valor') }} valor
             from unnest(f.campos) c where starts_with(trim(c.label), 'Encaminhamentos') and {{ pu_cpop_texto('c.valor') }} is not null order by label, valor) encaminhamentos_extraidos
     from formularios f join publico p on f.id_usuario = p.id_usuario
-    join {{ pu_ref('dim_usuarios') }} u on f.id_usuario = u.id_usuario
+    join {{ ref('dim_usuarios') }} u on f.id_usuario = u.id_usuario
     where f.data_cancelamento is null and f.titulo_formulario in (
         'Centro POP - Plano de Atendimento Individual (PAI)', 'Centro POP - Atendimento Social', 'Centro POP - Desligamento PAI', 'Situação de Saúde'
     )
@@ -149,10 +149,10 @@ questionarios as (
 {% if campo == 'motivo_principal_permanencia_rua' %}{{ pu_cpop_texto('r.resposta') }}{% else %}cast(null as {{ tipo }}){% endif %} as {{ campo }},
         {% endfor %}
         0 conflitos
-    from {{ pu_ref('raw_evolucoes_questionario') }} q
-    join {{ pu_ref('raw_evolucoes_questionario_lista') }} r on q.id_evolucao = r.id_evolucao and q.id_template = r.id_template and q.id_modulo is not distinct from r.id_modulo
+    from {{ ref('raw_evolucoes_questionario') }} q
+    join {{ ref('raw_evolucoes_questionario_lista') }} r on q.id_evolucao = r.id_evolucao and q.id_template = r.id_template and q.id_modulo is not distinct from r.id_modulo
     join publico p on q.id_prontuario = p.id_usuario
-    join {{ pu_ref('dim_usuarios') }} u on q.id_prontuario = u.id_usuario
+    join {{ ref('dim_usuarios') }} u on q.id_prontuario = u.id_usuario
     where q.id_template = 3 and r.id_questao = 18 and {{ pu_cpop_texto('r.resposta') }} is not null
 ),
 atividades as (
@@ -172,25 +172,10 @@ registros as (
 )
 select distinct to_hex(sha256(to_json_string(struct(r.id_usuario, r.origem, r.chave_origem)))) id_registro,
     r.* except(chave_origem), u.nome_unidade
-from registros r left join {{ pu_ref('dim_unidades') }} u on r.id_unidade = u.id_unidade
+from registros r left join {{ ref('dim_unidades') }} u on r.id_unidade = u.id_unidade
 {% endmacro %}
 
-{% macro pu_cpop_historico_publico(alias) %}
-{{ alias }}.origem, {{ alias }}.tipo_registro, {{ alias }}.abrangencia,
-    coalesce(cast({{ alias }}.data_ocorrencia as string), '') as data_ocorrencia,
-    {{ alias }}.origem_data_ocorrencia, {{ alias }}.situacao_data_ocorrencia,
-    coalesce(cast({{ alias }}.id_unidade as string), '') as id_unidade,
-    coalesce({{ alias }}.id_evolucao_modulo, '') as id_evolucao_modulo,
-    coalesce({{ alias }}.titulo_formulario, '') as titulo_formulario,
-    coalesce({{ alias }}.nome_unidade, '') as nome_unidade,
-    coalesce(cast({{ alias }}.data_registro as string), '') as data_registro,
-    coalesce(cast({{ alias }}.data_resposta as string), '') as data_resposta,
-    {% for campo, tipo in pu_cpop_campos().items() if campo not in ['id_atividade', 'nome_atividade', 'data_presenca', 'hora_presenca'] %}
-{% if campo == 'demandas' %}coalesce({{ alias }}.demandas, [])
-        {% elif campo == 'encaminhamentos' %}array(select as struct coalesce(e.label, '') label, coalesce(e.valor, '') valor from unnest({{ alias }}.encaminhamentos) e order by label, valor)
-        {% else %}coalesce(cast({{ alias }}.{{ campo }} as string), ''){% endif %} as {{ campo }}{% if not loop.last %},{% endif %}
-{% endfor %}
-{% endmacro %}
+
 
 {% macro pu_cpop_perfil_assuntos() %}
     {{ return({

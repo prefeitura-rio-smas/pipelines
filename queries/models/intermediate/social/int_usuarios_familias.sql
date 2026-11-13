@@ -10,8 +10,8 @@ with membros as (
         m.data_saida,
         m.parentesco_responsavel,
         ms.descricao_motivo_saida as motivo_saida
-    from {{ pu_ref('raw_membros_familia') }} as m
-    left join {{ pu_ref('raw_familias_motivos_saida') }} as ms on m.id_motivo_saida = ms.id_motivo_saida
+    from {{ ref('raw_membros_familia') }} as m
+    left join {{ ref('raw_familias_motivos_saida') }} as ms on m.id_motivo_saida = ms.id_motivo_saida
     where m.id_paciente is not null and m.id_familia is not null
 ),
 
@@ -33,7 +33,7 @@ vinculos as (
 ),
 
 familias as (
-    select distinct * from {{ pu_ref('raw_familias') }}
+    select distinct * from {{ ref('raw_familias') }}
 ),
 
 -- Inclui responsáveis sem registro na tabela de membros.
@@ -93,7 +93,7 @@ composicao_familiar as (
             m.parentesco_responsavel
         ) order by coalesce(u.nome, ''), m.id_usuario) as membros
     from membros_atuais_unicos as m
-    left join {{ pu_ref('dim_usuarios') }} as u on m.id_usuario = u.id_usuario
+    left join {{ ref('dim_usuarios') }} as u on m.id_usuario = u.id_usuario
     group by m.id_familia
 ),
 
@@ -109,9 +109,9 @@ servicos as (
             h.data_cancelamento,
             h.nome_servico_socioassistencial as nome_servico
         ) order by h.data_cadastro, h.id_servico_assistencial, h.id_unidade, h.data_cancelamento, h.id_profissional) as servicos
-    from {{ pu_ref('int_servicos_agregados') }} as s,
+    from {{ ref('int_servicos_agregados') }} as s,
         unnest(s.servicos_historico) as h
-    left join {{ pu_ref('dim_unidades') }} as u on h.id_unidade = u.id_unidade
+    left join {{ ref('dim_unidades') }} as u on h.id_unidade = u.id_unidade
     group by s.id_familia
 )
 
@@ -130,7 +130,7 @@ select
     ) order by uf.id_familia) as familias
 from usuarios_familias as uf
 left join familias as f on uf.id_familia = f.id_familia
-left join {{ pu_ref('dim_usuarios') }} as r on f.id_usuario_responsavel = r.id_usuario
+left join {{ ref('dim_usuarios') }} as r on f.id_usuario_responsavel = r.id_usuario
 left join composicao_familiar as cf on uf.id_familia = cf.id_familia
 left join vinculos as v on uf.id_usuario = v.id_usuario and uf.id_familia = v.id_familia
 left join servicos as s on uf.id_familia = s.id_familia

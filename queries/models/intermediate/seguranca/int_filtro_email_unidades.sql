@@ -7,14 +7,14 @@ with unidades as (
             error('Unidade com permissões conflitantes'),
             array_agg(struct(nome_unidade, cas, email_unidade) limit 1)[offset(0)]
         ) as dados
-    from {{ pu_ref('raw_unidades') }} group by id_unidade
+    from {{ ref('raw_unidades') }} group by id_unidade
 ),
 
 planilha as (
     select
         lower(trim(unidade_atendimento)) as nome,
         if(count(distinct coalesce(email, '')) > 1, error('Permissões conflitantes na planilha'), max(email)) as email
-    from {{ pu_filtro_email() }} group by nome
+    from {{ source('dashboard_acolherio', 'filtro_email_dev') }} group by nome
 ),
 
 nomes as (

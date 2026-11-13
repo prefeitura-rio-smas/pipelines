@@ -7,7 +7,7 @@ with linhas_preparadas as (
             id_unidade,
             id_tipo_atendimento,
             flag_cancelado
-        from {{ pu_ref('raw_atendimentos_usuarios') }}
+        from {{ ref('raw_atendimentos_usuarios') }}
         union all
         select
             'f' as modulo,
@@ -15,7 +15,7 @@ with linhas_preparadas as (
             id_unidade,
             id_tipo_atendimento,
             flag_cancelado
-        from {{ pu_ref('raw_atendimentos_familias') }}
+        from {{ ref('raw_atendimentos_familias') }}
     ),
 
     contextos as (
@@ -36,8 +36,8 @@ with linhas_preparadas as (
             p.id_profissional,
             c.descricao,
             if(count(distinct p.codigo_cbo) = 1, max(p.codigo_cbo), null) as codigo_cbo
-        from {{ pu_ref('raw_profissionais_ocupacoes') }} as p
-        inner join {{ pu_ref('raw_cbo') }} as c on p.codigo_cbo = c.codigo_cbo
+        from {{ ref('raw_profissionais_ocupacoes') }} as p
+        inner join {{ ref('raw_cbo') }} as c on p.codigo_cbo = c.codigo_cbo
         group by p.id_profissional, c.descricao
     ),
 
@@ -54,7 +54,7 @@ with linhas_preparadas as (
     ),
 
     enriquecidos as (
-        {{ aplicar_filtro_email('selecionados', pu_ref('raw_unidades'), pu_filtro_email()) }}
+        {{ aplicar_filtro_email('selecionados', ref('raw_unidades'), source('dashboard_acolherio', 'filtro_email_dev')) }}
     ),
 
     datas as (

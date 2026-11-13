@@ -1,7 +1,7 @@
 {{ config(materialized='ephemeral', enabled=target.name != 'prod', tags=['planilha_unificada']) }}
 with registros_escopo as (
     select r.* replace (concat(cast(r.id_usuario as string), ':', cast(r.id_unidade as string)) as id_usuario)
-    from {{ pu_ref('int_registros_centro_pop') }} as r
+    from {{ ref('int_registros_centro_pop') }} as r
     where r.id_unidade is not null
 ),
 

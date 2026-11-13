@@ -217,16 +217,16 @@ select
 from {{ fonte }} as p
 left join respostas on p.id_usuario = respostas.id_usuario
 left join ultimos as r_mse on p.id_usuario = r_mse.id_usuario and r_mse.assunto = 'mse'
-left join {{ pu_ref('dim_unidades') }} as u_mse on r_mse.id_unidade = u_mse.id_unidade
+left join {{ ref('dim_unidades') }} as u_mse on r_mse.id_unidade = u_mse.id_unidade
 left join ultimos as r_mse_retorno on p.id_usuario = r_mse_retorno.id_usuario and r_mse_retorno.assunto = 'mse_retorno'
-left join {{ pu_ref('dim_unidades') }} as u_mse_retorno on r_mse_retorno.id_unidade = u_mse_retorno.id_unidade
+left join {{ ref('dim_unidades') }} as u_mse_retorno on r_mse_retorno.id_unidade = u_mse_retorno.id_unidade
 left join ultimos as r_peti on p.id_usuario = r_peti.id_usuario and r_peti.assunto = 'peti'
-left join {{ pu_ref('dim_unidades') }} as u_peti on r_peti.id_unidade = u_peti.id_unidade
+left join {{ ref('dim_unidades') }} as u_peti on r_peti.id_unidade = u_peti.id_unidade
 left join ultimos as r_scfv on p.id_usuario = r_scfv.id_usuario and r_scfv.assunto = 'scfv'
-left join {{ pu_ref('dim_unidades') }} as u_scfv on r_scfv.id_unidade = u_scfv.id_unidade
+left join {{ ref('dim_unidades') }} as u_scfv on r_scfv.id_unidade = u_scfv.id_unidade
 left join ultimos as r_peti_desligamento on p.id_usuario = r_peti_desligamento.id_usuario and r_peti_desligamento.assunto = 'peti_desligamento'
-left join {{ pu_ref('dim_unidades') }} as u_peti_desligamento on r_peti_desligamento.id_unidade = u_peti_desligamento.id_unidade
+left join {{ ref('dim_unidades') }} as u_peti_desligamento on r_peti_desligamento.id_unidade = u_peti_desligamento.id_unidade
 
-left join {{ pu_ref('dim_unidades') }} as u_passo on p.participacoes[safe_offset(array_length(p.participacoes) - 1)].id_unidade = u_passo.id_unidade
+left join {{ ref('dim_unidades') }} as u_passo on p.participacoes[safe_offset(array_length(p.participacoes) - 1)].id_unidade = u_passo.id_unidade
 
 {% endmacro %}

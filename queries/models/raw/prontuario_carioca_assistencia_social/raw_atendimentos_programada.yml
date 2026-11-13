@@ -3,7 +3,6 @@ models:
   - name: raw_atendimentos_programada
     description: Fotografia materializada da programada original, preservando campos e multiplicidade. Executar após a conclusão da programada.
     data_tests:
-      - pu_selecao_bi_paridade
       - dbt_utils.unique_combination_of_columns:
           arguments:
             combination_of_columns: [seq_atendimento, modulo, id_usuario, profissional_id]

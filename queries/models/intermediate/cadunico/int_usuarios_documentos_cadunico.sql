@@ -16,8 +16,8 @@ with documentos as (
             nullif(trim(d.id_termi_matricula_certidao), ''),
             null
         ) as numero_certidao_nascimento
-    from {{ pu_ref('raw_documento_pessoa') }} as d
-    left join {{ pu_ref('raw_identificacao_membro') }} as m on d.id_membro_familia = m.id_membro_familia
+    from {{ ref('raw_documento_pessoa') }} as d
+    left join {{ ref('raw_identificacao_membro') }} as m on d.id_membro_familia = m.id_membro_familia
 ),
 
 documentos_por_cpf as (
@@ -42,7 +42,7 @@ controle_atual as (
         safe_cast(trim(id_familia) as int64) as id_familia_cadunico,
         safe_cast(data_atualizacao as date) as data_atualizacao,
         safe_cast(data_limite_catastro_atual as date) as data_limite_cadastro_atual
-    from {{ pu_ref('raw_identificacao_controle') }}
+    from {{ ref('raw_identificacao_controle') }}
     where safe_cast(trim(id_familia) as int64) is not null
     qualify row_number() over (
         partition by safe_cast(trim(id_familia) as int64)
@@ -67,7 +67,7 @@ select
         d.flag_rg_ambiguo,
         d.flag_certidao_ambigua
     ) as documentos_cadunico
-from {{ pu_ref('dim_usuarios') }} as u
+from {{ ref('dim_usuarios') }} as u
 inner join documentos_por_cpf as d
     on nullif(regexp_replace(coalesce(u.cpf, ''), r'[^0-9]', ''), '') = d.cpf_normalizado
 left join controle_atual as c on d.id_familia_cadunico = c.id_familia_cadunico

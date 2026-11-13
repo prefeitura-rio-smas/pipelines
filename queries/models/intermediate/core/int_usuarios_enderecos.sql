@@ -11,7 +11,7 @@ with foto as (
 ),
 
 cadastro as (
-    select distinct * from {{ pu_ref('raw_usuarios_enderecos') }}
+    select distinct * from {{ ref('raw_usuarios_enderecos') }}
 )
 
 select
@@ -25,6 +25,6 @@ select
         when f.id_usuario is not null then 'referencia_bi'
         when c.id_paciente is not null then 'cadastro' else 'sem_registro'
     end as origem_endereco
-from {{ pu_ref('dim_usuarios') }} as u
+from {{ ref('dim_usuarios') }} as u
 left join foto as f on u.id_usuario = f.id_usuario
 left join cadastro as c on u.id_usuario = c.id_paciente

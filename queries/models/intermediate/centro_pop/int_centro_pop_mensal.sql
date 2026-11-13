@@ -15,12 +15,12 @@ unidades as (
     select
         id_unidade,
         nome_unidade
-    from {{ pu_ref('dim_unidades') }} where tipo_unidade = 'Centro POP'
+    from {{ ref('dim_unidades') }} where tipo_unidade = 'Centro POP'
 ),
 
 registros_escopo as (
     select r.* replace (concat(cast(r.id_usuario as string), ':', cast(r.id_unidade as string)) as id_usuario)
-    from {{ pu_ref('int_registros_centro_pop') }} as r
+    from {{ ref('int_registros_centro_pop') }} as r
     where
         r.id_unidade in (select un.id_unidade from unidades as un)
         and coalesce(safe_cast(r.data_ocorrencia as date), safe_cast(r.data_registro as date), r.data_presenca, date('1900-01-01')) <= least(last_day((select c.mes from competencia as c)), current_date('America/Sao_Paulo'))
@@ -40,7 +40,7 @@ atendimentos_escopo as (
 ),
 
 evolucoes_escopo as (
-    select e.* from {{ pu_ref('int_evolucoes_por_usuario') }} as e
+    select e.* from {{ ref('int_evolucoes_por_usuario') }} as e
     where
         e.id_unidade in (select un.id_unidade from unidades as un)
         and (e.data_evolucao is null or date(e.data_evolucao) <= least(last_day((select c.mes from competencia as c)), current_date('America/Sao_Paulo')))
