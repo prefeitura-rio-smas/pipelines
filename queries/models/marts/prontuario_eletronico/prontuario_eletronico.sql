@@ -327,7 +327,14 @@ select
         esc.participacoes[safe_offset(array_length(esc.participacoes) - 1)].nome_atividade as ultima_participacao_atividade,
         esc.participacoes[safe_offset(array_length(esc.participacoes) - 1)].nome_unidade as ultima_participacao_unidade,
         esc.participacoes[safe_offset(array_length(esc.participacoes) - 1)].data_presenca as ultima_participacao_data,
-        esc.participacoes[safe_offset(array_length(esc.participacoes) - 1)].hora_presenca as ultima_participacao_hora
+        esc.participacoes[safe_offset(array_length(esc.participacoes) - 1)].hora_presenca as ultima_participacao_hora,
+        array_to_string(
+            array_concat(
+                coalesce(perfil_cp.encaminhamentos_atendimento_social, []),
+                coalesce(perfil_cp.encaminhamentos_pai, [])
+            ),
+            ', '
+        ) as encaminhamentos
     ) as centro_pop,
     struct(
         {{ consolidar_emails('coalesce(cr_reg.registros, [])', campo='email_filtro') }} as email_filtro,

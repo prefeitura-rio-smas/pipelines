@@ -419,3 +419,7 @@ models:
         description: Sim quando gh_cidadao_pac.numrg está preenchido; Não caso contrário. O numero_rg usa o mesmo campo do prontuário.
       - name: usuario.possui_certidao_nascimento
         description: Sim quando gh_pac_dados.dscmatrcert está preenchido; Não caso contrário. O número da certidão usa o mesmo campo do prontuário.
+
+      - name: centro_pop.encaminhamentos
+        data_type: STRING
+        description: Encaminhamentos de Atendimento Social seguidos dos encaminhamentos PAI, separados por vírgula e espaço. Preserva repetições entre assuntos; ausência como texto vazio. Apenas no perfil geral.
