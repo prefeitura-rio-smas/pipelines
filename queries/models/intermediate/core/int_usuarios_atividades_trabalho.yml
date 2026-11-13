@@ -1,7 +1,0 @@
-version: 2
-models:
-  - name: int_usuarios_atividades_trabalho
-    description: Tipos de atividade informados em indqualativ, sem inferência pela renda ou profissão. Catálogo com confiança inferida registrado no seed.
-    columns:
-      - name: id_paciente
-        data_tests: [not_null, unique]
