@@ -15,7 +15,8 @@ unidades as (
     select
         id_unidade,
         nome_unidade
-    from {{ ref('dim_unidades') }} where tipo_unidade = 'Centro POP'
+    from {{ ref('dim_unidades') }}
+    where tipo_unidade = 'Centro POP'
 ),
 
 registros_escopo as (
