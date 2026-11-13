@@ -10,3 +10,9 @@ models:
           - unique
       - name: cpf
         description: "CPF do paciente."
+
+      - name: numero_rg_cadastro
+        description: RG cadastral original (numrg); presença define a flag pública de RG.
+
+      - name: nis_cadastro
+        description: NIS cadastral original em dsccns, preservado como informado.

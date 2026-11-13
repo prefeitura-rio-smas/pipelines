@@ -1,0 +1,9 @@
+version: 2
+models:
+- name: int_atendimentos_por_usuario
+  description: Eventos aceitos pelas regras da programada, com os profissionais selecionados aninhados. Sem filtro adicional de cancelamento; classificação por profissional preservada; categoria do evento prioriza Recepção, Técnico e Outros.
+  columns:
+  - name: id_usuario
+    data_tests:
+    - not_null
+    - unique

@@ -3,6 +3,7 @@ with source as (
     select
         seqpac as id_usuario,
         seqevopac as id_evolucao,
+        seqatend as id_atendimento,
         sequs as id_unidade,
         seqprof as id_profissional,
         dtevopac as data_evolucao,
@@ -12,4 +13,5 @@ with source as (
         codabapac as codigo_abrangencia
     from {{ source('brutos_acolherio_staging', 'gh_evolupac') }}
 )
+
 select * from source

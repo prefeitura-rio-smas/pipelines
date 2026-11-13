@@ -1,0 +1,4 @@
+version: 2
+models:
+  - name: int_perfil_centro_pop_por_unidade
+    description: Perfil Centro POP selecionado integralmente dentro do cidadão/unidade; encaminhamentos e participações não cruzam unidades.

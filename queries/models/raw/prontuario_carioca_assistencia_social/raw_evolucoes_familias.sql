@@ -3,6 +3,7 @@ with source as (
     select
         seqfamil as id_familia,
         seqevopac as id_evolucao,
+        seqatend as id_atendimento,
         sequs as id_unidade,
         seqprof as id_profissional,
         dtevopac as data_evolucao,
@@ -13,4 +14,5 @@ with source as (
         seqpac as id_paciente
     from {{ source('brutos_acolherio_staging', 'gh_evolufamil') }}
 )
+
 select * from source

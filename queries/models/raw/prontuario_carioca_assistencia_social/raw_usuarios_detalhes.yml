@@ -7,3 +7,6 @@ models:
         description: "Conteúdo cadastral de dsctomdecproces, preservado como informado. O flag em int_usuarios indica se este campo está preenchido."
       - name: flag_cadunico
         description: "Valores de saída Sim/Não/NULL. Na origem indcadunico, S é convertido em Sim e N em Não; ausência ou resposta inválida é NULL."
+
+      - name: matricula_certidao_nascimento
+        description: Matrícula cadastral original (dscmatrcert); presença define a flag pública de certidão.

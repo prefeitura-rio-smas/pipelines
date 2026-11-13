@@ -1,0 +1,13 @@
+codigo,descricao,fonte,confianca
+1,Aprendiz,qual_atividade.ini,inferred
+2,Empregado com carteira de trabalho assinada,qual_atividade.ini,inferred
+3,Empregado sem carteira de trabalho assinada,qual_atividade.ini,inferred
+4,Empregador,qual_atividade.ini,inferred
+5,Estagiário,qual_atividade.ini,inferred
+6,Militar ou servidor público,qual_atividade.ini,inferred
+7,Trabalhador doméstico com carteira de trabalho assinada,qual_atividade.ini,inferred
+8,Trabalhador doméstico sem carteira de trabalho assinada,qual_atividade.ini,inferred
+9,Trabalhador não remunerado,qual_atividade.ini,inferred
+10,Trabalhador por conta própria (autônomo),qual_atividade.ini,inferred
+11,Trabalhador temporário em área rural,qual_atividade.ini,inferred
+12,Trabalhador ilegal,qual_atividade.ini,inferred

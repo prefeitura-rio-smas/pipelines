@@ -1,0 +1,5 @@
+version: 2
+models:
+- name: int_centro_pop_historico_mensal
+  description: Última versão de cada competência fechada e prévia corrente. Campos
+    de perfil observados na captura; sem reconstrução histórica dos atributos cadastrais.
