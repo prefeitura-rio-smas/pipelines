@@ -26,3 +26,6 @@ models:
         description: Data de cadastro do registro na origem; não identifica necessariamente alterações.
       - name: id_unidade_cadastro
         description: Unidade que cadastrou a informação médica.
+
+      - name: flag_uso_substancias_psicoativas
+        description: Indicador cadastral original inddrogas (S/N/vazio), sem normalização.

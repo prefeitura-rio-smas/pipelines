@@ -144,10 +144,10 @@ select
         coalesce(trim(cast(p.cidade_nascimento as string)), '') as cidade_nascimento,
         coalesce(cast(p.serie_escolar as string), '') as serie_escolar,
         coalesce(cast(p.data_cadunico_informada as string), '') as data_cadunico_informada,
-        coalesce(cast(d.documentos_cadunico.nis as string), '') as nis,
+        coalesce(cast(cadastro.nis_cadastro as string), '') as nis,
         coalesce(cast(d.documentos_cadunico.numero_rg as string), '') as numero_rg,
-        {{ pu_flag_sim_nao("coalesce(cast(d.documentos_cadunico.possui_rg as string), '')") }} as possui_rg,
-        {{ pu_flag_sim_nao("coalesce(cast(d.documentos_cadunico.possui_certidao_nascimento as string), '')") }} as possui_certidao_nascimento,
+        if(nullif(trim(cast(cadastro.numero_rg_cadastro as string)), '') is not null, 'Sim', 'Não') as possui_rg,
+        if(nullif(trim(cast(detalhes_cadastro.matricula_certidao_nascimento as string)), '') is not null, 'Sim', 'Não') as possui_certidao_nascimento,
         coalesce(cast(d.documentos_cadunico.numero_certidao_nascimento as string), '') as numero_certidao_nascimento,
         coalesce(cast(d.documentos_cadunico.data_atualizacao as string), '') as data_atualizacao,
         coalesce(cast(d.documentos_cadunico.data_limite_cadastro_atual as string), '') as data_limite_cadastro_atual,
@@ -317,7 +317,10 @@ select
         ) as registros
     ) as evolucoes,
     struct(
-        {{ pu_cpop_perfil_publico('perfil_cp', listas_em_texto=true) }},
+        {{ pu_cpop_perfil_publico('perfil_cp', listas_em_texto=true, indicadores_medicos={
+            'uso_substancias_psicoativas': "case upper(trim(cast(medico.flag_uso_substancias_psicoativas as string))) when 'S' then 'Sim' when 'N' then 'Não' else '' end",
+            'possui_problema_saude': "case upper(trim(cast(medico.flag_possui_comorbidade as string))) when 'S' then 'Sim' when 'N' then 'Não' else '' end"
+        }) }},
         {{ consolidar_emails('coalesce(cp_reg.registros, [])', campo='email_filtro') }} as email_filtro,
         coalesce(cp_reg.registros, []) as registros,
         coalesce(hist.historico_mensal, []) as historico_mensal,
@@ -460,3 +463,7 @@ left join {{ pu_ref('dim_unidades') }} as unidade_referencia on safe_cast(p.id_u
 
 left join {{ ref('int_perfil_creas_simples') }} as perfil_creas_simples on p.id_usuario = perfil_creas_simples.id_usuario
 left join {{ pu_ref('alta_complexidade') }} as perfil_alta on p.id_usuario = perfil_alta.id_usuario
+
+left join {{ ref('raw_usuarios') }} as cadastro on p.id_usuario = cadastro.id_paciente
+left join {{ ref('raw_usuarios_detalhes') }} as detalhes_cadastro on p.id_usuario = detalhes_cadastro.id_paciente
+left join {{ ref('raw_usuarios_informacoes_medicas') }} as medico on p.id_usuario = medico.id_usuario

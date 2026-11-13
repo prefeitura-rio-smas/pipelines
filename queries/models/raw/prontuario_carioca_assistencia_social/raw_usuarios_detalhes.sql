@@ -16,7 +16,9 @@ with source as (
         valrendaativ as renda_ativa,
         indqualativ as tipos_atividade_trabalho,
         valrendabenef as renda_beneficio,
-        indtipovinc  as vinculo_trabalhista
-    from  {{ source('brutos_acolherio_staging', 'gh_pac_dados') }}
+        indtipovinc as vinculo_trabalhista,
+        dscmatrcert as matricula_certidao_nascimento
+    from {{ source('brutos_acolherio_staging', 'gh_pac_dados') }}
 )
+
 select * from source

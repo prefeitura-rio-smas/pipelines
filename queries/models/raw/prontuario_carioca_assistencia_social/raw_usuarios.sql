@@ -24,7 +24,9 @@ with source as (
         indsexo as sexo,
         indgenero as genero,
         nuprontpapel as prontuario_papel,
-        datcadast as data_cadastro
+        datcadast as data_cadastro,
+        numrg as numero_rg_cadastro,
+        dsccns as nis_cadastro
     from {{ source('brutos_acolherio_staging', 'gh_cidadao_pac') }}
 )
 
