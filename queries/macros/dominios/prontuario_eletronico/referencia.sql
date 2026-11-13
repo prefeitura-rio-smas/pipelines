@@ -1,3 +1,13 @@
+{% macro pu_ref(nome) %}
+    {# Register the real dependency even when its input is redirected. #}
+    {% set dependencia = ref(nome) %}
+    {% if execute == true and nome in var('pu_fontes', {}) %}
+        {{ api.Relation.create(database=target.database, schema=var('pu_base_schema'), identifier=nome) }}
+    {% else %}
+        {{ dependencia }}
+    {% endif %}
+{% endmacro %}
+
 {% macro pu_programada() %}
     {% set origem = source('acolherio_referencia', 'atendimentos_programada') %}
     {% if execute == true and var('pu_referencia', false) %}
