@@ -422,4 +422,8 @@ models:
 
       - name: centro_pop.encaminhamentos
         data_type: STRING
-        description: Encaminhamentos de Atendimento Social seguidos dos encaminhamentos PAI, separados por vírgula e espaço. Preserva repetições entre assuntos; ausência como texto vazio. Apenas no perfil geral.
+        description: Somente respostas dos campos do tópico Encaminhamentos dos formulários Centro POP - Atendimento Social e Centro POP - Plano de Atendimento Individual (PAI), nessa ordem, separadas por vírgula e espaço. Histórico não cancelado; pares rótulo/resposta distintos por cidadão e assunto; preserva respostas repetidas entre campos ou assuntos. Ausência como texto vazio. Apenas no perfil geral.
+
+      - name: centro_pop.procedimentos
+        data_type: STRING
+        description: Demandas informadas em Demanda inicial do formulário Centro POP - Atendimento Social e Identificação das demandas apresentadas pelo usuário do formulário Centro POP - Plano de Atendimento Individual (PAI), nessa ordem, separadas por vírgula e espaço. Nome procedimentos preservado por compatibilidade. Histórico não cancelado; valores distintos por cidadão e assunto; preserva repetições entre assuntos. Ausência como texto vazio. Apenas no perfil geral.

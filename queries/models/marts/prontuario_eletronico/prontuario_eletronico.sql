@@ -1,7 +1,49 @@
 {{ config(alias='planilha_unificada', schema=var('pu_candidato_schema', 'pu_candidatos')) }}
 -- noqa: disable=ST06
 -- Contrato por assunto; identificadores públicos restritos aos campos autorizados.
-with cp_registros as (
+with encaminhamentos_centro_pop as (
+    select
+        id_usuario,
+        string_agg(
+            valor, ', '
+            order by if(tipo_registro = 'atendimento_social', 0, 1), concat(label, ': ', valor)
+        ) as encaminhamentos
+    from (
+        select distinct
+            r.id_usuario,
+            r.tipo_registro,
+            trim(e.label) as label,
+            trim(e.valor) as valor
+        from {{ ref('int_registros_centro_pop') }} as r, unnest(r.encaminhamentos) as e
+        where
+            r.tipo_registro in ('atendimento_social', 'pai')
+            and nullif(trim(e.label), '') is not null
+            and nullif(trim(e.valor), '') is not null
+    )
+    group by id_usuario
+),
+
+procedimentos_centro_pop as (
+    select
+        id_usuario,
+        string_agg(
+            valor, ', '
+            order by if(tipo_registro = 'atendimento_social', 0, 1), valor
+        ) as procedimentos
+    from (
+        select distinct
+            r.id_usuario,
+            r.tipo_registro,
+            trim(demanda) as valor
+        from {{ ref('int_registros_centro_pop') }} as r, unnest(r.demandas) as demanda
+        where
+            r.tipo_registro in ('atendimento_social', 'pai')
+            and nullif(trim(demanda), '') is not null
+    )
+    group by id_usuario
+),
+
+cp_registros as (
     select
         p.id_usuario,
         array_agg((
@@ -328,13 +370,8 @@ select
         esc.participacoes[safe_offset(array_length(esc.participacoes) - 1)].nome_unidade as ultima_participacao_unidade,
         esc.participacoes[safe_offset(array_length(esc.participacoes) - 1)].data_presenca as ultima_participacao_data,
         esc.participacoes[safe_offset(array_length(esc.participacoes) - 1)].hora_presenca as ultima_participacao_hora,
-        array_to_string(
-            array_concat(
-                coalesce(perfil_cp.encaminhamentos_atendimento_social, []),
-                coalesce(perfil_cp.encaminhamentos_pai, [])
-            ),
-            ', '
-        ) as encaminhamentos
+        coalesce(cp_enc.encaminhamentos, '') as encaminhamentos,
+        coalesce(cp_proc.procedimentos, '') as procedimentos
     ) as centro_pop,
     struct(
         {{ consolidar_emails('coalesce(cr_reg.registros, [])', campo='email_filtro') }} as email_filtro,
@@ -460,6 +497,8 @@ left join {{ ref('int_usuarios_enderecos') }} as end_bi on p.id_usuario = end_bi
 left join {{ ref('int_usuarios_familias') }} as f on p.id_usuario = f.id_usuario
 left join atendimentos_por_usuario as a on p.id_usuario = a.id_usuario
 left join registros_evolucoes as e on p.id_usuario = e.id_usuario
+left join procedimentos_centro_pop as cp_proc on p.id_usuario = cp_proc.id_usuario
+left join encaminhamentos_centro_pop as cp_enc on p.id_usuario = cp_enc.id_usuario
 left join cp_registros as cp_reg on cast(p.id_usuario as string) = cp_reg.id_usuario
 left join {{ ref('creas') }} as cr_reg on p.id_usuario = cr_reg.id_usuario
 left join historico_centro_pop as hist on cast(p.id_usuario as string) = hist.id_usuario
