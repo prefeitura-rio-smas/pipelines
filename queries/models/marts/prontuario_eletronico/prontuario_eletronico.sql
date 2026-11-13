@@ -145,16 +145,16 @@ select
         coalesce(cast(p.serie_escolar as string), '') as serie_escolar,
         coalesce(cast(p.data_cadunico_informada as string), '') as data_cadunico_informada,
         coalesce(cast(cadastro.nis_cadastro as string), '') as nis,
-        coalesce(cast(d.documentos_cadunico.numero_rg as string), '') as numero_rg,
+        coalesce(cast(cadastro.numero_rg_cadastro as string), '') as numero_rg,
         if(nullif(trim(cast(cadastro.numero_rg_cadastro as string)), '') is not null, 'Sim', 'Não') as possui_rg,
         if(nullif(trim(cast(detalhes_cadastro.matricula_certidao_nascimento as string)), '') is not null, 'Sim', 'Não') as possui_certidao_nascimento,
-        coalesce(cast(d.documentos_cadunico.numero_certidao_nascimento as string), '') as numero_certidao_nascimento,
-        coalesce(cast(d.documentos_cadunico.data_atualizacao as string), '') as data_atualizacao,
-        coalesce(cast(d.documentos_cadunico.data_limite_cadastro_atual as string), '') as data_limite_cadastro_atual,
-        {{ pu_flag_sim_nao("coalesce(cast(d.documentos_cadunico.flag_familia_ambigua as string), '')") }} as flag_familia_ambigua,
-        {{ pu_flag_sim_nao("coalesce(cast(d.documentos_cadunico.flag_nis_ambiguo as string), '')") }} as flag_nis_ambiguo,
-        {{ pu_flag_sim_nao("coalesce(cast(d.documentos_cadunico.flag_rg_ambiguo as string), '')") }} as flag_rg_ambiguo,
-        {{ pu_flag_sim_nao("coalesce(cast(d.documentos_cadunico.flag_certidao_ambigua as string), '')") }} as flag_certidao_ambigua,
+        coalesce(cast(detalhes_cadastro.matricula_certidao_nascimento as string), '') as numero_certidao_nascimento,
+        cast('' as string) as data_atualizacao,
+        cast('' as string) as data_limite_cadastro_atual,
+        cast('' as string) as flag_familia_ambigua,
+        cast('' as string) as flag_nis_ambiguo,
+        cast('' as string) as flag_rg_ambiguo,
+        cast('' as string) as flag_certidao_ambigua,
         array(
             select as struct coalesce(cast(item1.descricao as string), '') as descricao
             from unnest(p.beneficio) as item1 with offset as posicao
@@ -450,7 +450,6 @@ select
 from {{ ref('dim_usuarios') }} as p
 left join projetos_por_usuario as proj on p.id_usuario = proj.id_usuario
 left join {{ ref('int_usuarios_enderecos') }} as end_bi on p.id_usuario = end_bi.id_usuario
-left join {{ ref('int_usuarios_documentos_cadunico') }} as d on p.id_usuario = d.id_usuario
 left join {{ ref('int_usuarios_familias') }} as f on p.id_usuario = f.id_usuario
 left join atendimentos_por_usuario as a on p.id_usuario = a.id_usuario
 left join registros_evolucoes as e on p.id_usuario = e.id_usuario
