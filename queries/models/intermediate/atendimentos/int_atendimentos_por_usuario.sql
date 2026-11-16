@@ -175,6 +175,7 @@ eventos as (
             id_atendimento as id_atendimento_legado
         ) order by profissional_id, id_atendimento) as profissionais
     from linhas_preparadas
+    where {{ nao_cancelado('_flag_cancelado') }}
     group by
         id_usuario, id_atendimento_modulo, id_atendimento, origem_modulo,
         id_unidade, nome_unidade, tipo_servico, id_tipo_atendimento,

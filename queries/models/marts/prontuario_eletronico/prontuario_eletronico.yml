@@ -166,10 +166,10 @@ models:
           STRUCT com quantidade INT64, quantidade_cras, quantidade_creas, quantidade_centro_pop, quantidade_outros e registros ARRAY<STRUCT>. Um evento por
           id_atendimento_modulo, com origem, nome_unidade, tipo, data, hora HH:MM,
           flag_cancelado, profissionais e tipo_servico. Preserva somente os eventos e profissionais aceitos pelas regras da programada,
-          reproduzidas no dbt com desempates estáveis e sem filtro adicional de cancelamento.
+          reproduzidas no dbt com desempates estáveis; atendimentos cancelados são excluídos.
           Profissionais homônimos não são deduplicados após retirar seus IDs.
       - name: atendimentos.quantidade
-        description: Igual ao tamanho de atendimentos.registros, em todo o histórico disponível; zero sem eventos.
+        description: Igual ao tamanho de atendimentos.registros, no histórico disponível (cancelados excluídos); zero sem eventos.
         data_tests: [not_null]
       - name: atendimentos.registros.tipo_servico
         description: Serviço de origem do evento (cras, creas, centro_pop ou outros), preservado do intermediário comum para futuras marts.
