@@ -2,19 +2,17 @@
 with perfil as (
     with base_historico as (
         select
-            concat(cast(p.id_usuario as string), ':', cast(h.id_unidade as string)) as id_usuario,
+            concat(cast(p.id_usuario as string), ':', coalesce(cast(h.id_unidade as string), '')) as id_usuario,
             array_agg(h) as historico
         from {{ ref('int_perfil_creas') }} as p, unnest(p.historico) as h
-        where h.id_unidade is not null
         group by 1
     ),
 
     base_participacoes as (
         select
-            concat(cast(p.id_usuario as string), ':', cast(h.id_unidade as string)) as id_usuario,
+            concat(cast(p.id_usuario as string), ':', coalesce(cast(h.id_unidade as string), '')) as id_usuario,
             array_agg(h order by h.data_presenca, h.hora_presenca, h.id_atividade) as participacoes
         from {{ ref('int_perfil_creas') }} as p, unnest(p.participacoes) as h
-        where h.id_unidade is not null
         group by 1
     ),
 

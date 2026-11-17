@@ -4,6 +4,7 @@
 with encaminhamentos_centro_pop as (
     select
         id_usuario,
+        id_unidade,
         string_agg(
             valor, ', '
             order by if(tipo_registro = 'atendimento_social', 0, 1), concat(label, ': ', valor)
@@ -11,6 +12,7 @@ with encaminhamentos_centro_pop as (
     from (
         select distinct
             r.id_usuario,
+            r.id_unidade,
             r.tipo_registro,
             trim(e.label) as label,
             trim(e.valor) as valor
@@ -20,12 +22,13 @@ with encaminhamentos_centro_pop as (
             and nullif(trim(e.label), '') is not null
             and nullif(trim(e.valor), '') is not null
     )
-    group by id_usuario
+    group by id_usuario, id_unidade
 ),
 
 ultimo_atendimento_tecnico_centro_pop as (
     select
         e.id_usuario,
+        e.id_unidade,
         max(coalesce(
             (
                 select max(safe.parse_date('%d/%m/%Y', data_informada))
@@ -51,12 +54,13 @@ ultimo_atendimento_tecnico_centro_pop as (
             when e.origem_modulo = 'administrativa' then operador.nivel_conta
             else profissional.nivel_conta
         end in (2, 5)
-    group by e.id_usuario
+    group by e.id_usuario, e.id_unidade
 ),
 
 procedimentos_centro_pop as (
     select
         id_usuario,
+        id_unidade,
         string_agg(
             valor, ', '
             order by if(tipo_registro = 'atendimento_social', 0, 1), valor
@@ -64,6 +68,7 @@ procedimentos_centro_pop as (
     from (
         select distinct
             r.id_usuario,
+            r.id_unidade,
             r.tipo_registro,
             trim(demanda) as valor
         from {{ ref('int_registros_centro_pop') }} as r, unnest(r.demandas) as demanda
@@ -71,12 +76,13 @@ procedimentos_centro_pop as (
             r.tipo_registro in ('atendimento_social', 'pai')
             and nullif(trim(demanda), '') is not null
     )
-    group by id_usuario
+    group by id_usuario, id_unidade
 ),
 
 cp_registros as (
     select
         p.id_usuario,
+        p.id_unidade,
         array_agg((
             select as struct
                 p.id_unidade,
@@ -87,13 +93,14 @@ cp_registros as (
         order by p.id_unidade) as registros
     from {{ ref('int_perfil_centro_pop_por_unidade') }} as p
     left join {{ ref('int_filtro_email_unidades') }} as e on p.id_unidade = e.id_unidade
-    group by p.id_usuario
+    group by p.id_usuario, p.id_unidade
 ),
 
 
 historico_centro_pop as (
     select
         h.id_usuario,
+        h.id_unidade,
         array_agg((
             select as struct
                 h.* except (id_usuario),
@@ -101,13 +108,14 @@ historico_centro_pop as (
         ) order by h.mes_referencia desc, h.id_unidade asc) as historico_mensal
     from {{ ref('int_centro_pop_historico_mensal') }} as h
     left join {{ ref('int_filtro_email_unidades') }} as e on h.id_unidade = e.id_unidade
-    group by h.id_usuario
+    group by h.id_usuario, h.id_unidade
 ),
 
 
 projetos_por_usuario as (
     select
         u.id_usuario,
+        ps.id_unidade,
         array_agg(struct(
             coalesce({{ map_nome_projeto_social('ps.id_projeto_social') }}, format('Projeto não mapeado (ID %d)', ps.id_projeto_social)) as nome_projeto_social,
             ps.id_projeto_social, ps.id_unidade, un.nome_unidade, coalesce(em.email_filtro, '') as email_filtro, ps.indicador_ativo, ps.data_cadastro, ps.data_cancelamento
@@ -116,12 +124,13 @@ projetos_por_usuario as (
     inner join {{ ref('dim_usuarios') }} as u on ps.id_usuario = u.id_usuario
     left join {{ ref('dim_unidades') }} as un on ps.id_unidade = un.id_unidade
     left join {{ ref('int_filtro_email_unidades') }} as em on ps.id_unidade = em.id_unidade
-    group by u.id_usuario
+    group by u.id_usuario, ps.id_unidade
 ),
 
 atendimentos_por_usuario as (
     select
         p.id_usuario,
+        a.id_unidade,
         array_agg((
             select as struct
                 a.*,
@@ -130,7 +139,7 @@ atendimentos_por_usuario as (
         order by a.data_atendimento, a.hora_atendimento, a.id_atendimento_modulo) as atendimentos
     from {{ ref('int_atendimentos_por_usuario') }} as p, unnest(p.atendimentos) as a
     left join {{ ref('int_filtro_email_unidades') }} as e on a.id_unidade = e.id_unidade
-    group by p.id_usuario
+    group by p.id_usuario, a.id_unidade
 ),
 
 formularios_por_evolucao as (
@@ -145,6 +154,7 @@ formularios_por_evolucao as (
 registros_evolucoes as (
     select
         e.id_usuario,
+        e.id_unidade,
         array_agg(struct(
             e.id_evolucao_modulo, e.origem_modulo, e.id_familia, e.id_unidade, e.nome_unidade,
             e.tipo_servico, coalesce(em.email_filtro, '') as email_filtro, e.data_evolucao, e.data_cancelamento, e.tipo_evolucao,
@@ -155,12 +165,13 @@ registros_evolucoes as (
     from {{ ref('int_evolucoes_por_usuario') }} as e
     left join {{ ref('int_filtro_email_unidades') }} as em on e.id_unidade = em.id_unidade
     left join formularios_por_evolucao as f on e.id_usuario = f.id_usuario and e.id_evolucao_modulo = f.id_evolucao_modulo
-    group by e.id_usuario
+    group by e.id_usuario, e.id_unidade
 ),
 
 escopo_centro_pop as (
     select
         s.id_usuario,
+        s.id_unidade,
         array_agg(if(s.tipo_registro = 'participacao', struct(
             coalesce(cast(s.id_unidade as string), '') as id_unidade,
             coalesce(cast(s.id_atividade as string), '') as id_atividade,
@@ -170,7 +181,89 @@ escopo_centro_pop as (
             coalesce(s.hora_presenca, '') as hora_presenca
         ), null) ignore nulls order by s.data_presenca, s.hora_presenca, s.id_atividade, s.id_registro) as participacoes
     from {{ ref('int_registros_centro_pop') }} as s
-    group by s.id_usuario
+    group by s.id_usuario, s.id_unidade
+),
+
+creas_por_unidade as (
+    select
+        p.id_usuario,
+        p.id_unidade,
+        p.creas,
+        [(
+            select as struct
+                p.id_unidade,
+                em.nome_unidade,
+                coalesce(em.email_filtro, '') as email_filtro,
+                p.creas.*
+        )] as registros
+    from {{ ref('int_perfil_creas_por_unidade') }} as p
+    left join {{ ref('int_filtro_email_unidades') }} as em on p.id_unidade = em.id_unidade
+),
+
+acolhimentos_por_unidade as (
+    select
+        p.id_usuario,
+        h.id_unidade,
+        array_agg(
+            (
+                select as struct
+                    h.*,
+                    coalesce(em.email_filtro, '') as email_filtro
+            )
+            order by h.data_entrada, h.id_ciclo
+        ) as registros,
+        array_agg(
+            h order by
+                if(h.data_saida is null, 0, 1), h.data_entrada desc nulls last,
+                h.id_ciclo desc, to_json_string(h) desc
+            limit 1
+        )[offset(0)] as ultimo_ciclo
+    from {{ ref('alta_complexidade') }} as p, unnest(p.historico) as h
+    left join {{ ref('int_filtro_email_unidades') }} as em on h.id_unidade = em.id_unidade
+    group by p.id_usuario, h.id_unidade
+),
+
+unidades_por_usuario as (
+    -- Uma chave por vínculo; os eventos continuam nas coleções de cada assunto.
+    select
+        cast(id_usuario as string) as id_usuario,
+        id_unidade
+    from atendimentos_por_usuario
+    union distinct
+    select
+        cast(id_usuario as string) as id_usuario,
+        id_unidade
+    from registros_evolucoes
+    union distinct
+    select
+        cast(id_usuario as string) as id_usuario,
+        id_unidade
+    from projetos_por_usuario
+    union distinct
+    select
+        cast(id_usuario as string) as id_usuario,
+        id_unidade
+    from escopo_centro_pop
+    union distinct
+    select
+        cast(id_usuario as string) as id_usuario,
+        id_unidade
+    from historico_centro_pop
+    union distinct
+    select
+        cast(id_usuario as string) as id_usuario,
+        id_unidade
+    from cp_registros
+    union distinct
+    select
+        cast(id_usuario as string) as id_usuario,
+        id_unidade
+    from creas_por_unidade
+    union distinct
+    select
+        cast(id_usuario as string) as id_usuario,
+        id_unidade
+    from acolhimentos_por_unidade
 )
 
 select
@@ -390,125 +483,125 @@ select
         ) as registros
     ) as evolucoes,
     struct(
-        {{ pu_cpop_perfil_publico('perfil_cp', listas_em_texto=true, indicadores_medicos={
-            'uso_substancias_psicoativas': "case upper(trim(cast(medico.flag_uso_substancias_psicoativas as string))) when 'S' then 'Sim' when 'N' then 'Não' else '' end",
-            'possui_problema_saude': "case upper(trim(cast(medico.flag_possui_comorbidade as string))) when 'S' then 'Sim' when 'N' then 'Não' else '' end"
+        {{ pu_cpop_perfil_publico('perfil_cp.perfil', listas_em_texto=true, indicadores_medicos={
+            'uso_substancias_psicoativas': "case when perfil_cp.id_usuario is null then '' else case upper(trim(cast(medico.flag_uso_substancias_psicoativas as string))) when 'S' then 'Sim' when 'N' then 'Não' else '' end end",
+            'possui_problema_saude': "case when perfil_cp.id_usuario is null then '' else case upper(trim(cast(medico.flag_possui_comorbidade as string))) when 'S' then 'Sim' when 'N' then 'Não' else '' end end"
         }) }},
         {{ consolidar_emails('coalesce(cp_reg.registros, [])', campo='email_filtro') }} as email_filtro,
         coalesce(cp_reg.registros, []) as registros,
         coalesce(hist.historico_mensal, []) as historico_mensal,
-        coalesce(cast(ultimo_cp.data_ultimo_atend_tecnico_informada as string), '') as data_ultimo_atend_tecnico_informada,
         esc.participacoes[safe_offset(array_length(esc.participacoes) - 1)].nome_atividade as ultima_participacao_atividade,
         esc.participacoes[safe_offset(array_length(esc.participacoes) - 1)].nome_unidade as ultima_participacao_unidade,
         esc.participacoes[safe_offset(array_length(esc.participacoes) - 1)].data_presenca as ultima_participacao_data,
         esc.participacoes[safe_offset(array_length(esc.participacoes) - 1)].hora_presenca as ultima_participacao_hora,
         coalesce(cp_enc.encaminhamentos, '') as encaminhamentos,
-        coalesce(cp_proc.procedimentos, '') as procedimentos
+        coalesce(cp_proc.procedimentos, '') as procedimentos,
+        coalesce(cast(ultimo_cp.data_ultimo_atend_tecnico_informada as string), '') as data_ultimo_atend_tecnico_informada
     ) as centro_pop,
     struct(
         {{ consolidar_emails('coalesce(cr_reg.registros, [])', campo='email_filtro') }} as email_filtro,
         coalesce(cr_reg.registros, []) as registros,
-        perfil_creas_simples.mse_data_ocorrencia,
-        perfil_creas_simples.mse_data_registro,
-        perfil_creas_simples.mse_id_unidade,
-        perfil_creas_simples.mse_nome_unidade,
-        perfil_creas_simples.mse_observacoes,
-        perfil_creas_simples.mse_com_que_frequencia_vai_a_casa_da_familia_ou_pessoa_de_referencia,
-        perfil_creas_simples.mse_com_quem_moraria,
-        perfil_creas_simples.mse_1o_bimestre_documentacao,
-        perfil_creas_simples.mse_1o_bimestre_beneficios,
-        perfil_creas_simples.mse_1o_bimestre_cadunico,
-        perfil_creas_simples.mse_1o_bimestre_localizacao,
-        perfil_creas_simples.mse_1o_bimestre_outras_acoes,
-        perfil_creas_simples.mse_1o_bimestre_saude,
-        perfil_creas_simples.mse_adolescente_em_reinfracao,
-        perfil_creas_simples.mse_adolescente_tem_historico_de_cumprimento_de_mse_em_meio_fechado_ou_semiliberdade,
-        perfil_creas_simples.mse_avaliacao_tecnica_bimestral_1o_bimestre,
-        perfil_creas_simples.mse_cras_de_referencia,
-        perfil_creas_simples.mse_creas_de_referencia,
-        perfil_creas_simples.mse_carga_horaria,
-        perfil_creas_simples.mse_com_quem_residia_anteriormente,
-        perfil_creas_simples.mse_data,
-        perfil_creas_simples.mse_data_de_inclusao_no_mse,
-        perfil_creas_simples.mse_desdobramento,
-        perfil_creas_simples.mse_em_caso_de_cumprimento_de_mse_qual_o_status,
-        perfil_creas_simples.mse_em_caso_de_cumprimento_de_psc_qual_o_local,
-        perfil_creas_simples.mse_endereco_cras,
-        perfil_creas_simples.mse_endereco_creas,
-        perfil_creas_simples.mse_especialidade,
-        perfil_creas_simples.mse_gostaria_de_retornar_para_casa_ou_convivio_anterior,
-        perfil_creas_simples.mse_gostaria_de_retornar_para_casa_ou_convivio_anterior_com_quem_moraria,
-        perfil_creas_simples.mse_local,
-        perfil_creas_simples.mse_mantem_contato_com_a_familia_ou_pessoa_de_referencia,
-        perfil_creas_simples.mse_mantem_contato_com_a_familia_ou_pessoa_de_referencia_com_que_frequencia_vai_a_casa_da_familia_ou_pessoa_de_referencia,
-        perfil_creas_simples.mse_medida_aplicada,
-        perfil_creas_simples.mse_nome_do_local_de_cumprimento_de_psc,
-        perfil_creas_simples.mse_outras_atividades,
-        perfil_creas_simples.mse_por_que_se_afastou_da_familia_ou_pessoa_de_referencia,
-        perfil_creas_simples.mse_procedimento,
-        perfil_creas_simples.mse_profissional_cras,
-        perfil_creas_simples.mse_profissional_creas,
-        perfil_creas_simples.mse_quais_atividades_gostaria_de_participar,
-        perfil_creas_simples.mse_registrar_o_que_conseguiu_cumprir_e_justificar_o_que_nao_conseguiu_cumprir_no_prazo_estabelecido,
-        perfil_creas_simples.mse_servico_de_protecao_social_ao_adolescente_em_cumprimento_de_la_ou_psc,
-        perfil_creas_simples.mse_telefone_cras,
-        perfil_creas_simples.mse_telefone_creas,
-        perfil_creas_simples.mse_tempo_de_cumprimento,
-        perfil_creas_simples.mse_tipo,
-        perfil_creas_simples.mse_tipo_de_ato_infracional,
-        perfil_creas_simples.mse_usuario_interditado,
-        perfil_creas_simples.mse_retorno_data_ocorrencia,
-        perfil_creas_simples.mse_retorno_data_registro,
-        perfil_creas_simples.mse_retorno_id_unidade,
-        perfil_creas_simples.mse_retorno_nome_unidade,
-        perfil_creas_simples.mse_retorno_observacoes,
-        perfil_creas_simples.mse_retorno_adolescente_em_reinfracao,
-        perfil_creas_simples.mse_retorno_data_do_desligamento,
-        perfil_creas_simples.mse_retorno_desligamento,
-        perfil_creas_simples.mse_retorno_em_caso_de_cumprimento_de_mse_qual_o_status,
-        perfil_creas_simples.mse_retorno_em_caso_de_cumprimento_de_psc_qual_o_local,
-        perfil_creas_simples.mse_retorno_motivo_do_desligamento,
-        perfil_creas_simples.mse_retorno_nome_do_local_de_cumprimento_de_psc,
-        perfil_creas_simples.peti_data_ocorrencia,
-        perfil_creas_simples.peti_data_registro,
-        perfil_creas_simples.peti_id_unidade,
-        perfil_creas_simples.peti_nome_unidade,
-        perfil_creas_simples.peti_observacoes,
-        perfil_creas_simples.peti_data_da_inclusao_no_peti,
-        perfil_creas_simples.peti_demanda_inicial,
-        perfil_creas_simples.peti_forma_de_acesso_informe_a_origem_de_acesso,
-        perfil_creas_simples.peti_marcacao_nos_campo_cadunico,
-        perfil_creas_simples.peti_orientacoes_e_encaminhamentos,
-        perfil_creas_simples.peti_outras_demandas_vulnerabilidades,
-        perfil_creas_simples.peti_outras_formas_de_acesso,
-        perfil_creas_simples.peti_outros,
-        perfil_creas_simples.peti_tipo_de_trabalho_infantil,
-        perfil_creas_simples.peti_e_acompanhado_em_outro_creas,
-        perfil_creas_simples.peti_e_necessario_realizar_a_gestao_de_beneficios,
-        perfil_creas_simples.scfv_data_ocorrencia,
-        perfil_creas_simples.scfv_data_registro,
-        perfil_creas_simples.scfv_id_unidade,
-        perfil_creas_simples.scfv_nome_unidade,
-        perfil_creas_simples.scfv_observacoes,
-        perfil_creas_simples.scfv_data_da_solicitacao_do_acolhimento,
-        perfil_creas_simples.scfv_demanda_de_acolhimento_institucional_por_decisao_judicial,
-        perfil_creas_simples.scfv_nome_do_cras_responsavel,
-        perfil_creas_simples.scfv_o_usuario_participa_do_scfv_servico_de_convivencia_e_fortalecimento_de_vinculos,
-        perfil_creas_simples.scfv_oriundo_de_instituicao_de_acolhimento_interditado,
-        perfil_creas_simples.scfv_usuario_interditado,
-        perfil_creas_simples.scfv_orgao_de_origem_do_acolhimento,
-        perfil_creas_simples.peti_desligamento_data_ocorrencia,
-        perfil_creas_simples.peti_desligamento_data_registro,
-        perfil_creas_simples.peti_desligamento_id_unidade,
-        perfil_creas_simples.peti_desligamento_nome_unidade,
-        perfil_creas_simples.peti_desligamento_observacoes,
-        perfil_creas_simples.peti_desligamento_data_do_desligamento_do_peti,
-        perfil_creas_simples.peti_desligamento_motivo_do_desligamento,
-        perfil_creas_simples.peti_desligamento_outros,
-        perfil_creas_simples.passo_a_passo_ultima_atividade,
-        perfil_creas_simples.passo_a_passo_ultima_data,
-        perfil_creas_simples.passo_a_passo_ultima_hora,
-        perfil_creas_simples.passo_a_passo_ultima_unidade
+        cr_reg.creas.mse_data_ocorrencia,
+        cr_reg.creas.mse_data_registro,
+        cr_reg.creas.mse_id_unidade,
+        cr_reg.creas.mse_nome_unidade,
+        cr_reg.creas.mse_observacoes,
+        cr_reg.creas.mse_com_que_frequencia_vai_a_casa_da_familia_ou_pessoa_de_referencia,
+        cr_reg.creas.mse_com_quem_moraria,
+        cr_reg.creas.mse_1o_bimestre_documentacao,
+        cr_reg.creas.mse_1o_bimestre_beneficios,
+        cr_reg.creas.mse_1o_bimestre_cadunico,
+        cr_reg.creas.mse_1o_bimestre_localizacao,
+        cr_reg.creas.mse_1o_bimestre_outras_acoes,
+        cr_reg.creas.mse_1o_bimestre_saude,
+        cr_reg.creas.mse_adolescente_em_reinfracao,
+        cr_reg.creas.mse_adolescente_tem_historico_de_cumprimento_de_mse_em_meio_fechado_ou_semiliberdade,
+        cr_reg.creas.mse_avaliacao_tecnica_bimestral_1o_bimestre,
+        cr_reg.creas.mse_cras_de_referencia,
+        cr_reg.creas.mse_creas_de_referencia,
+        cr_reg.creas.mse_carga_horaria,
+        cr_reg.creas.mse_com_quem_residia_anteriormente,
+        cr_reg.creas.mse_data,
+        cr_reg.creas.mse_data_de_inclusao_no_mse,
+        cr_reg.creas.mse_desdobramento,
+        cr_reg.creas.mse_em_caso_de_cumprimento_de_mse_qual_o_status,
+        cr_reg.creas.mse_em_caso_de_cumprimento_de_psc_qual_o_local,
+        cr_reg.creas.mse_endereco_cras,
+        cr_reg.creas.mse_endereco_creas,
+        cr_reg.creas.mse_especialidade,
+        cr_reg.creas.mse_gostaria_de_retornar_para_casa_ou_convivio_anterior,
+        cr_reg.creas.mse_gostaria_de_retornar_para_casa_ou_convivio_anterior_com_quem_moraria,
+        cr_reg.creas.mse_local,
+        cr_reg.creas.mse_mantem_contato_com_a_familia_ou_pessoa_de_referencia,
+        cr_reg.creas.mse_mantem_contato_com_a_familia_ou_pessoa_de_referencia_com_que_frequencia_vai_a_casa_da_familia_ou_pessoa_de_referencia,
+        cr_reg.creas.mse_medida_aplicada,
+        cr_reg.creas.mse_nome_do_local_de_cumprimento_de_psc,
+        cr_reg.creas.mse_outras_atividades,
+        cr_reg.creas.mse_por_que_se_afastou_da_familia_ou_pessoa_de_referencia,
+        cr_reg.creas.mse_procedimento,
+        cr_reg.creas.mse_profissional_cras,
+        cr_reg.creas.mse_profissional_creas,
+        cr_reg.creas.mse_quais_atividades_gostaria_de_participar,
+        cr_reg.creas.mse_registrar_o_que_conseguiu_cumprir_e_justificar_o_que_nao_conseguiu_cumprir_no_prazo_estabelecido,
+        cr_reg.creas.mse_servico_de_protecao_social_ao_adolescente_em_cumprimento_de_la_ou_psc,
+        cr_reg.creas.mse_telefone_cras,
+        cr_reg.creas.mse_telefone_creas,
+        cr_reg.creas.mse_tempo_de_cumprimento,
+        cr_reg.creas.mse_tipo,
+        cr_reg.creas.mse_tipo_de_ato_infracional,
+        cr_reg.creas.mse_usuario_interditado,
+        cr_reg.creas.mse_retorno_data_ocorrencia,
+        cr_reg.creas.mse_retorno_data_registro,
+        cr_reg.creas.mse_retorno_id_unidade,
+        cr_reg.creas.mse_retorno_nome_unidade,
+        cr_reg.creas.mse_retorno_observacoes,
+        cr_reg.creas.mse_retorno_adolescente_em_reinfracao,
+        cr_reg.creas.mse_retorno_data_do_desligamento,
+        cr_reg.creas.mse_retorno_desligamento,
+        cr_reg.creas.mse_retorno_em_caso_de_cumprimento_de_mse_qual_o_status,
+        cr_reg.creas.mse_retorno_em_caso_de_cumprimento_de_psc_qual_o_local,
+        cr_reg.creas.mse_retorno_motivo_do_desligamento,
+        cr_reg.creas.mse_retorno_nome_do_local_de_cumprimento_de_psc,
+        cr_reg.creas.peti_data_ocorrencia,
+        cr_reg.creas.peti_data_registro,
+        cr_reg.creas.peti_id_unidade,
+        cr_reg.creas.peti_nome_unidade,
+        cr_reg.creas.peti_observacoes,
+        cr_reg.creas.peti_data_da_inclusao_no_peti,
+        cr_reg.creas.peti_demanda_inicial,
+        cr_reg.creas.peti_forma_de_acesso_informe_a_origem_de_acesso,
+        cr_reg.creas.peti_marcacao_nos_campo_cadunico,
+        cr_reg.creas.peti_orientacoes_e_encaminhamentos,
+        cr_reg.creas.peti_outras_demandas_vulnerabilidades,
+        cr_reg.creas.peti_outras_formas_de_acesso,
+        cr_reg.creas.peti_outros,
+        cr_reg.creas.peti_tipo_de_trabalho_infantil,
+        cr_reg.creas.peti_e_acompanhado_em_outro_creas,
+        cr_reg.creas.peti_e_necessario_realizar_a_gestao_de_beneficios,
+        cr_reg.creas.scfv_data_ocorrencia,
+        cr_reg.creas.scfv_data_registro,
+        cr_reg.creas.scfv_id_unidade,
+        cr_reg.creas.scfv_nome_unidade,
+        cr_reg.creas.scfv_observacoes,
+        cr_reg.creas.scfv_data_da_solicitacao_do_acolhimento,
+        cr_reg.creas.scfv_demanda_de_acolhimento_institucional_por_decisao_judicial,
+        cr_reg.creas.scfv_nome_do_cras_responsavel,
+        cr_reg.creas.scfv_o_usuario_participa_do_scfv_servico_de_convivencia_e_fortalecimento_de_vinculos,
+        cr_reg.creas.scfv_oriundo_de_instituicao_de_acolhimento_interditado,
+        cr_reg.creas.scfv_usuario_interditado,
+        cr_reg.creas.scfv_orgao_de_origem_do_acolhimento,
+        cr_reg.creas.peti_desligamento_data_ocorrencia,
+        cr_reg.creas.peti_desligamento_data_registro,
+        cr_reg.creas.peti_desligamento_id_unidade,
+        cr_reg.creas.peti_desligamento_nome_unidade,
+        cr_reg.creas.peti_desligamento_observacoes,
+        cr_reg.creas.peti_desligamento_data_do_desligamento_do_peti,
+        cr_reg.creas.peti_desligamento_motivo_do_desligamento,
+        cr_reg.creas.peti_desligamento_outros,
+        cr_reg.creas.passo_a_passo_ultima_atividade,
+        cr_reg.creas.passo_a_passo_ultima_data,
+        cr_reg.creas.passo_a_passo_ultima_hora,
+        cr_reg.creas.passo_a_passo_ultima_unidade
     ) as creas,
     struct(
         {{ consolidar_emails('coalesce(perfil_alta.registros, [])', campo='email_filtro') }} as email_filtro,
@@ -521,26 +614,65 @@ select
         perfil_alta.ultimo_ciclo.motivo_saida,
         perfil_alta.ultimo_ciclo.tempo_permanencia_dias
     ) as alta_complexidade,
-    {{ consolidar_unidades("coalesce(a.atendimentos, [])") }} as nome_unidade,
-    {{ consolidar_emails("coalesce(a.atendimentos, [])") }} as email_filtro
+    coalesce(unidade.nome_unidade, '') as nome_unidade,
+    coalesce(permissoes.email_filtro, '') as email_filtro,
+    coalesce(cast(vinculo.id_unidade as string), '') as id_unidade
 from {{ ref('dim_usuarios') }} as p
-left join projetos_por_usuario as proj on p.id_usuario = proj.id_usuario
+left join unidades_por_usuario as vinculo on cast(p.id_usuario as string) = vinculo.id_usuario
+left join {{ ref('dim_unidades') }} as unidade on vinculo.id_unidade = unidade.id_unidade
+left join {{ ref('int_filtro_email_unidades') }} as permissoes on vinculo.id_unidade = permissoes.id_unidade
+left join projetos_por_usuario as proj
+    on
+        p.id_usuario = proj.id_usuario
+        and vinculo.id_unidade is not distinct from proj.id_unidade
 left join {{ ref('int_usuarios_enderecos') }} as end_bi on p.id_usuario = end_bi.id_usuario
 left join {{ ref('int_usuarios_familias') }} as f on p.id_usuario = f.id_usuario
-left join atendimentos_por_usuario as a on p.id_usuario = a.id_usuario
-left join registros_evolucoes as e on p.id_usuario = e.id_usuario
-left join procedimentos_centro_pop as cp_proc on p.id_usuario = cp_proc.id_usuario
-left join encaminhamentos_centro_pop as cp_enc on p.id_usuario = cp_enc.id_usuario
-left join cp_registros as cp_reg on cast(p.id_usuario as string) = cp_reg.id_usuario
-left join {{ ref('creas') }} as cr_reg on p.id_usuario = cr_reg.id_usuario
-left join historico_centro_pop as hist on cast(p.id_usuario as string) = hist.id_usuario
-left join escopo_centro_pop as esc on p.id_usuario = esc.id_usuario
-left join {{ ref('centro_pop') }} as perfil_cp on p.id_usuario = perfil_cp.id_usuario
+left join atendimentos_por_usuario as a
+    on
+        p.id_usuario = a.id_usuario
+        and vinculo.id_unidade is not distinct from a.id_unidade
+left join registros_evolucoes as e
+    on
+        p.id_usuario = e.id_usuario
+        and vinculo.id_unidade is not distinct from e.id_unidade
+left join procedimentos_centro_pop as cp_proc
+    on
+        p.id_usuario = cp_proc.id_usuario
+        and vinculo.id_unidade is not distinct from cp_proc.id_unidade
+left join encaminhamentos_centro_pop as cp_enc
+    on
+        p.id_usuario = cp_enc.id_usuario
+        and vinculo.id_unidade is not distinct from cp_enc.id_unidade
+left join cp_registros as cp_reg
+    on
+        cast(p.id_usuario as string) = cp_reg.id_usuario
+        and vinculo.id_unidade is not distinct from cp_reg.id_unidade
+left join creas_por_unidade as cr_reg
+    on
+        cast(p.id_usuario as string) = cr_reg.id_usuario
+        and vinculo.id_unidade is not distinct from cr_reg.id_unidade
+left join historico_centro_pop as hist
+    on
+        cast(p.id_usuario as string) = hist.id_usuario
+        and vinculo.id_unidade is not distinct from hist.id_unidade
+left join escopo_centro_pop as esc
+    on
+        p.id_usuario = esc.id_usuario
+        and vinculo.id_unidade is not distinct from esc.id_unidade
+left join {{ ref('int_perfil_centro_pop_por_unidade') }} as perfil_cp
+    on
+        cast(p.id_usuario as string) = perfil_cp.id_usuario
+        and vinculo.id_unidade is not distinct from perfil_cp.id_unidade
 left join {{ ref('dim_unidades') }} as unidade_referencia on safe_cast(p.id_unidade_referencia as int64) = unidade_referencia.id_unidade
 
-left join {{ ref('int_perfil_creas_simples') }} as perfil_creas_simples on p.id_usuario = perfil_creas_simples.id_usuario
-left join {{ ref('alta_complexidade') }} as perfil_alta on p.id_usuario = perfil_alta.id_usuario
-left join ultimo_atendimento_tecnico_centro_pop as ultimo_cp on p.id_usuario = ultimo_cp.id_usuario
+left join acolhimentos_por_unidade as perfil_alta
+    on
+        p.id_usuario = perfil_alta.id_usuario
+        and vinculo.id_unidade is not distinct from perfil_alta.id_unidade
+left join ultimo_atendimento_tecnico_centro_pop as ultimo_cp
+    on
+        p.id_usuario = ultimo_cp.id_usuario
+        and vinculo.id_unidade is not distinct from ultimo_cp.id_unidade
 
 left join {{ ref('raw_usuarios') }} as cadastro on p.id_usuario = cadastro.id_paciente
 left join {{ ref('raw_usuarios_detalhes') }} as detalhes_cadastro on p.id_usuario = detalhes_cadastro.id_paciente
