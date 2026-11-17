@@ -22,7 +22,7 @@ models:
     config:
       meta:
         granularidade: [usuario.id_usuario]
-        contrato: por_assunto_v15_perfis_simples
+        contrato: por_assunto_v16_perfis_simples
         campos_raiz: [usuario, familias, projetos_sociais, atendimentos, evolucoes, centro_pop, creas, alta_complexidade, nome_unidade, email_filtro]
         execucao: modelo_dbt
         publicacao: desenvolvimento
@@ -134,6 +134,9 @@ models:
       - name: centro_pop.unidades_atendimento
         description: Nomes das unidades com atendimento Centro POP, separados por vírgula.
         data_type: STRING
+      - name: centro_pop.data_ultimo_atend_tecnico_informada
+        data_type: STRING
+        description: Data mais recente registrada após “Registro:” nas evoluções de Centro POP de profissionais com perfil 2 ou 5; usa data_evolucao quando a data informada não é válida. Formato AAAA-MM-DD; vazio sem evolução elegível.
       - name: usuario
         description: |
           STRUCT com os atributos cadastrais, documentos e endereço em campos diretos,

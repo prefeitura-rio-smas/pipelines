@@ -23,6 +23,35 @@ with encaminhamentos_centro_pop as (
     group by id_usuario
 ),
 
+ultimo_atendimento_tecnico_centro_pop as (
+    select
+        e.id_usuario,
+        max(coalesce(
+            (
+                select max(safe.parse_date('%d/%m/%Y', data_informada))
+                from unnest(regexp_extract_all(
+                    {{ texto_html_legivel('e.descricao_evolucao') }},
+                    r'(?i)Registro\s*:\s*(\d{2}/\d{2}/\d{4})'
+                )) as data_informada
+            ),
+            date(e.data_evolucao)
+        )) as data_ultimo_atend_tecnico_informada
+    from {{ ref('int_evolucoes_por_usuario') }} as e
+    left join {{ ref('dim_profissionais') }} as profissional
+        on e.origem_modulo != 'administrativa'
+        and e.id_profissional = profissional.id_profissional
+    left join {{ ref('raw_operadores') }} as operador
+        on e.origem_modulo = 'administrativa'
+        and e.id_profissional = operador.id_login
+    where
+        e.tipo_servico = 'centro_pop'
+        and case
+            when e.origem_modulo = 'administrativa' then operador.nivel_conta
+            else profissional.nivel_conta
+        end in (2, 5)
+    group by e.id_usuario
+),
+
 procedimentos_centro_pop as (
     select
         id_usuario,
@@ -366,6 +395,7 @@ select
         {{ consolidar_emails('coalesce(cp_reg.registros, [])', campo='email_filtro') }} as email_filtro,
         coalesce(cp_reg.registros, []) as registros,
         coalesce(hist.historico_mensal, []) as historico_mensal,
+        coalesce(cast(ultimo_cp.data_ultimo_atend_tecnico_informada as string), '') as data_ultimo_atend_tecnico_informada,
         esc.participacoes[safe_offset(array_length(esc.participacoes) - 1)].nome_atividade as ultima_participacao_atividade,
         esc.participacoes[safe_offset(array_length(esc.participacoes) - 1)].nome_unidade as ultima_participacao_unidade,
         esc.participacoes[safe_offset(array_length(esc.participacoes) - 1)].data_presenca as ultima_participacao_data,
@@ -508,6 +538,7 @@ left join {{ ref('dim_unidades') }} as unidade_referencia on safe_cast(p.id_unid
 
 left join {{ ref('int_perfil_creas_simples') }} as perfil_creas_simples on p.id_usuario = perfil_creas_simples.id_usuario
 left join {{ ref('alta_complexidade') }} as perfil_alta on p.id_usuario = perfil_alta.id_usuario
+left join ultimo_atendimento_tecnico_centro_pop as ultimo_cp on p.id_usuario = ultimo_cp.id_usuario
 
 left join {{ ref('raw_usuarios') }} as cadastro on p.id_usuario = cadastro.id_paciente
 left join {{ ref('raw_usuarios_detalhes') }} as detalhes_cadastro on p.id_usuario = detalhes_cadastro.id_paciente
