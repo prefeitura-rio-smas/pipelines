@@ -38,11 +38,13 @@ ultimo_atendimento_tecnico_centro_pop as (
         )) as data_ultimo_atend_tecnico_informada
     from {{ ref('int_evolucoes_por_usuario') }} as e
     left join {{ ref('dim_profissionais') }} as profissional
-        on e.origem_modulo != 'administrativa'
-        and e.id_profissional = profissional.id_profissional
+        on
+            e.origem_modulo != 'administrativa'
+            and e.id_profissional = profissional.id_profissional
     left join {{ ref('raw_operadores') }} as operador
-        on e.origem_modulo = 'administrativa'
-        and e.id_profissional = operador.id_login
+        on
+            e.origem_modulo = 'administrativa'
+            and e.id_profissional = operador.id_login
     where
         e.tipo_servico = 'centro_pop'
         and case
