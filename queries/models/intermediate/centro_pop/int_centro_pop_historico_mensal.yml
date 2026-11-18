@@ -1,5 +1,6 @@
 version: 2
 models:
 - name: int_centro_pop_historico_mensal
-  description: Última versão de cada competência fechada e prévia corrente. Campos
-    de perfil observados na captura; sem reconstrução histórica dos atributos cadastrais.
+  description: Histórico recalculado por cidadão, unidade e competência com movimento.
+    Eventos são atribuídos ao mês de realização e o perfil usa os registros disponíveis
+    até o fim da competência. A reconstrução usa a versão atual das fontes.

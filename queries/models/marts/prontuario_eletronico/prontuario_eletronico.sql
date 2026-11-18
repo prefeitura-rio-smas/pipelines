@@ -26,35 +26,9 @@ with encaminhamentos_centro_pop as (
 ),
 
 ultimo_atendimento_tecnico_centro_pop as (
-    select
-        e.id_usuario,
-        e.id_unidade,
-        max(coalesce(
-            (
-                select max(safe.parse_date('%d/%m/%Y', data_informada))
-                from unnest(regexp_extract_all(
-                    {{ texto_html_legivel('e.descricao_evolucao') }},
-                    r'(?i)Registro\s*:\s*(\d{2}/\d{2}/\d{4})'
-                )) as data_informada
-            ),
-            date(e.data_evolucao)
-        )) as data_ultimo_atend_tecnico_informada
-    from {{ ref('int_evolucoes_por_usuario') }} as e
-    left join {{ ref('dim_profissionais') }} as profissional
-        on
-            e.origem_modulo != 'administrativa'
-            and e.id_profissional = profissional.id_profissional
-    left join {{ ref('raw_operadores') }} as operador
-        on
-            e.origem_modulo = 'administrativa'
-            and e.id_profissional = operador.id_login
-    where
-        e.tipo_servico = 'centro_pop'
-        and case
-            when e.origem_modulo = 'administrativa' then operador.nivel_conta
-            else profissional.nivel_conta
-        end in (2, 5)
-    group by e.id_usuario, e.id_unidade
+    select id_usuario, id_unidade, max(data_ultimo_atend_tecnico_informada) as data_ultimo_atend_tecnico_informada
+    from ({{ pu_cpop_atendimentos_tecnicos() }})
+    group by id_usuario, id_unidade
 ),
 
 procedimentos_centro_pop as (

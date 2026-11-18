@@ -9,7 +9,7 @@ models:
       id_unidade, nome_unidade e email_filtro são campos STRING no topo, referentes à unidade da linha.
       Cadastro e famílias se repetem nas unidades; eventos, perfis e contadores ficam restritos à unidade.
       Para contar pessoas, usar COUNT(DISTINCT usuario.id_usuario).
-      O filtro de e-mail libera o histórico completo quando o endereço pertence à lista.
+      Os destinatários são metadados; o isolamento exige a consulta segura de consumo com DS_USER_EMAIL.
       Dados pessoais e perfil ficam em usuario; eventos têm quantidade, quantidade por serviço em campos diretos e registros.
       Evoluções não canceladas incluem registros sem formulário, com descrição legível.
       No cadastro, campos escalares são STRING com ausência como ''; no CREAS e alta, ausência é NULL. Bairro e raça/cor nulos
@@ -203,7 +203,7 @@ models:
       - name: alta_complexidade.registros
         description: Ciclos com unidade e destinatários próprios.
       - name: centro_pop.historico_mensal
-        description: Histórico por competência e unidade desde novembro/2026; inclui prévia corrente e última versão dos meses fechados. Cada entrada tem perfil escalar e contadores mensais. Consumir no Looker pela consulta autorizada por unidade.
+        description: Histórico recalculado por competência e unidade desde o primeiro mês com movimento nas fontes. Cada entrada tem perfil até o fim do mês, eventos e contadores mensais. Consumir no Looker pela consulta autorizada por unidade.
       - name: atendimentos.registros.classificacao_atendimento
         description: Classificação consolidada com prioridade Atendimento Recepção > Atendimento Técnico > Outros Atendimentos. Para métricas por tipo, usar profissionais.classificacao_atendimento; recepção tem precedência conforme a programada. Aplica-se a todos os serviços.
       - name: evolucoes
