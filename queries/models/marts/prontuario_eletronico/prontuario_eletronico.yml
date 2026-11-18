@@ -59,7 +59,6 @@ models:
           alta_complexidade.data_saida: DATE
           alta_complexidade.tempo_permanencia_dias: INT64
           usuario.idade: INT64
-          atendimentos.quantidade_linhas_bi: INT64
           atendimentos.quantidade: INT64
           evolucoes.quantidade: INT64
           atendimentos.quantidade_cras: INT64
@@ -115,9 +114,6 @@ models:
       - name: usuario.idade
         data_type: INT64
         description: Idade em anos completos na data de atualização da tabela, no fuso America/Sao_Paulo. NULL para nascimento ausente, inválido ou futuro. Permanece fixa até a próxima atualização.
-      - name: atendimentos.quantidade_linhas_bi
-        data_type: INT64
-        description: Total das linhas de atendimento/profissional aceitas pela programada; soma do tamanho das listas de profissionais. Não equivale ao número de eventos.
       - name: atendimentos.registros.profissionais.classificacao_atendimento
         description: Tipo da linha do BI, com recepção antes das quatro ocupações técnicas da programada.
       - name: atendimentos.registros.profissionais.profissional_cbo

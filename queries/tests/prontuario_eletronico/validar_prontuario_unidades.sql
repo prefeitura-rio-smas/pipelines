@@ -22,9 +22,6 @@ from {{ ref('prontuario_eletronico') }} as p
 where
     p.atendimentos.quantidade != array_length(p.atendimentos.registros)
     or p.evolucoes.quantidade != array_length(p.evolucoes.registros)
-    or p.atendimentos.quantidade_linhas_bi != (
-        select coalesce(sum(array_length(r.profissionais)), 0) from unnest(p.atendimentos.registros) as r
-    )
     {% for assunto in ['atendimentos', 'evolucoes'] %}
         {% for servico in ['cras', 'creas', 'centro_pop', 'outros'] %}
             or p.{{ assunto }}.quantidade_{{ servico }} != (

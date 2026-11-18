@@ -73,7 +73,7 @@ for identity, expected in [('a@example.invalid',1),(' A@EXAMPLE.INVALID ',1),('a
         assert len(d['centro_pop']['historico_mensal']) == expected
         assert len(d['projetos_sociais']) == expected
         assert d['atendimentos']['quantidade'] == expected
-        assert d['atendimentos']['quantidade_linhas_bi'] == 2 * expected
+        assert all(len(r['profissionais']) == 2 for r in d['atendimentos']['registros'])
         assert d['atendimentos']['quantidade_cras'] == expected
         assert d['evolucoes']['quantidade'] == expected
         assert all(f['servicos'] == [] for f in d['familias'])

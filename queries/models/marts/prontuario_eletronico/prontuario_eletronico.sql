@@ -376,7 +376,6 @@ select
     struct(
         {{ consolidar_emails('coalesce(a.atendimentos, [])', campo='email_assunto') }} as email_filtro,
         array_length(coalesce(a.atendimentos, [])) as quantidade,
-        (select coalesce(sum(array_length(a.profissionais)), 0) from unnest(coalesce(a.atendimentos, [])) as a) as quantidade_linhas_bi,
         {{ pu_contagens_diretas('coalesce(a.atendimentos, [])') }},
         array(
             select as struct

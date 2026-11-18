@@ -389,7 +389,6 @@ select
     struct(
         if(array_length(atendimentos_registros) > 0, email, '') as email_filtro,
         array_length(atendimentos_registros) as quantidade,
-        (select coalesce(sum(array_length(r.profissionais)), 0) from unnest(atendimentos_registros) as r) as quantidade_linhas_bi,
         (select countif(r.tipo_servico = 'cras') from unnest(atendimentos_registros) as r) as quantidade_cras,
         (select countif(r.tipo_servico = 'creas') from unnest(atendimentos_registros) as r) as quantidade_creas,
         (select countif(r.tipo_servico = 'centro_pop') from unnest(atendimentos_registros) as r) as quantidade_centro_pop,
