@@ -26,7 +26,10 @@ with encaminhamentos_centro_pop as (
 ),
 
 ultimo_atendimento_tecnico_centro_pop as (
-    select id_usuario, id_unidade, max(data_ultimo_atend_tecnico_informada) as data_ultimo_atend_tecnico_informada
+    select
+        id_usuario,
+        id_unidade,
+        max(data_ultimo_atend_tecnico_informada) as data_ultimo_atend_tecnico_informada
     from ({{ pu_cpop_atendimentos_tecnicos() }})
     group by id_usuario, id_unidade
 ),

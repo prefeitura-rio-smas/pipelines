@@ -1,6 +1,9 @@
 {{ config(enabled=target.name != 'prod', tags=['planilha_unificada']) }}
 
-select id_usuario, id_unidade, mes_referencia
+select
+    id_usuario,
+    id_unidade,
+    mes_referencia
 from {{ ref('int_centro_pop_mensal') }} as mensal
 where
     quantidade_atendimentos != array_length(atendimentos)
@@ -17,7 +20,10 @@ where
         )
     {% endfor %}
 union all
-select id_usuario, id_unidade, mes_referencia
+select
+    id_usuario,
+    id_unidade,
+    mes_referencia
 from {{ ref('int_centro_pop_mensal') }}
 group by id_usuario, id_unidade, mes_referencia
 having count(*) > 1

@@ -8,7 +8,9 @@ with cargas as (
 ),
 
 unidades as (
-    select id_unidade, nome_unidade
+    select
+        id_unidade,
+        nome_unidade
     from {{ ref('dim_unidades') }}
     where tipo_unidade = 'Centro POP'
 ),
@@ -24,14 +26,20 @@ registros as (
 ),
 
 atendimentos as (
-    select p.id_usuario, a.id_unidade, a.data_atendimento as data_evento,
+    select
+        p.id_usuario,
+        a.id_unidade,
+        a.data_atendimento as data_evento,
         (select as struct a.* except (email, projetos_sociais_familia)) as atendimento
     from {{ ref('int_atendimentos_por_usuario') }} as p
     cross join unnest(p.atendimentos) as a
 ),
 
 formularios as (
-    select p.id_usuario, f.id_unidade, f.id_evolucao_modulo,
+    select
+        p.id_usuario,
+        f.id_unidade,
+        f.id_evolucao_modulo,
         array_agg(f order by posicao) as formularios
     from {{ ref('int_formularios_por_usuario') }} as p
     cross join unnest(p.formularios) as f with offset as posicao
@@ -39,49 +47,68 @@ formularios as (
 ),
 
 evolucoes as (
-    select e.* replace ({{ texto_html_legivel('e.descricao_evolucao') }} as descricao_evolucao),
-        date(e.data_evolucao) as data_evento, coalesce(f.formularios, []) as formularios
+    select
+        e.* replace ({{ texto_html_legivel('e.descricao_evolucao') }} as descricao_evolucao),
+        date(e.data_evolucao) as data_evento,
+        coalesce(f.formularios, []) as formularios
     from {{ ref('int_evolucoes_por_usuario') }} as e
-    left join formularios as f using (id_usuario, id_unidade, id_evolucao_modulo)
+    left join formularios as f
+        on e.id_usuario = f.id_usuario and e.id_unidade = f.id_unidade and e.id_evolucao_modulo = f.id_evolucao_modulo
 ),
 
 movimento as (
     {% for origem in ['atendimentos', 'evolucoes', 'registros'] %}
-        select id_usuario, id_unidade, data_evento from {{ origem }}
+        select
+            id_usuario,
+            id_unidade,
+            data_evento
+        from {{ origem }}
         {% if not loop.last %}union all{% endif %}
     {% endfor %}
 ),
 
 competencias as (
-    select distinct m.id_usuario, m.id_unidade, date_trunc(m.data_evento, month) as mes
+    select distinct
+        m.id_usuario,
+        m.id_unidade,
+        date_trunc(m.data_evento, month) as mes
     from movimento as m
-    inner join unidades as un using (id_unidade)
-    where m.data_evento <= current_date('America/Sao_Paulo')
-    {% if mes %}and date_trunc(m.data_evento, month) = date('{{ mes }}'){% endif %}
+    inner join unidades as un on m.id_unidade = un.id_unidade
+    where
+        m.data_evento <= current_date('America/Sao_Paulo')
+        {% if mes %}and date_trunc(m.data_evento, month) = date('{{ mes }}'){% endif %}
 ),
 
 usuarios_escopo as (
     select
+        id_usuario as id_cidadao,
+        id_unidade,
+        mes,
         concat(cast(id_usuario as string), ':', cast(id_unidade as string), ':', cast(mes as string)) as id_usuario,
-        id_usuario as id_cidadao, id_unidade, mes,
         least(last_day(mes), current_date('America/Sao_Paulo')) as limite
     from competencias
 ),
 
 registros_escopo as (
-    select r.* replace (u.id_usuario as id_usuario), u.mes
+    select
+        r.* replace (u.id_usuario as id_usuario),
+        u.mes
     from usuarios_escopo as u
     inner join registros as r on u.id_cidadao = r.id_usuario and u.id_unidade = r.id_unidade
-    where r.data_evento <= u.limite
+    where
+        r.data_evento <= u.limite
         and (r.data_registro is null or date(r.data_registro) <= u.limite)
         and (r.data_resposta is null or date(r.data_resposta) <= u.limite)
 ),
 
 atendimentos_escopo as (
-    select u.id_usuario, array_agg(a.atendimento) as atendimentos
+    select
+        u.id_usuario,
+        array_agg(a.atendimento) as atendimentos
     from usuarios_escopo as u
     inner join atendimentos as a on u.id_cidadao = a.id_usuario and u.id_unidade = a.id_unidade
-    where a.data_evento <= u.limite
+    where
+        a.data_evento <= u.limite
         and coalesce(safe_cast(a.atendimento.data_cadastro_atendimento as date), a.data_evento) <= u.limite
     group by u.id_usuario
 ),
@@ -91,17 +118,19 @@ atendimentos_escopo as (
     ('evolucoes', 'a.data_evolucao, a.id_evolucao_modulo'),
     ('registros', 'a.data_evento, a.id_registro')
 ] %}
-{{ origem }}_mensais as (
-    select u.id_usuario, array_agg(
-        {% if origem == 'atendimentos' %}a.atendimento
-        {% else %}(select as struct a.* except (id_usuario)){% endif %}
-        order by {{ ordenacao }}
-    ) as itens
-    from usuarios_escopo as u
-    inner join {{ origem }} as a on u.id_cidadao = a.id_usuario and u.id_unidade = a.id_unidade
-    where a.data_evento between u.mes and u.limite
-    group by u.id_usuario
-),
+    {{ origem }}_mensais as (
+        select
+            u.id_usuario,
+            array_agg(
+                {% if origem == 'atendimentos' %}a.atendimento
+                {% else %}(select as struct a.* except (id_usuario)){% endif %}
+                order by {{ ordenacao }}
+            ) as itens
+        from usuarios_escopo as u
+        inner join {{ origem }} as a on u.id_cidadao = a.id_usuario and u.id_unidade = a.id_unidade
+        where a.data_evento between u.mes and u.limite
+        group by u.id_usuario
+    ),
 {% endfor %}
 
 perfil_scoped as ({{ pu_perfil_centro_pop_sql('registros_escopo', 'atendimentos_escopo', 'usuarios_escopo') }}),
@@ -109,7 +138,9 @@ perfil_scoped as ({{ pu_perfil_centro_pop_sql('registros_escopo', 'atendimentos_
 atendimentos_tecnicos as ({{ pu_cpop_atendimentos_tecnicos() }}),
 
 ultimo_tecnico as (
-    select u.id_usuario, max(t.data_ultimo_atend_tecnico_informada) as data_ultimo
+    select
+        u.id_usuario,
+        max(t.data_ultimo_atend_tecnico_informada) as data_ultimo
     from usuarios_escopo as u
     inner join atendimentos_tecnicos as t
         on u.id_cidadao = t.id_usuario and u.id_unidade = t.id_unidade
@@ -130,7 +161,7 @@ participacoes as (
 
 select
     cast(u.id_cidadao as string) as id_usuario,
-    u.id_unidade as id_unidade,
+    u.id_unidade,
     un.nome_unidade,
     u.mes as mes_referencia,
     'Prévia' as situacao,
@@ -156,8 +187,11 @@ select
         where item.tipo_registro in ('pai', 'atendimento_social') and nullif(trim(demanda), '') is not null
     ) as procedimentos_mes,
     (
-        select string_agg(distinct concat(trim(enc.label), ': ', trim(enc.valor)), ', '
-            order by concat(trim(enc.label), ': ', trim(enc.valor)))
+        select
+            string_agg(
+                distinct concat(trim(enc.label), ': ', trim(enc.valor)), ', '
+                order by concat(trim(enc.label), ': ', trim(enc.valor))
+            )
         from unnest(r.itens) as item cross join unnest(item.encaminhamentos) as enc
         where nullif(trim(enc.label), '') is not null and nullif(trim(enc.valor), '') is not null
     ) as encaminhamentos_mes,

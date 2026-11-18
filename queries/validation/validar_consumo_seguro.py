@@ -1,3 +1,4 @@
+# ruff: noqa: S101, S608, S701
 """SELECTs sintéticos sobre a mesma macro do Looker; nenhuma materialização.
 Definir PRONTUARIO_VALIDACAO_TABELA com a tabela candidata atual.
 Executar da raiz com .venv/bin/python queries/validation/validar_consumo_seguro.py.
@@ -5,6 +6,9 @@ Executar da raiz com .venv/bin/python queries/validation/validar_consumo_seguro.
 import json
 import os
 from pathlib import Path
+import re
+import sys
+
 from google.cloud import bigquery
 from jinja2 import Environment
 
@@ -12,7 +16,7 @@ TABLE = os.environ['PRONTUARIO_VALIDACAO_TABELA']
 client = bigquery.Client(project='rj-smas-dev')
 schema = client.get_table(TABLE).schema
 active_paths = None
-macro = Environment().from_string(Path('queries/macros/dominios/prontuario_eletronico/consumo_seguro.sql').read_text()).module
+macro = Environment(autoescape=False).from_string(Path('queries/macros/dominios/prontuario_eletronico/consumo_seguro.sql').read_text()).module
 
 def sql_type(f):
     t = 'struct<' + ','.join(x.name+' '+sql_type(x) for x in f.fields) + '>' if f.field_type == 'RECORD' else f.field_type
@@ -90,7 +94,6 @@ for active_paths in [set(), {'.evolucoes.registros'}, {'.centro_pop.historico_me
     print(json.dumps({'only_paths':sorted(active_paths), 'passed':True}))
 
 # Opcional: exercita um cidadão real multiunidade sem imprimir dados pessoais.
-import sys
 if '--real' in sys.argv:
     q = f'''select to_json_string(p) as original from `{TABLE}` p
     where (select count(distinct r.id_unidade) from unnest(p.atendimentos.registros) r) > 1
@@ -104,7 +107,6 @@ if '--real' in sys.argv:
         for part in path.split('.'):
             d=d[part]
         return d
-    import re
     def allowed(r, email):
         return str(r.get('id_unidade') or '').strip() != '' and email in [t.strip().lower() for t in re.split('[;,\r\n]',r.get('email_filtro') or '')]
     emails={e.strip().lower() for r in original['atendimentos']['registros'] for e in re.split('[;,\r\n]',r.get('email_filtro') or '') if e.strip()}
@@ -119,7 +121,8 @@ if '--real' in sys.argv:
         expected=[r for r in records(original,path) if allowed(r,selected)]
         for r in expected:
             r['email_filtro']=selected
-            if path=='atendimentos.registros':r['projetos_sociais_familia']=None
+            if path == 'atendimentos.registros':
+                r['projetos_sociais_familia'] = None
         assert records(result,path)==expected, path
     assert result['atendimentos']['quantidade']==len(result['atendimentos']['registros'])
     print(json.dumps({'real_mult_unit_isolation':True,'bytes':job.total_bytes_processed,'slot_ms':job.slot_millis,'sample_bytes':original_job.total_bytes_processed}))
