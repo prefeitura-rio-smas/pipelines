@@ -19,6 +19,7 @@ _ISO_DATE_RE = re.compile(r'^\d{4}-\d{2}-\d{2}$')
 _DATE_CLASSIC_COLUMNS = {
     'data_entrada',
     'data_saida',
+    'data_ingresso',
     'nascimento_data',
 }
 
