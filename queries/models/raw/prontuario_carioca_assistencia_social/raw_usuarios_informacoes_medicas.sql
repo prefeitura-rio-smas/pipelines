@@ -5,5 +5,6 @@ select
     datcomorbinfo as data_informacao_comorbidades,
     dsclocaltratcomorb as local_tratamento_comorbidades,
     datcadastro as data_cadastro,
-    sequscadastro as id_unidade_cadastro
+    sequscadastro as id_unidade_cadastro,
+    inddrogas as flag_uso_substancias_psicoativas
 from {{ source('brutos_acolherio_staging', 'gh_pac_info_med') }}

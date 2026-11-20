@@ -1,0 +1,19 @@
+version: 2
+models:
+- name: int_evolucoes_por_usuario
+  description: Preparação por evolução não cancelada e usuário; associação familiar
+    apenas pelo paciente explícito, sem distribuição aos membros. Data de cancelamento
+    deve ser NULL antes da contagem e extração de formulários.
+  data_tests:
+  - dbt_utils.unique_combination_of_columns:
+      arguments:
+        combination_of_columns:
+        - id_usuario
+        - id_evolucao_modulo
+  columns:
+  - name: id_usuario
+    data_tests:
+    - not_null
+  - name: id_evolucao_modulo
+    data_tests:
+    - not_null

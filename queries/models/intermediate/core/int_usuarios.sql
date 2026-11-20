@@ -40,6 +40,27 @@ projetos as (
     select * from {{ ref('int_usuarios_projetos_sociais') }}
 ),
 
+atividades_trabalho as (
+    with itens as (
+        select
+            d.id_paciente,
+            trim(codigo) as codigo
+        from {{ ref('raw_usuarios_detalhes') }} as d,
+            unnest(split(coalesce(d.tipos_atividade_trabalho, ''), ',')) as codigo
+        where nullif(trim(codigo), '') is not null
+    )
+
+    select
+        i.id_paciente,
+        string_agg(
+            distinct coalesce(c.descricao, concat('Atividade não mapeada (código ', i.codigo, ')')), ', '
+            order by coalesce(c.descricao, concat('Atividade não mapeada (código ', i.codigo, ')'))
+        ) as tipo_atividade_remunerada
+    from itens as i
+    left join {{ ref('acolherio_atividades_trabalho') }} as c on i.codigo = cast(c.codigo as string)
+    group by i.id_paciente
+),
+
 final as (
     select
         base.id_paciente as id_usuario,
@@ -63,6 +84,7 @@ final as (
         det.nome_apoiador,
         det.numero_processo_decisao_apoiada,
         det.renda_ativa,
+        ativ.tipo_atividade_remunerada,
         case
             when det.renda_ativa != 0 then "Sim"
             else "Não"
@@ -92,9 +114,14 @@ final as (
         b.beneficio,
         proj.projetos_sociais,
         base.id_unidade_referencia,
-        base.id_login_cadastro
+        base.id_login_cadastro,
+        base.uf_nascimento,
+        base.cidade_nascimento,
+        sm.serie_escolar,
+        safe_cast(det.data_cadunico as date) as data_cadunico_informada
     from base as base
     left join detalhes as det on base.id_paciente = det.id_paciente
+    left join atividades_trabalho as ativ on base.id_paciente = ativ.id_paciente
     left join saude_mental as sm on base.id_paciente = sm.id_paciente
     left join origens as ori on sm.codigo_origem = ori.id_origem
     left join violacoes as v on base.id_paciente = v.id_usuario
@@ -104,4 +131,4 @@ final as (
     where upper(trim(base.nome)) not like "TESTE%"
 )
 
-select * from final
+select *, {{ idade_faixa("case when safe_cast(data_nascimento as date) <= current_date('America/Sao_Paulo') then " ~ calc_idade('safe_cast(data_nascimento as date)', "current_date('America/Sao_Paulo')") ~ " end") }} as idade_faixa from final

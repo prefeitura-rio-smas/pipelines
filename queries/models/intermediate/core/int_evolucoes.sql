@@ -1,3 +1,4 @@
+-- Reconstruir antes da supertabela; cobertura das fontes é verificada por teste.
 with adm as (
     select
         *,

@@ -1,0 +1,4 @@
+version: 2
+models:
+- name: int_centro_pop_snapshots
+  description: Fotos imutáveis versionadas, sem expiração, preservadas para leitura do histórico. Full refresh desabilitado.

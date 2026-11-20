@@ -5,6 +5,7 @@ with source as (
         sequsref as id_unidade_referencia,
         seqlogin as id_login_cadastro,
         sigufnasc as uf_nascimento,
+        muninasc as cidade_nascimento,
         dscnomepac as nome,
         dscnomsoci as nome_social,
         dscnmmae as nome_mae,
@@ -18,12 +19,15 @@ with source as (
         numend as numero_endereco,
         complend as complemento_endereco,
         pontorefe as ponto_referencia,
-        racacor as raca_cor, 
+        racacor as raca_cor,
         numcpfpac as cpf,
         indsexo as sexo,
         indgenero as genero,
         nuprontpapel as prontuario_papel,
-        datcadast as data_cadastro
-    from  {{ source('brutos_acolherio_staging', 'gh_cidadao_pac') }}
+        datcadast as data_cadastro,
+        numrg as numero_rg_cadastro,
+        dsccns as nis_cadastro
+    from {{ source('brutos_acolherio_staging', 'gh_cidadao_pac') }}
 )
+
 select * from source

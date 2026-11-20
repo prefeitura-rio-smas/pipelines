@@ -38,6 +38,8 @@ sources:
         description: "Dados complementares do Paciente."
       - name: gh_familias_membros
         description: "Composição familiar e vínculos."
+      - name: gh_familias_motiv_saida
+        description: "Catálogo de motivos de saída de membros da família."
       - name: gh_tpatendimentos
         description: "Tipos de atendimento configurados."
       - name: gh_contas
@@ -82,3 +84,10 @@ sources:
         description: "Respostas de lista dos questionários estruturados do prontuário."
       - name: sys_config
         description: "Configurações globais do sistema (sys_config), utilizada como heartbeat de atualização da pipeline."
+  - name: acolherio_referencia
+    database: rj-smas-dev
+    schema: dashboard_acolherio
+    tables:
+    - name: atendimentos_programada
+      identifier: dev_atendimentos
+      description: Referência materializada da consulta programada, somente leitura.

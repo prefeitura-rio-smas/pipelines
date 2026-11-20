@@ -48,6 +48,10 @@ models:
       +materialized: table
       +schema: "{{ 'marts' if target.name == 'prod' else 'relatorio' }}"
 
+      prontuario_eletronico:
+        +enabled: "{{ target.name != 'prod' }}"
+        +tags: ["planilha_unificada"]
+
       core:
         # Star schema conformado: dims em dimensions/ e fatos em facts/ (thin
         # sobre os int_ de intermediate/core, com surrogate keys).
@@ -79,9 +83,6 @@ models:
 
       rma_cras:
         +tags: ["monthly"]
-
-      centro_pop:
-        +tags: ["daily"]
 
       poc_paif:
         +materialized: table

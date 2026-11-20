@@ -1,0 +1,9 @@
+version: 2
+models:
+  - name: int_perfil_centro_pop_por_unidade
+    description: Perfil Centro POP selecionado integralmente dentro do cidadão/unidade; encaminhamentos e participações não cruzam unidades.
+    columns:
+      - name: perfil
+        description: Respostas internas do perfil selecionado na unidade, para projeção pública com os tipos e valores ausentes originais.
+      - name: id_unidade
+        description: Unidade do perfil; NULL preserva registros sem unidade identificada.
