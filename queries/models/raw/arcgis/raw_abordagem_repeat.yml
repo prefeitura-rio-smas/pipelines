@@ -1,0 +1,75 @@
+version: 2
+
+sources:
+  - name: arcgis_raw
+    description: "Feature Services do ArcGIS (SIURB) carregados pelos flows de extração."
+    database: rj-smas
+    schema: arcgis_raw
+    tables:
+      - name: abordagem_repeat_raw
+        description: >
+          Layer 1 (repeat) do Feature Service de Abordagem Social: 1 linha por
+          abordagem registrada. Extraída pelo flow `abordagem | Carga ArcGIS` (6/6h).
+
+models:
+  - name: raw_abordagem_repeat
+    description: >
+      Camada Raw do formulário de abordagem (repeat): 1 linha por abordagem
+      (globalid). Renomeia/tipa a fonte e normaliza rótulos de domínio (CASE)
+      consumidos pelo dashboard de Abordagem. Contrato externo: as colunas são
+      as da relação `dashboard_arcgis.abordagem` lida pelo Looker — não
+      renomear sem repontar o BI. A tradução código→rótulo ainda está em CASE
+      (débito herdado: deveria vir de seed, ver taxonomia de macros).
+    columns:
+      - name: objectid
+        description: "ObjectID da feature (ArcGIS)."
+        tests:
+          - not_null
+          - unique
+      - name: globalid
+        description: "GUID da abordagem (ArcGIS). Chave lógica do grão."
+        tests:
+          - not_null
+          - unique
+      - name: parentrowid
+        description: "ObjectID da ficha (layer 0) que originou esta abordagem; join com raw_abordagem_ficha.objectid."
+      - name: repeat_unidade_calculo_tratada
+        description: "Unidade de cálculo da abordagem (nome normalizado; CREAS/Centro POP)."
+      - name: repeat_unidade_cas
+        description: "CAS da unidade que registrou a abordagem (liga no de/para de e-mails do BI)."
+      - name: repeat_nome_usuario
+        description: "Nome do usuário abordado."
+      - name: repeat_nome_mae
+        description: "Nome da mãe do usuário abordado (chave de dedup)."
+      - name: repeat_nome_pai
+        description: "Nome do pai do usuário abordado (chave de dedup)."
+      - name: repeat_cpf
+        description: "CPF como preenchido no formulário (sem validação)."
+      - name: repeat_data_nascimento
+        description: "Data de nascimento parseada do formato dd/mm/aaaa."
+      - name: data_abordagem
+        description: "Data da abordagem (epoch ms ou ISO convertidos para DATE)."
+      - name: repeat_faixa_etaria
+        description: "Faixa etária do usuário na abordagem."
+      - name: repeat_raca_cor_etnia_tratada
+        description: "Raça/cor/etnia com rótulo normalizado."
+      - name: repeat_sexo
+        description: "Sexo do usuário com rótulo normalizado."
+      - name: endereco_abord
+        description: "Endereço descritivo da abordagem."
+      - name: latitude
+        description: "Latitude extraída do SHAPE do ArcGIS."
+      - name: longitude
+        description: "Longitude extraída do SHAPE do ArcGIS."
+      - name: geometry
+        description: "Geometria nativa (GEOGRAPHY) do ArcGIS."
+      - name: qual_substancia_psicoativa
+        description: "Substâncias psicoativas utilizadas (lista separada por vírgula)."
+      - name: key_cpf
+        description: "CPF normalizado (só dígitos) usado nas regras de dedup."
+      - name: key_nome_usuario
+        description: "Nome do usuário normalizado (sem acento/stopwords) para dedup."
+      - name: key_nome_mae
+        description: "Nome da mãe normalizado (sem acento/stopwords) para dedup."
+      - name: key_nome_pai
+        description: "Nome do pai normalizado (sem acento/stopwords) para dedup."

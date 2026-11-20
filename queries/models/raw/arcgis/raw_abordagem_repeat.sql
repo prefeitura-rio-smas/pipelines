@@ -1,4 +1,10 @@
-{{ config(materialized = 'ephemeral') }}
+-- Camada Raw: formulários de abordagem (layer 1 do Feature Service, "repeat").
+-- Fonte: arcgis_raw.abordagem_repeat_raw (flow `abordagem | Carga ArcGIS`, 6/6h).
+-- Grão: 1 linha por abordagem registrada. Renomeia/tipa a fonte e normaliza os
+-- rótulos de domínio (CASE) consumidos pelo BI — a tradução código->rótulo ainda
+-- não veio para seed; débito herdado do legado (ver ops/macros/taxonomia-macros).
+-- Contrato: mesmas colunas da tabela `dashboard_arcgis.abordagem` (Looker).
+{{ config(materialized = 'view') }}
 
 SELECT
   objectid,
