@@ -77,10 +77,10 @@ historico_centro_pop as (
     select
         h.id_usuario,
         h.id_unidade,
-        array_agg((
-            select as struct
-                h.* except (id_usuario)
-        ) order by h.mes_referencia desc, h.id_unidade asc) as historico_mensal
+        array_agg(
+            (select as struct h.* except (id_usuario))
+            order by h.mes_referencia desc, h.id_unidade asc
+        ) as historico_mensal
     from {{ ref('int_centro_pop_historico_mensal') }} as h
     group by h.id_usuario, h.id_unidade
 ),
