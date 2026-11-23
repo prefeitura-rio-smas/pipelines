@@ -24,6 +24,16 @@ union all
 select
     p.usuario.id_usuario,
     p.id_unidade,
+    'id_usuario_unidade' as origem
+from {{ ref('prontuario_eletronico') }} as p
+where
+    strpos(p.id_usuario, ':') > 0
+    or strpos(p.id_unidade, ':') > 0
+    or p.id_usuario_unidade is distinct from concat(p.id_usuario, ':', p.id_unidade)
+union all
+select
+    p.usuario.id_usuario,
+    p.id_unidade,
     'contadores' as origem
 from {{ ref('prontuario_eletronico') }} as p
 where
@@ -36,6 +46,15 @@ where
             )
         {% endfor %}
     {% endfor %}
+union all
+select
+    p.usuario.id_usuario,
+    p.id_unidade,
+    'participacao_atendimento' as origem
+from {{ ref('prontuario_eletronico') }} as p, unnest(p.atendimentos.registros) as r
+where
+    array_length(r.profissionais) != 1
+    or r.classificacao_atendimento is distinct from r.profissionais[safe_offset(0)].classificacao_atendimento
 union all
 select
     p.usuario.id_usuario,

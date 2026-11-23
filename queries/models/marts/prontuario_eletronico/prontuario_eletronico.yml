@@ -26,7 +26,7 @@ models:
       meta:
         granularidade: [id_usuario, id_unidade]
         contrato: por_assunto_v17_usuario_unidade
-        campos_raiz: [id_usuario, id_unidade, nome_unidade, email_filtro, usuario, familias, projetos_sociais, atendimentos, evolucoes, centro_pop, creas, alta_complexidade]
+        campos_raiz: [id_usuario_unidade, id_usuario, id_unidade, nome_unidade, email_filtro, usuario, familias, projetos_sociais, atendimentos, evolucoes, centro_pop, creas, alta_complexidade]
         execucao: modelo_dbt
         publicacao: desenvolvimento
         valores_ausentes: texto_vazio
@@ -85,6 +85,10 @@ models:
           arguments:
             combination_of_columns: [id_usuario, id_unidade]
     columns:
+      - name: id_usuario_unidade
+        data_type: STRING
+        description: Chave da linha no formato id_usuario:id_unidade, com sufixo vazio para linhas sem unidade.
+        data_tests: [unique, not_null]
       - name: id_usuario
         data_type: STRING
         description: Identificador do cidadão na raiz, com o mesmo valor de usuario.id_usuario. Compõe a chave com id_unidade.
@@ -178,14 +182,16 @@ models:
           cadastro mais recente por usuário/projeto. Não é um histórico completo.
       - name: atendimentos
         description: |
-          STRUCT com quantidade INT64, quantidade_cras, quantidade_creas, quantidade_centro_pop, quantidade_outros e registros ARRAY<STRUCT>. Um evento por
-          id_atendimento_modulo, com origem, nome_unidade, tipo, data, hora HH:MM,
-          profissionais e tipo_servico. Preserva somente os eventos e profissionais aceitos pelas regras da programada,
-          reproduzidas no dbt com desempates estáveis; atendimentos cancelados são excluídos.
-          Profissionais homônimos não são deduplicados após retirar seus IDs.
+          STRUCT com quantidade INT64, contadores por serviço e registros ARRAY<STRUCT>.
+          Cada registro representa uma participação da programada, inclusive com ID profissional vazio.
+          Participações do mesmo evento repetem id_atendimento_modulo, data e flag de compartilhamento.
+          Atendimentos cancelados são excluídos.
       - name: atendimentos.quantidade
-        description: Igual ao tamanho de atendimentos.registros, na unidade da linha (cancelados excluídos); zero sem eventos.
+        description: Número de participações da unidade da linha, igual ao tamanho de atendimentos.registros. Os contadores por serviço usam o mesmo grão.
         data_tests: [not_null]
+      - name: atendimentos.registros.atendimento_compartilhado
+        data_type: STRING
+        description: Flag do evento original, repetida nas suas participações. Vale Sim quando há pelo menos dois IDs profissionais distintos e preenchidos.
       - name: atendimentos.registros.tipo_servico
         description: Serviço de origem do evento (cras, creas, centro_pop ou outros), preservado do intermediário comum para futuras marts.
       - name: usuario.cidade_nascimento
@@ -199,7 +205,7 @@ models:
       - name: centro_pop.historico_mensal
         description: Histórico recalculado por competência e unidade desde o primeiro mês com movimento nas fontes. Cada entrada tem perfil até o fim do mês, eventos e contadores mensais. Consumir no Looker pela consulta autorizada por unidade.
       - name: atendimentos.registros.classificacao_atendimento
-        description: Classificação consolidada com prioridade Atendimento Recepção > Atendimento Técnico > Outros Atendimentos. Para métricas por tipo, usar profissionais.classificacao_atendimento; recepção tem precedência conforme a programada. Aplica-se a todos os serviços.
+        description: Classificação da participação na programada. Igual à classificação no único elemento do array profissionais.
       - name: evolucoes
         description: |
           STRUCT com quantidade INT64 e registros ARRAY<STRUCT>, uma entrada por

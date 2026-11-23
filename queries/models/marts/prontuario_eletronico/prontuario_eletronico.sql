@@ -104,8 +104,13 @@ atendimentos_por_usuario as (
     select
         p.id_usuario,
         a.id_unidade,
-        array_agg(a order by a.data_atendimento, a.hora_atendimento, a.id_atendimento_modulo) as atendimentos
-    from {{ ref('int_atendimentos_por_usuario') }} as p, unnest(p.atendimentos) as a
+        array_agg(
+            ({{ pu_participacao_atendimento('a', 'profissional') }})
+            order by pos_evento, pos_profissional
+        ) as atendimentos
+    from {{ ref('int_atendimentos_por_usuario') }} as p
+    cross join unnest(p.atendimentos) as a with offset as pos_evento
+    cross join unnest(a.profissionais) as profissional with offset as pos_profissional
     group by p.id_usuario, a.id_unidade
 ),
 
@@ -224,6 +229,11 @@ unidades_por_usuario as (
 )
 
 select
+    concat(
+        coalesce(cast(p.id_usuario as string), ''),
+        ':',
+        coalesce(cast(vinculo.id_unidade as string), '')
+    ) as id_usuario_unidade,
     coalesce(cast(p.id_usuario as string), '') as id_usuario,
     coalesce(cast(vinculo.id_unidade as string), '') as id_unidade,
     coalesce(unidade.nome_unidade, '') as nome_unidade,
@@ -395,7 +405,8 @@ select
                 coalesce(item1.cadastrante, '') as cadastrante,
                 coalesce(cast(item1.data_cadastro_atendimento as string), '') as data_atendimento_sistema,
                 coalesce(item1.tipo_unidade, '') as tipo_unidade,
-                item1.elegivel_indicador
+                item1.elegivel_indicador,
+                item1.atendimento_compartilhado
             from unnest(coalesce(a.atendimentos, [])) as item1 with offset as posicao
             order by posicao
         ) as registros

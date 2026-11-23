@@ -1,19 +1,21 @@
 {{ config(enabled=target.name != 'prod', tags=['planilha_unificada']) }}
--- Comparar identidade, unidade, data e multiplicidade: apenas somar totais esconderia perdas compensadas por duplicatas.
+-- Comparar identidade, unidade, data e multiplicidade de participações e evoluções.
 with esperado as (
     select
         cast(p.id_usuario as string) as id_usuario,
         coalesce(cast(a.id_unidade as string), '') as id_unidade,
         'atendimento' as origem,
-        a.id_atendimento_modulo as id_evento,
+        coalesce(a.id_atendimento_modulo, '') as id_evento,
         coalesce(cast(a.data_atendimento as string), '') as data_evento,
-        to_json_string(array(
-            select coalesce(cast(prof.id_profissional as string), '')
-            from unnest(a.profissionais) as prof with offset as posicao
-            order by posicao
-        )) as profissionais
-    from {{ ref('int_atendimentos_por_usuario') }} as p, unnest(p.atendimentos) as a
+        coalesce(a.origem_modulo, '') as modulo,
+        coalesce(cast(prof.id_profissional as string), '') as profissional,
+        coalesce(prof.id_atendimento_legado, '') as id_atendimento_legado,
+        coalesce(prof.classificacao_atendimento, '') as classificacao,
+        a.atendimento_compartilhado
+    from {{ ref('int_atendimentos_por_usuario') }} as p
     inner join {{ ref('dim_usuarios') }} as u on p.id_usuario = u.id_usuario
+    cross join unnest(p.atendimentos) as a
+    cross join unnest(a.profissionais) as prof
     union all
     select
         cast(e.id_usuario as string) as id_usuario,
@@ -21,7 +23,11 @@ with esperado as (
         'evolucao' as origem,
         e.id_evolucao_modulo as id_evento,
         coalesce(cast(e.data_evolucao as string), '') as data_evento,
-        '' as profissionais
+        '' as modulo,
+        '' as profissional,
+        '' as id_atendimento_legado,
+        '' as classificacao,
+        '' as atendimento_compartilhado
     from {{ ref('int_evolucoes_por_usuario') }} as e
     inner join {{ ref('dim_usuarios') }} as u on e.id_usuario = u.id_usuario
 ),
@@ -33,10 +39,11 @@ obtido as (
         'atendimento' as origem,
         a.id_atendimento_modulo as id_evento,
         a.data_atendimento_informada as data_evento,
-        to_json_string(array(
-            select prof.id_profissional from unnest(a.profissionais) as prof with offset as posicao
-            order by posicao
-        )) as profissionais
+        a.origem_modulo as modulo,
+        a.profissionais[safe_offset(0)].id_profissional as profissional,
+        a.profissionais[safe_offset(0)].id_atendimento_legado as id_atendimento_legado,
+        a.classificacao_atendimento as classificacao,
+        a.atendimento_compartilhado
     from {{ ref('prontuario_eletronico') }} as p, unnest(p.atendimentos.registros) as a
     union all
     select
@@ -45,7 +52,11 @@ obtido as (
         'evolucao' as origem,
         e.id_evolucao_modulo as id_evento,
         e.data_evolucao as data_evento,
-        '' as profissionais
+        '' as modulo,
+        '' as profissional,
+        '' as id_atendimento_legado,
+        '' as classificacao,
+        '' as atendimento_compartilhado
     from {{ ref('prontuario_eletronico') }} as p, unnest(p.evolucoes.registros) as e
 ),
 

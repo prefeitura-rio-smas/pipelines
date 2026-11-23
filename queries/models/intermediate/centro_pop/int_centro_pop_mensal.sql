@@ -30,7 +30,7 @@ atendimentos as (
         p.id_usuario,
         a.id_unidade,
         a.data_atendimento as data_evento,
-        (select as struct a.* except (email, flag_cancelado, projetos_sociais_familia)) as atendimento
+        (select as struct a.* except (email, flag_cancelado, projetos_sociais_familia, atendimento_compartilhado)) as atendimento
     from {{ ref('int_atendimentos_por_usuario') }} as p
     cross join unnest(p.atendimentos) as a
 ),

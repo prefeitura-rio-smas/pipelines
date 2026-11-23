@@ -173,7 +173,12 @@ eventos as (
             nome_atendimento,
             id_familia as id_familia_referencia,
             id_atendimento as id_atendimento_legado
-        ) order by profissional_id, id_atendimento) as profissionais
+        ) order by profissional_id, id_atendimento) as profissionais,
+        if(
+            count(distinct nullif(trim(cast(profissional_id as string)), '')) >= 2,
+            'Sim',
+            'Não'
+        ) as atendimento_compartilhado
     from linhas_preparadas
     where {{ nao_cancelado('_flag_cancelado') }}
     group by

@@ -1,3 +1,11 @@
+{% macro prontuario_email_autorizado(lista, email) -%}
+exists (
+    select 1
+    from unnest(split(regexp_replace(coalesce({{ lista }}, ''), r'[;\r\n]', ','), ',')) as destinatario
+    where lower(trim(destinatario)) = {{ email }}
+)
+{%- endmacro %}
+
 {% macro prontuario_consumo_seguro(relacao, identidade) -%}
 -- noqa: disable=ST06
 -- Projeção explícita do contrato; campos sem proveniência segura são suprimidos.
@@ -5,6 +13,7 @@ with identidade as (select lower(trim({{ identidade }})) as email),
 
 filtrados as (
     select
+        b.id_usuario_unidade,
         b.usuario,
         b.familias,
         b.id_unidade,
@@ -40,7 +49,8 @@ filtrados as (
             r.cadastrante,
             r.data_atendimento_sistema,
             r.tipo_unidade,
-            r.elegivel_indicador
+            r.elegivel_indicador,
+            r.atendimento_compartilhado
         from unnest(b.atendimentos.registros) as r with offset as pos
         where cast(r.id_unidade as string) = b.id_unidade
         order by pos) as atendimentos_registros,
@@ -329,14 +339,11 @@ filtrados as (
     where
         nullif(i.email, '') is not null
         and nullif(trim(b.id_unidade), '') is not null
-        and exists (
-            select 1
-            from unnest(split(regexp_replace(coalesce(b.email_filtro, ''), r'[;\r\n]', ','), ',')) as e
-            where lower(trim(e)) = i.email
-        )
+        and {{ prontuario_email_autorizado('b.email_filtro', 'i.email') }}
 )
 
 select
+    id_usuario_unidade,
     usuario.id_usuario as id_usuario,
     id_unidade,
     nome_unidade,
