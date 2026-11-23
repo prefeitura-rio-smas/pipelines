@@ -15,6 +15,7 @@ from jinja2 import Environment
 TABLE = os.environ['PRONTUARIO_VALIDACAO_TABELA']
 client = bigquery.Client(project='rj-smas-dev')
 schema = client.get_table(TABLE).schema
+assert [f.name for f in schema[:5]] == ['id_usuario', 'id_unidade', 'nome_unidade', 'email_filtro', 'usuario']
 active_paths = None
 macro = Environment(autoescape=False).from_string(Path('queries/macros/dominios/prontuario_eletronico/consumo_seguro.sql').read_text()).module
 
@@ -28,7 +29,7 @@ def value(f, unit=None, path=''):
         if f.name in ('registros', 'historico_mensal', 'projetos_sociais'):
             if active_paths is not None and path not in active_paths:
                 return 'cast([] as '+sql_type(f)+')'
-            return '[' + ','.join(record(f.fields, u, path) for u in range(1, 6)) + ']'
+            return '[' + record(f.fields, unit, path) + ']'
         if f.name == 'profissionais':
             return '[' + record(f.fields, unit, path) + ',' + record(f.fields, unit, path) + ']'
         if f.name in ('formularios', 'familias', 'servicos'):
@@ -37,9 +38,10 @@ def value(f, unit=None, path=''):
     if f.field_type == 'RECORD':
         return record(f.fields, unit, path)
     if f.name == 'email_filtro':
+        assert path == '.email_filtro', f'Filtro aninhado: {path}'
         return "'" + ({1:' A@example.invalid; admin@example.invalid, ab@example.invalid', 2:'b@example.invalid,admin@example.invalid,ab@example.invalid', 3:'c@example.invalid,admin@example.invalid',4:'',5:'a@example.invalid'}.get(unit,'global@example.invalid')) + "'"
     if f.name == 'id_unidade' and unit == 5:
-        return 'null'
+        return "''" if path == '.id_unidade' else f'cast(null as {sql_type(f)})'
     if f.field_type in ('INTEGER', 'INT64'):
         return str(unit or 999)
     if f.field_type == 'DATE':
@@ -48,6 +50,8 @@ def value(f, unit=None, path=''):
         return "datetime '2026-11-01 00:00:00'"
     if f.field_type == 'BOOLEAN':
         return 'true'
+    if f.name == 'id_usuario':
+        return "'999'"
     if f.name == 'origem_modulo':
         return "'familia'"
     if f.name == 'tipo_servico':
@@ -59,35 +63,40 @@ def value(f, unit=None, path=''):
 def record(fields, unit=None, path=''):
     return 'struct(' + ','.join(value(f, unit, path)+' as '+f.name for f in fields) + ')'
 
-source = '(select ' + ','.join(value(f)+' as '+f.name for f in schema) + ')'
+def fixture(units):
+    return '(' + ' union all '.join(
+        'select ' + ','.join(value(f, unit)+' as '+f.name for f in schema) for unit in units
+    ) + ')'
+
+
+source = fixture(range(1, 6))
 for identity, expected in [('a@example.invalid',1),(' A@EXAMPLE.INVALID ',1),('ab@example.invalid',2),('admin@example.invalid',3),('example.invalid',0),('aa@example.invalid',0),('unknown@example.invalid',0),('',0),(None,0)]:
     sql = macro.prontuario_consumo_seguro(source, '@DS_USER_EMAIL')
-    job = client.query('select to_json_string(t) as resultado from ('+sql+') t', job_config=bigquery.QueryJobConfig(query_parameters=[bigquery.ScalarQueryParameter('DS_USER_EMAIL','STRING',identity)], maximum_bytes_billed=5_000_000_000))
+    job = client.query('select to_json_string(t) as resultado from ('+sql+') t order by t.id_unidade', job_config=bigquery.QueryJobConfig(query_parameters=[bigquery.ScalarQueryParameter('DS_USER_EMAIL','STRING',identity)], maximum_bytes_billed=5_000_000_000))
     rows=list(job.result())
-    assert len(rows) == bool(expected), (identity, len(rows))
-    if rows:
-        d=json.loads(rows[0].resultado)
-        for name in ['atendimentos','evolucoes','centro_pop','creas','alta_complexidade']:
-            assert len(d[name]['registros']) == expected, name
-            assert [int(r['id_unidade']) for r in d[name]['registros']] == list(range(1, expected + 1)), name
-        assert len(d['centro_pop']['historico_mensal']) == expected
-        assert len(d['projetos_sociais']) == expected
-        assert d['atendimentos']['quantidade'] == expected
-        assert all(len(r['profissionais']) == 2 for r in d['atendimentos']['registros'])
-        assert d['atendimentos']['quantidade_cras'] == expected
-        assert d['evolucoes']['quantidade'] == expected
+    assert len(rows) == expected, (identity, len(rows))
+    for unit, row in enumerate(rows, start=1):
+        d = json.loads(row.resultado)
+        assert d['id_usuario'] == d['usuario']['id_usuario'] == '999'
+        assert d['id_unidade'] == str(unit)
+        assert d['email_filtro'] == identity.strip().lower()
+        for name in ['atendimentos', 'evolucoes', 'centro_pop', 'creas', 'alta_complexidade']:
+            assert [int(r['id_unidade']) for r in d[name]['registros']] == [unit], name
+        assert len(d['centro_pop']['historico_mensal']) == 1
+        assert len(d['projetos_sociais']) == 1
+        assert d['atendimentos']['quantidade'] == 1
+        assert len(d['atendimentos']['registros'][0]['profissionais']) == 2
+        assert d['atendimentos']['quantidade_cras'] == 1
+        assert d['evolucoes']['quantidade'] == 1
         assert all(f['servicos'] == [] for f in d['familias'])
         assert d['usuario']['logradouro'] is None
         assert d['usuario']['flag_possui_violacao_direito'] is None
         assert d['centro_pop']['observacoes_pai'] is None
         assert d['creas']['mse_observacoes'] is None
-        if expected == 1:
-            assert 'UNIT2' not in rows[0].resultado and 'UNIT3' not in rows[0].resultado
-        assert 'UNIT4' not in rows[0].resultado and 'UNIT5' not in rows[0].resultado
     print(json.dumps({'identity': identity, 'expected':expected,'passed':True,'bytes':job.total_bytes_processed,'slot_ms':job.slot_millis}))
 
 for active_paths in [set(), {'.evolucoes.registros'}, {'.centro_pop.historico_mensal'}]:
-    source = '(select ' + ','.join(value(f)+' as '+f.name for f in schema) + ')'
+    source = fixture([1])
     sql = macro.prontuario_consumo_seguro(source, "'a@example.invalid'")
     job = client.query('select count(*) as n from ('+sql+')',job_config=bigquery.QueryJobConfig(maximum_bytes_billed=5_000_000_000))
     assert next(iter(job.result())).n == bool(active_paths)
@@ -95,41 +104,72 @@ for active_paths in [set(), {'.evolucoes.registros'}, {'.centro_pop.historico_me
 
 # Opcional: exercita um cidadão real multiunidade sem imprimir dados pessoais.
 if '--real' in sys.argv:
-    q = f'''select to_json_string(p) as original from `{TABLE}` p
-    where (select count(distinct r.id_unidade) from unnest(p.atendimentos.registros) r) > 1
-    limit 1'''
+    q = f'''
+    with unidades as (
+        select usuario.id_usuario, id_unidade, email_filtro
+        from `{TABLE}`
+        where id_unidade != '' and email_filtro != '' and array_length(atendimentos.registros) > 0
+    ), amostra as (
+        select a.id_usuario, email
+        from unidades as a
+        join unidades as b on a.id_usuario = b.id_usuario and a.id_unidade != b.id_unidade
+        cross join unnest(split(a.email_filtro, ', ')) as email
+        where email not in unnest(split(b.email_filtro, ', '))
+        limit 1
+    )
+    select to_json_string(p) as original, a.email
+    from `{TABLE}` as p
+    join amostra as a on p.usuario.id_usuario = a.id_usuario
+    '''
     original_job = client.query(q, job_config=bigquery.QueryJobConfig(maximum_bytes_billed=5_000_000_000))
-    originals=list(original_job.result())
-    assert originals, 'Não foi encontrado cidadão multiunidade'
-    original=json.loads(originals[0].original)
-    paths=['projetos_sociais','atendimentos.registros','evolucoes.registros','centro_pop.registros','centro_pop.historico_mensal','creas.registros','alta_complexidade.registros']
-    def records(d, path):
+    sample = list(original_job.result())
+    assert sample, 'Amostra sem cidadão com unidades e permissões diferentes'
+    originals = [json.loads(row.original) for row in sample]
+    citizen = originals[0]['usuario']['id_usuario']
+    selected = sample[0].email
+    paths = ['projetos_sociais', 'atendimentos.registros', 'evolucoes.registros', 'centro_pop.registros', 'centro_pop.historico_mensal', 'creas.registros', 'alta_complexidade.registros']
+
+    def records(row, path):
         for part in path.split('.'):
-            d=d[part]
-        return d
-    def allowed(r, email):
-        return str(r.get('id_unidade') or '').strip() != '' and email in [t.strip().lower() for t in re.split('[;,\r\n]',r.get('email_filtro') or '')]
-    emails={e.strip().lower() for r in original['atendimentos']['registros'] for e in re.split('[;,\r\n]',r.get('email_filtro') or '') if e.strip()}
-    selected=next((e for e in sorted(emails) if 0 < sum(allowed(r,e) for r in original['atendimentos']['registros']) < len(original['atendimentos']['registros'])),None)
-    assert selected, 'Amostra sem destinatário de escopo parcial; selecionar outra amostra'
-    relation=f'(select * from `{TABLE}` where usuario.id_usuario = @cidadao)'
-    query=macro.prontuario_consumo_seguro(relation,'@DS_USER_EMAIL')
-    config=bigquery.QueryJobConfig(query_parameters=[bigquery.ScalarQueryParameter('DS_USER_EMAIL','STRING',selected),bigquery.ScalarQueryParameter('cidadao','STRING',original['usuario']['id_usuario'])],maximum_bytes_billed=5_000_000_000)
-    job=client.query('select to_json_string(t) as resultado from ('+query+') t',job_config=config)
-    result=json.loads(next(iter(job.result())).resultado)
-    for path in paths:
-        expected=[r for r in records(original,path) if allowed(r,selected)]
-        for r in expected:
-            r['email_filtro']=selected
+            row = row[part]
+        return row
+
+    def recipients(row):
+        return {e.strip().lower() for e in re.split('[;,\r\n]', row['email_filtro'] or '') if e.strip()}
+
+    expected_rows = {
+        row['id_unidade']: row for row in originals
+        if row['id_unidade'] and selected in recipients(row) and any(records(row, path) for path in paths)
+    }
+    relation = f'(select * from `{TABLE}` where usuario.id_usuario = @cidadao)'
+    query = macro.prontuario_consumo_seguro(relation, '@DS_USER_EMAIL')
+    config = bigquery.QueryJobConfig(query_parameters=[
+        bigquery.ScalarQueryParameter('DS_USER_EMAIL', 'STRING', selected),
+        bigquery.ScalarQueryParameter('cidadao', 'STRING', citizen),
+    ], maximum_bytes_billed=5_000_000_000)
+    job = client.query('select to_json_string(t) as resultado from ('+query+') t', job_config=config)
+    results = [json.loads(row.resultado) for row in job.result()]
+    assert len(results) == len(expected_rows)
+    for result in results:
+        assert result['id_usuario'] == result['usuario']['id_usuario'] == citizen
+        original = expected_rows.pop(result['id_unidade'])
+        for path in paths:
+            expected = records(original, path)
             if path == 'atendimentos.registros':
-                r['projetos_sociais_familia'] = None
-        assert records(result,path)==expected, path
-    assert result['atendimentos']['quantidade']==len(result['atendimentos']['registros'])
-    print(json.dumps({'real_mult_unit_isolation':True,'bytes':job.total_bytes_processed,'slot_ms':job.slot_millis,'sample_bytes':original_job.total_bytes_processed}))
+                expected = [dict(record, projetos_sociais_familia=None) for record in expected]
+            assert records(result, path) == expected, path
+        assert result['atendimentos']['quantidade'] == len(result['atendimentos']['registros'])
+    print(json.dumps({'real_mult_unit_isolation': True, 'bytes': job.total_bytes_processed}))
 
     dry_config=bigquery.QueryJobConfig(query_parameters=config.query_parameters,dry_run=True,use_query_cache=False)
     dry=client.query(query,job_config=dry_config)
-    def shape(fields):
-        return [(f.name,f.field_type,f.mode=='REPEATED',shape(f.fields)) for f in fields]
-    assert shape(dry.schema)==shape(schema), 'Schema de consumo difere do contrato publicado'
+    def shape(fields, path=''):
+        # A projeção segura omite o resumo técnico na raiz de Centro POP.
+        return [
+            (f.name, f.field_type, f.mode == 'REPEATED', shape(f.fields, path + '.' + f.name))
+            for f in fields
+            if (path, f.name) != ('.centro_pop', 'data_ultimo_atend_tecnico_informada')
+        ]
+
+    assert shape(dry.schema) == shape(schema), 'Schema de consumo difere do contrato publicado'
     print(json.dumps({'schema_equal':True,'dry_bytes':dry.total_bytes_processed}))

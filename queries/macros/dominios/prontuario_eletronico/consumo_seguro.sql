@@ -14,22 +14,15 @@ filtrados as (
             r.nome_projeto_social,
             r.id_projeto_social,
             r.id_unidade,
-            i.email as email_filtro,
             r.nome_unidade,
             r.indicador_ativo,
             r.data_cadastro,
             r.data_cancelamento
         from unnest(b.projetos_sociais) as r with offset as pos
-        where
-            nullif(
-                trim(cast(r.id_unidade as string)), '') is not null and exists (
-                select 1 from unnest(split(regexp_replace(coalesce(r.email_filtro, ''), r'[;\r\n]', ','), ',')) as e
-                where lower(trim(e)) = i.email
-            )
+        where cast(r.id_unidade as string) = b.id_unidade
         order by pos) as projetos_sociais,
         array(select as struct
             r.id_atendimento_modulo,
-            i.email as email_filtro,
             r.id_familia,
             r.origem_modulo,
             r.id_unidade,
@@ -37,7 +30,6 @@ filtrados as (
             r.tipo_atendimento_descricao,
             r.data_atendimento_informada,
             r.hora_atendimento,
-            r.flag_cancelado,
             r.profissionais,
             r.tipo_servico,
             r.classificacao_atendimento,
@@ -50,16 +42,10 @@ filtrados as (
             r.tipo_unidade,
             r.elegivel_indicador
         from unnest(b.atendimentos.registros) as r with offset as pos
-        where
-            nullif(
-                trim(cast(r.id_unidade as string)), '') is not null and exists (
-                select 1 from unnest(split(regexp_replace(coalesce(r.email_filtro, ''), r'[;\r\n]', ','), ',')) as e
-                where lower(trim(e)) = i.email
-            )
+        where cast(r.id_unidade as string) = b.id_unidade
         order by pos) as atendimentos_registros,
         array(select as struct
             r.id_evolucao_modulo,
-            i.email as email_filtro,
             r.origem_modulo,
             r.id_familia,
             r.id_unidade,
@@ -73,17 +59,11 @@ filtrados as (
             r.formularios,
             r.tipo_servico
         from unnest(b.evolucoes.registros) as r with offset as pos
-        where
-            nullif(
-                trim(cast(r.id_unidade as string)), '') is not null and exists (
-                select 1 from unnest(split(regexp_replace(coalesce(r.email_filtro, ''), r'[;\r\n]', ','), ',')) as e
-                where lower(trim(e)) = i.email
-            )
+        where cast(r.id_unidade as string) = b.id_unidade
         order by pos) as evolucoes_registros,
         array(select as struct
             r.id_unidade,
             r.nome_unidade,
-            i.email as email_filtro,
             r.unidades_atendimento,
             r.possui_registro_pai,
             r.data_ocorrencia_pai,
@@ -144,12 +124,7 @@ filtrados as (
             r.ultima_participacao_data,
             r.ultima_participacao_hora
         from unnest(b.centro_pop.registros) as r with offset as pos
-        where
-            nullif(
-                trim(cast(r.id_unidade as string)), '') is not null and exists (
-                select 1 from unnest(split(regexp_replace(coalesce(r.email_filtro, ''), r'[;\r\n]', ','), ',')) as e
-                where lower(trim(e)) = i.email
-            )
+        where cast(r.id_unidade as string) = b.id_unidade
         order by pos) as centro_pop_registros,
         array(select as struct
             r.id_unidade,
@@ -228,20 +203,13 @@ filtrados as (
             r.ocorrencias,
             r.procedimentos_mes,
             r.encaminhamentos_mes,
-            r.data_ultimo_atend_tecnico_informada,
-            i.email as email_filtro
+            r.data_ultimo_atend_tecnico_informada
         from unnest(b.centro_pop.historico_mensal) as r with offset as pos
-        where
-            nullif(
-                trim(cast(r.id_unidade as string)), '') is not null and exists (
-                select 1 from unnest(split(regexp_replace(coalesce(r.email_filtro, ''), r'[;\r\n]', ','), ',')) as e
-                where lower(trim(e)) = i.email
-            )
+        where cast(r.id_unidade as string) = b.id_unidade
         order by pos) as centro_pop_historico_mensal,
         array(select as struct
             r.id_unidade,
             r.nome_unidade,
-            i.email as email_filtro,
             r.mse_data_ocorrencia,
             r.mse_data_registro,
             r.mse_id_unidade,
@@ -344,12 +312,7 @@ filtrados as (
             r.passo_a_passo_ultima_data,
             r.passo_a_passo_ultima_hora
         from unnest(b.creas.registros) as r with offset as pos
-        where
-            nullif(
-                trim(cast(r.id_unidade as string)), '') is not null and exists (
-                select 1 from unnest(split(regexp_replace(coalesce(r.email_filtro, ''), r'[;\r\n]', ','), ',')) as e
-                where lower(trim(e)) = i.email
-            )
+        where cast(r.id_unidade as string) = b.id_unidade
         order by pos) as creas_registros,
         array(select as struct
             r.id_ciclo,
@@ -358,21 +321,26 @@ filtrados as (
             r.data_entrada,
             r.data_saida,
             r.motivo_saida,
-            r.tempo_permanencia_dias,
-            i.email as email_filtro
+            r.tempo_permanencia_dias
         from unnest(b.alta_complexidade.registros) as r with offset as pos
-        where
-            nullif(
-                trim(cast(r.id_unidade as string)), '') is not null and exists (
-                select 1 from unnest(split(regexp_replace(coalesce(r.email_filtro, ''), r'[;\r\n]', ','), ',')) as e
-                where lower(trim(e)) = i.email
-            )
+        where cast(r.id_unidade as string) = b.id_unidade
         order by pos) as alta_complexidade_registros
     from {{ relacao }} as b cross join identidade as i
-    where nullif(i.email, '') is not null
+    where
+        nullif(i.email, '') is not null
+        and nullif(trim(b.id_unidade), '') is not null
+        and exists (
+            select 1
+            from unnest(split(regexp_replace(coalesce(b.email_filtro, ''), r'[;\r\n]', ','), ',')) as e
+            where lower(trim(e)) = i.email
+        )
 )
 
 select
+    usuario.id_usuario as id_usuario,
+    id_unidade,
+    nome_unidade,
+    email as email_filtro,
     struct(usuario.id_usuario, usuario.nome, usuario.nome_social, usuario.filiacao_mae, usuario.nacionalidade, usuario.condicao_estrangeira, usuario.pais_origem, usuario.cpf, usuario.data_nascimento, usuario.sexo, usuario.raca_cor, usuario.genero, usuario.bairro, usuario.prontuario, usuario.flag_cadunico, usuario.pontuacao, usuario.grau_dependencia, usuario.nome_apoiador, usuario.numero_processo_decisao_apoiada, usuario.renda_ativa, usuario.atvd_remunerada, usuario.flag_decisao_apoiada, usuario.flag_saude_mental_comprometida, usuario.motivo_acolhimento, usuario.orientacao_sexual, usuario.vinculo_trabalhista, usuario.flag_trabalha, usuario.profissao, usuario.flag_frequenta_escola, usuario.escolaridade_indice, usuario.flag_recebe_beneficio, usuario.flag_curatela, usuario.tipo_curatela, usuario.flag_deficiencia, usuario.flag_situacao_rua, usuario.origem_demanda, cast(null as string) as flag_possui_violacao_direito, cast(null as string) as nome_unidade_referencia, usuario.uf_nascimento, usuario.cidade_nascimento, usuario.serie_escolar, usuario.data_cadunico_informada, usuario.nis, usuario.numero_rg, usuario.possui_rg, usuario.possui_certidao_nascimento, usuario.numero_certidao_nascimento, usuario.data_atualizacao, usuario.data_limite_cadastro_atual, usuario.flag_familia_ambigua, usuario.flag_nis_ambiguo, usuario.flag_rg_ambiguo, usuario.flag_certidao_ambigua, usuario.beneficio, usuario.deficiencia, cast([] as array<struct<descricao string, origem string>>) as violacoes, cast(null as string) as logradouro, cast(null as string) as numero, cast(null as string) as complemento, cast(null as string) as referencia_ou_comunidade, usuario.idade, usuario.tipo_atividade_remunerada, usuario.possui_cpf, usuario.idade_faixa) as usuario,
     array(select as struct
         f.id_familia,
@@ -387,7 +355,6 @@ select
     order by pos) as familias,
     projetos_sociais,
     struct(
-        if(array_length(atendimentos_registros) > 0, email, '') as email_filtro,
         array_length(atendimentos_registros) as quantidade,
         (select countif(r.tipo_servico = 'cras') from unnest(atendimentos_registros) as r) as quantidade_cras,
         (select countif(r.tipo_servico = 'creas') from unnest(atendimentos_registros) as r) as quantidade_creas,
@@ -396,7 +363,6 @@ select
         atendimentos_registros as registros
     ) as atendimentos,
     struct(
-        if(array_length(evolucoes_registros) > 0, email, '') as email_filtro,
         array_length(evolucoes_registros) as quantidade,
         (select countif(r.tipo_servico = 'cras') from unnest(evolucoes_registros) as r) as quantidade_cras,
         (select countif(r.tipo_servico = 'creas') from unnest(evolucoes_registros) as r) as quantidade_creas,
@@ -460,7 +426,6 @@ select
         cast(null as string) as capacidade_habilidades,
         cast(null as string) as flag_interesse_curso,
         cast(null as string) as flag_incluido_acompanhamento_pai,
-        if(array_length(centro_pop_registros) > 0, email, '') as email_filtro,
         centro_pop_registros as registros,
         centro_pop_historico_mensal as historico_mensal,
         cast(null as string) as ultima_participacao_atividade,
@@ -471,7 +436,6 @@ select
         cast(null as string) as procedimentos
     ) as centro_pop,
     struct(
-        if(array_length(creas_registros) > 0, email, '') as email_filtro,
         creas_registros as registros,
         cast(null as date) as mse_data_ocorrencia,
         cast(null as datetime) as mse_data_registro,
@@ -576,7 +540,6 @@ select
         cast(null as string) as passo_a_passo_ultima_unidade
     ) as creas,
     struct(
-        if(array_length(alta_complexidade_registros) > 0, email, '') as email_filtro,
         alta_complexidade_registros as registros,
         (
             select r.id_ciclo from unnest(alta_complexidade_registros) as r
@@ -606,10 +569,7 @@ select
             select r.tempo_permanencia_dias from unnest(alta_complexidade_registros) as r
             order by if(r.data_saida is null, 0, 1), r.data_entrada desc nulls last, r.id_ciclo desc, to_json_string(r) desc limit 1
         ) as tempo_permanencia_dias
-    ) as alta_complexidade,
-    id_unidade,
-    nome_unidade,
-    email as email_filtro
+    ) as alta_complexidade
 from filtrados
 where array_length(projetos_sociais) + array_length(atendimentos_registros) + array_length(evolucoes_registros) + array_length(centro_pop_registros) + array_length(centro_pop_historico_mensal) + array_length(creas_registros) + array_length(alta_complexidade_registros) > 0
 {% endmacro %}

@@ -3,12 +3,12 @@ version: 2
 models:
   - name: prontuario_eletronico
     description: |
-      Uma linha por usuario.id_usuario e id_unidade, preservando a população de dim_usuarios.
+      Uma linha por id_usuario e id_unidade, preservando a população de dim_usuarios.
       Usuários sem vínculo com unidade mantêm uma linha com id_unidade vazio; registros sem unidade ficam nessa linha.
       Contrato por assunto: usuario, familias, projetos_sociais, atendimentos, evolucoes, centro_pop, creas e alta_complexidade.
       id_unidade, nome_unidade e email_filtro são campos STRING no topo, referentes à unidade da linha.
       Cadastro e famílias se repetem nas unidades; eventos, perfis e contadores ficam restritos à unidade.
-      Para contar pessoas, usar COUNT(DISTINCT usuario.id_usuario).
+      Para contar pessoas, usar COUNT(DISTINCT id_usuario).
       Os destinatários são metadados; o isolamento exige a consulta segura de consumo com DS_USER_EMAIL.
       Dados pessoais e perfil ficam em usuario; eventos têm quantidade, quantidade por serviço em campos diretos e registros.
       Evoluções não canceladas incluem registros sem formulário, com descrição legível.
@@ -24,9 +24,9 @@ models:
       documentos são o estado atual; cada consumidor define competência e população.
     config:
       meta:
-        granularidade: [usuario.id_usuario, id_unidade]
+        granularidade: [id_usuario, id_unidade]
         contrato: por_assunto_v17_usuario_unidade
-        campos_raiz: [id_unidade, usuario, familias, projetos_sociais, atendimentos, evolucoes, centro_pop, creas, alta_complexidade, nome_unidade, email_filtro]
+        campos_raiz: [id_usuario, id_unidade, nome_unidade, email_filtro, usuario, familias, projetos_sociais, atendimentos, evolucoes, centro_pop, creas, alta_complexidade]
         execucao: modelo_dbt
         publicacao: desenvolvimento
         valores_ausentes: texto_vazio
@@ -83,11 +83,15 @@ models:
     data_tests:
       - dbt_utils.unique_combination_of_columns:
           arguments:
-            combination_of_columns: [usuario.id_usuario, id_unidade]
+            combination_of_columns: [id_usuario, id_unidade]
     columns:
+      - name: id_usuario
+        data_type: STRING
+        description: Identificador do cidadão na raiz, com o mesmo valor de usuario.id_usuario. Compõe a chave com id_unidade.
+        data_tests: [not_null]
       - name: id_unidade
         data_type: STRING
-        description: Unidade da linha; vazio para usuário sem vínculo com unidade ou registros sem unidade identificada. Compõe a chave com usuario.id_usuario.
+        description: Unidade da linha; vazio para usuário sem vínculo com unidade ou registros sem unidade identificada. Compõe a chave com id_usuario.
         data_tests: [not_null]
       - name: atendimentos.registros.tipo_unidade
         description: Tipo original da unidade do atendimento na captura da programada.
@@ -176,7 +180,7 @@ models:
         description: |
           STRUCT com quantidade INT64, quantidade_cras, quantidade_creas, quantidade_centro_pop, quantidade_outros e registros ARRAY<STRUCT>. Um evento por
           id_atendimento_modulo, com origem, nome_unidade, tipo, data, hora HH:MM,
-          flag_cancelado, profissionais e tipo_servico. Preserva somente os eventos e profissionais aceitos pelas regras da programada,
+          profissionais e tipo_servico. Preserva somente os eventos e profissionais aceitos pelas regras da programada,
           reproduzidas no dbt com desempates estáveis; atendimentos cancelados são excluídos.
           Profissionais homônimos não são deduplicados após retirar seus IDs.
       - name: atendimentos.quantidade
@@ -186,18 +190,12 @@ models:
         description: Serviço de origem do evento (cras, creas, centro_pop ou outros), preservado do intermediário comum para futuras marts.
       - name: usuario.cidade_nascimento
         description: Cidade de nascimento do prontuário (muninasc), com espaços nas extremidades removidos; STRING vazia quando ausente.
-      - name: atendimentos.email_filtro
-        description: Resumo do assunto; autorização usa o email de cada registro.
-      - name: atendimentos.registros.email_filtro
-        description: Destinatários da unidade do atendimento; sem unidade identificada fica vazio.
-      - name: evolucoes.registros.email_filtro
-        description: Destinatários da unidade da evolução, independentes dos atendimentos.
       - name: centro_pop.registros
-        description: Perfis por unidade, com dados e destinatários próprios.
+        description: Perfis da unidade da linha.
       - name: creas.registros
         description: Perfis CREAS selecionados e autorizados dentro de cada unidade.
       - name: alta_complexidade.registros
-        description: Ciclos com unidade e destinatários próprios.
+        description: Ciclos da unidade da linha.
       - name: centro_pop.historico_mensal
         description: Histórico recalculado por competência e unidade desde o primeiro mês com movimento nas fontes. Cada entrada tem perfil até o fim do mês, eventos e contadores mensais. Consumir no Looker pela consulta autorizada por unidade.
       - name: atendimentos.registros.classificacao_atendimento
@@ -254,7 +252,7 @@ models:
       - name: atendimentos.registros.email_cas
         description: E-mail calculado a partir de apus da unidade no prontuário; CAS 01 a 10 correspondem a cas1@prefeitura.rio até cas10@prefeitura.rio. Demais valores usam gdados.smas@prefeitura.rio, como na programada.
       - name: email_filtro
-        description: "Endereços de todos os atendimentos do usuário, em minúsculas, distintos e ordenados, separados por vírgula e espaço. Ausência como texto vazio. Resumo legado para compatibilidade; as consultas por assunto autorizam cada registro pelo seu próprio email."
+        description: Destinatários da unidade da linha, em minúsculas, distintos e ordenados, separados por vírgula e espaço. Vazio sem permissões. A consulta segura usa esse campo para autorizar a linha.
       - name: atendimentos.registros.cadastrante
         description: Nome apresentado na referência para a pessoa que cadastrou o atendimento; não equivale ao profissional executor.
       - name: atendimentos.registros.data_atendimento_sistema

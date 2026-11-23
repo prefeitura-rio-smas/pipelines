@@ -17,6 +17,13 @@ union all
 select
     p.usuario.id_usuario,
     p.id_unidade,
+    'id_usuario_raiz' as origem
+from {{ ref('prontuario_eletronico') }} as p
+where nullif(p.id_usuario, '') is null or p.id_usuario is distinct from p.usuario.id_usuario
+union all
+select
+    p.usuario.id_usuario,
+    p.id_unidade,
     'contadores' as origem
 from {{ ref('prontuario_eletronico') }} as p
 where

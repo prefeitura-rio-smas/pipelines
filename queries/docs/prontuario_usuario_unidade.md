@@ -1,6 +1,6 @@
 # Prontuário eletrônico por usuário e unidade
 
-O modelo `prontuario_eletronico` publica uma linha por `(usuario.id_usuario, id_unidade)`.
+O modelo `prontuario_eletronico` publica uma linha por `(id_usuario, id_unidade)`. O ID no topo também está disponível em `usuario.id_usuario`.
 `id_unidade` é STRING; vazio representa registros sem unidade identificada ou um usuário sem vínculos.
 A unidade de referência do cadastro não cria um vínculo de atendimento.
 
@@ -18,7 +18,7 @@ Os últimos formulários, participações, encaminhamentos e ciclos de acolhimen
 - Atendimentos: somar `atendimentos.quantidade` nas linhas desejadas, ou abrir `atendimentos.registros`.
 - Quantidades de pessoas de unidades distintas não são aditivas: a mesma pessoa pode estar em mais de uma unidade.
 - Usar `id_unidade` para chaves, filtros e junções; `nome_unidade` contém um único nome e não é uma chave.
-- `email_filtro` e os destinatários dos eventos ficam restritos à unidade da linha. A consulta autorizada continua necessária.
+- As primeiras colunas são `id_usuario`, `id_unidade`, `nome_unidade` e `email_filtro`, seguidas pela struct `usuario`. Os destinatários da unidade ficam em `email_filtro` na raiz. O Looker usa a consulta autorizada para filtrar a linha e os itens da unidade.
 - Consumidores que tratavam `usuario.id_usuario` como único precisam usar a chave composta. Joins apenas por usuário podem multiplicar linhas.
 
 ## Validação e publicação
