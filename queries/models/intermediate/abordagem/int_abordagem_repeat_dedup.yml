@@ -1,0 +1,25 @@
+version: 2
+
+models:
+  - name: int_abordagem_repeat_dedup
+    description: >
+      Agrupamento de abordagens que se referem à mesma pessoa. Grão: 1 linha por
+      globalid (= 1 abordagem), com o `cluster_id` do registro mestre do cluster e
+      a flag `is_duplicado`. Grafo recursivo com 6 regras de match exato dentro do
+      mesmo ano (CPF; nome+nome da mãe; nome+CPF+nascimento; nome da mãe+CPF+nascimento;
+      mãe+pai+nascimento; mãe+pai+CPF). Substituiu o modelo anterior baseado em SOUNDEX.
+      Não filtra linhas: o BI usa `is_duplicado` para contar pessoas distintas.
+    columns:
+      - name: globalid
+        description: "GUID da abordagem (chave da linha; 1:1 com raw_abordagem_repeat.globalid)."
+        tests:
+          - not_null
+          - unique
+      - name: cluster_id
+        description: "globalid do registro mestre do cluster (igual ao próprio globalid quando não há duplicidade)."
+        tests:
+          - not_null
+      - name: is_duplicado
+        description: "TRUE quando a linha é duplicata de outro registro do cluster."
+        tests:
+          - not_null
