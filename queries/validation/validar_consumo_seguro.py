@@ -18,7 +18,10 @@ schema = client.get_table(TABLE).schema
 assert [f.name for f in schema[:6]] == ['id_usuario_unidade', 'id_usuario', 'id_unidade', 'nome_unidade', 'email_filtro', 'usuario']
 assert schema[0].field_type == 'STRING'
 active_paths = None
-macro = Environment(autoescape=False).from_string(Path('queries/macros/dominios/prontuario_eletronico/consumo_seguro.sql').read_text()).module
+macros = Path('queries/macros/dominios/prontuario_eletronico')
+macro = Environment(autoescape=False).from_string(
+    (macros / 'ordem_campos.sql').read_text() + (macros / 'consumo_seguro.sql').read_text()
+).module
 
 def sql_type(f):
     t = 'struct<' + ','.join(x.name+' '+sql_type(x) for x in f.fields) + '>' if f.field_type == 'RECORD' else f.field_type

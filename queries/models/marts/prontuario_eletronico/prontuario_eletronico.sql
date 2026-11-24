@@ -64,7 +64,7 @@ cp_registros as (
             select as struct
                 p.id_unidade,
                 e.nome_unidade,
-                p.centro_pop.*
+                {{ pu_campos_perfil_centro_pop('p.centro_pop') }}
         )
         order by p.id_unidade) as registros
     from {{ ref('int_perfil_centro_pop_por_unidade') }} as p
@@ -78,7 +78,10 @@ historico_centro_pop as (
         h.id_usuario,
         h.id_unidade,
         array_agg(
-            (select as struct h.* except (id_usuario))
+            (
+                select as struct
+                    {{ pu_campos_historico_centro_pop('h') }}
+            )
             order by h.mes_referencia desc, h.id_unidade asc
         ) as historico_mensal
     from {{ ref('int_centro_pop_historico_mensal') }} as h
@@ -164,7 +167,7 @@ creas_por_unidade as (
             select as struct
                 p.id_unidade,
                 em.nome_unidade,
-                p.creas.*
+                {{ pu_campos_perfil_creas('p.creas') }}
         )] as registros
     from {{ ref('int_perfil_creas_por_unidade') }} as p
     left join {{ ref('int_filtro_email_unidades') }} as em on p.id_unidade = em.id_unidade
@@ -347,9 +350,9 @@ select
             ) as membros,
             array(
                 select as struct
+                    coalesce(cast(item2.parentesco_responsavel as string), '') as parentesco_responsavel,
                     coalesce(cast(item2.data_entrada as string), '') as data_entrada,
                     coalesce(cast(item2.data_saida as string), '') as data_saida,
-                    coalesce(cast(item2.parentesco_responsavel as string), '') as parentesco_responsavel,
                     coalesce(cast(item2.motivo_saida as string), '') as motivo_saida
                 from unnest(item1.vinculos) as item2 with offset as posicao
                 order by posicao
@@ -357,9 +360,9 @@ select
             array(
                 select as struct
                     coalesce(item2.nome_unidade, '') as nome_unidade,
+                    coalesce(cast(item2.nome_servico as string), '') as nome_servico,
                     coalesce(cast(item2.data_cadastro as string), '') as data_cadastro,
-                    coalesce(cast(item2.data_cancelamento as string), '') as data_cancelamento,
-                    coalesce(cast(item2.nome_servico as string), '') as nome_servico
+                    coalesce(cast(item2.data_cancelamento as string), '') as data_cancelamento
                 from unnest(item1.servicos) as item2 with offset as posicao
                 order by posicao
             ) as servicos
@@ -368,8 +371,8 @@ select
     ) as familias,
     array(
         select as struct
-            coalesce(cast(item1.nome_projeto_social as string), '') as nome_projeto_social,
             item1.id_projeto_social,
+            coalesce(cast(item1.nome_projeto_social as string), '') as nome_projeto_social,
             item1.id_unidade,
             coalesce(item1.nome_unidade, '') as nome_unidade,
             {{ pu_flag_sim_nao("coalesce(cast(item1.indicador_ativo as string), '')") }} as indicador_ativo,
@@ -388,37 +391,37 @@ select
                 coalesce(cast(item1.origem_modulo as string), '') as origem_modulo,
                 coalesce(cast(item1.id_unidade as string), '') as id_unidade,
                 coalesce(item1.nome_unidade, '') as nome_unidade,
-                coalesce(cast(item1.tipo_atendimento_descricao as string), '') as tipo_atendimento_descricao,
+                coalesce(item1.tipo_unidade, '') as tipo_unidade,
+                coalesce(item1.cas, '') as cas,
                 coalesce(cast(item1.data_atendimento as string), '') as data_atendimento_informada,
                 {{ normalizar_hora_atendimento('item1.hora_atendimento') }} as hora_atendimento,
+                coalesce(cast(item1.tipo_atendimento_descricao as string), '') as tipo_atendimento_descricao,
+                coalesce(item1.tipo_servico, '') as tipo_servico,
+                coalesce(item1.classificacao_atendimento, '') as classificacao_atendimento,
+                coalesce(item1.projetos_sociais_familia, '') as projetos_sociais_familia,
+                item1.elegivel_indicador,
+                item1.atendimento_compartilhado,
                 array(
                     select as struct
+                        coalesce(cast(item2.id_profissional as string), '') as id_profissional,
                         coalesce(cast(item2.nome_profissional as string), '') as nome_profissional,
+                        coalesce(cast(item2.id_familia_referencia as string), '') as id_familia_referencia,
+                        coalesce(item2.id_atendimento_legado, '') as id_atendimento_legado,
                         array(
                             select coalesce(item3, '') from unnest(item2.descricoes_cbo) as item3 with offset as posicao
                             order by posicao
                         ) as descricoes_cbo,
                         coalesce(cast(item2.cbo_principal_descricao as string), '') as cbo_principal_descricao,
-                        coalesce(cast(item2.id_profissional as string), '') as id_profissional,
                         coalesce(item2.profissional_cbo, '') as profissional_cbo,
                         coalesce(item2.classificacao_atendimento, '') as classificacao_atendimento,
-                        coalesce(item2.nome_atendimento, '') as nome_atendimento,
-                        coalesce(cast(item2.id_familia_referencia as string), '') as id_familia_referencia,
-                        coalesce(item2.id_atendimento_legado, '') as id_atendimento_legado
+                        coalesce(item2.nome_atendimento, '') as nome_atendimento
                     from unnest(item1.profissionais) as item2 with offset as posicao
                     order by posicao
                 ) as profissionais,
-                coalesce(item1.tipo_servico, '') as tipo_servico,
-                coalesce(item1.classificacao_atendimento, '') as classificacao_atendimento,
-                coalesce(item1.projetos_sociais_familia, '') as projetos_sociais_familia,
-                coalesce(item1.cas, '') as cas,
-                coalesce(item1.email_unidade, '') as email_unidade,
-                coalesce(item1.email_cas, '') as email_cas,
                 coalesce(item1.cadastrante, '') as cadastrante,
                 coalesce(cast(item1.data_cadastro_atendimento as string), '') as data_atendimento_sistema,
-                coalesce(item1.tipo_unidade, '') as tipo_unidade,
-                item1.elegivel_indicador,
-                item1.atendimento_compartilhado
+                coalesce(item1.email_unidade, '') as email_unidade,
+                coalesce(item1.email_cas, '') as email_cas
             from unnest(coalesce(a.atendimentos, [])) as item1 with offset as posicao
             order by posicao
         ) as registros
@@ -436,9 +439,10 @@ select
                 coalesce(cast(item1.data_evolucao as string), '') as data_evolucao,
                 coalesce(cast(item1.data_cancelamento as string), '') as data_cancelamento,
                 coalesce(cast(item1.tipo_evolucao as string), '') as tipo_evolucao,
-                coalesce(cast(item1.nome_profissional as string), '') as nome_profissional,
+                coalesce(item1.tipo_servico, '') as tipo_servico,
                 coalesce(cast(item1.nome_atividade as string), '') as nome_atividade,
                 coalesce(cast(item1.descricao_evolucao as string), '') as descricao_evolucao,
+                coalesce(cast(item1.nome_profissional as string), '') as nome_profissional,
                 array(
                     select as struct
                         coalesce(cast(item2.titulo_formulario as string), '') as titulo_formulario,
@@ -453,34 +457,100 @@ select
                         ) as campos
                     from unnest(item1.formularios) as item2 with offset as posicao
                     order by posicao
-                ) as formularios,
-                coalesce(item1.tipo_servico, '') as tipo_servico
+                ) as formularios
             from unnest(coalesce(e.evolucoes, [])) as item1 with offset as posicao
             order by posicao
         ) as registros
     ) as evolucoes,
-    struct(
-        {{ pu_cpop_perfil_publico('perfil_cp.perfil', listas_em_texto=true, indicadores_medicos={
-            'uso_substancias_psicoativas': "case when perfil_cp.id_usuario is null then '' else case upper(trim(cast(medico.flag_uso_substancias_psicoativas as string))) when 'S' then 'Sim' when 'N' then 'Não' else '' end end",
-            'possui_problema_saude': "case when perfil_cp.id_usuario is null then '' else case upper(trim(cast(medico.flag_possui_comorbidade as string))) when 'S' then 'Sim' when 'N' then 'Não' else '' end end"
-        }) }},
-        coalesce(cp_reg.registros, []) as registros,
-        coalesce(hist.historico_mensal, []) as historico_mensal,
-        esc.participacoes[safe_offset(array_length(esc.participacoes) - 1)].nome_atividade as ultima_participacao_atividade,
-        esc.participacoes[safe_offset(array_length(esc.participacoes) - 1)].nome_unidade as ultima_participacao_unidade,
-        esc.participacoes[safe_offset(array_length(esc.participacoes) - 1)].data_presenca as ultima_participacao_data,
-        esc.participacoes[safe_offset(array_length(esc.participacoes) - 1)].hora_presenca as ultima_participacao_hora,
-        coalesce(cp_enc.encaminhamentos, '') as encaminhamentos,
-        coalesce(cp_proc.procedimentos, '') as procedimentos,
-        coalesce(cast(ultimo_cp.data_ultimo_atend_tecnico_informada as string), '') as data_ultimo_atend_tecnico_informada
+    (
+        select as struct
+            cp.unidades_atendimento,
+            cp.possui_registro_pai,
+            cp.data_ocorrencia_pai,
+            cp.origem_data_ocorrencia_pai,
+            cp.situacao_data_ocorrencia_pai,
+            cp.data_registro_pai,
+            cp.data_resposta_pai,
+            cp.data_inclusao_pai,
+            cp.data_inclusao_pai_informada,
+            cp.flag_incluido_acompanhamento_pai,
+            cp.flag_empregabilidade_imediata,
+            cp.capacidade_habilidades,
+            cp.flag_interesse_curso,
+            cp.demandas_pai,
+            cp.encaminhamentos_pai,
+            cp.observacoes_pai,
+            cp.data_ocorrencia_atendimento_social,
+            cp.origem_data_ocorrencia_atendimento_social,
+            cp.situacao_data_ocorrencia_atendimento_social,
+            cp.data_registro_atendimento_social,
+            cp.data_resposta_atendimento_social,
+            cp.demandas_atendimento_social,
+            cp.encaminhamentos_atendimento_social,
+            cp.observacoes_atendimento_social,
+            cp.encaminhamentos,
+            cp.procedimentos,
+            cp.data_ultimo_atend_tecnico_informada,
+            cp.data_ocorrencia_saude,
+            cp.origem_data_ocorrencia_saude,
+            cp.situacao_data_ocorrencia_saude,
+            cp.data_registro_saude,
+            cp.data_resposta_saude,
+            cp.uso_substancias_psicoativas,
+            cp.situacao_saude,
+            cp.local_tratamento,
+            cp.possui_problema_saude,
+            cp.realiza_acompanhamento_saude,
+            cp.observacoes_saude,
+            cp.data_ocorrencia_situacao_rua,
+            cp.origem_data_ocorrencia_situacao_rua,
+            cp.situacao_data_ocorrencia_situacao_rua,
+            cp.data_registro_situacao_rua,
+            cp.data_resposta_situacao_rua,
+            cp.motivo_principal_permanencia_rua,
+            cp.motivo_secundario_permanencia_rua,
+            cp.possui_referencias_familiares,
+            cp.territorio_referencia_familia,
+            cp.possibilidade_reinsercao_familiar,
+            cp.data_ocorrencia_desligamento_pai,
+            cp.origem_data_ocorrencia_desligamento_pai,
+            cp.situacao_data_ocorrencia_desligamento_pai,
+            cp.data_hora_registro_desligamento_pai,
+            cp.data_hora_resposta_desligamento_pai,
+            cp.data_desligamento_pai,
+            cp.data_desligamento_pai_informada,
+            cp.motivo_desligamento_pai,
+            cp.complemento_motivo_desligamento_pai,
+            cp.observacoes_desligamento_pai,
+            cp.ultima_participacao_atividade,
+            cp.ultima_participacao_unidade,
+            cp.ultima_participacao_data,
+            cp.ultima_participacao_hora,
+            cp.registros,
+            cp.historico_mensal
+        from unnest([struct(
+            {{ pu_cpop_perfil_publico('perfil_cp.perfil', listas_em_texto=true, indicadores_medicos={
+                'uso_substancias_psicoativas': "case when perfil_cp.id_usuario is null then '' else case upper(trim(cast(medico.flag_uso_substancias_psicoativas as string))) when 'S' then 'Sim' when 'N' then 'Não' else '' end end",
+                'possui_problema_saude': "case when perfil_cp.id_usuario is null then '' else case upper(trim(cast(medico.flag_possui_comorbidade as string))) when 'S' then 'Sim' when 'N' then 'Não' else '' end end"
+            }) }},
+            coalesce(cp_reg.registros, []) as registros,
+            coalesce(hist.historico_mensal, []) as historico_mensal,
+            esc.participacoes[safe_offset(array_length(esc.participacoes) - 1)].nome_atividade as ultima_participacao_atividade,
+            esc.participacoes[safe_offset(array_length(esc.participacoes) - 1)].nome_unidade as ultima_participacao_unidade,
+            esc.participacoes[safe_offset(array_length(esc.participacoes) - 1)].data_presenca as ultima_participacao_data,
+            esc.participacoes[safe_offset(array_length(esc.participacoes) - 1)].hora_presenca as ultima_participacao_hora,
+            coalesce(cp_enc.encaminhamentos, '') as encaminhamentos,
+            coalesce(cp_proc.procedimentos, '') as procedimentos,
+            coalesce(cast(ultimo_cp.data_ultimo_atend_tecnico_informada as string), '') as data_ultimo_atend_tecnico_informada
+        )]) as cp
     ) as centro_pop,
     struct(
-        coalesce(cr_reg.registros, []) as registros,
-        cr_reg.creas.mse_data_ocorrencia,
-        cr_reg.creas.mse_data_registro,
         cr_reg.creas.mse_id_unidade,
         cr_reg.creas.mse_nome_unidade,
-        cr_reg.creas.mse_observacoes,
+        cr_reg.creas.mse_data_ocorrencia,
+        cr_reg.creas.mse_data_registro,
+        cr_reg.creas.mse_data,
+        cr_reg.creas.mse_data_de_inclusao_no_mse,
         cr_reg.creas.mse_com_que_frequencia_vai_a_casa_da_familia_ou_pessoa_de_referencia,
         cr_reg.creas.mse_com_quem_moraria,
         cr_reg.creas.mse_1o_bimestre_documentacao,
@@ -496,8 +566,6 @@ select
         cr_reg.creas.mse_creas_de_referencia,
         cr_reg.creas.mse_carga_horaria,
         cr_reg.creas.mse_com_quem_residia_anteriormente,
-        cr_reg.creas.mse_data,
-        cr_reg.creas.mse_data_de_inclusao_no_mse,
         cr_reg.creas.mse_desdobramento,
         cr_reg.creas.mse_em_caso_de_cumprimento_de_mse_qual_o_status,
         cr_reg.creas.mse_em_caso_de_cumprimento_de_psc_qual_o_local,
@@ -525,23 +593,23 @@ select
         cr_reg.creas.mse_tipo,
         cr_reg.creas.mse_tipo_de_ato_infracional,
         cr_reg.creas.mse_usuario_interditado,
-        cr_reg.creas.mse_retorno_data_ocorrencia,
-        cr_reg.creas.mse_retorno_data_registro,
+        cr_reg.creas.mse_observacoes,
         cr_reg.creas.mse_retorno_id_unidade,
         cr_reg.creas.mse_retorno_nome_unidade,
-        cr_reg.creas.mse_retorno_observacoes,
-        cr_reg.creas.mse_retorno_adolescente_em_reinfracao,
+        cr_reg.creas.mse_retorno_data_ocorrencia,
+        cr_reg.creas.mse_retorno_data_registro,
         cr_reg.creas.mse_retorno_data_do_desligamento,
+        cr_reg.creas.mse_retorno_adolescente_em_reinfracao,
         cr_reg.creas.mse_retorno_desligamento,
         cr_reg.creas.mse_retorno_em_caso_de_cumprimento_de_mse_qual_o_status,
         cr_reg.creas.mse_retorno_em_caso_de_cumprimento_de_psc_qual_o_local,
         cr_reg.creas.mse_retorno_motivo_do_desligamento,
         cr_reg.creas.mse_retorno_nome_do_local_de_cumprimento_de_psc,
-        cr_reg.creas.peti_data_ocorrencia,
-        cr_reg.creas.peti_data_registro,
+        cr_reg.creas.mse_retorno_observacoes,
         cr_reg.creas.peti_id_unidade,
         cr_reg.creas.peti_nome_unidade,
-        cr_reg.creas.peti_observacoes,
+        cr_reg.creas.peti_data_ocorrencia,
+        cr_reg.creas.peti_data_registro,
         cr_reg.creas.peti_data_da_inclusao_no_peti,
         cr_reg.creas.peti_demanda_inicial,
         cr_reg.creas.peti_forma_de_acesso_informe_a_origem_de_acesso,
@@ -553,11 +621,19 @@ select
         cr_reg.creas.peti_tipo_de_trabalho_infantil,
         cr_reg.creas.peti_e_acompanhado_em_outro_creas,
         cr_reg.creas.peti_e_necessario_realizar_a_gestao_de_beneficios,
-        cr_reg.creas.scfv_data_ocorrencia,
-        cr_reg.creas.scfv_data_registro,
+        cr_reg.creas.peti_observacoes,
+        cr_reg.creas.peti_desligamento_id_unidade,
+        cr_reg.creas.peti_desligamento_nome_unidade,
+        cr_reg.creas.peti_desligamento_data_ocorrencia,
+        cr_reg.creas.peti_desligamento_data_registro,
+        cr_reg.creas.peti_desligamento_data_do_desligamento_do_peti,
+        cr_reg.creas.peti_desligamento_motivo_do_desligamento,
+        cr_reg.creas.peti_desligamento_outros,
+        cr_reg.creas.peti_desligamento_observacoes,
         cr_reg.creas.scfv_id_unidade,
         cr_reg.creas.scfv_nome_unidade,
-        cr_reg.creas.scfv_observacoes,
+        cr_reg.creas.scfv_data_ocorrencia,
+        cr_reg.creas.scfv_data_registro,
         cr_reg.creas.scfv_data_da_solicitacao_do_acolhimento,
         cr_reg.creas.scfv_demanda_de_acolhimento_institucional_por_decisao_judicial,
         cr_reg.creas.scfv_nome_do_cras_responsavel,
@@ -565,28 +641,22 @@ select
         cr_reg.creas.scfv_oriundo_de_instituicao_de_acolhimento_interditado,
         cr_reg.creas.scfv_usuario_interditado,
         cr_reg.creas.scfv_orgao_de_origem_do_acolhimento,
-        cr_reg.creas.peti_desligamento_data_ocorrencia,
-        cr_reg.creas.peti_desligamento_data_registro,
-        cr_reg.creas.peti_desligamento_id_unidade,
-        cr_reg.creas.peti_desligamento_nome_unidade,
-        cr_reg.creas.peti_desligamento_observacoes,
-        cr_reg.creas.peti_desligamento_data_do_desligamento_do_peti,
-        cr_reg.creas.peti_desligamento_motivo_do_desligamento,
-        cr_reg.creas.peti_desligamento_outros,
+        cr_reg.creas.scfv_observacoes,
+        cr_reg.creas.passo_a_passo_ultima_unidade,
         cr_reg.creas.passo_a_passo_ultima_atividade,
         cr_reg.creas.passo_a_passo_ultima_data,
         cr_reg.creas.passo_a_passo_ultima_hora,
-        cr_reg.creas.passo_a_passo_ultima_unidade
+        coalesce(cr_reg.registros, []) as registros
     ) as creas,
     struct(
-        coalesce(perfil_alta.registros, []) as registros,
         perfil_alta.ultimo_ciclo.id_ciclo,
         perfil_alta.ultimo_ciclo.id_unidade,
         perfil_alta.ultimo_ciclo.nome_unidade,
         perfil_alta.ultimo_ciclo.data_entrada,
         perfil_alta.ultimo_ciclo.data_saida,
         perfil_alta.ultimo_ciclo.motivo_saida,
-        perfil_alta.ultimo_ciclo.tempo_permanencia_dias
+        perfil_alta.ultimo_ciclo.tempo_permanencia_dias,
+        coalesce(perfil_alta.registros, []) as registros
     ) as alta_complexidade
 from {{ ref('dim_usuarios') }} as p
 left join unidades_por_usuario as vinculo on cast(p.id_usuario as string) = vinculo.id_usuario
