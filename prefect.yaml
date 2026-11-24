@@ -392,6 +392,15 @@ deployments:
     entrypoint: pipelines/datalake/transform/dbt/flows.py:dbt_transform_flow
     parameters:
       select: "+tag:daily"
+      atualizar_prontuario: true
+      publicar_prontuario: false
+    schedule:
+      cron: "0 10 * * *"
+      timezone: "America/Sao_Paulo"
+      active: false  # Ativar após o primeiro run manual de staging sem promoção.
+    concurrency_limit:
+      limit: 1
+      collision_strategy: CANCEL_NEW
     work_pool:
       name: docker-pool
       job_variables:

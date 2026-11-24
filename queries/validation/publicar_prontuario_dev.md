@@ -1,25 +1,43 @@
-# Materialização do prontuário em desenvolvimento
+# Atualização diária do Prontuário em staging
 
-Na raiz do repositório, com as dependências Python e os pacotes dbt instalados,
-execute com as credenciais padrão de aplicação do BigQuery:
+O deployment `dbt-transform-staging` reaproveita o flow dbt existente. O
+agendamento é diário às 10h em São Paulo. A etapa do Prontuário roda após o
+`dbt build` de staging e exige o sucesso da consulta programada das 05h que
+atualiza `rj-smas-dev.dashboard_acolherio.dev_atendimentos`.
+
+O flow captura os atendimentos e a planilha uma vez, reconstrói as dependências
+materializadas em um dataset isolado e roda os testes de população, eventos,
+perfis por unidade e histórico mensal. As diferenças entre a versão publicada
+e a candidata ficam no artefato `prontuario-staging`. Variações de volume são
+aceitas quando a candidata reconcilia com as fontes e os controles passam.
+
+A promoção ocorre dentro de uma transação. O snapshot de recuperação fica
+disponível por sete dias. Após verificar o destino, o flow remove o dataset
+isolado. Em caso de falha ou validação sem promoção, as tabelas de trabalho
+expiram em 24 horas. Se a execução falhar antes de criar o job de publicação,
+use um novo run para reconstruir a candidata e preserve a anterior para
+diagnóstico. Se o job já existir, um retry do mesmo run recupera seu resultado.
+
+## Primeira execução no Prefect
+
+1. Implantar a versão de staging com o agendamento inativo.
+2. Disparar `dbt-transform-staging` depois da carga das 05h, com
+   `atualizar_prontuario=true` e `publicar_prontuario=false`. Conferir a execução
+   do dbt e os controles no artefato. A conta do worker precisa poder consultar
+   os jobs do BigQuery e ler as fontes, além de criar datasets e snapshots e
+   gravar no destino de desenvolvimento para poder publicar.
+3. Após a validação, mudar `publicar_prontuario` e `schedule.active` para `true`
+   no manifesto e acompanhar o primeiro ciclo até a confirmação e a limpeza.
+
+## Execução manual fora do Prefect
+
+Na raiz do repositório, com as dependências Python, os pacotes dbt e as
+credenciais padrão de aplicação disponíveis:
 
 ```sh
 uv run python queries/validation/publicar_prontuario_dev.py
 uv run python queries/validation/publicar_prontuario_dev.py --publicar
 ```
 
-O primeiro comando constrói e valida uma candidata. O segundo repete o processo
-com uma nova candidata e promove o resultado validado em
-`rj-smas-dev.abordagem.prontuario_eletronico`. A conta precisa poder ler as fontes
-de desenvolvimento, criar datasets e executar jobs. Para publicar, também
-precisa poder gravar na tabela de destino.
-
-O comando lê a exportação da aba de e-mails configurada no BigQuery e reconstrói
-os registros e o histórico do Centro POP antes de materializar o prontuário. As
-tabelas de trabalho expiram em 24 horas. O histórico abrange todas as
-competências com movimento e a tabela compartilhada `relatorio.centro_pop_mensal`
-permanece disponível para seus consumidores.
-
-Use o dataset e os IDs de jobs exibidos no terminal para investigar falhas. Uma
-mudança de esquema, chaves novas ou removidas ou um controle inconsistente
-bloqueia a promoção e deixa a candidata disponível até sua expiração.
+Cada comando cria uma nova candidata. O primeiro valida e informa os jobs e
+contagens. O segundo também promove a candidata após os mesmos controles.
