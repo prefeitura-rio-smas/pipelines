@@ -393,11 +393,11 @@ deployments:
     parameters:
       select: "+tag:daily"
       atualizar_prontuario: true
-      publicar_prontuario: false
+      publicar_prontuario: true
     schedule:
       cron: "0 10 * * *"
       timezone: "America/Sao_Paulo"
-      active: false  # Ativar após o primeiro run manual de staging sem promoção.
+      active: true
     concurrency_limit:
       limit: 1
       collision_strategy: CANCEL_NEW
