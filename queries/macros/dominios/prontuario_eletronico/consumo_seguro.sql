@@ -348,7 +348,84 @@ select
     id_unidade,
     nome_unidade,
     email as email_filtro,
-    struct(usuario.id_usuario, usuario.nome, usuario.nome_social, usuario.filiacao_mae, usuario.nacionalidade, usuario.condicao_estrangeira, usuario.pais_origem, usuario.cpf, usuario.data_nascimento, usuario.sexo, usuario.raca_cor, usuario.genero, usuario.bairro, usuario.flag_cadunico, usuario.pontuacao, usuario.grau_dependencia, usuario.renda_ativa, usuario.atvd_remunerada, usuario.flag_decisao_apoiada, usuario.numero_processo_decisao_apoiada, usuario.nome_apoiador, usuario.flag_saude_mental_comprometida, usuario.motivo_acolhimento, usuario.orientacao_sexual, usuario.vinculo_trabalhista, usuario.flag_trabalha, usuario.profissao, usuario.flag_frequenta_escola, usuario.escolaridade_indice, usuario.flag_recebe_beneficio, usuario.flag_curatela, usuario.tipo_curatela, usuario.flag_deficiencia, usuario.flag_situacao_rua, usuario.origem_demanda, cast(null as string) as flag_possui_violacao_direito, cast(null as string) as nome_unidade_referencia, usuario.uf_nascimento, usuario.cidade_nascimento, usuario.serie_escolar, usuario.data_cadunico_informada, usuario.nis, usuario.numero_rg, usuario.possui_rg, usuario.possui_certidao_nascimento, usuario.numero_certidao_nascimento, usuario.data_atualizacao, usuario.data_limite_cadastro_atual, usuario.flag_familia_ambigua, usuario.flag_nis_ambiguo, usuario.flag_rg_ambiguo, usuario.flag_certidao_ambigua, usuario.beneficio, usuario.deficiencia, cast([] as array<struct<descricao string, origem string>>) as violacoes, cast(null as string) as logradouro, cast(null as string) as numero, cast(null as string) as complemento, cast(null as string) as referencia_ou_comunidade, usuario.idade, usuario.tipo_atividade_remunerada, usuario.possui_cpf, usuario.idade_faixa) as usuario,
+    struct(
+        usuario.id_usuario,
+        usuario.nome,
+        usuario.nome_social,
+        usuario.filiacao_mae,
+
+        usuario.data_nascimento,
+        usuario.idade,
+        usuario.idade_faixa,
+        usuario.uf_nascimento,
+        usuario.cidade_nascimento,
+
+        usuario.nacionalidade,
+        usuario.pais_origem,
+        usuario.condicao_estrangeira,
+
+        usuario.sexo,
+        usuario.genero,
+        usuario.orientacao_sexual,
+        usuario.raca_cor,
+
+        usuario.possui_cpf,
+        usuario.cpf,
+        usuario.possui_rg,
+        usuario.numero_rg,
+        usuario.flag_rg_ambiguo,
+        usuario.possui_certidao_nascimento,
+        usuario.numero_certidao_nascimento,
+        usuario.flag_certidao_ambigua,
+
+        usuario.flag_cadunico,
+        usuario.data_cadunico_informada,
+        usuario.nis,
+        usuario.flag_nis_ambiguo,
+
+        usuario.bairro,
+        cast(null as string) as logradouro,
+        cast(null as string) as numero,
+        cast(null as string) as complemento,
+        cast(null as string) as referencia_ou_comunidade,
+
+        usuario.escolaridade_indice,
+        usuario.flag_frequenta_escola,
+        usuario.serie_escolar,
+
+        usuario.flag_trabalha,
+        usuario.profissao,
+        usuario.vinculo_trabalhista,
+        usuario.tipo_atividade_remunerada,
+        usuario.atvd_remunerada,
+        usuario.renda_ativa,
+
+        usuario.flag_recebe_beneficio,
+        usuario.beneficio,
+
+        usuario.flag_decisao_apoiada,
+        usuario.numero_processo_decisao_apoiada,
+        usuario.nome_apoiador,
+        usuario.flag_saude_mental_comprometida,
+        usuario.flag_curatela,
+        usuario.tipo_curatela,
+
+        usuario.flag_deficiencia,
+        usuario.deficiencia,
+        usuario.grau_dependencia,
+
+        usuario.flag_situacao_rua,
+        usuario.origem_demanda,
+        usuario.motivo_acolhimento,
+        cast(null as string) as nome_unidade_referencia,
+        cast(null as string) as flag_possui_violacao_direito,
+        cast([] as array<struct<descricao string, origem string>>) as violacoes,
+
+        usuario.data_atualizacao,
+        usuario.data_limite_cadastro_atual,
+        usuario.flag_familia_ambigua,
+        usuario.pontuacao
+    ) as usuario,
     array(select as struct
         f.id_familia,
         f.nome_responsavel,

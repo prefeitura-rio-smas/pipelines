@@ -243,64 +243,80 @@ select
         coalesce(cast(p.nome as string), '') as nome,
         coalesce(cast(p.nome_social as string), '') as nome_social,
         coalesce(cast(p.filiacao_mae as string), '') as filiacao_mae,
-        coalesce(cast(p.nacionalidade as string), '') as nacionalidade,
-        coalesce(cast(p.condicao_estrangeira as string), '') as condicao_estrangeira,
-        coalesce(cast(p.pais_origem as string), '') as pais_origem,
-        coalesce(cast(p.cpf as string), '') as cpf,
+
         coalesce(cast(p.data_nascimento as string), '') as data_nascimento,
-        coalesce(cast(p.sexo as string), '') as sexo,
-        coalesce(cast(p.raca_cor as string), 'NÃO INFORMADO') as raca_cor,
-        coalesce(cast(p.genero as string), '') as genero,
-        coalesce(cast(p.bairro as string), 'NÃO INFORMADO') as bairro,
-        {{ pu_flag_sim_nao("coalesce(cast(p.flag_cadunico as string), '')") }} as flag_cadunico,
-        coalesce(cast(p.pontuacao as string), '') as pontuacao,
-        coalesce(cast(p.grau_dependencia as string), '') as grau_dependencia,
-        coalesce(cast(p.renda_ativa as string), '') as renda_ativa,
-        {{ pu_flag_sim_nao("coalesce(cast(p.atvd_remunerada as string), '')") }} as atvd_remunerada,
-        {{ pu_flag_sim_nao("coalesce(cast(p.flag_decisao_apoiada as string), '')") }} as flag_decisao_apoiada,
-        coalesce(cast(p.numero_processo_decisao_apoiada as string), '') as numero_processo_decisao_apoiada,
-        coalesce(cast(p.nome_apoiador as string), '') as nome_apoiador,
-        {{ pu_flag_sim_nao("coalesce(cast(p.flag_saude_mental_comprometida as string), '')") }} as flag_saude_mental_comprometida,
-        coalesce(cast(p.motivo_acolhimento as string), '') as motivo_acolhimento,
-        coalesce(cast(p.orientacao_sexual as string), '') as orientacao_sexual,
-        coalesce(cast(p.vinculo_trabalhista as string), '') as vinculo_trabalhista,
-        {{ pu_flag_sim_nao("coalesce(cast(p.flag_trabalha as string), '')") }} as flag_trabalha,
-        coalesce(cast(p.profissao as string), '') as profissao,
-        {{ pu_flag_sim_nao("coalesce(cast(p.flag_frequenta_escola as string), '')") }} as flag_frequenta_escola,
-        coalesce(cast(p.escolaridade_indice as string), '') as escolaridade_indice,
-        {{ pu_flag_sim_nao("coalesce(cast(p.flag_recebe_beneficio as string), '')") }} as flag_recebe_beneficio,
-        {{ pu_flag_sim_nao("coalesce(cast(p.flag_curatela as string), '')") }} as flag_curatela,
-        coalesce(cast(p.tipo_curatela as string), '') as tipo_curatela,
-        {{ pu_flag_sim_nao("coalesce(cast(p.flag_deficiencia as string), '')") }} as flag_deficiencia,
-        {{ pu_flag_sim_nao("coalesce(cast(p.flag_situacao_rua as string), '')") }} as flag_situacao_rua,
-        coalesce(cast(p.origem_demanda as string), '') as origem_demanda,
-        {{ pu_flag_sim_nao("coalesce(cast(p.flag_possui_violacao_direito as string), '')") }} as flag_possui_violacao_direito,
-        coalesce(unidade_referencia.nome_unidade, '') as nome_unidade_referencia,
+        case when safe_cast(p.data_nascimento as date) <= current_date('America/Sao_Paulo') then {{ calc_idade('safe_cast(p.data_nascimento as date)', "current_date('America/Sao_Paulo')") }} end as idade,
+        {{ idade_faixa("case when safe_cast(p.data_nascimento as date) <= current_date('America/Sao_Paulo') then " ~ calc_idade('safe_cast(p.data_nascimento as date)', "current_date('America/Sao_Paulo')") ~ " end") }} as idade_faixa,
         coalesce(cast(p.uf_nascimento as string), '') as uf_nascimento,
         coalesce(trim(cast(p.cidade_nascimento as string)), '') as cidade_nascimento,
-        coalesce(cast(p.serie_escolar as string), '') as serie_escolar,
-        coalesce(cast(p.data_cadunico_informada as string), '') as data_cadunico_informada,
-        coalesce(cast(cadastro.nis_cadastro as string), '') as nis,
-        coalesce(cast(cadastro.numero_rg_cadastro as string), '') as numero_rg,
+
+        coalesce(cast(p.nacionalidade as string), '') as nacionalidade,
+        coalesce(cast(p.pais_origem as string), '') as pais_origem,
+        coalesce(cast(p.condicao_estrangeira as string), '') as condicao_estrangeira,
+
+        coalesce(cast(p.sexo as string), '') as sexo,
+        coalesce(cast(p.genero as string), '') as genero,
+        coalesce(cast(p.orientacao_sexual as string), '') as orientacao_sexual,
+        coalesce(cast(p.raca_cor as string), 'NÃO INFORMADO') as raca_cor,
+
+        if(nullif(trim(cast(p.cpf as string)), '') is not null, 'Sim', 'Não') as possui_cpf,
+        coalesce(cast(p.cpf as string), '') as cpf,
         if(nullif(trim(cast(cadastro.numero_rg_cadastro as string)), '') is not null, 'Sim', 'Não') as possui_rg,
+        coalesce(cast(cadastro.numero_rg_cadastro as string), '') as numero_rg,
+        cast('' as string) as flag_rg_ambiguo,
         if(nullif(trim(cast(detalhes_cadastro.matricula_certidao_nascimento as string)), '') is not null, 'Sim', 'Não') as possui_certidao_nascimento,
         coalesce(cast(detalhes_cadastro.matricula_certidao_nascimento as string), '') as numero_certidao_nascimento,
-        cast('' as string) as data_atualizacao,
-        cast('' as string) as data_limite_cadastro_atual,
-        cast('' as string) as flag_familia_ambigua,
-        cast('' as string) as flag_nis_ambiguo,
-        cast('' as string) as flag_rg_ambiguo,
         cast('' as string) as flag_certidao_ambigua,
+
+        {{ pu_flag_sim_nao("coalesce(cast(p.flag_cadunico as string), '')") }} as flag_cadunico,
+        coalesce(cast(p.data_cadunico_informada as string), '') as data_cadunico_informada,
+        coalesce(cast(cadastro.nis_cadastro as string), '') as nis,
+        cast('' as string) as flag_nis_ambiguo,
+
+        coalesce(cast(p.bairro as string), 'NÃO INFORMADO') as bairro,
+        coalesce(end_bi.endereco.logradouro, '') as logradouro,
+        coalesce(end_bi.endereco.numero, '') as numero,
+        coalesce(end_bi.endereco.complemento, '') as complemento,
+        coalesce(end_bi.endereco.referencia_ou_comunidade, '') as referencia_ou_comunidade,
+
+        coalesce(cast(p.escolaridade_indice as string), '') as escolaridade_indice,
+        {{ pu_flag_sim_nao("coalesce(cast(p.flag_frequenta_escola as string), '')") }} as flag_frequenta_escola,
+        coalesce(cast(p.serie_escolar as string), '') as serie_escolar,
+
+        {{ pu_flag_sim_nao("coalesce(cast(p.flag_trabalha as string), '')") }} as flag_trabalha,
+        coalesce(cast(p.profissao as string), '') as profissao,
+        coalesce(cast(p.vinculo_trabalhista as string), '') as vinculo_trabalhista,
+        coalesce(p.tipo_atividade_remunerada, '') as tipo_atividade_remunerada,
+        {{ pu_flag_sim_nao("coalesce(cast(p.atvd_remunerada as string), '')") }} as atvd_remunerada,
+        coalesce(cast(p.renda_ativa as string), '') as renda_ativa,
+
+        {{ pu_flag_sim_nao("coalesce(cast(p.flag_recebe_beneficio as string), '')") }} as flag_recebe_beneficio,
         array(
             select as struct coalesce(cast(item1.descricao as string), '') as descricao
             from unnest(p.beneficio) as item1 with offset as posicao
             order by posicao
         ) as beneficio,
+
+        {{ pu_flag_sim_nao("coalesce(cast(p.flag_decisao_apoiada as string), '')") }} as flag_decisao_apoiada,
+        coalesce(cast(p.numero_processo_decisao_apoiada as string), '') as numero_processo_decisao_apoiada,
+        coalesce(cast(p.nome_apoiador as string), '') as nome_apoiador,
+        {{ pu_flag_sim_nao("coalesce(cast(p.flag_saude_mental_comprometida as string), '')") }} as flag_saude_mental_comprometida,
+        {{ pu_flag_sim_nao("coalesce(cast(p.flag_curatela as string), '')") }} as flag_curatela,
+        coalesce(cast(p.tipo_curatela as string), '') as tipo_curatela,
+
+        {{ pu_flag_sim_nao("coalesce(cast(p.flag_deficiencia as string), '')") }} as flag_deficiencia,
         array(
             select as struct coalesce(cast(item1.descricao as string), '') as descricao
             from unnest(p.deficiencia) as item1 with offset as posicao
             order by posicao
         ) as deficiencia,
+        coalesce(cast(p.grau_dependencia as string), '') as grau_dependencia,
+
+        {{ pu_flag_sim_nao("coalesce(cast(p.flag_situacao_rua as string), '')") }} as flag_situacao_rua,
+        coalesce(cast(p.origem_demanda as string), '') as origem_demanda,
+        coalesce(cast(p.motivo_acolhimento as string), '') as motivo_acolhimento,
+        coalesce(unidade_referencia.nome_unidade, '') as nome_unidade_referencia,
+        {{ pu_flag_sim_nao("coalesce(cast(p.flag_possui_violacao_direito as string), '')") }} as flag_possui_violacao_direito,
         array(
             select as struct
                 coalesce(cast(item1.descricao as string), '') as descricao,
@@ -308,14 +324,11 @@ select
             from unnest(p.violacoes) as item1 with offset as posicao
             order by posicao
         ) as violacoes,
-        coalesce(end_bi.endereco.logradouro, '') as logradouro,
-        coalesce(end_bi.endereco.numero, '') as numero,
-        coalesce(end_bi.endereco.complemento, '') as complemento,
-        coalesce(end_bi.endereco.referencia_ou_comunidade, '') as referencia_ou_comunidade,
-        case when safe_cast(p.data_nascimento as date) <= current_date('America/Sao_Paulo') then {{ calc_idade('safe_cast(p.data_nascimento as date)', "current_date('America/Sao_Paulo')") }} end as idade,
-        coalesce(p.tipo_atividade_remunerada, '') as tipo_atividade_remunerada,
-        if(nullif(trim(cast(p.cpf as string)), '') is not null, 'Sim', 'Não') as possui_cpf,
-        {{ idade_faixa("case when safe_cast(p.data_nascimento as date) <= current_date('America/Sao_Paulo') then " ~ calc_idade('safe_cast(p.data_nascimento as date)', "current_date('America/Sao_Paulo')") ~ " end") }} as idade_faixa
+
+        cast('' as string) as data_atualizacao,
+        cast('' as string) as data_limite_cadastro_atual,
+        cast('' as string) as flag_familia_ambigua,
+        coalesce(cast(p.pontuacao as string), '') as pontuacao
     ) as usuario,
     array(
         select as struct
