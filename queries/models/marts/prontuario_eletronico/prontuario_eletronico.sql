@@ -252,7 +252,6 @@ select
         coalesce(cast(p.raca_cor as string), 'NÃO INFORMADO') as raca_cor,
         coalesce(cast(p.genero as string), '') as genero,
         coalesce(cast(p.bairro as string), 'NÃO INFORMADO') as bairro,
-        coalesce(cast(p.prontuario as string), '') as prontuario,
         {{ pu_flag_sim_nao("coalesce(cast(p.flag_cadunico as string), '')") }} as flag_cadunico,
         coalesce(cast(p.pontuacao as string), '') as pontuacao,
         coalesce(cast(p.grau_dependencia as string), '') as grau_dependencia,
