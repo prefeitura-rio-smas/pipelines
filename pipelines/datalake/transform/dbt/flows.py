@@ -4,6 +4,7 @@ import os
 from prefect import flow
 from prefect.runtime import flow_run
 
+from pipelines.datalake.transform.dbt.prontuario import TEST_PATH
 from pipelines.datalake.transform.dbt.tasks import (
     create_dbt_report,
     execute_dbt,
@@ -27,6 +28,8 @@ def dbt_transform_flow(
     args = ["build", "--target", dbt_target, "--project-dir", "queries", "--profiles-dir", "queries"]
     if select:
         args += ["--select", select]
+    if atualizar_prontuario:
+        args += ["--exclude", f"path:{TEST_PATH.rstrip('/')}"]
     execution_info = execute_dbt(args)
     create_dbt_report(execution_info, target=dbt_target, select=select)
     if atualizar_prontuario:

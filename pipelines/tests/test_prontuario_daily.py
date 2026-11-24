@@ -114,6 +114,9 @@ def test_daily_executa_prontuario_somente_apos_dbt_bem_sucedido(monkeypatch):
     monkeypatch.setattr(flows, "flow_run", SimpleNamespace(id=run_id))
     flows.dbt_transform_flow.fn("+tag:daily", atualizar_prontuario=True)
     update.assert_called_once_with(run_id, publish=False)
+    assert flows.execute_dbt.call_args.args[0][-2:] == [
+        "--exclude", "path:tests/prontuario_eletronico",
+    ]
 
     monkeypatch.setenv("MODE", "prod")
     with pytest.raises(ValueError, match="staging"):
