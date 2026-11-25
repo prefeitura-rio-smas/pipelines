@@ -1,0 +1,55 @@
+version: 2
+models:
+  - name: int_centro_pop_historico_mensal
+    description: Histórico recalculado por cidadão, unidade e competência com movimento.
+      Eventos são atribuídos ao mês de realização e o perfil usa os registros disponíveis
+      até o fim da competência. A reconstrução usa a versão atual das fontes.
+
+  - name: int_centro_pop_mensal
+    description: Histórico recalculado do Centro POP por cidadão, unidade e mês com movimento. Sem reconstrução
+      de cadastro histórico; perfil observado na captura, limitado às ocorrências até
+      a competência. As listas contêm apenas os eventos da competência.
+    columns:
+      - name: mes_referencia
+        description: Primeiro dia da competência, DATE. Data de realização rege atendimentos;
+          data de evolução rege evoluções; presença rege atividades.
+      - name: data_carga_fontes
+        description: Menor watermark entre as últimas extrações de atendimentos, evoluções
+          e presenças. Permite identificar defasagem das fontes no momento da captura.
+      - name: data_atualizacao
+        description: Instante da reconstrução mensal.
+
+  - name: int_centro_pop_snapshots
+    description: Fotos imutáveis versionadas, sem expiração, preservadas para leitura do histórico. Full refresh desabilitado.
+
+  - name: int_perfil_centro_pop
+    description: Perfil por usuário com registro específico ou atendimento Centro POP;
+      sem formulário, respostas permanecem vazias.
+    columns:
+      - name: id_usuario
+        data_tests:
+          - not_null
+          - unique
+
+  - name: int_perfil_centro_pop_por_unidade
+    description: Perfil Centro POP selecionado integralmente dentro do cidadão/unidade; encaminhamentos e participações não cruzam unidades.
+    columns:
+      - name: perfil
+        description: Respostas internas do perfil selecionado na unidade, para projeção pública com os tipos e valores ausentes originais.
+      - name: id_unidade
+        description: Unidade do perfil; NULL preserva registros sem unidade identificada.
+
+  - name: int_registros_centro_pop
+    description: Uma ocorrência datada de resposta ou presença; preserva as regras de
+      extração já validadas, sem consolidar por usuário ou mês. Dados gerais de pessoa
+      não geram vínculo artificial com unidades.
+    columns:
+      - name: id_usuario
+        data_tests:
+          - not_null
+      - name: id_registro
+        description: Identidade técnica estável da ocorrência, preservada na separação
+          do antigo model.
+        data_tests:
+          - not_null
+          - unique

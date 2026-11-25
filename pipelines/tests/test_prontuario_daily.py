@@ -1,4 +1,4 @@
-"""Controles do daily de staging que protegem a publicação."""
+"""Controles da atualização do Prontuário em staging."""
 from datetime import datetime, timedelta
 from types import SimpleNamespace
 from unittest.mock import Mock
@@ -96,7 +96,7 @@ def test_variacao_reconciliada_e_divergencia(monkeypatch, divergencia):
         promote.assert_called_once()
 
 
-def test_daily_executa_prontuario_somente_apos_dbt_bem_sucedido(monkeypatch):
+def test_atualizacao_do_prontuario_exige_dbt_bem_sucedido_e_staging(monkeypatch):
     monkeypatch.setenv("MODE", "staging")
     monkeypatch.setattr(flows, "BaseSettings", lambda: None)
     monkeypatch.setattr(flows, "execute_dbt", Mock())

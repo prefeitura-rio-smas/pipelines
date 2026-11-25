@@ -1,20 +1,24 @@
 {{ config(materialized='ephemeral', enabled=target.name != 'prod', tags=['planilha_unificada']) }}
 with linhas_preparadas as (
-    with eventos as (
+    with eventos_origem as (
         select
-            'u' as modulo,
+            modulo,
             id_atendimento,
+            id_paciente as id_usuario,
             id_unidade,
             id_tipo_atendimento,
-            flag_cancelado
+            flag_cancelado,
+            data_atendimento
         from {{ ref('raw_atendimentos_usuarios') }}
         union all
         select
-            'f' as modulo,
+            modulo,
             id_atendimento,
+            id_paciente as id_usuario,
             id_unidade,
             id_tipo_atendimento,
-            flag_cancelado
+            flag_cancelado,
+            data_atendimento
         from {{ ref('raw_atendimentos_familias') }}
     ),
 
@@ -27,7 +31,7 @@ with linhas_preparadas as (
                 error('Contextos internos conflitantes para atendimento da programada'),
                 array_agg(struct(id_unidade, id_tipo_atendimento, flag_cancelado) limit 1)[offset(0)]
             ) as contexto
-        from eventos
+        from eventos_origem
         group by modulo, id_atendimento
     ),
 
@@ -63,9 +67,9 @@ with linhas_preparadas as (
             id_atendimento,
             id_usuario,
             id_unidade,
-            data_atendimento,
-            origem_data_atendimento
-        from {{ ref('int_datas_atendimento') }}
+            if(count(distinct data_atendimento) > 1, error('Datas conflitantes para atendimento'), min(data_atendimento)) as data_atendimento
+        from eventos_origem
+        group by modulo, id_atendimento, id_usuario, id_unidade
     )
 
     select
@@ -77,23 +81,10 @@ with linhas_preparadas as (
         b.email_cas,
         b.seq_atendimento,
         datas.data_atendimento as data_de_atendimento,
-        b.hora_de_atendimento_original,
         b.hora_de_atendimento,
         b.id_usuario,
         b.id_familia,
-        b.nome_usuario,
-        b.documentacao,
-        b.numero_documento,
-        b.endereco,
-        b.endereco_numero,
-        b.endereco_complemento,
-        b.bairro,
-        b.referencia_ou_comunidade,
         b.nome_atendimento_original,
-        b.data_nascimento,
-        b.idade,
-        b.raca_cor,
-        b.sexo,
         b.profissional_id,
         b.profissional,
         b.profissional_cbo_original,
@@ -102,18 +93,13 @@ with linhas_preparadas as (
         b.data_cadastro_atendimento,
         b.tipo_atendimento,
         b.nome_atendimento,
-        b.idade_faixa,
         b.id_atendimento,
         b.email,
-        b.cbo_unico_rank,
-        b.atendimento_unico_rank,
         b.projetos_sociais,
         b._id_unidade,
         b._id_tipo_atendimento,
         b._flag_cancelado,
-        b._codigo_cbo,
-        b.data_de_atendimento as _data_de_atendimento_base,
-        coalesce(datas.origem_data_atendimento, 'sem_correspondencia') as _origem_data_atendimento
+        b._codigo_cbo
     from enriquecidos as b
     left join datas on
         b.modulo = datas.modulo and b.seq_atendimento = datas.id_atendimento
@@ -122,7 +108,7 @@ with linhas_preparadas as (
 ),
 
 eventos as (
-    select
+    select  -- noqa: ST06
         id_usuario,
         seq_atendimento as id_atendimento,
         _id_unidade as id_unidade,
@@ -146,7 +132,7 @@ eventos as (
             when 'CRAS' then 'cras' when 'CREAS' then 'creas'
             when 'CENTRO POP' then 'centro_pop' else 'outros'
         end as tipo_servico,
-        {{ pu_ids_familias('id_familia') }} as id_familia,
+        coalesce(string_agg(distinct cast(id_familia as string), ', ' order by cast(id_familia as string)), '') as id_familia,
         max(projetos_sociais) as projetos_sociais_familia,
         case
             when countif(tipo_atendimento = 'Atendimento Recepção') > 0 then 'Atendimento Recepção'

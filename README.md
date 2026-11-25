@@ -89,6 +89,16 @@ dbt run --select pic --project-dir queries --profiles-dir queries
 ### Rodando Pipelines (Prefect)
 Nossas pipelines são definidas na pasta `pipelines/`. Para rodar ou testar localmente, certifique-se de que seu ambiente virtual (`.venv`) está ativado.
 
+#### Transformação diária e Prontuário em staging
+
+O deployment `dbt-transform-daily-prod` executa `dbt build --select +tag:daily` diariamente às 10h (São Paulo). O deployment `dbt-transform-staging` é manual.
+
+Para validar o Prontuário, execute o deployment de staging após a carga das 05h de `rj-smas-dev.dashboard_acolherio.dev_atendimentos`, com `atualizar_prontuario=true` e `publicar_prontuario=false`. Após o `dbt build`, o flow captura as fontes, materializa a candidata em um dataset isolado e registra controles, diferenças de volume e IDs dos jobs no artefato `prontuario-staging`. O worker precisa consultar jobs, ler as fontes e criar o dataset de trabalho.
+
+Para publicar em `rj-smas-dev.abordagem.prontuario_eletronico`, habilite também `publicar_prontuario=true`. O worker precisa de permissões de escrita e de criação de snapshots. A promoção é transacional e o snapshot de recuperação dura sete dias. O flow remove o dataset após verificar a publicação. As tabelas de candidatas que ficam no dataset expiram em 24 horas.
+
+Se a execução falhar antes de criar o job de publicação, use um novo run para reconstruir a candidata. Se o job já existir, repita o mesmo run para recuperar o resultado.
+
 ---
 
 ## ⚠️ 4. Solução de Problemas Comuns

@@ -1,4 +1,14 @@
 {{ config(alias='planilha_unificada', schema=var('pu_candidato_schema', 'pu_candidatos')) }}
+{% set origens_vinculos = [
+    'atendimentos_por_usuario',
+    'registros_evolucoes',
+    'projetos_por_usuario',
+    'escopo_centro_pop',
+    'historico_centro_pop',
+    'cp_registros',
+    'creas_por_unidade',
+    'acolhimentos_por_unidade',
+] %}
 -- noqa: disable=ST06
 -- Contrato por assunto; identificadores públicos restritos aos campos autorizados.
 with encaminhamentos_centro_pop as (
@@ -108,7 +118,10 @@ atendimentos_por_usuario as (
         p.id_usuario,
         a.id_unidade,
         array_agg(
-            ({{ pu_participacao_atendimento('a', 'profissional') }})
+            (select as struct a.* replace (
+                [profissional] as profissionais,
+                profissional.classificacao_atendimento as classificacao_atendimento
+            ))
             order by pos_evento, pos_profissional
         ) as atendimentos
     from {{ ref('int_atendimentos_por_usuario') }} as p
@@ -190,45 +203,13 @@ acolhimentos_por_unidade as (
 
 unidades_por_usuario as (
     -- Uma chave por vínculo; os eventos continuam nas coleções de cada assunto.
-    select
-        cast(id_usuario as string) as id_usuario,
-        id_unidade
-    from atendimentos_por_usuario
-    union distinct
-    select
-        cast(id_usuario as string) as id_usuario,
-        id_unidade
-    from registros_evolucoes
-    union distinct
-    select
-        cast(id_usuario as string) as id_usuario,
-        id_unidade
-    from projetos_por_usuario
-    union distinct
-    select
-        cast(id_usuario as string) as id_usuario,
-        id_unidade
-    from escopo_centro_pop
-    union distinct
-    select
-        cast(id_usuario as string) as id_usuario,
-        id_unidade
-    from historico_centro_pop
-    union distinct
-    select
-        cast(id_usuario as string) as id_usuario,
-        id_unidade
-    from cp_registros
-    union distinct
-    select
-        cast(id_usuario as string) as id_usuario,
-        id_unidade
-    from creas_por_unidade
-    union distinct
-    select
-        cast(id_usuario as string) as id_usuario,
-        id_unidade
-    from acolhimentos_por_unidade
+    {% for origem in origens_vinculos %}
+        select
+            cast(id_usuario as string) as id_usuario,
+            id_unidade
+        from {{ origem }}
+        {% if not loop.last %}union distinct{% endif %}
+    {% endfor %}
 )
 
 select
@@ -545,107 +526,7 @@ select
         )]) as cp
     ) as centro_pop,
     struct(
-        cr_reg.creas.mse_id_unidade,
-        cr_reg.creas.mse_nome_unidade,
-        cr_reg.creas.mse_data_ocorrencia,
-        cr_reg.creas.mse_data_registro,
-        cr_reg.creas.mse_data,
-        cr_reg.creas.mse_data_de_inclusao_no_mse,
-        cr_reg.creas.mse_com_que_frequencia_vai_a_casa_da_familia_ou_pessoa_de_referencia,
-        cr_reg.creas.mse_com_quem_moraria,
-        cr_reg.creas.mse_1o_bimestre_documentacao,
-        cr_reg.creas.mse_1o_bimestre_beneficios,
-        cr_reg.creas.mse_1o_bimestre_cadunico,
-        cr_reg.creas.mse_1o_bimestre_localizacao,
-        cr_reg.creas.mse_1o_bimestre_outras_acoes,
-        cr_reg.creas.mse_1o_bimestre_saude,
-        cr_reg.creas.mse_adolescente_em_reinfracao,
-        cr_reg.creas.mse_adolescente_tem_historico_de_cumprimento_de_mse_em_meio_fechado_ou_semiliberdade,
-        cr_reg.creas.mse_avaliacao_tecnica_bimestral_1o_bimestre,
-        cr_reg.creas.mse_cras_de_referencia,
-        cr_reg.creas.mse_creas_de_referencia,
-        cr_reg.creas.mse_carga_horaria,
-        cr_reg.creas.mse_com_quem_residia_anteriormente,
-        cr_reg.creas.mse_desdobramento,
-        cr_reg.creas.mse_em_caso_de_cumprimento_de_mse_qual_o_status,
-        cr_reg.creas.mse_em_caso_de_cumprimento_de_psc_qual_o_local,
-        cr_reg.creas.mse_endereco_cras,
-        cr_reg.creas.mse_endereco_creas,
-        cr_reg.creas.mse_especialidade,
-        cr_reg.creas.mse_gostaria_de_retornar_para_casa_ou_convivio_anterior,
-        cr_reg.creas.mse_gostaria_de_retornar_para_casa_ou_convivio_anterior_com_quem_moraria,
-        cr_reg.creas.mse_local,
-        cr_reg.creas.mse_mantem_contato_com_a_familia_ou_pessoa_de_referencia,
-        cr_reg.creas.mse_mantem_contato_com_a_familia_ou_pessoa_de_referencia_com_que_frequencia_vai_a_casa_da_familia_ou_pessoa_de_referencia,
-        cr_reg.creas.mse_medida_aplicada,
-        cr_reg.creas.mse_nome_do_local_de_cumprimento_de_psc,
-        cr_reg.creas.mse_outras_atividades,
-        cr_reg.creas.mse_por_que_se_afastou_da_familia_ou_pessoa_de_referencia,
-        cr_reg.creas.mse_procedimento,
-        cr_reg.creas.mse_profissional_cras,
-        cr_reg.creas.mse_profissional_creas,
-        cr_reg.creas.mse_quais_atividades_gostaria_de_participar,
-        cr_reg.creas.mse_registrar_o_que_conseguiu_cumprir_e_justificar_o_que_nao_conseguiu_cumprir_no_prazo_estabelecido,
-        cr_reg.creas.mse_servico_de_protecao_social_ao_adolescente_em_cumprimento_de_la_ou_psc,
-        cr_reg.creas.mse_telefone_cras,
-        cr_reg.creas.mse_telefone_creas,
-        cr_reg.creas.mse_tempo_de_cumprimento,
-        cr_reg.creas.mse_tipo,
-        cr_reg.creas.mse_tipo_de_ato_infracional,
-        cr_reg.creas.mse_usuario_interditado,
-        cr_reg.creas.mse_observacoes,
-        cr_reg.creas.mse_retorno_id_unidade,
-        cr_reg.creas.mse_retorno_nome_unidade,
-        cr_reg.creas.mse_retorno_data_ocorrencia,
-        cr_reg.creas.mse_retorno_data_registro,
-        cr_reg.creas.mse_retorno_data_do_desligamento,
-        cr_reg.creas.mse_retorno_adolescente_em_reinfracao,
-        cr_reg.creas.mse_retorno_desligamento,
-        cr_reg.creas.mse_retorno_em_caso_de_cumprimento_de_mse_qual_o_status,
-        cr_reg.creas.mse_retorno_em_caso_de_cumprimento_de_psc_qual_o_local,
-        cr_reg.creas.mse_retorno_motivo_do_desligamento,
-        cr_reg.creas.mse_retorno_nome_do_local_de_cumprimento_de_psc,
-        cr_reg.creas.mse_retorno_observacoes,
-        cr_reg.creas.peti_id_unidade,
-        cr_reg.creas.peti_nome_unidade,
-        cr_reg.creas.peti_data_ocorrencia,
-        cr_reg.creas.peti_data_registro,
-        cr_reg.creas.peti_data_da_inclusao_no_peti,
-        cr_reg.creas.peti_demanda_inicial,
-        cr_reg.creas.peti_forma_de_acesso_informe_a_origem_de_acesso,
-        cr_reg.creas.peti_marcacao_nos_campo_cadunico,
-        cr_reg.creas.peti_orientacoes_e_encaminhamentos,
-        cr_reg.creas.peti_outras_demandas_vulnerabilidades,
-        cr_reg.creas.peti_outras_formas_de_acesso,
-        cr_reg.creas.peti_outros,
-        cr_reg.creas.peti_tipo_de_trabalho_infantil,
-        cr_reg.creas.peti_e_acompanhado_em_outro_creas,
-        cr_reg.creas.peti_e_necessario_realizar_a_gestao_de_beneficios,
-        cr_reg.creas.peti_observacoes,
-        cr_reg.creas.peti_desligamento_id_unidade,
-        cr_reg.creas.peti_desligamento_nome_unidade,
-        cr_reg.creas.peti_desligamento_data_ocorrencia,
-        cr_reg.creas.peti_desligamento_data_registro,
-        cr_reg.creas.peti_desligamento_data_do_desligamento_do_peti,
-        cr_reg.creas.peti_desligamento_motivo_do_desligamento,
-        cr_reg.creas.peti_desligamento_outros,
-        cr_reg.creas.peti_desligamento_observacoes,
-        cr_reg.creas.scfv_id_unidade,
-        cr_reg.creas.scfv_nome_unidade,
-        cr_reg.creas.scfv_data_ocorrencia,
-        cr_reg.creas.scfv_data_registro,
-        cr_reg.creas.scfv_data_da_solicitacao_do_acolhimento,
-        cr_reg.creas.scfv_demanda_de_acolhimento_institucional_por_decisao_judicial,
-        cr_reg.creas.scfv_nome_do_cras_responsavel,
-        cr_reg.creas.scfv_o_usuario_participa_do_scfv_servico_de_convivencia_e_fortalecimento_de_vinculos,
-        cr_reg.creas.scfv_oriundo_de_instituicao_de_acolhimento_interditado,
-        cr_reg.creas.scfv_usuario_interditado,
-        cr_reg.creas.scfv_orgao_de_origem_do_acolhimento,
-        cr_reg.creas.scfv_observacoes,
-        cr_reg.creas.passo_a_passo_ultima_unidade,
-        cr_reg.creas.passo_a_passo_ultima_atividade,
-        cr_reg.creas.passo_a_passo_ultima_data,
-        cr_reg.creas.passo_a_passo_ultima_hora,
+        {{ pu_campos_perfil_creas('cr_reg.creas') | trim | indent(8) }},
         coalesce(cr_reg.registros, []) as registros
     ) as creas,
     struct(
