@@ -1,0 +1,13 @@
+version: 2
+models:
+  - name: int_perfil_creas
+    description: Histórico de formulários e participações CREAS por cidadão, com perfis calculados dentro de cada unidade.
+    columns:
+      - name: id_usuario
+        data_tests:
+          - not_null
+          - unique
+      - name: perfil_geral
+        description: Histórico do cidadão com formulários CREAS e participações no Passo a Passo.
+      - name: registros
+        description: Últimas respostas e participações na própria unidade. Unidade nula preserva registros sem unidade identificada.

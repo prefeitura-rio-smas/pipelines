@@ -1,7 +1,0 @@
-version: 2
-models:
-  - name: int_perfil_creas_por_unidade
-    description: Últimas respostas e participações CREAS dentro do cidadão/unidade, preservando a origem de cada assunto.
-    columns:
-      - name: id_unidade
-        description: Unidade do perfil; NULL preserva respostas e participações sem unidade identificada.

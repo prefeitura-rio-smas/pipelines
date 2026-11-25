@@ -14,7 +14,7 @@ with vinculos as (
     select
         cast(id_usuario as string) as id_usuario,
         id_unidade
-    from {{ ref('int_projetos_sociais_por_unidade') }}
+    from {{ ref('int_projetos_sociais') }}
     union distinct
     select
         cast(id_usuario as string) as id_usuario,
@@ -29,12 +29,12 @@ with vinculos as (
     select
         cast(p.id_usuario as string) as id_usuario,
         h.id_unidade
-    from {{ ref('int_perfil_creas') }} as p, unnest(p.historico) as h
+    from {{ ref('int_perfil_creas') }} as p, unnest(p.perfil_geral.historico) as h
     union distinct
     select
         cast(p.id_usuario as string) as id_usuario,
         h.id_unidade
-    from {{ ref('int_perfil_creas') }} as p, unnest(p.participacoes) as h
+    from {{ ref('int_perfil_creas') }} as p, unnest(p.perfil_geral.participacoes) as h
     union distinct
     select
         cast(p.id_usuario as string) as id_usuario,

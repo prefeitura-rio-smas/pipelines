@@ -69,19 +69,18 @@ procedimentos_centro_pop as (
 cp_registros as (
     select
         p.id_usuario,
-        p.id_unidade,
-        array_agg((
+        u.id_unidade,
+        u.perfil,
+        [(
             select as struct
-                p.id_unidade,
+                u.id_unidade,
                 e.nome_unidade,
-                {{ pu_campos_perfil_centro_pop('p.centro_pop') }}
-        )
-        order by p.id_unidade) as registros
-    from {{ ref('int_perfil_centro_pop_por_unidade') }} as p
-    left join {{ ref('int_filtro_email_unidades') }} as e on p.id_unidade = e.id_unidade
-    group by p.id_usuario, p.id_unidade
+                {{ pu_campos_perfil_centro_pop('u.centro_pop') }}
+        )] as registros
+    from {{ ref('int_perfil_centro_pop') }} as p
+    cross join unnest(p.registros) as u
+    left join {{ ref('int_filtro_email_unidades') }} as e on u.id_unidade = e.id_unidade
 ),
-
 
 historico_centro_pop as (
     select
@@ -107,7 +106,7 @@ projetos_por_usuario as (
             coalesce({{ map_nome_projeto_social('ps.id_projeto_social') }}, format('Projeto não mapeado (ID %d)', ps.id_projeto_social)) as nome_projeto_social,
             ps.id_projeto_social, ps.id_unidade, un.nome_unidade, ps.indicador_ativo, ps.data_cadastro, ps.data_cancelamento
         ) order by ps.id_projeto_social, ps.id_unidade) as projetos_sociais
-    from {{ ref('int_projetos_sociais_por_unidade') }} as ps
+    from {{ ref('int_projetos_sociais') }} as ps
     inner join {{ ref('dim_usuarios') }} as u on ps.id_usuario = u.id_usuario
     left join {{ ref('dim_unidades') }} as un on ps.id_unidade = un.id_unidade
     group by u.id_usuario, ps.id_unidade
@@ -171,6 +170,15 @@ escopo_centro_pop as (
     group by s.id_usuario, s.id_unidade
 ),
 
+perfis_creas as (
+    select
+        p.id_usuario,
+        u.id_unidade,
+        u.creas
+    from {{ ref('int_perfil_creas') }} as p
+    cross join unnest(p.registros) as u
+),
+
 creas_por_unidade as (
     select
         p.id_usuario,
@@ -182,7 +190,7 @@ creas_por_unidade as (
                 em.nome_unidade,
                 {{ pu_campos_perfil_creas('p.creas') }}
         )] as registros
-    from {{ ref('int_perfil_creas_por_unidade') }} as p
+    from perfis_creas as p
     left join {{ ref('int_filtro_email_unidades') }} as em on p.id_unidade = em.id_unidade
 ),
 
@@ -510,9 +518,9 @@ select
             cp.registros,
             cp.historico_mensal
         from unnest([struct(
-            {{ pu_cpop_perfil_publico('perfil_cp.perfil', listas_em_texto=true, indicadores_medicos={
-                'uso_substancias_psicoativas': "case when perfil_cp.id_usuario is null then '' else case upper(trim(cast(medico.flag_uso_substancias_psicoativas as string))) when 'S' then 'Sim' when 'N' then 'Não' else '' end end",
-                'possui_problema_saude': "case when perfil_cp.id_usuario is null then '' else case upper(trim(cast(medico.flag_possui_comorbidade as string))) when 'S' then 'Sim' when 'N' then 'Não' else '' end end"
+            {{ pu_cpop_perfil_publico('cp_reg.perfil', listas_em_texto=true, indicadores_medicos={
+                'uso_substancias_psicoativas': "case when cp_reg.id_usuario is null then '' else case upper(trim(cast(medico.flag_uso_substancias_psicoativas as string))) when 'S' then 'Sim' when 'N' then 'Não' else '' end end",
+                'possui_problema_saude': "case when cp_reg.id_usuario is null then '' else case upper(trim(cast(medico.flag_possui_comorbidade as string))) when 'S' then 'Sim' when 'N' then 'Não' else '' end end"
             }) }},
             coalesce(cp_reg.registros, []) as registros,
             coalesce(hist.historico_mensal, []) as historico_mensal,
@@ -581,10 +589,6 @@ left join escopo_centro_pop as esc
     on
         p.id_usuario = esc.id_usuario
         and vinculo.id_unidade is not distinct from esc.id_unidade
-left join {{ ref('int_perfil_centro_pop_por_unidade') }} as perfil_cp
-    on
-        cast(p.id_usuario as string) = perfil_cp.id_usuario
-        and vinculo.id_unidade is not distinct from perfil_cp.id_unidade
 left join {{ ref('dim_unidades') }} as unidade_referencia on safe_cast(p.id_unidade_referencia as int64) = unidade_referencia.id_unidade
 
 left join acolhimentos_por_unidade as perfil_alta

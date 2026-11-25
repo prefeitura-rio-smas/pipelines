@@ -1,4 +1,10 @@
 {{ config(alias='dim_centro_pop', schema='gerenciamento__dbt', tags=['pu_dimensoes']) }}
+with perfil_geral as (
+    select p.perfil_geral.*
+    from {{ ref('int_perfil_centro_pop') }} as p
+    where p.perfil_geral is not null
+)
+
 select
     id_usuario,
     unidades_atendimento,
@@ -52,4 +58,4 @@ select
     motivo_desligamento,
     motivo_desligamento_outros,
     observacoes_desligamento
-from {{ ref('int_perfil_centro_pop') }}
+from perfil_geral
