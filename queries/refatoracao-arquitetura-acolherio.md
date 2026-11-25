@@ -186,7 +186,7 @@ para `raw/arcgis` + `intermediate/social` + `marts/risco_social`).
 
 - [x] Criar modelos **marts** para dashboards e relatórios
 - [x] Migrar sistema **bolsa_familia** para a nova arquitetura
-- [x] Migrar sistema **arcgis** para a nova arquitetura (`raw/arcgis` + `marts/abordagem/mart_abordagem`)
+- [x] Migrar sistema **arcgis** para a nova arquitetura (`raw/arcgis` + `intermediate/abordagem` + `marts/abordagem/mart_abordagem`)
 - [x] Migrar **rma/cras** para a nova arquitetura (`marts/rma_cras/`)
 - [ ] Configurar **snapshots** para histórico (SCD Type 2)
 - [ ] Revisar e completar `ARCHITECTURE.md`
@@ -203,15 +203,18 @@ não tinha nenhum consumidor no BigQuery e foi substituído por
 `poligonos_rmi` não rodava desde 03/2026.
 
 `dashboard_arcgis/` (7 arquivos) foi migrado em 2026-11-10, na mesma data:
-`abordagem_repeat` → `raw/arcgis/raw_abordagem_repeat`, `abordagem_ficha` →
-`raw/arcgis/raw_abordagem_ficha`, `abordagem_repeat_dedup` →
-`intermediate/abordagem/int_abordagem_repeat_dedup` e `abordagem` →
-`marts/abordagem/mart_abordagem`. `gestao_vagas` não tinha nenhuma consulta em
-7 dias e saiu junto.
+`abordagem_repeat` → `raw/arcgis/raw_abordagem_repeat` (só rename/type),
+`abordagem_ficha` → `raw/arcgis/raw_abordagem_ficha` (view), `abordagem_repeat_dedup`
+→ `intermediate/abordagem/int_abordagem_repeat_dedup` (chaves de dedup + cluster)
+e `abordagem` → `marts/abordagem/mart_abordagem`. A tradução código→rótulo e os
+joins (ficha, de/para de e-mails, dedup) ficam na `int_abordagem` (ephemeral);
+a `mart_abordagem` é thin e só expõe o contrato. `gestao_vagas` não tinha
+nenhuma consulta em 7 dias e saiu junto.
 
 **Destino final:** `mart_abordagem` grava em `rj-smas.abordagem.abordagem`
 (grão 1 linha por abordagem), via `+schema` da pasta `marts/abordagem` — sem
 hardcode de projeto. A tabela antiga
 `rj-smas-dev.dashboard_arcgis.abordagem` deixa de ser atualizada; o repoint do
 Looker é uma etapa operacional posterior. Paridade de linhas/colunas é
-revalidada no CI/Recce a cada mudança.
+revalidada no CI/Recce a cada mudança. O `ficha_objectid` é nulo em toda a base
+(join legado pendente de investigação), mantido no contrato.

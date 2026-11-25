@@ -1,10 +1,11 @@
 {{ config(materialized = 'table') }}
 
 -- Agrupamento de abordagens da mesma pessoa (clusters de duplicidade).
--- Grão: 1 linha por globalid (= 1 abordagem), com o cluster_id do registro
--- mestre e a flag is_duplicado. Grafo recursivo com 6 regras de match exato
--- dentro do mesmo ano (ver CTE Matches); substituiu a versão com SOUNDEX.
--- Consumido pela mart_abordagem (dashboard de Abordagem).
+-- Grão: 1 linha por globalid (= 1 abordagem), com as chaves normalizadas, o
+-- cluster_id do registro mestre e a flag is_duplicado. As chaves (que antes
+-- vinham da raw) são calculadas aqui. Grafo recursivo com 6 regras de match
+-- exato dentro do mesmo ano (ver CTE Matches); substituiu a versão com SOUNDEX.
+-- Consumido pela int_abordagem (camada conformada).
 
 -- ==========================================================
 -- Dedup via grafo recursivo com 6 regras de matching exato
@@ -16,12 +17,63 @@ WITH RECURSIVE
 BASEDADOS AS (
     SELECT
         GLOBALID AS ID,
-        KEY_CPF,
-        KEY_NOME_USUARIO AS KEY_NM,
-        KEY_NOME_MAE AS KEY_MAE,
-        KEY_NOME_PAI AS KEY_PAI,
         REPEAT_DATA_NASCIMENTO,
-        ANO_NUM_DATA_ABORDAGEM AS ANO
+        ANO_NUM_DATA_ABORDAGEM AS ANO,
+        REGEXP_REPLACE(COALESCE(REPEAT_CPF, ''), R'\D', '') AS KEY_CPF,
+        UPPER(REGEXP_REPLACE(
+            ARRAY_TO_STRING(
+                ARRAY(
+                    SELECT W FROM
+                        UNNEST(
+                            SPLIT(
+                                REGEXP_REPLACE(
+                                    REGEXP_REPLACE(NORMALIZE(COALESCE(REPEAT_NOME_USUARIO, ''), NFD), R'\p{M}', ''),
+                                    R'[^A-Z0-9]', ' '
+                                ),
+                                ' '
+                            )
+                        ) AS W
+                    WHERE UPPER(W) NOT IN ('DE', 'DA', 'DO', 'DAS', 'DOS', 'E', 'A', 'O', 'OS', 'AS')
+                ), ''
+            ),
+            R'[^A-Z0-9]', ''
+        )) AS KEY_NM,
+        UPPER(REGEXP_REPLACE(
+            ARRAY_TO_STRING(
+                ARRAY(
+                    SELECT W FROM
+                        UNNEST(
+                            SPLIT(
+                                REGEXP_REPLACE(
+                                    REGEXP_REPLACE(NORMALIZE(COALESCE(REPEAT_NOME_MAE, ''), NFD), R'\p{M}', ''),
+                                    R'[^A-Z0-9]', ' '
+                                ),
+                                ' '
+                            )
+                        ) AS W
+                    WHERE UPPER(W) NOT IN ('DE', 'DA', 'DO', 'DAS', 'DOS', 'E', 'A', 'O', 'OS', 'AS')
+                ), ''
+            ),
+            R'[^A-Z0-9]', ''
+        )) AS KEY_MAE,
+        UPPER(REGEXP_REPLACE(
+            ARRAY_TO_STRING(
+                ARRAY(
+                    SELECT W FROM
+                        UNNEST(
+                            SPLIT(
+                                REGEXP_REPLACE(
+                                    REGEXP_REPLACE(NORMALIZE(COALESCE(REPEAT_NOME_PAI, ''), NFD), R'\p{M}', ''),
+                                    R'[^A-Z0-9]', ' '
+                                ),
+                                ' '
+                            )
+                        ) AS W
+                    WHERE UPPER(W) NOT IN ('DE', 'DA', 'DO', 'DAS', 'DOS', 'E', 'A', 'O', 'OS', 'AS')
+                ), ''
+            ),
+            R'[^A-Z0-9]', ''
+        )) AS KEY_PAI
     FROM {{ ref('raw_abordagem_repeat') }}
 ),
 
@@ -101,6 +153,10 @@ MAPA_DE_PARA AS (
 
 SELECT
     ORIG.ID AS `globalid`,
+    ORIG.KEY_CPF AS `key_cpf`,
+    ORIG.KEY_NM AS `key_nome_usuario`,
+    ORIG.KEY_MAE AS `key_nome_mae`,
+    ORIG.KEY_PAI AS `key_nome_pai`,
     COALESCE(MAPA.ID_MESTRE, ORIG.ID) AS `cluster_id`,
     MAPA.ID_MESTRE IS NOT NULL AND MAPA.ID_MESTRE != ORIG.ID AS `is_duplicado`
 FROM BASEDADOS AS ORIG

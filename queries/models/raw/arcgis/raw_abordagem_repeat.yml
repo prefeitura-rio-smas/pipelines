@@ -15,11 +15,9 @@ models:
   - name: raw_abordagem_repeat
     description: >
       Camada Raw do formulário de abordagem (repeat): 1 linha por abordagem
-      (globalid). Renomeia/tipa a fonte e normaliza rótulos de domínio (CASE)
-      consumidos pelo dashboard de Abordagem. Contrato externo: as colunas são
-      as da relação `rj-smas.abordagem.abordagem` — não renomear sem alinhar o
-      BI. A tradução código→rótulo ainda está em CASE
-      (débito herdado: deveria vir de seed, ver taxonomia de macros).
+      (globalid). Renomeia/tipa a fonte e expõe os valores brutos; a tradução
+      código→rótulo e as chaves de dedup ficam no intermediate. O contrato final
+      (154 colunas) é exposto pela mart_abordagem.
     columns:
       - name: objectid
         description: "ObjectID da feature (ArcGIS)."
@@ -34,7 +32,7 @@ models:
       - name: parentrowid
         description: "ObjectID da ficha (layer 0) que originou esta abordagem; join com raw_abordagem_ficha.objectid."
       - name: repeat_unidade_calculo_tratada
-        description: "Unidade de cálculo da abordagem (nome normalizado; CREAS/Centro POP)."
+        description: "Valor bruto da unidade de cálculo (tradução no int_abordagem)."
       - name: repeat_unidade_cas
         description: "CAS da unidade que registrou a abordagem (liga no de/para de e-mails do BI)."
       - name: repeat_nome_usuario
@@ -52,9 +50,9 @@ models:
       - name: repeat_faixa_etaria
         description: "Faixa etária do usuário na abordagem."
       - name: repeat_raca_cor_etnia_tratada
-        description: "Raça/cor/etnia com rótulo normalizado."
+        description: "Valor bruto de raça/cor/etnia (tradução no int_abordagem)."
       - name: repeat_sexo
-        description: "Sexo do usuário com rótulo normalizado."
+        description: "Valor bruto do sexo (tradução no int_abordagem)."
       - name: endereco_abord
         description: "Endereço descritivo da abordagem."
       - name: latitude
@@ -65,11 +63,3 @@ models:
         description: "Geometria nativa (GEOGRAPHY) do ArcGIS."
       - name: qual_substancia_psicoativa
         description: "Substâncias psicoativas utilizadas (lista separada por vírgula)."
-      - name: key_cpf
-        description: "CPF normalizado (só dígitos) usado nas regras de dedup."
-      - name: key_nome_usuario
-        description: "Nome do usuário normalizado (sem acento/stopwords) para dedup."
-      - name: key_nome_mae
-        description: "Nome da mãe normalizado (sem acento/stopwords) para dedup."
-      - name: key_nome_pai
-        description: "Nome do pai normalizado (sem acento/stopwords) para dedup."
