@@ -30,7 +30,7 @@ ultimo_atendimento_tecnico_centro_pop as (
         id_usuario,
         id_unidade,
         max(data_ultimo_atend_tecnico_informada) as data_ultimo_atend_tecnico_informada
-    from ({{ pu_cpop_atendimentos_tecnicos() }})
+    from ({{ datas_atendimentos_tecnicos_centro_pop() }})
     group by id_usuario, id_unidade
 ),
 

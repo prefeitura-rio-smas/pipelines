@@ -1,4 +1,4 @@
-{% macro pu_cpop_atendimentos_tecnicos() %}
+{% macro datas_atendimentos_tecnicos_centro_pop() %}
     select
         e.id_usuario,
         e.id_unidade,

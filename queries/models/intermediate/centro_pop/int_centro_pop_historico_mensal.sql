@@ -1,7 +1,7 @@
 {{ config(enabled=target.name != 'prod', materialized='ephemeral', tags=['centro_pop_mensal', 'planilha_unificada']) }}
 -- A reconstrução usa os dados disponíveis a cada execução.
 select
-    {{ pu_cpop_mensal_colunas('m') }},
+    {{ colunas_resumo_mensal_centro_pop('m') }},
     m.atendimentos,
     m.evolucoes,
     m.ocorrencias,

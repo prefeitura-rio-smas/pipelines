@@ -135,7 +135,7 @@ atendimentos_escopo as (
 
 perfil_scoped as ({{ pu_perfil_centro_pop_sql('registros_escopo', 'atendimentos_escopo', 'usuarios_escopo') }}),
 
-atendimentos_tecnicos as ({{ pu_cpop_atendimentos_tecnicos() }}),
+atendimentos_tecnicos as ({{ datas_atendimentos_tecnicos_centro_pop() }}),
 
 ultimo_tecnico as (
     select
