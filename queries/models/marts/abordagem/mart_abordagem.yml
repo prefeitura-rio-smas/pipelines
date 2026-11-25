@@ -1,30 +1,16 @@
 version: 2
 
-sources:
-  - name: dashboard_arcgis_manuais
-    description: >
-      Tabelas mantidas fora do dbt no dataset `dashboard_arcgis` do projeto DEV
-      (de/para operacional). Dívida conhecida: a mart em `rj-smas.abordagem` lê
-      esta tabela cross-project. Não versionadas neste repo.
-    database: rj-smas-dev
-    schema: dashboard_arcgis
-    tables:
-      - name: abordagem_filtro_emails
-        description: >
-          De/para CAS → e-mail institucional usado no filtro de unidade do
-          dashboard de Abordagem (`cas` é a chave do join).
-
 models:
   - name: mart_abordagem
     description: >
       Mart de Abordagem Social (situação de rua). Grão: 1 linha por abordagem
-      (globalid). Entrega a tabela `rj-smas.abordagem.abordagem`, com o cluster
-      de duplicidade da pessoa, o e-mail institucional da unidade e o objectid
-      da ficha de origem.
+      (globalid). Camada de apresentação thin sobre a `int_abordagem`: expõe o
+      contrato de 154 colunas em `rj-smas.abordagem.abordagem`.
 
       A antiga tabela `rj-smas-dev.dashboard_arcgis.abordagem` deixa de ser
       atualizada; o repoint do Looker é uma etapa operacional posterior. Não
-      renomear/remover coluna sem alinhar o BI.
+      renomear/remover coluna sem alinhar o BI. O `ficha_objectid` é nulo em
+      toda a base (join legado pendente de investigação), mantido no contrato.
     columns:
       - name: globalid
         description: "GUID da abordagem (chave da mart)."
