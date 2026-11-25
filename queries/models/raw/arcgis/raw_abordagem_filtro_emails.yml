@@ -1,0 +1,21 @@
+version: 2
+
+sources:
+  - name: dashboard_arcgis_manuais
+    description: >
+      Tabelas mantidas fora do dbt no dataset `dashboard_arcgis` do projeto DEV
+      (de/para operacional). Dívida conhecida: a int_abordagem lê esta tabela
+      cross-project. Não versionadas neste repo.
+    database: rj-smas-dev
+    schema: dashboard_arcgis
+    tables:
+      - name: abordagem_filtro_emails
+        description: >
+          De/para CAS → e-mail institucional usado no filtro de unidade do
+          dashboard de Abordagem (`cas` é a chave do join).
+
+models:
+  - name: raw_abordagem_filtro_emails
+    description: >
+      Camada Raw do de/para CAS → e-mail (2 colunas). Exposta como view para que
+      a source externa seja o único ponto de contato na raw.
