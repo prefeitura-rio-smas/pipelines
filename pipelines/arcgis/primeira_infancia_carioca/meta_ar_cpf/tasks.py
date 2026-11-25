@@ -240,6 +240,7 @@ def apply_arcgis_status_sync(item_id: str, layer_idx: int = 0):
             attrs["status_inativo_motivo"] = row["status_inativo_motivo"]
         if not pd.isna(row["cpf_programa"]):
             attrs["cpf_pic"] = row["cpf_programa"]
+            attrs["cpf_cadun"] = row["cpf_programa"]
         if not pd.isna(row["protocolo_status_programa"]):
             attrs["protocolo_status"] = row["protocolo_status_programa"]
         updates.append({"attributes": attrs})
