@@ -26,16 +26,3 @@ e os IDs dos jobs no artefato `prontuario-staging`. A conta do worker precisa
 consultar os jobs do BigQuery, ler as fontes e criar o dataset de trabalho.
 A publicação também requer permissão para criar snapshots e gravar em
 `rj-smas-dev.abordagem.prontuario_eletronico`.
-
-## Execução manual fora do Prefect
-
-Na raiz do repositório, com as dependências Python, os pacotes dbt e as
-credenciais padrão de aplicação disponíveis:
-
-```sh
-uv run python queries/validation/publicar_prontuario_dev.py
-uv run python queries/validation/publicar_prontuario_dev.py --publicar
-```
-
-Cada comando cria uma nova candidata. O primeiro valida e informa os jobs e
-contagens. O segundo também promove a candidata após os mesmos controles.
