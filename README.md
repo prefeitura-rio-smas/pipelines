@@ -97,6 +97,8 @@ Para validar o Prontuário, execute o deployment de staging após a carga das 05
 
 Para publicar em `rj-smas-dev.abordagem.prontuario_eletronico`, habilite também `publicar_prontuario=true`. O worker precisa de permissões de escrita e de criação de snapshots. A promoção é transacional e o snapshot de recuperação dura sete dias. O flow remove o dataset após verificar a publicação. As tabelas de candidatas que ficam no dataset expiram em 24 horas.
 
+A cada atualização, o flow testa a base do Prontuário e prepara a projeção que o Looker já consome. O cartão de profissionais conta cadastrantes e o de famílias conta os vínculos registrados nos atendimentos. Para respeitar os filtros do relatório, a projeção separa os atendimentos de uma mesma pessoa na unidade por conjunto de famílias, o que pode repetir a chave cidadão–unidade na tabela publicada. Os nomes e tipos dos campos da tabela de destino são preservados.
+
 Se a execução falhar antes de criar o job de publicação, use um novo run para reconstruir a candidata. Se o job já existir, repita o mesmo run para recuperar o resultado.
 
 ---
