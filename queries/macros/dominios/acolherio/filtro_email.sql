@@ -48,10 +48,3 @@ select
     {{ filtro_email('email_cas', 'email_planilha', 'email_unidade', formato='programada') }} as email
 from emails
 {% endmacro %}
-
-{% macro consolidar_unidades(registros) -%}
-    coalesce((select string_agg(distinct nullif(trim(r.nome_unidade), ''), ', ' order by nullif(trim(r.nome_unidade), '')) from unnest({{ registros }}) r), '')
-{%- endmacro %}
-{% macro consolidar_emails(registros, campo='email') -%}
-    coalesce((select string_agg(distinct nullif(lower(trim(endereco)), ''), ', ' order by nullif(lower(trim(endereco)), '')) from unnest({{ registros }}) r, unnest(split(regexp_replace(coalesce(r.{{ campo }}, ''), r'[;\r\n]', ','), ',')) endereco), '')
-{%- endmacro %}

@@ -1,4 +1,4 @@
-{{ config(alias='dim_creas', schema='gerenciamento__dbt', enabled=target.name != 'prod', tags=['planilha_unificada', 'pu_dimensoes']) }}
+{{ config(alias='dim_creas', schema='gerenciamento__dbt', tags=['pu_dimensoes']) }}
 -- Preserve a ordem publicada dos campos do registro.
 -- noqa: disable=ST06
 with registros as (

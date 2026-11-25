@@ -18,16 +18,14 @@ expiram em 24 horas. Se a execução falhar antes de criar o job de publicação
 use um novo run para reconstruir a candidata e preserve a anterior para
 diagnóstico. Se o job já existir, um retry do mesmo run recupera seu resultado.
 
-## Primeira execução no Prefect
+## Validação manual no Prefect
 
-1. Implantar a versão de staging com o agendamento inativo.
-2. Disparar `dbt-transform-staging` depois da carga das 05h, com
-   `atualizar_prontuario=true` e `publicar_prontuario=false`. Conferir a execução
-   do dbt e os controles no artefato. A conta do worker precisa poder consultar
-   os jobs do BigQuery e ler as fontes, além de criar datasets e snapshots e
-   gravar no destino de desenvolvimento para poder publicar.
-3. Após a validação, mudar `publicar_prontuario` e `schedule.active` para `true`
-   no manifesto e acompanhar o primeiro ciclo até a confirmação e a limpeza.
+Dispare `dbt-transform-staging` após a carga das 05h, com
+`atualizar_prontuario=true` e `publicar_prontuario=false`. Confira os controles
+e os IDs dos jobs no artefato `prontuario-staging`. A conta do worker precisa
+consultar os jobs do BigQuery, ler as fontes e criar o dataset de trabalho.
+A publicação também requer permissão para criar snapshots e gravar em
+`rj-smas-dev.abordagem.prontuario_eletronico`.
 
 ## Execução manual fora do Prefect
 

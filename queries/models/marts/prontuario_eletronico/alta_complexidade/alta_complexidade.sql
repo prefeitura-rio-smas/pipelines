@@ -1,4 +1,4 @@
-{{ config(alias='dim_alta_complexidade', schema='gerenciamento__dbt', enabled=target.name != 'prod', tags=['planilha_unificada', 'pu_dimensoes']) }}
+{{ config(alias='dim_alta_complexidade', schema='gerenciamento__dbt', tags=['pu_dimensoes']) }}
 with historico as (
     select
         a.id_usuario,
