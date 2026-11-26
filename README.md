@@ -91,7 +91,7 @@ Nossas pipelines são definidas na pasta `pipelines/`. Para rodar ou testar loca
 
 #### Transformação diária e Prontuário em staging
 
-O deployment `dbt-transform-daily-prod` executa `dbt build --select +tag:daily` diariamente às 10h (São Paulo). O deployment `dbt-transform-staging` é manual.
+O deployment `dbt-transform-daily-prod` executa `dbt build --select +tag:daily` diariamente às 10h (São Paulo) e, após o sucesso do build, publica o Prontuário em `rj-smas.abordagem.prontuario_eletronico`. A primeira publicação cria a tabela após os controles da candidata. O deployment `dbt-transform-staging` é manual.
 
 O modelo intermediário `int_atendimentos_selecionados` seleciona os atendimentos e profissionais a partir dos raws do AcolheRio e da planilha de permissões. O flow materializa a seleção no dataset isolado e a usa para montar e reconciliar o Prontuário.
 

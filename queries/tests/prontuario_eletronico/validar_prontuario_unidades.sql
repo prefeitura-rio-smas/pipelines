@@ -1,4 +1,4 @@
-{{ config(enabled=target.name != 'prod', tags=['planilha_unificada']) }}
+{{ config(enabled=target.name != 'prod' or var('prontuario_publicacao', false), tags=['planilha_unificada']) }}
 -- Cada lista pertence à unidade da linha, inclusive quando a unidade é desconhecida.
 with inconsistencias as (
     {% for lista in ['projetos_sociais', 'atendimentos.registros', 'evolucoes.registros', 'centro_pop.registros', 'centro_pop.historico_mensal', 'creas.registros', 'alta_complexidade.registros'] %}

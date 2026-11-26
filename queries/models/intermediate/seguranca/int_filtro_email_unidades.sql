@@ -1,4 +1,4 @@
-{{ config(enabled=target.name != 'prod', materialized='ephemeral', tags=['planilha_unificada']) }}
+{{ config(enabled=target.name != 'prod' or var('prontuario_publicacao', false), materialized='ephemeral', tags=['planilha_unificada']) }}
 with unidades as (
     select
         id_unidade,

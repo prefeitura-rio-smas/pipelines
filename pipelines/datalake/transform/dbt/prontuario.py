@@ -1,6 +1,6 @@
 # ruff: noqa: S608
 # Relações vêm de constantes, UUIDs, metadados BigQuery e do manifesto dbt.
-"""Reconstrução isolada e publicação do prontuário em staging."""
+"""Reconstrução isolada e publicação do prontuário."""
 import csv
 import io
 import json
@@ -19,6 +19,7 @@ from google.api_core.exceptions import Conflict, NotFound
 from google.cloud import bigquery
 
 PROJECT = "rj-smas-dev"
+PROD_PROJECT = "rj-smas"
 LOCATION = "US"
 DESTINATION = f"{PROJECT}.abordagem.prontuario_eletronico"
 SHEET = f"{PROJECT}.dashboard_acolherio.filtro_email_dev"
@@ -90,27 +91,28 @@ def ordered_tables(manifest):
     return models
 
 
-def dbt_command(command, directory):
+def dbt_command(command, directory, target="staging"):
     dbt = Path(sys.executable).with_name("dbt")
     executable = str(dbt) if dbt.exists() else shutil.which("dbt") or "dbt"
     return [
         executable, "--quiet", command, "--project-dir", str(QUERIES),
-        "--profiles-dir", str(QUERIES), "--target", "staging", "--target-path", directory,
+        "--profiles-dir", str(QUERIES), "--target", target, "--target-path", directory,
     ]
 
 
-def compile_graph():
+def compile_graph(target="staging"):
     with TemporaryDirectory(prefix="prontuario-dbt-") as directory:
         manifest_file = Path(directory) / "manifest.json"
         variables = ["--vars", json.dumps({
             "prontuario_projetar_cartoes": True,
+            "prontuario_publicacao": target == "prod",
         })]
-        subprocess.run([*dbt_command("parse", directory), *variables], check=True, stdout=subprocess.DEVNULL)  # noqa: S603
+        subprocess.run([*dbt_command("parse", directory, target), *variables], check=True, stdout=subprocess.DEVNULL)  # noqa: S603
         manifest = json.loads(manifest_file.read_text())
         ordered = ordered_tables(manifest)
         names = [manifest["nodes"][key]["name"] for key in ordered]
         command = [
-            *dbt_command("compile", directory), *variables, "--select", *names, PERMISSIONS,
+            *dbt_command("compile", directory, target), *variables, "--select", *names, PERMISSIONS,
             f"path:{TEST_PATH.rstrip('/')}",
         ]
         subprocess.run(command, check=True, stdout=subprocess.DEVNULL)  # noqa: S603
@@ -124,8 +126,8 @@ def compiled_sql(node, references):
     return sql
 
 
-def materialize(client, prefix, report):
-    manifest, ordered = compile_graph()
+def materialize(client, prefix, report, *, target="staging"):
+    manifest, ordered = compile_graph(target)
     nodes = manifest["nodes"]
     sheet = f"{prefix}.filtro_email"
     load_sheet(client, sheet, report)
@@ -172,7 +174,7 @@ def array_counts(fields, parent="t", prefix="", depth=0):
     return counts
 
 
-def compare_volumes(client, candidate, schema, report):
+def compare_volumes(client, candidate, schema, report, *, destination=DESTINATION):
     arrays = array_counts(schema)
     columns = ", ".join(f"SUM(n{i}) AS n{i}" for i in range(len(arrays)))
     measures = ", ".join(f"{value} AS n{i}" for i, value in enumerate(arrays.values()))
@@ -185,7 +187,7 @@ def compare_volumes(client, candidate, schema, report):
     row = next(iter(execute(client, f"""
         WITH a AS (
             SELECT id_usuario_unidade, {columns}
-            FROM (SELECT id_usuario_unidade, {measures} FROM `{DESTINATION}` t)
+            FROM (SELECT id_usuario_unidade, {measures} FROM `{destination}` t)
             GROUP BY id_usuario_unidade
         ), b AS (
             SELECT id_usuario_unidade, {columns}
@@ -203,7 +205,7 @@ def compare_volumes(client, candidate, schema, report):
 
 
 def validate(client, prefix, published, candidate, nodes, references, report):
-    if not candidate.num_rows or schema_signature(published.schema) != schema_signature(candidate.schema):
+    if not candidate.num_rows or (published and schema_signature(published.schema) != schema_signature(candidate.schema)):
         raise ValueError("Candidata vazia ou com esquema diferente do destino")
     tests = [
         node for node in nodes.values()
@@ -217,11 +219,12 @@ def validate(client, prefix, published, candidate, nodes, references, report):
         sql = compiled_sql(test, references)
         checks[name] = next(iter(execute(client, f"SELECT COUNT(*) AS n FROM ({sql})", report, name))).n
 
+    usuarios = nodes["model.queries.raw_usuarios"]["relation_name"]
     permissoes = compiled_sql(nodes[f"model.queries.{PERMISSIONS}"], references)
     row = next(iter(execute(client, f"""
         WITH permissao AS ({permissoes}), dados AS (
             SELECT DISTINCT CAST(id_paciente AS STRING) AS id_usuario
-            FROM `{PROJECT}.gerenciamento__dbt.raw_usuarios`
+            FROM {usuarios}
             WHERE UPPER(TRIM(nome)) NOT LIKE 'TESTE%'
         ), publicados AS (
             SELECT DISTINCT id_usuario FROM `{prefix}.{MART}`
@@ -237,19 +240,21 @@ def validate(client, prefix, published, candidate, nodes, references, report):
         LEFT JOIN permissao p ON t.id_unidade = CAST(p.id_unidade AS STRING)
     """, report, "cadastros_chaves_emails")))
     checks.update(dict(row))
-    checks["atendimentos_selecionados"] = reconcile_attendance(client, prefix, report)
+    checks["atendimentos_selecionados"] = reconcile_attendance(client, prefix, nodes, report)
     if any(checks.values()):
         raise ValueError(f"Candidata diverge das fontes: {checks}")
 
 
-def reconcile_attendance(client, prefix, report):
+def reconcile_attendance(client, prefix, nodes, report):
+    usuarios = nodes["model.queries.raw_atendimentos_usuarios"]["relation_name"]
+    familias = nodes["model.queries.raw_atendimentos_familias"]["relation_name"]
     row = next(iter(execute(client, f"""
         WITH eventos AS (
             SELECT id_atendimento_modulo, LOGICAL_AND(COALESCE(flag_cancelado, '') = 'S') AS cancelado
             FROM (
-                SELECT id_atendimento_modulo, flag_cancelado FROM `{PROJECT}.gerenciamento__dbt.raw_atendimentos_usuarios`
+                SELECT id_atendimento_modulo, flag_cancelado FROM {usuarios}
                 UNION ALL
-                SELECT id_atendimento_modulo, flag_cancelado FROM `{PROJECT}.gerenciamento__dbt.raw_atendimentos_familias`
+                SELECT id_atendimento_modulo, flag_cancelado FROM {familias}
             ) GROUP BY 1
         ), a AS (
             SELECT CAST(p.id_usuario AS STRING) AS usuario,
@@ -292,7 +297,7 @@ def validate_publication(client, prefix, current, report):
     source = f"{prefix}.{MART}"
     destination = f"{prefix}.{PUBLISHED_MART}"
     candidate = client.get_table(destination)
-    if not candidate.num_rows or schema_signature(candidate.schema) != schema_signature(current.schema):
+    if not candidate.num_rows or (current and schema_signature(candidate.schema) != schema_signature(current.schema)):
         raise ValueError("Projeção dos cartões vazia ou com esquema diferente do destino")
 
     row = next(iter(execute(client, f"""
@@ -334,7 +339,7 @@ def validate_publication(client, prefix, current, report):
     return candidate
 
 
-def finish_publication(client, prefix, report):
+def finish_publication(client, prefix, report, *, destination=DESTINATION):
     relation = f"{prefix}.{PUBLISHED_MART}"
     try:
         candidate = client.get_table(relation)
@@ -348,12 +353,12 @@ def finish_publication(client, prefix, report):
         # Retomada de publicações iniciadas quando a mart era promovida diretamente.
         relation = f"{prefix}.{MART}"
         candidate = client.get_table(relation)
-    target = client.get_table(DESTINATION)
+    target = client.get_table(destination)
     if (target.num_rows != candidate.num_rows
             or schema_signature(target.schema) != schema_signature(candidate.schema)):
         raise RuntimeError("Contagem ou esquema do destino diverge da candidata após a publicação")
     row = next(iter(execute(client, f"""
-        SELECT COUNT(*) AS n FROM ({rows_differ(DESTINATION, relation)})
+        SELECT COUNT(*) AS n FROM ({rows_differ(destination, relation)})
     """, report, "verificacao_destino")))
     if row.n:
         raise RuntimeError("Conteúdo do destino diverge da candidata após a publicação")
@@ -362,11 +367,13 @@ def finish_publication(client, prefix, report):
     report["linhas_publicadas"] = target.num_rows
 
 
-def refresh_prontuario(run_id, *, publish, report):
+def refresh_prontuario(run_id, *, publish, report, target="staging"):
+    project = {"staging": PROJECT, "prod": PROD_PROJECT}[target]
+    destination = f"{project}.abordagem.prontuario_eletronico"
     run_hex = UUID(str(run_id)).hex
-    prefix = f"{PROJECT}.prontuario_build_{run_hex}"
+    prefix = f"{project}.prontuario_build_{run_hex}"
     job_id = f"prontuario_publish_{run_hex}"
-    client = bigquery.Client(project=PROJECT, location=LOCATION)
+    client = bigquery.Client(project=project, location=LOCATION)
     report["dataset"] = prefix
     if publish:
         try:
@@ -376,43 +383,57 @@ def refresh_prontuario(run_id, *, publish, report):
         if existing is not None:
             report.setdefault("jobs", {})["publicacao"] = existing.job_id
             existing.result()
-            finish_publication(client, prefix, report)
+            finish_publication(client, prefix, report, destination=destination)
             return
 
     dataset = bigquery.Dataset(prefix)
     dataset.location = LOCATION
     dataset.default_table_expiration_ms = 24 * 60 * 60 * 1000
     client.create_dataset(dataset)
-    nodes, references = materialize(client, prefix, report)
-    current = client.get_table(DESTINATION)
+    nodes, references = materialize(client, prefix, report, target=target)
+    try:
+        current = client.get_table(destination)
+    except NotFound:
+        if target != "prod":
+            raise
+        current = None
     candidate = client.get_table(f"{prefix}.{MART}")
     validate(client, prefix, current, candidate, nodes, references, report)
-    candidate = validate_publication(client, prefix, current, report)
-    report["linhas"] = {"publicada": current.num_rows, "candidata": candidate.num_rows}
-    report["volumes"] = compare_volumes(client, f"{prefix}.{PUBLISHED_MART}", candidate.schema, report)
+    candidate = validate_publication(client, prefix, current or candidate, report)
+    report["linhas"] = {"publicada": current.num_rows if current else 0, "candidata": candidate.num_rows}
+    if current:
+        report["volumes"] = compare_volumes(
+            client, f"{prefix}.{PUBLISHED_MART}", candidate.schema, report, destination=destination,
+        )
     if not publish:
         report["resultado"] = "candidata validada sem promoção"
         return
 
-    promote(client, prefix, current, run_hex, job_id, report)
-    finish_publication(client, prefix, report)
+    promote(client, prefix, current, run_hex, job_id, report, destination=destination)
+    finish_publication(client, prefix, report, destination=destination)
 
 
-def promote(client, prefix, current, run_hex, job_id, report):
-    backup = f"{DESTINATION}_backup_{run_hex}"
+def promote(client, prefix, current, run_hex, job_id, report, *, destination=DESTINATION):
+    if current is None:
+        execute(client, f"""
+            CREATE TABLE `{destination}` AS SELECT * FROM `{prefix}.{PUBLISHED_MART}`
+        """, report, "publicacao", job_id=job_id)
+        return
+
+    backup = f"{destination}_backup_{run_hex}"
     report["snapshot"] = backup
     execute(client, f"""
-        CREATE SNAPSHOT TABLE `{backup}` CLONE `{DESTINATION}`
+        CREATE SNAPSHOT TABLE `{backup}` CLONE `{destination}`
         OPTIONS (expiration_timestamp = TIMESTAMP_ADD(CURRENT_TIMESTAMP(), INTERVAL 7 DAY))
     """, report, "snapshot")
-    if client.get_table(DESTINATION).etag != current.etag:
+    if client.get_table(destination).etag != current.etag:
         raise RuntimeError("O destino mudou durante a validação")
     execute(client, f"""
         BEGIN TRANSACTION;
-        IF EXISTS ({rows_differ(DESTINATION, backup)}) THEN
+        IF EXISTS ({rows_differ(destination, backup)}) THEN
             RAISE USING MESSAGE = 'O destino mudou após o snapshot';
         END IF;
-        TRUNCATE TABLE `{DESTINATION}`;
-        INSERT INTO `{DESTINATION}` SELECT * FROM `{prefix}.{PUBLISHED_MART}`;
+        TRUNCATE TABLE `{destination}`;
+        INSERT INTO `{destination}` SELECT * FROM `{prefix}.{PUBLISHED_MART}`;
         COMMIT TRANSACTION;
     """, report, "publicacao", job_id=job_id)
