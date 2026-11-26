@@ -102,7 +102,7 @@ final as (
         ua.ids_unidade
 
     from operadores as ope
-    left join profissionais as p on ope.id_login = p.id_login  -- noqa: ST09
+    full outer join profissionais as p on ope.id_login = p.id_login  -- noqa: ST09
     left join {{ ref('raw_contas_modulos') }} as cm on ope.id_login = cm.id_login
     left join {{ ref('raw_perfis_grupos') }} as pa on cm.id_perfil_acesso = pa.id_perfil_acesso
     left join ocupacoes as ocu on p.id_profissional = ocu.id_profissional
