@@ -1,4 +1,4 @@
-{{ config(enabled=target.name != 'prod' or var('prontuario_publicacao', false), materialized='ephemeral', tags=['centro_pop_mensal', 'planilha_unificada']) }}
+{{ config(enabled=target.name != 'prod', materialized='ephemeral', tags=['centro_pop_mensal', 'planilha_unificada']) }}
 -- A reconstrução usa os dados disponíveis a cada execução.
 select
     {{ colunas_resumo_mensal_centro_pop('m') }},

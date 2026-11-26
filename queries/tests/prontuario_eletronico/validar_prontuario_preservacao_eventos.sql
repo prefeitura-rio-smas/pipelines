@@ -1,4 +1,4 @@
-{{ config(enabled=target.name != 'prod' or var('prontuario_publicacao', false), tags=['planilha_unificada']) }}
+{{ config(enabled=target.name != 'prod', tags=['planilha_unificada']) }}
 -- Comparar identidade, unidade, data e multiplicidade de participações e evoluções.
 with esperado as (
     select

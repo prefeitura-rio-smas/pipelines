@@ -1,4 +1,4 @@
-{{ config(enabled=target.name != 'prod' or var('prontuario_publicacao', false), tags=['planilha_unificada', 'pu_dimensoes']) }}
+{{ config(enabled=target.name != 'prod', tags=['planilha_unificada', 'pu_dimensoes']) }}
 {% set campos_por_assunto = {
     'mse': [
         'mse_com_que_frequencia_vai_a_casa_da_familia_ou_pessoa_de_referencia',

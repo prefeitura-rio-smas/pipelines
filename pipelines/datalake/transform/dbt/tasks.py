@@ -69,16 +69,16 @@ def create_dbt_report(execution_info: dict, target: str, select: str | None = No
 
 
 @task
-def update_prontuario(run_id: str, *, publish: bool, target: str) -> None:
+def update_prontuario(run_id: str, *, publish: bool) -> None:
     report = {}
     try:
-        refresh_prontuario(run_id, publish=publish, report=report, target=target)
+        refresh_prontuario(run_id, publish=publish, report=report)
     except Exception:
         report["resultado"] = "falha na atualização"
         raise
     finally:
         create_markdown_artifact(
-            key=f"prontuario-{target}",
-            description=f"Reconstrução diária do prontuário em {target}",
+            key="prontuario-staging",
+            description="Reconstrução diária do prontuário em staging",
             markdown="```json\n" + json.dumps(report, ensure_ascii=False, indent=2, default=str) + "\n```",
         )

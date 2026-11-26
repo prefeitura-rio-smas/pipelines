@@ -1,4 +1,4 @@
-{{ config(materialized='ephemeral', enabled=target.name != 'prod' or var('prontuario_publicacao', false), tags=['planilha_unificada']) }}
+{{ config(materialized='ephemeral', enabled=target.name != 'prod', tags=['planilha_unificada']) }}
 -- Endereço da seleção de atendimentos; cadastro para usuários sem atendimento.
 with foto as (
     select distinct
