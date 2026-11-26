@@ -1,0 +1,43 @@
+# VCS e ambiente local
+.git
+.gitignore
+.gitattributes
+.env
+.env.*
+.venv
+venv
+.worktrees
+requirements.txt
+
+# Python / testes / caches
+**/__pycache__
+**/*.py[cod]
+**/.pytest_cache
+**/.ruff_cache
+**/.mypy_cache
+**/*.egg-info
+pipelines_arcgis.egg-info
+.coverage
+htmlcov
+
+# dbt / logs / artefatos
+**/target
+**/logs
+**/dbt_packages
+queries/dbt_internal_packages
+queries/models/aux
+
+# Infra / editor / docs
+.github
+.devcontainer.json
+**/.vscode
+**/.idea
+**/.DS_Store
+backups
+**/backups
+**/*.log
+
+# Lint (não necessário em runtime)
+sqlfluff_libs
+.sqlfluff
+.sqlfluffignore

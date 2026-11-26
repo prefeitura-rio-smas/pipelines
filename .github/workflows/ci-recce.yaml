@@ -176,7 +176,7 @@ jobs:
           # --favor-state: upstream não selecionado resolve SEMPRE para prod (dataset dedicado do PR ainda não existe).
           uv run dbt build \
             --select "state:modified+" "@state:modified,path:models/intermediate/core" \
-            --exclude "encaminhamentos_unidade gestao_vagas" \
+            --exclude "encaminhamentos_unidade" \
             --defer \
             --favor-state \
             --state target-base \
@@ -190,7 +190,7 @@ jobs:
         run: |
           uv run dbt docs generate \
             --select "state:modified+" "@state:modified,path:models/intermediate/core" \
-            --exclude "encaminhamentos_unidade gestao_vagas" \
+            --exclude "encaminhamentos_unidade" \
             --defer \
             --favor-state \
             --state target-base \

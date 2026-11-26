@@ -3,7 +3,7 @@ version: 2
 sources:
   - name: arcgis_raw
     description: "Survey de entrega do Cartão PIC — ArcGIS (SIURB)."
-    database: rj-smas
+    database: "{{ target.project }}"
     schema: arcgis_raw
     tables:
       - name: primeira_infancia_carioca_raw

@@ -107,4 +107,3 @@ joined as (
 
 select *
 from joined
-where not flag_sem_conta

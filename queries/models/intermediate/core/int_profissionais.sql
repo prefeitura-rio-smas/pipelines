@@ -101,8 +101,8 @@ final as (
         coalesce(ua.qtde_unidades, 0) as qtde_unidades,
         ua.ids_unidade
 
-    from profissionais as p
-    left join operadores as ope on p.id_login = ope.id_login
+    from operadores as ope
+    full outer join profissionais as p on ope.id_login = p.id_login  -- noqa: ST09
     left join {{ ref('raw_contas_modulos') }} as cm on ope.id_login = cm.id_login
     left join {{ ref('raw_perfis_grupos') }} as pa on cm.id_perfil_acesso = pa.id_perfil_acesso
     left join ocupacoes as ocu on p.id_profissional = ocu.id_profissional

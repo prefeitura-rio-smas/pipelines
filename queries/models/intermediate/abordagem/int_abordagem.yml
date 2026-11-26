@@ -1,0 +1,10 @@
+version: 2
+
+models:
+  - name: int_abordagem
+    description: >
+      Camada intermediate da abordagem (grão globalid). Consolida o formulário
+      repeat, traduz os rótulos de domínio, expõe as chaves de dedup, o cluster,
+      a ficha de origem e o de/para de e-mails. A mart_abordagem apenas expõe o
+      contrato final (154 colunas). O `ficha_objectid` é nulo em toda a base
+      (join legado pendente de investigação), mantido para preservar o contrato.
