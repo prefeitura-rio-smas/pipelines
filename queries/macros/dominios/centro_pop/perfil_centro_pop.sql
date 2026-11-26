@@ -14,7 +14,7 @@ with encaminhamentos_historicos as (
 ultimos as (
     -- Selecionar a ocorrência inteira antes de projetar respostas, inclusive vazias.
     select * from {{ registros }}
-    where tipo_registro in ({% for assunto in pu_cpop_perfil_assuntos() %}'{{ assunto }}'{% if not loop.last %}, {% endif %}{% endfor %})
+    where tipo_registro in ({% for assunto in assuntos_perfil_centro_pop() %}'{{ assunto }}'{% if not loop.last %}, {% endif %}{% endfor %})
     qualify row_number() over (
         partition by id_usuario, tipo_registro
         order by data_ocorrencia desc nulls last, data_registro desc nulls last, data_resposta desc nulls last, id_registro desc
@@ -44,7 +44,7 @@ select
     u.id_usuario,
     coalesce(unidades.unidades_atendimento, []) as unidades_atendimento,
     if(pai.id_registro is not null, 'Sim', '') as possui_registro_pai
-    {% for assunto, campos in pu_cpop_perfil_assuntos().items() %}
+    {% for assunto, campos in assuntos_perfil_centro_pop().items() %}
         , {{ assunto }}.data_ocorrencia as data_ocorrencia_{{ assunto }},
         {{ assunto }}.origem_data_ocorrencia as origem_data_ocorrencia_{{ assunto }},
         {{ assunto }}.situacao_data_ocorrencia as situacao_data_ocorrencia_{{ assunto }},
@@ -54,13 +54,13 @@ select
             , {% if campo == 'encaminhamentos' %}
                 coalesce(enc_{{ assunto }}.valores, [])
             {% elif campo == 'demandas' %}coalesce({{ assunto }}.{{ campo }}, [])
-            {% elif pu_cpop_campos()[campo] == 'DATE' %}{{ assunto }}.{{ campo }}
-            {% else %}coalesce({{ assunto }}.{{ campo }}, ''){% endif %} as {{ pu_cpop_perfil_nome(assunto, campo) }}
+            {% elif tipos_campos_centro_pop()[campo] == 'DATE' %}{{ assunto }}.{{ campo }}
+            {% else %}coalesce({{ assunto }}.{{ campo }}, ''){% endif %} as {{ nome_campo_perfil_centro_pop(assunto, campo) }}
 {% endfor %}
 {% endfor %}
 from usuarios as u
 left join unidades_atendimento as unidades on u.id_usuario = unidades.id_usuario
-{% for assunto in pu_cpop_perfil_assuntos() %}
+{% for assunto in assuntos_perfil_centro_pop() %}
     left join ultimos as {{ assunto }} on u.id_usuario = {{ assunto }}.id_usuario and {{ assunto }}.tipo_registro = '{{ assunto }}'
 {% endfor %}
 

@@ -173,7 +173,7 @@ select
     array_length(coalesce(a.itens, [])) as quantidade_atendimentos,
     array_length(coalesce(e.itens, [])) as quantidade_evolucoes,
     (select countif(item.tipo_registro = 'participacao') from unnest(r.itens) as item) as quantidade_participacoes,
-    {{ pu_cpop_perfil_publico('perfil', listas_em_texto=true) }},
+    {{ perfil_publico_centro_pop('perfil', listas_em_texto=true) }},
     part.nome_atividade as ultima_participacao_atividade,
     part.nome_unidade as ultima_participacao_unidade,
     part.data_presenca as ultima_participacao_data,

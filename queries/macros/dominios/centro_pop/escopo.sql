@@ -1,24 +1,24 @@
-{% macro pu_cpop_texto(expr) %}
+{% macro normalizar_texto_centro_pop(expr) %}
     case when lower(trim({{ expr }})) in ('', '-', 'undefined', 'null', 'não informado', 'nao informado', 'não informada', 'nao informada') then null else trim({{ expr }}) end
 {% endmacro %}
 
-{% macro pu_cpop_data(expr) %}
+{% macro interpretar_data_centro_pop(expr) %}
     coalesce(
         safe.parse_date('%d/%m/%Y', regexp_extract(trim({{ expr }}), r'^\d{2}/\d{2}/\d{4}')),
         safe_cast(regexp_extract(trim({{ expr }}), r'^\d{4}-\d{2}-\d{2}') as date)
     )
 {% endmacro %}
 
-{% macro pu_cpop_valores(campos, labels, modo='texto') %}
+{% macro valores_campos_centro_pop(campos, labels, modo='texto') %}
     array(
         select distinct valor from (
             select
                 {% if modo == 'flag' %}
                     case lower(trim(c.valor)) when 's' then 'Sim' when 'sim' then 'Sim' when 'n' then 'Não' when 'não' then 'Não' when 'nao' then 'Não' end
                 {% elif modo == 'data' %}
-                    cast({{ pu_cpop_data('c.valor') }} as string)
+                    cast({{ interpretar_data_centro_pop('c.valor') }} as string)
                 {% else %}
-{{ pu_cpop_texto('c.valor') }}
+{{ normalizar_texto_centro_pop('c.valor') }}
 {% endif %} as valor
             from unnest({{ campos }}) as c
             where regexp_replace(trim(c.label), r':\s*$', '') in (
@@ -28,7 +28,7 @@
     )
 {% endmacro %}
 
-{% macro pu_cpop_campos() %}
+{% macro tipos_campos_centro_pop() %}
     {{ return({
         'data_inclusao_pai': 'DATE', 'data_inclusao_informada': 'STRING',
         'motivo_principal_permanencia_rua': 'STRING', 'motivo_secundario_permanencia_rua': 'STRING',
@@ -45,7 +45,7 @@
     }) }}
 {% endmacro %}
 
-{% macro pu_cpop_registros_sql() %}
+{% macro registros_centro_pop() %}
 with formularios as (
     select p.id_usuario, f.*, posicao
     from {{ ref('int_formularios_por_usuario') }} p, unnest(p.formularios) f with offset posicao
@@ -66,22 +66,22 @@ publico as (
 ),
 valores as (
     select f.*,
-        {{ pu_cpop_valores('f.campos', ['Data do atendimento'], 'data') }} inclusoes,
-        {{ pu_cpop_valores('f.campos', ['Data do atendimento']) }} inclusoes_originais,
-        {{ pu_cpop_valores('f.campos', ['Motivo secundário da ida às ruas']) }} motivos_rua,
-        {{ pu_cpop_valores('f.campos', ['Possui referências familiares?'], 'flag') }} referencias,
-        {{ pu_cpop_valores('f.campos', ['Território da referência familiar']) }} territorios,
-        {{ pu_cpop_valores('f.campos', ['Existe possibilidade de reinserção familiar?'], 'flag') }} reinsercoes,
-        {{ pu_cpop_valores('f.campos', ['Faz uso de substâncias psicoativas?'], 'flag') }} substancias,
-        {{ pu_cpop_valores('f.campos', ['Situação']) }} situacoes,
-        {{ pu_cpop_valores('f.campos', ['Local onde faz tratamento']) }} tratamentos,
-        {{ pu_cpop_valores('f.campos', ['Data do desligamento'], 'data') }} desligamentos,
-        {{ pu_cpop_valores('f.campos', ['Data do desligamento']) }} desligamentos_originais,
-        {{ pu_cpop_valores('f.campos', ['Motivo do desligamento']) }} motivos_desligamento,
-        {{ pu_cpop_valores('f.campos', ['Outros']) }} outros_desligamento,
-        {{ pu_cpop_valores('f.campos', ['Demanda inicial', 'Identificação das demandas apresentadas pelo usuário']) }} demandas_extraidas,
-        array(select distinct as struct regexp_replace(trim(c.label), r':\s*$', '') label, {{ pu_cpop_texto('c.valor') }} valor
-            from unnest(f.campos) c where starts_with(trim(c.label), 'Encaminhamentos') and {{ pu_cpop_texto('c.valor') }} is not null order by label, valor) encaminhamentos_extraidos
+        {{ valores_campos_centro_pop('f.campos', ['Data do atendimento'], 'data') }} inclusoes,
+        {{ valores_campos_centro_pop('f.campos', ['Data do atendimento']) }} inclusoes_originais,
+        {{ valores_campos_centro_pop('f.campos', ['Motivo secundário da ida às ruas']) }} motivos_rua,
+        {{ valores_campos_centro_pop('f.campos', ['Possui referências familiares?'], 'flag') }} referencias,
+        {{ valores_campos_centro_pop('f.campos', ['Território da referência familiar']) }} territorios,
+        {{ valores_campos_centro_pop('f.campos', ['Existe possibilidade de reinserção familiar?'], 'flag') }} reinsercoes,
+        {{ valores_campos_centro_pop('f.campos', ['Faz uso de substâncias psicoativas?'], 'flag') }} substancias,
+        {{ valores_campos_centro_pop('f.campos', ['Situação']) }} situacoes,
+        {{ valores_campos_centro_pop('f.campos', ['Local onde faz tratamento']) }} tratamentos,
+        {{ valores_campos_centro_pop('f.campos', ['Data do desligamento'], 'data') }} desligamentos,
+        {{ valores_campos_centro_pop('f.campos', ['Data do desligamento']) }} desligamentos_originais,
+        {{ valores_campos_centro_pop('f.campos', ['Motivo do desligamento']) }} motivos_desligamento,
+        {{ valores_campos_centro_pop('f.campos', ['Outros']) }} outros_desligamento,
+        {{ valores_campos_centro_pop('f.campos', ['Demanda inicial', 'Identificação das demandas apresentadas pelo usuário']) }} demandas_extraidas,
+        array(select distinct as struct regexp_replace(trim(c.label), r':\s*$', '') label, {{ normalizar_texto_centro_pop('c.valor') }} valor
+            from unnest(f.campos) c where starts_with(trim(c.label), 'Encaminhamentos') and {{ normalizar_texto_centro_pop('c.valor') }} is not null order by label, valor) encaminhamentos_extraidos
     from formularios f join publico p on f.id_usuario = p.id_usuario
     join {{ ref('dim_usuarios') }} u on f.id_usuario = u.id_usuario
     where f.data_cancelamento is null and f.titulo_formulario in (
@@ -115,12 +115,12 @@ html as (
             'data_desligamento': 'Centro POP - Desligamento PAI', 'data_desligamento_informada': 'Centro POP - Desligamento PAI',
             'motivo_desligamento': 'Centro POP - Desligamento PAI', 'motivo_desligamento_outros': 'Centro POP - Desligamento PAI'
         } %}
-{% for campo, tipo in pu_cpop_campos().items() %}
+{% for campo, tipo in tipos_campos_centro_pop().items() %}
 {% if campo == 'possui_problema_saude' or campo == 'realiza_acompanhamento_saude' %}
                 {% set respostas = 'v.situacoes' if campo == 'possui_problema_saude' else 'v.tratamentos' %}
                 case (select logical_or({{ interpretar_resposta_saude('resposta') }}) from unnest({{ respostas }}) resposta) when true then 'Sim' when false then 'Não' end
             {% elif campo == 'observacoes' %}
-                {{ pu_cpop_texto('v.observacoes') }}
+                {{ normalizar_texto_centro_pop('v.observacoes') }}
             {% elif campo in valores_html %}
 {% if campo in grupos_html %}if(v.titulo_formulario = '{{ grupos_html[campo] }}', {{ valores_html[campo] }}, cast(null as {{ tipo }})){% else %}{{ valores_html[campo] }}{% endif %}
             {% else %}cast(null as {{ tipo }}){% endif %} as {{ campo }},
@@ -145,15 +145,15 @@ questionarios as (
         cast(q.data_evolucao as date) data_ocorrencia, 'fonte' origem_data_ocorrencia, 'nao_mapeado' situacao_data_ocorrencia,
         cast(q.data_evolucao as datetime) data_registro, cast(r.data_resposta as datetime) data_resposta,
         to_json_string(struct(q.id_modulo, q.id_template, q.id_evolucao, r.id_questao, r.data_resposta, r.resposta)) chave_origem,
-        {% for campo, tipo in pu_cpop_campos().items() %}
-{% if campo == 'motivo_principal_permanencia_rua' %}{{ pu_cpop_texto('r.resposta') }}{% else %}cast(null as {{ tipo }}){% endif %} as {{ campo }},
+        {% for campo, tipo in tipos_campos_centro_pop().items() %}
+{% if campo == 'motivo_principal_permanencia_rua' %}{{ normalizar_texto_centro_pop('r.resposta') }}{% else %}cast(null as {{ tipo }}){% endif %} as {{ campo }},
         {% endfor %}
         0 conflitos
     from {{ ref('raw_evolucoes_questionario') }} q
     join {{ ref('raw_evolucoes_questionario_lista') }} r on q.id_evolucao = r.id_evolucao and q.id_template = r.id_template and q.id_modulo is not distinct from r.id_modulo
     join publico p on q.id_prontuario = p.id_usuario
     join {{ ref('dim_usuarios') }} u on q.id_prontuario = u.id_usuario
-    where q.id_template = 3 and r.id_questao = 18 and {{ pu_cpop_texto('r.resposta') }} is not null
+    where q.id_template = 3 and r.id_questao = 18 and {{ normalizar_texto_centro_pop('r.resposta') }} is not null
 ),
 atividades as (
     select p.id_usuario, p.id_unidade, 'presenca' origem, 'participacao' tipo_registro, 'unidade' abrangencia,
@@ -161,7 +161,7 @@ atividades as (
         cast(p.data_presenca as date) data_ocorrencia, 'fonte' origem_data_ocorrencia, 'nao_mapeado' situacao_data_ocorrencia,
         cast(p.data_presenca as datetime) data_registro, cast(p.data_presenca as datetime) data_resposta,
         to_json_string(struct(p.id_atividade, p.data_presenca, p.hora_presenca, p.id_unidade)) chave_origem,
-        {% for campo, tipo in pu_cpop_campos().items() %}
+        {% for campo, tipo in tipos_campos_centro_pop().items() %}
 {% if campo in ['id_atividade', 'nome_atividade', 'data_presenca', 'hora_presenca'] %}p.{{ campo }}{% else %}cast(null as {{ tipo }}){% endif %} as {{ campo }},
         {% endfor %}
         0 conflitos
@@ -177,7 +177,7 @@ from registros r left join {{ ref('dim_unidades') }} u on r.id_unidade = u.id_un
 
 
 
-{% macro pu_cpop_perfil_assuntos() %}
+{% macro assuntos_perfil_centro_pop() %}
     {{ return({
         'pai': ['data_inclusao_pai', 'data_inclusao_informada', 'demandas', 'encaminhamentos', 'observacoes'],
         'atendimento_social': ['motivo_secundario_permanencia_rua', 'possui_referencias_familiares', 'territorio_referencia_familia', 'possibilidade_reinsercao_familiar', 'demandas', 'encaminhamentos', 'observacoes'],
@@ -187,14 +187,14 @@ from registros r left join {{ ref('dim_unidades') }} u on r.id_unidade = u.id_un
     }) }}
 {% endmacro %}
 
-{% macro pu_cpop_perfil_nome(assunto, campo) -%}
+{% macro nome_campo_perfil_centro_pop(assunto, campo) -%}
 {{ 'data_inclusao_pai_informada' if campo == 'data_inclusao_informada' else (campo ~ '_' ~ assunto if campo in ['demandas', 'encaminhamentos', 'observacoes'] else campo) }}
 {%- endmacro %}
 
-{% macro pu_cpop_perfil_publico(alias, listas_em_texto=false, indicadores_medicos=none) %}
+{% macro perfil_publico_centro_pop(alias, listas_em_texto=false, indicadores_medicos=none) %}
 {% if listas_em_texto %}array_to_string(coalesce({{ alias }}.unidades_atendimento, []), ', '){% else %}coalesce({{ alias }}.unidades_atendimento, []){% endif %} as unidades_atendimento,
     coalesce({{ alias }}.possui_registro_pai, '') as possui_registro_pai
-    {% for assunto, campos in pu_cpop_perfil_assuntos().items() %}
+    {% for assunto, campos in assuntos_perfil_centro_pop().items() %}
 {% if assunto == 'desligamento' %}
 , safe_cast({{ alias }}.data_ocorrencia_desligamento as DATE) as data_ocorrencia_desligamento_pai
 , coalesce({{ alias }}.origem_data_ocorrencia_desligamento, '') as origem_data_ocorrencia_desligamento_pai
@@ -212,7 +212,7 @@ from registros r left join {{ ref('dim_unidades') }} u on r.id_unidade = u.id_un
         , coalesce(cast({{ alias }}.data_registro_{{ assunto }} as string), '') as data_registro_{{ assunto }}
         , coalesce(cast({{ alias }}.data_resposta_{{ assunto }} as string), '') as data_resposta_{{ assunto }}
 {% for campo in campos %}
-{% set nome = pu_cpop_perfil_nome(assunto, campo) %}
+{% set nome = nome_campo_perfil_centro_pop(assunto, campo) %}
             , {% if campo in ['demandas', 'encaminhamentos'] %}{% if listas_em_texto %}array_to_string(coalesce({{ alias }}.{{ nome }}, []), ', '){% else %}coalesce({{ alias }}.{{ nome }}, []){% endif %}
               {% elif indicadores_medicos is not none and nome in indicadores_medicos %}{{ indicadores_medicos[nome] }}
               {% else %}coalesce(cast({{ alias }}.{{ nome }} as string), ''){% endif %} as {{ nome }}

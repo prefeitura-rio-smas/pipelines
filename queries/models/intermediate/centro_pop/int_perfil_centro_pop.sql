@@ -41,7 +41,7 @@ perfil_por_unidade as (
         safe_cast(split(coalesce(perfil.id_usuario, part.id_usuario), ':')[offset(1)] as int64) as id_unidade,
         (select as struct perfil.* except (id_usuario)) as perfil,
         struct(
-            {{ pu_cpop_perfil_publico('perfil', listas_em_texto=true) }},
+            {{ perfil_publico_centro_pop('perfil', listas_em_texto=true) }},
             part.nome_atividade as ultima_participacao_atividade,
             part.nome_unidade as ultima_participacao_unidade,
             part.data_presenca as ultima_participacao_data,

@@ -518,7 +518,7 @@ select
             cp.registros,
             cp.historico_mensal
         from unnest([struct(
-            {{ pu_cpop_perfil_publico('cp_reg.perfil', listas_em_texto=true, indicadores_medicos={
+            {{ perfil_publico_centro_pop('cp_reg.perfil', listas_em_texto=true, indicadores_medicos={
                 'uso_substancias_psicoativas': "case when cp_reg.id_usuario is null then '' else case upper(trim(cast(medico.flag_uso_substancias_psicoativas as string))) when 'S' then 'Sim' when 'N' then 'Não' else '' end end",
                 'possui_problema_saude': "case when cp_reg.id_usuario is null then '' else case upper(trim(cast(medico.flag_possui_comorbidade as string))) when 'S' then 'Sim' when 'N' then 'Não' else '' end end"
             }) }},
