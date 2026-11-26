@@ -15,7 +15,6 @@ def test_candidata_sem_job_agendado_usa_selecao_dbt(monkeypatch):
     materialize = Mock(return_value=({}, {}))
     monkeypatch.setattr(prontuario, "materialize", materialize)
     monkeypatch.setattr(prontuario, "validate", Mock())
-    monkeypatch.setattr(prontuario, "validate_publication", Mock())
     monkeypatch.setattr(prontuario, "compare_volumes", Mock())
     run_id = uuid4()
     prefix = f"rj-smas-dev.prontuario_build_{run_id.hex}"
@@ -63,50 +62,22 @@ def test_materializacao_usa_planilha_isolada_e_exige_atendimentos(monkeypatch, c
     assert "select * from `projeto.dataset.filtro_email`" in execute.call_args.args[1]
 
 
-def test_materializa_projecao_dbt_a_partir_da_mart_isolada(monkeypatch):
-    mart = f"model.queries.{prontuario.MART}"
-    projection = f"model.queries.{prontuario.PUBLISHED_MART}"
-    source = "`projeto.dashboard_acolherio.filtro_email_dev`"
-    nodes = {}
-    for name, sql in (
-        (prontuario.MART, "select * from `projeto.dashboard_acolherio.filtro_email_dev`"),
-        (prontuario.PUBLISHED_MART, "select * from `projeto.relatorio.prontuario_eletronico`"),
-    ):
-        nodes[f"model.queries.{name}"] = {
-            "name": name, "resource_type": "model", "config": {"materialized": "table"},
-            "compiled_code": sql, "relation_name": f"`projeto.relatorio.{name}`",
-        }
-    nodes["model.queries.raw_sheets_filtro_email_prontuario"] = {"relation_name": "`planilha_raw`"}
-    manifest = {
-        "nodes": nodes, "parent_map": {projection: [mart]},
-        "sources": {"source.queries.dashboard_acolherio.filtro_email_dev": {"relation_name": source}},
-    }
-    monkeypatch.setattr(prontuario, "compile_graph", lambda _: (manifest, prontuario.ordered_tables(manifest)))
-    monkeypatch.setattr(prontuario, "load_sheet", Mock())
-    execute = Mock()
-    monkeypatch.setattr(prontuario, "execute", execute)
-
-    prontuario.materialize(Mock(), "projeto.isolado", {})
-
-    create_mart, create_projection = execute.call_args_list
-    assert "CREATE TABLE `projeto.isolado.prontuario_eletronico`" in create_mart.args[1]
-    assert "CREATE TABLE `projeto.isolado.prontuario_cartoes`" in create_projection.args[1]
-    assert "from `projeto.isolado.prontuario_eletronico`" in create_projection.args[1]
-    assert create_projection.args[3] == "projecao_cartoes"
-
-
-def test_retry_reanexa_job_sem_reconstruir_ou_publicar_novamente(monkeypatch):
+@pytest.mark.parametrize("legacy", [False, True])
+def test_retry_reanexa_job_sem_reconstruir_ou_publicar_novamente(monkeypatch, legacy):
     client = Mock()
     monkeypatch.setattr(prontuario.bigquery, "Client", lambda **_: client)
     finish = Mock()
     monkeypatch.setattr(prontuario, "finish_publication", finish)
     run_id = uuid4()
+    prefix = f"rj-smas-dev.prontuario_build_{run_id.hex}"
+    source = f"{prefix}.prontuario_cartoes" if legacy else None
+    client.get_job.return_value.query = f"FROM `{source}`" if legacy else ""
 
     prontuario.refresh_prontuario(run_id, publish=True, report={})
 
     client.get_job.assert_called_once_with(f"prontuario_publish_{run_id.hex}", location="US")
     client.get_job.return_value.result.assert_called_once()
-    finish.assert_called_once()
+    assert finish.call_args.kwargs["source"] == source
     client.create_dataset.assert_not_called()
     client.query.assert_not_called()
 
@@ -123,8 +94,7 @@ def test_retry_apos_limpeza_reconhece_publicacao_verificada():
     client.query.assert_not_called()
 
 
-@pytest.mark.parametrize("publicacao_direta_anterior", [False, True])
-def test_publicacao_cartoes_e_verificacao_da_candidata(monkeypatch, publicacao_direta_anterior):
+def test_publicacao_direta_e_verificacao_da_candidata(monkeypatch):
     client = Mock()
     current = SimpleNamespace(etag="destino", num_rows=2, schema=[])
     client.get_table.return_value = current
@@ -133,37 +103,12 @@ def test_publicacao_cartoes_e_verificacao_da_candidata(monkeypatch, publicacao_d
     report = {}
 
     prontuario.promote(client, "projeto.dataset", current, "run", "job", report)
-    if publicacao_direta_anterior:
-        client.get_table.side_effect = [NotFound("projeção ausente"), current, current]
     prontuario.finish_publication(client, "projeto.dataset", report)
 
     _, publication, verification = execute.call_args_list
-    assert "SELECT * FROM `projeto.dataset.prontuario_cartoes`" in publication.args[1]
-    relation = "prontuario_eletronico" if publicacao_direta_anterior else "prontuario_cartoes"
-    assert f"`projeto.dataset.{relation}`" in verification.args[1]
+    assert "SELECT * FROM `projeto.dataset.prontuario_eletronico`" in publication.args[1]
+    assert "`projeto.dataset.prontuario_eletronico`" in verification.args[1]
     assert report["resultado"] == "publicada e verificada"
-
-
-@pytest.mark.parametrize("divergencias", [0, 2])
-def test_valida_projecao_e_confere_multiplicidade(monkeypatch, divergencias):
-    client = Mock()
-    candidate = SimpleNamespace(num_rows=2, schema=[])
-    client.get_table.return_value = candidate
-    execute = Mock(return_value=[SimpleNamespace(n=divergencias)])
-    monkeypatch.setattr(prontuario, "execute", execute)
-    report = {}
-
-    if divergencias:
-        with pytest.raises(ValueError, match="diverge dos atendimentos"):
-            prontuario.validate_publication(client, "projeto.dataset", candidate, report)
-    else:
-        assert prontuario.validate_publication(client, "projeto.dataset", candidate, report) is candidate
-
-    execute.assert_called_once()
-    assert "FROM `projeto.dataset.prontuario_eletronico`" in execute.call_args.args[1]
-    assert "FROM `projeto.dataset.prontuario_cartoes`" in execute.call_args.args[1]
-    assert "HAVING SUM(sinal) != 0" in execute.call_args.args[1]
-    assert report["cartoes"] == {"eventos_divergentes": divergencias}
 
 
 @pytest.mark.parametrize("divergencia", [False, True])
@@ -175,8 +120,6 @@ def test_variacao_reconciliada_e_divergencia(monkeypatch, divergencia):
     monkeypatch.setattr(prontuario, "compare_volumes", lambda *_, **__: {"novas": 5, "removidas": 2})
     validate = Mock(side_effect=ValueError("divergência") if divergencia else None)
     monkeypatch.setattr(prontuario, "validate", validate)
-    validate_projection = Mock()
-    monkeypatch.setattr(prontuario, "validate_publication", validate_projection)
     promote = Mock()
     monkeypatch.setattr(prontuario, "promote", promote)
     monkeypatch.setattr(prontuario, "finish_publication", Mock())
@@ -184,12 +127,10 @@ def test_variacao_reconciliada_e_divergencia(monkeypatch, divergencia):
     if divergencia:
         with pytest.raises(ValueError, match="divergência"):
             prontuario.refresh_prontuario(uuid4(), publish=True, report={})
-        validate_projection.assert_not_called()
         promote.assert_not_called()
         client.delete_dataset.assert_not_called()
     else:
         prontuario.refresh_prontuario(uuid4(), publish=True, report={})
-        validate_projection.assert_called_once()
         promote.assert_called_once()
 
 
@@ -225,12 +166,12 @@ def test_atualizacao_do_prontuario_exige_dbt_bem_sucedido(monkeypatch):
         flows.dbt_transform_flow.fn("+tag:daily", atualizar_prontuario=True)
 
 
-def test_primeira_publicacao_prod_cria_destino_a_partir_da_projecao(monkeypatch):
+def test_primeira_publicacao_prod_cria_destino_a_partir_da_mart(monkeypatch):
     execute = Mock()
     monkeypatch.setattr(prontuario, "execute", execute)
     destination = "rj-smas.abordagem.prontuario_eletronico"
     prefix = "rj-smas.dataset"
     prontuario.promote(Mock(), prefix, None, "run", "job", {}, destination=destination)
     execute.assert_called_once()
-    assert "CREATE TABLE `rj-smas.abordagem.prontuario_eletronico` AS SELECT * FROM `rj-smas.dataset.prontuario_cartoes`" in execute.call_args.args[1]
+    assert "CREATE TABLE `rj-smas.abordagem.prontuario_eletronico` AS SELECT * FROM `rj-smas.dataset.prontuario_eletronico`" in execute.call_args.args[1]
     assert execute.call_args.kwargs["job_id"] == "job"

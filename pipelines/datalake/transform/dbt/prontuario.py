@@ -25,7 +25,6 @@ DESTINATION = f"{PROJECT}.abordagem.prontuario_eletronico"
 SHEET = f"{PROJECT}.dashboard_acolherio.filtro_email_dev"
 QUERIES = Path(__file__).resolve().parents[4] / "queries"
 MART = "prontuario_eletronico"
-PUBLISHED_MART = "prontuario_cartoes"
 ATTENDANCE_SELECTION = "int_atendimentos_selecionados"
 PERMISSIONS = "int_filtro_email_unidades"
 TEST_PATH = "tests/prontuario_eletronico/"
@@ -84,9 +83,9 @@ def ordered_tables(manifest):
         if node and node["resource_type"] == "model" and node["config"]["materialized"] == "table":
             models.append(key)
 
-    root = f"model.queries.{PUBLISHED_MART}"
+    root = f"model.queries.{MART}"
     if root not in manifest["nodes"]:
-        raise RuntimeError("Modelo dbt de projeção dos cartões não encontrado")
+        raise RuntimeError("Modelo dbt do prontuário não encontrado")
     visit(root)
     return models
 
@@ -103,10 +102,7 @@ def dbt_command(command, directory, target="staging"):
 def compile_graph(target="staging"):
     with TemporaryDirectory(prefix="prontuario-dbt-") as directory:
         manifest_file = Path(directory) / "manifest.json"
-        variables = ["--vars", json.dumps({
-            "prontuario_projetar_cartoes": True,
-            "prontuario_publicacao": target == "prod",
-        })]
+        variables = ["--vars", "{prontuario_publicacao: true}"] if target == "prod" else []
         subprocess.run([*dbt_command("parse", directory, target), *variables], check=True, stdout=subprocess.DEVNULL)  # noqa: S603
         manifest = json.loads(manifest_file.read_text())
         ordered = ordered_tables(manifest)
@@ -139,9 +135,8 @@ def materialize(client, prefix, report, *, target="staging"):
         node = nodes[key]
         name = node["name"]
         relation = f"{prefix}.{name}"
-        phase = "projecao_cartoes" if name == PUBLISHED_MART else name
         execute(client, f"CREATE TABLE `{relation}` AS\n{compiled_sql(node, references)}",
-                report, phase)
+                report, name)
         if name == ATTENDANCE_SELECTION:
             count = client.get_table(relation).num_rows
             if not count:
@@ -293,54 +288,8 @@ def rows_differ(left, right):
     """
 
 
-def validate_publication(client, prefix, current, report):
-    source = f"{prefix}.{MART}"
-    destination = f"{prefix}.{PUBLISHED_MART}"
-    candidate = client.get_table(destination)
-    if not candidate.num_rows or (current and schema_signature(candidate.schema) != schema_signature(current.schema)):
-        raise ValueError("Projeção dos cartões vazia ou com esquema diferente do destino")
-
-    row = next(iter(execute(client, f"""
-        WITH esperados AS (
-            SELECT p.id_usuario_unidade, p.nome_unidade, p.email_filtro,
-                (SELECT AS STRUCT a.* REPLACE (
-                    ARRAY(
-                        SELECT AS STRUCT prof.* REPLACE (a.cadastrante AS id_profissional)
-                        FROM UNNEST(a.profissionais) prof WITH OFFSET AS posicao
-                        ORDER BY posicao
-                    ) AS profissionais
-                )) AS evento,
-                ARRAY(
-                    SELECT DISTINCT TRIM(prof.id_familia_referencia)
-                    FROM UNNEST(a.profissionais) prof
-                    WHERE NULLIF(TRIM(prof.id_familia_referencia), '') IS NOT NULL
-                    ORDER BY 1
-                ) AS familias
-            FROM `{source}` p CROSS JOIN UNNEST(p.atendimentos.registros) a
-        ), obtidos AS (
-            SELECT p.id_usuario_unidade, p.nome_unidade, p.email_filtro, a AS evento,
-                ARRAY(
-                    SELECT DISTINCT f.id_familia FROM UNNEST(p.familias) f ORDER BY 1
-                ) AS familias
-            FROM `{destination}` p CROSS JOIN UNNEST(p.atendimentos.registros) a
-        ), diferencas AS (
-            SELECT SHA256(TO_JSON_STRING(e)) AS assinatura, 1 AS sinal FROM esperados e
-            UNION ALL
-            SELECT SHA256(TO_JSON_STRING(o)) AS assinatura, -1 AS sinal FROM obtidos o
-        )
-        SELECT COUNT(*) AS n
-        FROM (
-            SELECT assinatura FROM diferencas GROUP BY assinatura HAVING SUM(sinal) != 0
-        )
-    """, report, "validacao_cartoes")))
-    report["cartoes"] = {"eventos_divergentes": row.n}
-    if row.n:
-        raise ValueError(f"Projeção dos cartões diverge dos atendimentos validados: {row.n}")
-    return candidate
-
-
-def finish_publication(client, prefix, report, *, destination=DESTINATION):
-    relation = f"{prefix}.{PUBLISHED_MART}"
+def finish_publication(client, prefix, report, *, destination=DESTINATION, source=None):
+    relation = source or f"{prefix}.{MART}"
     try:
         candidate = client.get_table(relation)
     except NotFound:
@@ -350,9 +299,7 @@ def finish_publication(client, prefix, report, *, destination=DESTINATION):
         except NotFound:
             report["resultado"] = "publicação já verificada e candidata removida"
             return
-        # Retomada de publicações iniciadas quando a mart era promovida diretamente.
-        relation = f"{prefix}.{MART}"
-        candidate = client.get_table(relation)
+        raise
     target = client.get_table(destination)
     if (target.num_rows != candidate.num_rows
             or schema_signature(target.schema) != schema_signature(candidate.schema)):
@@ -383,7 +330,10 @@ def refresh_prontuario(run_id, *, publish, report, target="staging"):
         if existing is not None:
             report.setdefault("jobs", {})["publicacao"] = existing.job_id
             existing.result()
-            finish_publication(client, prefix, report, destination=destination)
+            # Jobs anteriores à publicação direta podem ter promovido a projeção.
+            legacy = f"{prefix}.prontuario_cartoes"
+            source = legacy if f"`{legacy}`" in (existing.query or "") else None
+            finish_publication(client, prefix, report, destination=destination, source=source)
             return
 
     dataset = bigquery.Dataset(prefix)
@@ -399,11 +349,10 @@ def refresh_prontuario(run_id, *, publish, report, target="staging"):
         current = None
     candidate = client.get_table(f"{prefix}.{MART}")
     validate(client, prefix, current, candidate, nodes, references, report)
-    candidate = validate_publication(client, prefix, current or candidate, report)
     report["linhas"] = {"publicada": current.num_rows if current else 0, "candidata": candidate.num_rows}
     if current:
         report["volumes"] = compare_volumes(
-            client, f"{prefix}.{PUBLISHED_MART}", candidate.schema, report, destination=destination,
+            client, f"{prefix}.{MART}", candidate.schema, report, destination=destination,
         )
     if not publish:
         report["resultado"] = "candidata validada sem promoção"
@@ -416,7 +365,7 @@ def refresh_prontuario(run_id, *, publish, report, target="staging"):
 def promote(client, prefix, current, run_hex, job_id, report, *, destination=DESTINATION):
     if current is None:
         execute(client, f"""
-            CREATE TABLE `{destination}` AS SELECT * FROM `{prefix}.{PUBLISHED_MART}`
+            CREATE TABLE `{destination}` AS SELECT * FROM `{prefix}.{MART}`
         """, report, "publicacao", job_id=job_id)
         return
 
@@ -434,6 +383,6 @@ def promote(client, prefix, current, run_hex, job_id, report, *, destination=DES
             RAISE USING MESSAGE = 'O destino mudou após o snapshot';
         END IF;
         TRUNCATE TABLE `{destination}`;
-        INSERT INTO `{destination}` SELECT * FROM `{prefix}.{PUBLISHED_MART}`;
+        INSERT INTO `{destination}` SELECT * FROM `{prefix}.{MART}`;
         COMMIT TRANSACTION;
     """, report, "publicacao", job_id=job_id)

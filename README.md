@@ -99,7 +99,7 @@ Para homologar a troca de fonte, execute o deployment de staging com `atualizar_
 
 Para publicar em `rj-smas-dev.abordagem.prontuario_eletronico`, habilite também `publicar_prontuario=true`. O worker precisa de permissões de escrita e de criação de snapshots. A promoção é transacional e o snapshot de recuperação dura sete dias. O flow remove o dataset após verificar a publicação. As tabelas de candidatas que ficam no dataset expiram em 24 horas.
 
-O flow valida a mart no grão de uma linha por cidadão e unidade e valida a projeção dbt `prontuario_cartoes`, materializada no mesmo dataset isolado para a fonte atual do Looker Studio. O cartão de profissionais conta cadastrantes e o de famílias conta os vínculos dos atendimentos. A projeção agrupa os atendimentos pelo conjunto de famílias e pode repetir a chave cidadão–unidade na tabela publicada. O flow verifica o esquema e a preservação dos atendimentos antes da promoção.
+O flow valida e publica diretamente a mart dbt `prontuario_eletronico`, no grão de uma linha por cidadão e unidade. A promoção exige esquema compatível, chave `id_usuario_unidade` única e preservação dos atendimentos e das permissões.
 
 Se a execução falhar antes de criar o job de publicação, use um novo run para reconstruir a candidata. Se o job já existir, repita o mesmo run para recuperar o resultado.
 
