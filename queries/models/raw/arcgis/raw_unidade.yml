@@ -3,7 +3,7 @@ version: 2
 sources:
   - name: arcgis_raw
     description: "Equipamentos da rede socioassistencial — ArcGIS (SIURB)."
-    database: rj-smas
+    database: "{{ target.project }}"
     schema: arcgis_raw
     tables:
       - name: equipamento_raw
