@@ -1,25 +1,33 @@
 # Imagem base enxuta com Python 3.13
 FROM python:3.13-slim
 
-# Instala o uv (versão mais rápida e moderna que Poetry)
-ENV UV_VERSION=0.2.25
+# uv na mesma versão usada no CI
+ARG UV_VERSION=0.12.4
 RUN pip install --no-cache-dir "uv==$UV_VERSION"
+
+ENV PYTHONDONTWRITEBYTECODE=1 \
+    PYTHONUNBUFFERED=1 \
+    DBT_PROFILES_DIR=/app/queries
 
 WORKDIR /app
 
-# Copia manifests e instala dependências com uv
-COPY pyproject.toml /app/
-RUN uv pip compile pyproject.toml -o requirements.txt && \
-    uv pip install --system --no-cache -r requirements.txt
+# Usuário non-root (o Prefect/dbt não precisam de root)
+RUN useradd --create-home --uid 10001 appuser
 
-# Copia o resto do código
-COPY . /app
-COPY queries/profiles.yml /app/queries/profiles.yml
+# Dependências a partir do lockfile (reprodutível, igual ao CI)
+COPY pyproject.toml uv.lock /app/
+RUN uv export --frozen --no-dev --no-emit-project -o requirements.txt && \
+    uv pip install --system --no-cache -r requirements.txt && \
+    rm -f requirements.txt
 
-# Instala as dependências do dbt
-RUN dbt deps --project-dir queries --profiles-dir queries
+# Código (o .dockerignore exclui .git/.env/.venv/target/logs)
+COPY --chown=appuser:appuser . /app
 
-# Configura variável de ambiente do DBT
-ENV DBT_PROFILES_DIR=/app/queries
+# dbt deps antes de trocar para non-root; depois garante escrita em logs/target
+RUN dbt deps --project-dir queries --profiles-dir queries && \
+    mkdir -p queries/logs queries/target && \
+    chown -R appuser:appuser /app
+
+USER appuser
 
 # Não define ENTRYPOINT, permitindo que o Prefect (ou docker run) controle o comando
