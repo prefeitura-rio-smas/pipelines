@@ -1,0 +1,6 @@
+version: 2
+models:
+  - name: int_centro_pop_historico_mensal
+    description: Histórico recalculado por cidadão, unidade e competência com movimento.
+      Eventos são atribuídos ao mês de realização e o perfil usa os registros disponíveis
+      até o fim da competência. A reconstrução usa a versão atual das fontes.

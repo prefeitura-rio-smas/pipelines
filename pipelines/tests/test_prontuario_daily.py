@@ -72,7 +72,8 @@ def test_retry_apos_limpeza_reconhece_publicacao_verificada():
     client.query.assert_not_called()
 
 
-def test_publicacao_e_verificacao_usam_projecao_cartoes(monkeypatch):
+@pytest.mark.parametrize("legado", [False, True])
+def test_publicacao_direta_e_verificacao_da_candidata(monkeypatch, legado):
     client = Mock()
     current = SimpleNamespace(etag="destino", num_rows=2, schema=[])
     client.get_table.return_value = current
@@ -81,11 +82,14 @@ def test_publicacao_e_verificacao_usam_projecao_cartoes(monkeypatch):
     report = {}
 
     prontuario.promote(client, "projeto.dataset", current, "run", "job", report)
+    if not legado:
+        client.get_table.side_effect = [NotFound("projeção ausente"), current, current]
     prontuario.finish_publication(client, "projeto.dataset", report)
 
     _, publication, verification = execute.call_args_list
-    assert "SELECT * FROM `projeto.dataset.prontuario_cartoes`" in publication.args[1]
-    assert "`projeto.dataset.prontuario_cartoes`" in verification.args[1]
+    assert "SELECT * FROM `projeto.dataset.prontuario_eletronico`" in publication.args[1]
+    relation = "prontuario_cartoes" if legado else "prontuario_eletronico"
+    assert f"`projeto.dataset.{relation}`" in verification.args[1]
     assert report["resultado"] == "publicada e verificada"
 
 
@@ -99,8 +103,6 @@ def test_variacao_reconciliada_e_divergencia(monkeypatch, divergencia):
     monkeypatch.setattr(prontuario, "compare_volumes", lambda *_: {"novas": 5, "removidas": 2})
     validate = Mock(side_effect=ValueError("divergência") if divergencia else None)
     monkeypatch.setattr(prontuario, "validate", validate)
-    prepare = Mock()
-    monkeypatch.setattr(prontuario, "prepare_publication", prepare)
     promote = Mock()
     monkeypatch.setattr(prontuario, "promote", promote)
     monkeypatch.setattr(prontuario, "finish_publication", Mock())
@@ -108,12 +110,10 @@ def test_variacao_reconciliada_e_divergencia(monkeypatch, divergencia):
     if divergencia:
         with pytest.raises(ValueError, match="divergência"):
             prontuario.refresh_prontuario(uuid4(), publish=True, report={})
-        prepare.assert_not_called()
         promote.assert_not_called()
         client.delete_dataset.assert_not_called()
     else:
         prontuario.refresh_prontuario(uuid4(), publish=True, report={})
-        prepare.assert_called_once()
         promote.assert_called_once()
 
 

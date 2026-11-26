@@ -5,7 +5,6 @@ with perfis_centro_pop as (
     select
         p.id_usuario,
         u.id_unidade,
-        u.perfil,
         u.centro_pop
     from {{ ref('int_perfil_centro_pop') }} as p
     cross join unnest(p.registros) as u

@@ -28,8 +28,7 @@ PROGRAMADA = f"{PROJECT}.dashboard_acolherio.dev_atendimentos"
 QUERIES = Path(__file__).resolve().parents[4] / "queries"
 TIMEZONE = ZoneInfo("America/Sao_Paulo")
 MART = "prontuario_eletronico"
-PUBLISHED_MART = "prontuario_cartoes"
-PUBLICATION_SQL = QUERIES / "operations/sql/candidata_prontuario_cartoes.sql"
+LEGACY_PUBLISHED_MART = "prontuario_cartoes"
 PERMISSIONS = "int_filtro_email_unidades"
 TEST_PATH = "tests/prontuario_eletronico/"
 LOGGER = logging.getLogger(__name__)
@@ -307,52 +306,9 @@ def rows_differ(left, right):
     """
 
 
-def prepare_publication(client, prefix, current, report):
-    source = f"{prefix}.{MART}"
-    destination = f"{prefix}.{PUBLISHED_MART}"
-    sql = PUBLICATION_SQL.read_text().replace("__prontuario_base__", f"`{source}`")
-    execute(client, f"CREATE TABLE `{destination}` AS\n{sql}", report, "projecao_cartoes")
-    candidate = client.get_table(destination)
-    if not candidate.num_rows or schema_signature(candidate.schema) != schema_signature(current.schema):
-        raise ValueError("Projeção dos cartões vazia ou com esquema diferente do destino")
-    row = next(iter(execute(client, f"""
-        WITH base AS (
-            SELECT p.id_usuario_unidade, p.email_filtro, a.id_atendimento_modulo,
-                   a.data_atendimento_informada, a.tipo_unidade,
-                   TO_JSON_STRING(IF(ARRAY_LENGTH(a.profissionais) > 0, [a.cadastrante], [])) AS cadastrantes,
-                   TO_JSON_STRING(ARRAY(
-                       SELECT DISTINCT TRIM(prof.id_familia_referencia)
-                       FROM UNNEST(a.profissionais) prof
-                       WHERE NULLIF(TRIM(prof.id_familia_referencia), '') IS NOT NULL
-                       ORDER BY 1
-                   )) AS familias
-            FROM `{source}` p CROSS JOIN UNNEST(p.atendimentos.registros) a
-        ), projetada AS (
-            SELECT p.id_usuario_unidade, p.email_filtro, a.id_atendimento_modulo,
-                   a.data_atendimento_informada, a.tipo_unidade,
-                   TO_JSON_STRING(ARRAY(
-                       SELECT DISTINCT prof.id_profissional FROM UNNEST(a.profissionais) prof ORDER BY 1
-                   )) AS cadastrantes,
-                   TO_JSON_STRING(ARRAY(
-                       SELECT DISTINCT f.id_familia FROM UNNEST(p.familias) f ORDER BY 1
-                   )) AS familias
-            FROM `{destination}` p CROSS JOIN UNNEST(p.atendimentos.registros) a
-        )
-        SELECT (SELECT COUNT(*) FROM base) AS eventos_base,
-               (SELECT COUNT(*) FROM projetada) AS eventos_projecao,
-               (SELECT COUNT(*) FROM (SELECT * FROM base EXCEPT DISTINCT SELECT * FROM projetada))
-                   AS eventos_ausentes,
-               (SELECT COUNT(*) FROM (SELECT * FROM projetada EXCEPT DISTINCT SELECT * FROM base))
-                   AS eventos_inesperados
-    """, report, "validacao_cartoes")))
-    report["cartoes"] = dict(row)
-    if row.eventos_base != row.eventos_projecao or row.eventos_ausentes or row.eventos_inesperados:
-        raise ValueError(f"Projeção dos cartões diverge dos atendimentos validados: {dict(row)}")
-    return candidate
-
-
 def finish_publication(client, prefix, report):
-    relation = f"{prefix}.{PUBLISHED_MART}"
+    # Runs iniciados antes da publicação direta ainda podem ter a projeção antiga.
+    relation = f"{prefix}.{LEGACY_PUBLISHED_MART}"
     try:
         candidate = client.get_table(relation)
     except NotFound:
@@ -362,7 +318,6 @@ def finish_publication(client, prefix, report):
         except NotFound:
             report["resultado"] = "publicação já verificada e candidata removida"
             return
-        # Retomada de publicações anteriores à projeção dos cartões.
         relation = f"{prefix}.{MART}"
         candidate = client.get_table(relation)
     target = client.get_table(DESTINATION)
@@ -405,9 +360,8 @@ def refresh_prontuario(run_id, *, publish, report):
     current = client.get_table(DESTINATION)
     candidate = client.get_table(f"{prefix}.{MART}")
     validate(client, prefix, current, candidate, nodes, references, report)
-    candidate = prepare_publication(client, prefix, current, report)
     report["linhas"] = {"publicada": current.num_rows, "candidata": candidate.num_rows}
-    report["volumes"] = compare_volumes(client, f"{prefix}.{PUBLISHED_MART}", candidate.schema, report)
+    report["volumes"] = compare_volumes(client, f"{prefix}.{MART}", candidate.schema, report)
     if not publish:
         report["resultado"] = "candidata validada sem promoção"
         return
@@ -431,6 +385,6 @@ def promote(client, prefix, current, run_hex, job_id, report):
             RAISE USING MESSAGE = 'O destino mudou após o snapshot';
         END IF;
         TRUNCATE TABLE `{DESTINATION}`;
-        INSERT INTO `{DESTINATION}` SELECT * FROM `{prefix}.{PUBLISHED_MART}`;
+        INSERT INTO `{DESTINATION}` SELECT * FROM `{prefix}.{MART}`;
         COMMIT TRANSACTION;
     """, report, "publicacao", job_id=job_id)
