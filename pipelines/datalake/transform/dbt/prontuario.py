@@ -83,7 +83,10 @@ def ordered_tables(manifest):
         if node and node["resource_type"] == "model" and node["config"]["materialized"] == "table":
             models.append(key)
 
-    visit(f"model.queries.{MART}")
+    root = f"model.queries.{PUBLISHED_MART}"
+    if root not in manifest["nodes"]:
+        raise RuntimeError("Modelo dbt de projeção dos cartões não encontrado")
+    visit(root)
     return models
 
 
@@ -99,27 +102,19 @@ def dbt_command(command, directory):
 def compile_graph():
     with TemporaryDirectory(prefix="prontuario-dbt-") as directory:
         manifest_file = Path(directory) / "manifest.json"
-        subprocess.run(dbt_command("parse", directory), check=True, stdout=subprocess.DEVNULL)  # noqa: S603
+        variables = ["--vars", json.dumps({
+            "prontuario_projetar_cartoes": True,
+        })]
+        subprocess.run([*dbt_command("parse", directory), *variables], check=True, stdout=subprocess.DEVNULL)  # noqa: S603
         manifest = json.loads(manifest_file.read_text())
         ordered = ordered_tables(manifest)
         names = [manifest["nodes"][key]["name"] for key in ordered]
         command = [
-            *dbt_command("compile", directory), "--select", *names, PERMISSIONS,
+            *dbt_command("compile", directory), *variables, "--select", *names, PERMISSIONS,
             f"path:{TEST_PATH.rstrip('/')}",
         ]
         subprocess.run(command, check=True, stdout=subprocess.DEVNULL)  # noqa: S603
         return json.loads(manifest_file.read_text()), ordered
-
-
-def compile_publication(source):
-    inline = "{{ prontuario_projecao_cartoes(" + json.dumps(f"`{source}`") + ") }}"
-    with TemporaryDirectory(prefix="prontuario-cartoes-dbt-") as directory:
-        command = [
-            *dbt_command("compile", directory), "--inline", inline,
-            "--output", "json", "--no-introspect", "--no-populate-cache",
-        ]
-        result = subprocess.run(command, check=True, capture_output=True, text=True)  # noqa: S603
-        return json.loads(result.stdout)["compiled"].strip()
 
 
 def compiled_sql(node, references):
@@ -142,8 +137,9 @@ def materialize(client, prefix, report):
         node = nodes[key]
         name = node["name"]
         relation = f"{prefix}.{name}"
+        phase = "projecao_cartoes" if name == PUBLISHED_MART else name
         execute(client, f"CREATE TABLE `{relation}` AS\n{compiled_sql(node, references)}",
-                report, name)
+                report, phase)
         if name == ATTENDANCE_SELECTION:
             count = client.get_table(relation).num_rows
             if not count:
@@ -292,11 +288,9 @@ def rows_differ(left, right):
     """
 
 
-def prepare_publication(client, prefix, current, report):
+def validate_publication(client, prefix, current, report):
     source = f"{prefix}.{MART}"
     destination = f"{prefix}.{PUBLISHED_MART}"
-    sql = compile_publication(source)
-    execute(client, f"CREATE TABLE `{destination}` AS\n{sql}", report, "projecao_cartoes")
     candidate = client.get_table(destination)
     if not candidate.num_rows or schema_signature(candidate.schema) != schema_signature(current.schema):
         raise ValueError("Projeção dos cartões vazia ou com esquema diferente do destino")
@@ -393,7 +387,7 @@ def refresh_prontuario(run_id, *, publish, report):
     current = client.get_table(DESTINATION)
     candidate = client.get_table(f"{prefix}.{MART}")
     validate(client, prefix, current, candidate, nodes, references, report)
-    candidate = prepare_publication(client, prefix, current, report)
+    candidate = validate_publication(client, prefix, current, report)
     report["linhas"] = {"publicada": current.num_rows, "candidata": candidate.num_rows}
     report["volumes"] = compare_volumes(client, f"{prefix}.{PUBLISHED_MART}", candidate.schema, report)
     if not publish:

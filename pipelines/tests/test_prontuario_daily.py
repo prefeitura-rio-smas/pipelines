@@ -15,7 +15,7 @@ def test_candidata_sem_job_agendado_usa_selecao_dbt(monkeypatch):
     materialize = Mock(return_value=({}, {}))
     monkeypatch.setattr(prontuario, "materialize", materialize)
     monkeypatch.setattr(prontuario, "validate", Mock())
-    monkeypatch.setattr(prontuario, "prepare_publication", Mock())
+    monkeypatch.setattr(prontuario, "validate_publication", Mock())
     monkeypatch.setattr(prontuario, "compare_volumes", Mock())
     run_id = uuid4()
     prefix = f"rj-smas-dev.prontuario_build_{run_id.hex}"
@@ -61,6 +61,38 @@ def test_materializacao_usa_planilha_isolada_e_exige_atendimentos(monkeypatch, c
 
     client.get_table.assert_called_once_with(f"{prefix}.{model}")
     assert f"select * from `{prefix}.filtro_email`" in execute.call_args.args[1]
+
+
+def test_materializa_projecao_dbt_a_partir_da_mart_isolada(monkeypatch):
+    mart = f"model.queries.{prontuario.MART}"
+    projection = f"model.queries.{prontuario.PUBLISHED_MART}"
+    source = "`projeto.dashboard_acolherio.filtro_email_dev`"
+    nodes = {}
+    for name, sql in (
+        (prontuario.MART, f"select * from {source}"),
+        (prontuario.PUBLISHED_MART, f"select * from `projeto.relatorio.{prontuario.MART}`"),
+    ):
+        nodes[f"model.queries.{name}"] = {
+            "name": name, "resource_type": "model", "config": {"materialized": "table"},
+            "compiled_code": sql, "relation_name": f"`projeto.relatorio.{name}`",
+        }
+    nodes["model.queries.raw_sheets_filtro_email_prontuario"] = {"relation_name": "`planilha_raw`"}
+    manifest = {
+        "nodes": nodes, "parent_map": {projection: [mart]},
+        "sources": {"source.queries.dashboard_acolherio.filtro_email_dev": {"relation_name": source}},
+    }
+    monkeypatch.setattr(prontuario, "compile_graph", lambda: (manifest, prontuario.ordered_tables(manifest)))
+    monkeypatch.setattr(prontuario, "load_sheet", Mock())
+    execute = Mock()
+    monkeypatch.setattr(prontuario, "execute", execute)
+
+    prontuario.materialize(Mock(), "projeto.isolado", {})
+
+    create_mart, create_projection = execute.call_args_list
+    assert "CREATE TABLE `projeto.isolado.prontuario_eletronico`" in create_mart.args[1]
+    assert "CREATE TABLE `projeto.isolado.prontuario_cartoes`" in create_projection.args[1]
+    assert "from `projeto.isolado.prontuario_eletronico`" in create_projection.args[1]
+    assert create_projection.args[3] == "projecao_cartoes"
 
 
 def test_retry_reanexa_job_sem_reconstruir_ou_publicar_novamente(monkeypatch):
@@ -113,30 +145,24 @@ def test_publicacao_cartoes_e_verificacao_da_candidata(monkeypatch, publicacao_d
 
 
 @pytest.mark.parametrize("divergencias", [0, 2])
-def test_prepara_projecao_e_confere_multiplicidade(monkeypatch, divergencias):
+def test_valida_projecao_e_confere_multiplicidade(monkeypatch, divergencias):
     client = Mock()
     candidate = SimpleNamespace(num_rows=2, schema=[])
     client.get_table.return_value = candidate
-    execute = Mock(side_effect=[None, [SimpleNamespace(n=divergencias)]])
+    execute = Mock(return_value=[SimpleNamespace(n=divergencias)])
     monkeypatch.setattr(prontuario, "execute", execute)
-    source = "`projeto.dataset.prontuario_eletronico`"
-    compile_dbt = Mock(return_value=SimpleNamespace(stdout='{"compiled": "select * from ' + source + ' as p"}'))
-    monkeypatch.setattr(prontuario.subprocess, "run", compile_dbt)
     report = {}
 
     if divergencias:
         with pytest.raises(ValueError, match="diverge dos atendimentos"):
-            prontuario.prepare_publication(client, "projeto.dataset", candidate, report)
+            prontuario.validate_publication(client, "projeto.dataset", candidate, report)
     else:
-        assert prontuario.prepare_publication(client, "projeto.dataset", candidate, report) is candidate
+        assert prontuario.validate_publication(client, "projeto.dataset", candidate, report) is candidate
 
-    command = compile_dbt.call_args.args[0]
-    assert command[command.index("--inline") + 1] == f'{{{{ prontuario_projecao_cartoes("{source}") }}}}'
-    assert command[command.index("--output") + 1] == "json"
-    projection, validation = execute.call_args_list
-    assert "CREATE TABLE `projeto.dataset.prontuario_cartoes`" in projection.args[1]
-    assert "from `projeto.dataset.prontuario_eletronico` as p" in projection.args[1]
-    assert "HAVING SUM(sinal) != 0" in validation.args[1]
+    execute.assert_called_once()
+    assert "FROM `projeto.dataset.prontuario_eletronico`" in execute.call_args.args[1]
+    assert "FROM `projeto.dataset.prontuario_cartoes`" in execute.call_args.args[1]
+    assert "HAVING SUM(sinal) != 0" in execute.call_args.args[1]
     assert report["cartoes"] == {"eventos_divergentes": divergencias}
 
 
@@ -150,7 +176,7 @@ def test_variacao_reconciliada_e_divergencia(monkeypatch, divergencia):
     validate = Mock(side_effect=ValueError("divergência") if divergencia else None)
     monkeypatch.setattr(prontuario, "validate", validate)
     prepare = Mock()
-    monkeypatch.setattr(prontuario, "prepare_publication", prepare)
+    monkeypatch.setattr(prontuario, "validate_publication", prepare)
     promote = Mock()
     monkeypatch.setattr(prontuario, "promote", promote)
     monkeypatch.setattr(prontuario, "finish_publication", Mock())
