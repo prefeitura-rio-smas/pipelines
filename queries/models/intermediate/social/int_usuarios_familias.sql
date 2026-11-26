@@ -1,4 +1,4 @@
-{{ config(materialized='ephemeral', enabled=target.name != 'prod', tags=['planilha_unificada']) }}
+{{ config(materialized='ephemeral', enabled=target.name != 'prod' or var('prontuario_publicacao', false), tags=['planilha_unificada']) }}
 with membros as (
     select distinct
         m.id_paciente as id_usuario,

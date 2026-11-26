@@ -1,4 +1,4 @@
-{{ config(materialized='table', enabled=target.name != 'prod', tags=['planilha_unificada']) }}
+{{ config(materialized='table', enabled=target.name != 'prod' or var('prontuario_publicacao', false), tags=['planilha_unificada']) }}
 -- Seleção de linhas de atendimento e profissional a partir dos raws do AcolheRio.
 -- Replica os rankings publicados, inclusive a chave de CBO sem o módulo e os empates sem ordem definida.
 WITH base_atendimentos AS (

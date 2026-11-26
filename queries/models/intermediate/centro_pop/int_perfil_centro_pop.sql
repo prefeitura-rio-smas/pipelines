@@ -1,4 +1,4 @@
-{{ config(materialized='ephemeral', enabled=target.name != 'prod', tags=['planilha_unificada']) }}
+{{ config(materialized='ephemeral', enabled=target.name != 'prod' or var('prontuario_publicacao', false), tags=['planilha_unificada']) }}
 with perfil_geral as (
     {{ perfil_centro_pop(ref('int_registros_centro_pop'), ref('int_atendimentos_por_usuario'), ref('dim_usuarios')) }}
 ),

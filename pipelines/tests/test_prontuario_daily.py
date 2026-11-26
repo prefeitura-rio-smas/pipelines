@@ -25,7 +25,7 @@ def test_candidata_sem_job_agendado_usa_selecao_dbt(monkeypatch):
 
     client.get_job.assert_not_called()
     client.query.assert_not_called()
-    materialize.assert_called_once_with(client, prefix, report)
+    materialize.assert_called_once_with(client, prefix, report, target="staging")
     assert report["resultado"] == "candidata validada sem promoção"
 
 
@@ -44,7 +44,7 @@ def test_materializacao_usa_planilha_isolada_e_exige_atendimentos(monkeypatch, c
         },
         "sources": {"source.queries.dashboard_acolherio.filtro_email_dev": {"relation_name": source}},
     }
-    monkeypatch.setattr(prontuario, "compile_graph", lambda: (manifest, [key]))
+    monkeypatch.setattr(prontuario, "compile_graph", lambda _: (manifest, [key]))
     monkeypatch.setattr(prontuario, "load_sheet", Mock())
     execute = Mock()
     monkeypatch.setattr(prontuario, "execute", execute)
@@ -81,7 +81,7 @@ def test_materializa_projecao_dbt_a_partir_da_mart_isolada(monkeypatch):
         "nodes": nodes, "parent_map": {projection: [mart]},
         "sources": {"source.queries.dashboard_acolherio.filtro_email_dev": {"relation_name": source}},
     }
-    monkeypatch.setattr(prontuario, "compile_graph", lambda: (manifest, prontuario.ordered_tables(manifest)))
+    monkeypatch.setattr(prontuario, "compile_graph", lambda _: (manifest, prontuario.ordered_tables(manifest)))
     monkeypatch.setattr(prontuario, "load_sheet", Mock())
     execute = Mock()
     monkeypatch.setattr(prontuario, "execute", execute)
@@ -171,12 +171,12 @@ def test_variacao_reconciliada_e_divergencia(monkeypatch, divergencia):
     client = Mock()
     monkeypatch.setattr(prontuario.bigquery, "Client", lambda **_: client)
     client.get_job.side_effect = NotFound("job novo")
-    monkeypatch.setattr(prontuario, "materialize", lambda *_: ({}, {}))
-    monkeypatch.setattr(prontuario, "compare_volumes", lambda *_: {"novas": 5, "removidas": 2})
+    monkeypatch.setattr(prontuario, "materialize", lambda *_, **__: ({}, {}))
+    monkeypatch.setattr(prontuario, "compare_volumes", lambda *_, **__: {"novas": 5, "removidas": 2})
     validate = Mock(side_effect=ValueError("divergência") if divergencia else None)
     monkeypatch.setattr(prontuario, "validate", validate)
-    prepare = Mock()
-    monkeypatch.setattr(prontuario, "validate_publication", prepare)
+    validate_projection = Mock()
+    monkeypatch.setattr(prontuario, "validate_publication", validate_projection)
     promote = Mock()
     monkeypatch.setattr(prontuario, "promote", promote)
     monkeypatch.setattr(prontuario, "finish_publication", Mock())
@@ -184,16 +184,16 @@ def test_variacao_reconciliada_e_divergencia(monkeypatch, divergencia):
     if divergencia:
         with pytest.raises(ValueError, match="divergência"):
             prontuario.refresh_prontuario(uuid4(), publish=True, report={})
-        prepare.assert_not_called()
+        validate_projection.assert_not_called()
         promote.assert_not_called()
         client.delete_dataset.assert_not_called()
     else:
         prontuario.refresh_prontuario(uuid4(), publish=True, report={})
-        prepare.assert_called_once()
+        validate_projection.assert_called_once()
         promote.assert_called_once()
 
 
-def test_atualizacao_do_prontuario_exige_dbt_bem_sucedido_e_staging(monkeypatch):
+def test_atualizacao_do_prontuario_exige_dbt_bem_sucedido(monkeypatch):
     monkeypatch.setenv("MODE", "staging")
     monkeypatch.setattr(flows, "BaseSettings", lambda: None)
     monkeypatch.setattr(flows, "execute_dbt", Mock())
@@ -210,11 +210,27 @@ def test_atualizacao_do_prontuario_exige_dbt_bem_sucedido_e_staging(monkeypatch)
     run_id = str(uuid4())
     monkeypatch.setattr(flows, "flow_run", SimpleNamespace(id=run_id))
     flows.dbt_transform_flow.fn("+tag:daily", atualizar_prontuario=True)
-    update.assert_called_once_with(run_id, publish=False)
+    update.assert_called_once_with(run_id, publish=False, target="staging")
     assert flows.execute_dbt.call_args.args[0][-2:] == [
         "--exclude", "path:tests/prontuario_eletronico",
     ]
 
     monkeypatch.setenv("MODE", "prod")
-    with pytest.raises(ValueError, match="staging"):
+    flows.dbt_transform_flow.fn("+tag:daily", atualizar_prontuario=True, publicar_prontuario=True)
+    update.assert_called_with(run_id, publish=True, target="prod")
+    assert "creas_campos" in flows.execute_dbt.call_args.args[0]
+
+    monkeypatch.setenv("MODE", "dev")
+    with pytest.raises(ValueError, match="staging e prod"):
         flows.dbt_transform_flow.fn("+tag:daily", atualizar_prontuario=True)
+
+
+def test_primeira_publicacao_prod_cria_destino_a_partir_da_projecao(monkeypatch):
+    execute = Mock()
+    monkeypatch.setattr(prontuario, "execute", execute)
+    destination = "rj-smas.abordagem.prontuario_eletronico"
+    prefix = "rj-smas.dataset"
+    prontuario.promote(Mock(), prefix, None, "run", "job", {}, destination=destination)
+    execute.assert_called_once()
+    assert f"CREATE TABLE `{destination}` AS SELECT * FROM `{prefix}.prontuario_cartoes`" in execute.call_args.args[1]
+    assert execute.call_args.kwargs["job_id"] == "job"
