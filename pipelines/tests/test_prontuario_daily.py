@@ -39,7 +39,7 @@ def test_materializacao_usa_planilha_isolada_e_exige_atendimentos(monkeypatch, c
     relation = f"`projeto.gerenciamento__dbt.{model}`"
     manifest = {
         "nodes": {
-            key: {"name": model, "relation_name": relation, "compiled_code": f"select * from {source}"},
+            key: {"name": model, "relation_name": relation, "compiled_code": "select * from `projeto.dashboard_acolherio.filtro_email_dev`"},
             "model.queries.raw_sheets_filtro_email_prontuario": {"relation_name": "`planilha_raw`"},
         },
         "sources": {"source.queries.dashboard_acolherio.filtro_email_dev": {"relation_name": source}},
@@ -60,7 +60,7 @@ def test_materializacao_usa_planilha_isolada_e_exige_atendimentos(monkeypatch, c
             prontuario.materialize(client, prefix, report)
 
     client.get_table.assert_called_once_with(f"{prefix}.{model}")
-    assert f"select * from `{prefix}.filtro_email`" in execute.call_args.args[1]
+    assert "select * from `projeto.dataset.filtro_email`" in execute.call_args.args[1]
 
 
 def test_materializa_projecao_dbt_a_partir_da_mart_isolada(monkeypatch):
@@ -69,8 +69,8 @@ def test_materializa_projecao_dbt_a_partir_da_mart_isolada(monkeypatch):
     source = "`projeto.dashboard_acolherio.filtro_email_dev`"
     nodes = {}
     for name, sql in (
-        (prontuario.MART, f"select * from {source}"),
-        (prontuario.PUBLISHED_MART, f"select * from `projeto.relatorio.{prontuario.MART}`"),
+        (prontuario.MART, "select * from `projeto.dashboard_acolherio.filtro_email_dev`"),
+        (prontuario.PUBLISHED_MART, "select * from `projeto.relatorio.prontuario_eletronico`"),
     ):
         nodes[f"model.queries.{name}"] = {
             "name": name, "resource_type": "model", "config": {"materialized": "table"},
@@ -232,5 +232,5 @@ def test_primeira_publicacao_prod_cria_destino_a_partir_da_projecao(monkeypatch)
     prefix = "rj-smas.dataset"
     prontuario.promote(Mock(), prefix, None, "run", "job", {}, destination=destination)
     execute.assert_called_once()
-    assert f"CREATE TABLE `{destination}` AS SELECT * FROM `{prefix}.prontuario_cartoes`" in execute.call_args.args[1]
+    assert "CREATE TABLE `rj-smas.abordagem.prontuario_eletronico` AS SELECT * FROM `rj-smas.dataset.prontuario_cartoes`" in execute.call_args.args[1]
     assert execute.call_args.kwargs["job_id"] == "job"
