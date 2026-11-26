@@ -6,7 +6,9 @@ exclude_rules = L016, L031
 [sqlfluff:templater:jinja]
 apply_dbt_builtins = True
 load_macros_from_path = queries/macros
-library_path = sqlfluff_libs
+# Caminho relativo a raiz do repo: SQLFluff resolve library_path a partir
+# do CWD, e o CI executa da raiz.
+library_path = queries/sqlfluff_libs
 
 [sqlfluff:templater:jinja:macros]
 filtro_particao_cadunico = {% macro filtro_particao_cadunico() %}data_particao = date('2024-01-01'){% endmacro %}
