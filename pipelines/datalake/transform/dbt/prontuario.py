@@ -29,7 +29,6 @@ QUERIES = Path(__file__).resolve().parents[4] / "queries"
 TIMEZONE = ZoneInfo("America/Sao_Paulo")
 MART = "prontuario_eletronico"
 PUBLISHED_MART = "prontuario_cartoes"
-PUBLICATION_SQL = QUERIES / "operations/sql/looker_cartoes_atendimentos.sql"
 PERMISSIONS = "int_filtro_email_unidades"
 TEST_PATH = "tests/prontuario_eletronico/"
 LOGGER = logging.getLogger(__name__)
@@ -120,21 +119,39 @@ def ordered_tables(manifest):
     return models
 
 
-def compile_graph():
+def dbt_command(command, directory):
     dbt = Path(sys.executable).with_name("dbt")
     executable = str(dbt) if dbt.exists() else shutil.which("dbt") or "dbt"
+    return [
+        executable, "--quiet", command, "--project-dir", str(QUERIES),
+        "--profiles-dir", str(QUERIES), "--target", "staging", "--target-path", directory,
+    ]
+
+
+def compile_graph():
     with TemporaryDirectory(prefix="prontuario-dbt-") as directory:
         manifest_file = Path(directory) / "manifest.json"
-        args = ["--project-dir", str(QUERIES), "--profiles-dir", str(QUERIES), "--target",
-                "staging", "--target-path", directory]
-        subprocess.run([executable, "--quiet", "parse", *args], check=True, stdout=subprocess.DEVNULL)  # noqa: S603
+        subprocess.run(dbt_command("parse", directory), check=True, stdout=subprocess.DEVNULL)  # noqa: S603
         manifest = json.loads(manifest_file.read_text())
         ordered = ordered_tables(manifest)
         names = [manifest["nodes"][key]["name"] for key in ordered]
-        command = [executable, "--quiet", "compile", *args, "--select", *names, PERMISSIONS,
-                   f"path:{TEST_PATH.rstrip('/')}"]
+        command = [
+            *dbt_command("compile", directory), "--select", *names, PERMISSIONS,
+            f"path:{TEST_PATH.rstrip('/')}",
+        ]
         subprocess.run(command, check=True, stdout=subprocess.DEVNULL)  # noqa: S603
         return json.loads(manifest_file.read_text()), ordered
+
+
+def compile_publication(source):
+    inline = "{{ prontuario_projecao_cartoes(" + json.dumps(f"`{source}`") + ") }}"
+    with TemporaryDirectory(prefix="prontuario-cartoes-dbt-") as directory:
+        command = [
+            *dbt_command("compile", directory), "--inline", inline,
+            "--output", "json", "--no-introspect", "--no-populate-cache",
+        ]
+        result = subprocess.run(command, check=True, capture_output=True, text=True)  # noqa: S603
+        return json.loads(result.stdout)["compiled"].strip()
 
 
 def compiled_sql(node, references):
@@ -310,7 +327,7 @@ def rows_differ(left, right):
 def prepare_publication(client, prefix, current, report):
     source = f"{prefix}.{MART}"
     destination = f"{prefix}.{PUBLISHED_MART}"
-    sql = PUBLICATION_SQL.read_text().replace("__prontuario_base__", f"`{source}`")
+    sql = compile_publication(source)
     execute(client, f"CREATE TABLE `{destination}` AS\n{sql}", report, "projecao_cartoes")
     candidate = client.get_table(destination)
     if not candidate.num_rows or schema_signature(candidate.schema) != schema_signature(current.schema):

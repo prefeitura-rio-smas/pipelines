@@ -100,6 +100,9 @@ def test_prepara_projecao_e_confere_multiplicidade(monkeypatch, divergencias):
     client.get_table.return_value = candidate
     execute = Mock(side_effect=[None, [SimpleNamespace(n=divergencias)]])
     monkeypatch.setattr(prontuario, "execute", execute)
+    source = "`projeto.dataset.prontuario_eletronico`"
+    compile_dbt = Mock(return_value=SimpleNamespace(stdout='{"compiled": "select * from ' + source + ' as p"}'))
+    monkeypatch.setattr(prontuario.subprocess, "run", compile_dbt)
     report = {}
 
     if divergencias:
@@ -108,6 +111,9 @@ def test_prepara_projecao_e_confere_multiplicidade(monkeypatch, divergencias):
     else:
         assert prontuario.prepare_publication(client, "projeto.dataset", candidate, report) is candidate
 
+    command = compile_dbt.call_args.args[0]
+    assert command[command.index("--inline") + 1] == f'{{{{ prontuario_projecao_cartoes("{source}") }}}}'
+    assert command[command.index("--output") + 1] == "json"
     projection, validation = execute.call_args_list
     assert "CREATE TABLE `projeto.dataset.prontuario_cartoes`" in projection.args[1]
     assert "from `projeto.dataset.prontuario_eletronico` as p" in projection.args[1]
