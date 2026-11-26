@@ -93,7 +93,9 @@ Nossas pipelines são definidas na pasta `pipelines/`. Para rodar ou testar loca
 
 O deployment `dbt-transform-daily-prod` executa `dbt build --select +tag:daily` diariamente às 10h (São Paulo). O deployment `dbt-transform-staging` é manual.
 
-Para validar o Prontuário, execute o deployment de staging após a carga das 05h de `rj-smas-dev.dashboard_acolherio.dev_atendimentos`, com `atualizar_prontuario=true` e `publicar_prontuario=false`. Após o `dbt build`, o flow captura as fontes, materializa a candidata em um dataset isolado e registra controles, diferenças de volume e IDs dos jobs no artefato `prontuario-staging`. O worker precisa consultar jobs, ler as fontes e criar o dataset de trabalho.
+O modelo intermediário `int_atendimentos_selecionados` seleciona os atendimentos e profissionais a partir dos raws do AcolheRio e da planilha de permissões. O flow materializa a seleção no dataset isolado e a usa para montar e reconciliar o Prontuário.
+
+Para homologar a troca de fonte, execute o deployment de staging com `atualizar_prontuario=true` e `publicar_prontuario=false`. O artefato `prontuario-staging` registra controles, diferenças de volume e IDs dos jobs. Compare a seleção dbt com a programada usando a mesma fotografia dos raws, a mesma cópia da planilha e a mesma data de referência. Confira esquema, identidade e multiplicidade por usuário, atendimento e profissional, além dos endereços, classificações, projetos, permissões e cartões publicados. Use a programada como referência da comparação e mantenha seu agendamento ativo no BigQuery. A seleção dbt replica os rankings publicados. Empates sem ordenação completa podem produzir vencedores diferentes entre execuções.
 
 Para publicar em `rj-smas-dev.abordagem.prontuario_eletronico`, habilite também `publicar_prontuario=true`. O worker precisa de permissões de escrita e de criação de snapshots. A promoção é transacional e o snapshot de recuperação dura sete dias. O flow remove o dataset após verificar a publicação. As tabelas de candidatas que ficam no dataset expiram em 24 horas.
 

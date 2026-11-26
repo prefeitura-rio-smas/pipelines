@@ -1,5 +1,4 @@
 """Controles da atualização do Prontuário em staging."""
-from datetime import datetime, timedelta
 from types import SimpleNamespace
 from unittest.mock import Mock
 from uuid import uuid4
@@ -9,39 +8,59 @@ import pytest
 
 from pipelines.datalake.transform.dbt import flows, prontuario
 
-NOW = datetime(2026, 11, 24, 10, tzinfo=prontuario.TIMEZONE)
 
-
-@pytest.mark.parametrize("state,ok", [(None, False), ("RUNNING", True), ("DONE", False)])
-def test_carga_indisponivel_bloqueia_leitura_da_origem(monkeypatch, state, ok):
+def test_candidata_sem_job_agendado_usa_selecao_dbt(monkeypatch):
     client = Mock()
-    rows = [] if state is None else [SimpleNamespace(job_id="scheduled_query_test", state=state, ok=ok)]
-    monkeypatch.setattr(prontuario, "execute", lambda *_args, **_kwargs: rows)
-
-    with pytest.raises(RuntimeError, match="não concluiu"):
-        prontuario.scheduled_load(client, NOW, {})
-
-    client.get_table.assert_not_called()
-
-
-def test_carga_agendada_exige_versao_da_tabela_do_job(monkeypatch):
-    job = SimpleNamespace(
-        job_id="scheduled_query_test", creation_time=NOW - timedelta(hours=5),
-        end_time=NOW - timedelta(hours=5) + timedelta(seconds=15), state="DONE", ok=True,
-    )
-    client = Mock()
-    source = client.get_table.return_value
-    source.num_rows = 1
-    source.modified = job.end_time + timedelta(seconds=1)
-    monkeypatch.setattr(prontuario, "execute", lambda *_args, **_kwargs: [job])
-
-    with pytest.raises(RuntimeError, match="não corresponde"):
-        prontuario.scheduled_load(client, NOW, {})
-
-    source.modified = job.end_time
+    monkeypatch.setattr(prontuario.bigquery, "Client", lambda **_: client)
+    materialize = Mock(return_value=({}, {}))
+    monkeypatch.setattr(prontuario, "materialize", materialize)
+    monkeypatch.setattr(prontuario, "validate", Mock())
+    monkeypatch.setattr(prontuario, "prepare_publication", Mock())
+    monkeypatch.setattr(prontuario, "compare_volumes", Mock())
+    run_id = uuid4()
+    prefix = f"rj-smas-dev.prontuario_build_{run_id.hex}"
     report = {}
-    assert prontuario.scheduled_load(client, NOW, report) is source
-    assert report["origem"]["job"] == job.job_id
+
+    prontuario.refresh_prontuario(run_id, publish=False, report=report)
+
+    client.get_job.assert_not_called()
+    client.query.assert_not_called()
+    materialize.assert_called_once_with(client, prefix, report)
+    assert report["resultado"] == "candidata validada sem promoção"
+
+
+@pytest.mark.parametrize("count", [0, 3])
+def test_materializacao_usa_planilha_isolada_e_exige_atendimentos(monkeypatch, count):
+    client = Mock()
+    client.get_table.return_value.num_rows = count
+    model = prontuario.ATTENDANCE_SELECTION
+    key = f"model.queries.{model}"
+    source = "`projeto.dashboard_acolherio.filtro_email_dev`"
+    relation = f"`projeto.gerenciamento__dbt.{model}`"
+    manifest = {
+        "nodes": {
+            key: {"name": model, "relation_name": relation, "compiled_code": f"select * from {source}"},
+            "model.queries.raw_sheets_filtro_email_prontuario": {"relation_name": "`planilha_raw`"},
+        },
+        "sources": {"source.queries.dashboard_acolherio.filtro_email_dev": {"relation_name": source}},
+    }
+    monkeypatch.setattr(prontuario, "compile_graph", lambda: (manifest, [key]))
+    monkeypatch.setattr(prontuario, "load_sheet", Mock())
+    execute = Mock()
+    monkeypatch.setattr(prontuario, "execute", execute)
+    prefix = "projeto.dataset"
+    report = {}
+
+    if count:
+        _, references = prontuario.materialize(client, prefix, report)
+        assert references[relation] == f"{prefix}.{model}"
+        assert report["origem"] == {"modelo": model, "linhas": count}
+    else:
+        with pytest.raises(RuntimeError, match="seleção dbt de atendimentos está vazia"):
+            prontuario.materialize(client, prefix, report)
+
+    client.get_table.assert_called_once_with(f"{prefix}.{model}")
+    assert f"select * from `{prefix}.filtro_email`" in execute.call_args.args[1]
 
 
 def test_retry_reanexa_job_sem_reconstruir_ou_publicar_novamente(monkeypatch):
@@ -126,7 +145,6 @@ def test_variacao_reconciliada_e_divergencia(monkeypatch, divergencia):
     client = Mock()
     monkeypatch.setattr(prontuario.bigquery, "Client", lambda **_: client)
     client.get_job.side_effect = NotFound("job novo")
-    monkeypatch.setattr(prontuario, "scheduled_load", Mock())
     monkeypatch.setattr(prontuario, "materialize", lambda *_: ({}, {}))
     monkeypatch.setattr(prontuario, "compare_volumes", lambda *_: {"novas": 5, "removidas": 2})
     validate = Mock(side_effect=ValueError("divergência") if divergencia else None)

@@ -28,7 +28,7 @@ with linhas_preparadas as (
             id_atendimento,
             if(
                 count(distinct to_json_string(struct(id_unidade, id_tipo_atendimento, flag_cancelado))) > 1,
-                error('Contextos internos conflitantes para atendimento da programada'),
+                error('Contextos internos conflitantes para atendimento selecionado'),
                 array_agg(struct(id_unidade, id_tipo_atendimento, flag_cancelado) limit 1)[offset(0)]
             ) as contexto
         from eventos_origem
@@ -52,7 +52,7 @@ with linhas_preparadas as (
             e.contexto.id_tipo_atendimento as _id_tipo_atendimento,
             e.contexto.flag_cancelado as _flag_cancelado,
             c.codigo_cbo as _codigo_cbo
-        from {{ ref('raw_atendimentos_programada') }} as s
+        from {{ ref('int_atendimentos_selecionados') }} as s
         left join contextos as e on s.modulo = e.modulo and s.seq_atendimento = e.id_atendimento
         left join cbos as c on s.profissional_id = c.id_profissional and s.profissional_cbo_original = c.descricao
     ),

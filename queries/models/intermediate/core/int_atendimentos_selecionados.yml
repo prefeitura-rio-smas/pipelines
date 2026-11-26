@@ -1,7 +1,7 @@
 version: 2
 models:
-  - name: raw_atendimentos_programada
-    description: Fotografia materializada da programada original, preservando campos e multiplicidade. Executar após a conclusão da programada.
+  - name: int_atendimentos_selecionados
+    description: Seleção por atendimento e profissional a partir dos raws do AcolheRio, com os mesmos rankings da consulta programada.
     data_tests:
       - dbt_utils.unique_combination_of_columns:
           arguments:

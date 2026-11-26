@@ -1,5 +1,5 @@
 {{ config(materialized='ephemeral', enabled=target.name != 'prod', tags=['planilha_unificada']) }}
--- Endereço da captura da programada; cadastro para usuários sem atendimento.
+-- Endereço da seleção de atendimentos; cadastro para usuários sem atendimento.
 with foto as (
     select distinct
         id_usuario,
@@ -7,7 +7,7 @@ with foto as (
         endereco_numero as numero,
         endereco_complemento as complemento,
         referencia_ou_comunidade
-    from {{ ref('raw_atendimentos_programada') }}
+    from {{ ref('int_atendimentos_selecionados') }}
 ),
 
 cadastro as (

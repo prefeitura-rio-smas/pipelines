@@ -1,7 +1,7 @@
 version: 2
 models:
 - name: int_atendimentos_por_usuario
-  description: Eventos aceitos pelas regras da programada, com os profissionais selecionados aninhados. Exclui atendimentos cancelados (flag_cancelado = 'S'); classificação por profissional preservada; categoria do evento prioriza Recepção, Técnico e Outros.
+  description: Eventos aceitos pela seleção dbt, com os profissionais selecionados aninhados. Exclui atendimentos cancelados (flag_cancelado = 'S'); classificação por profissional preservada; categoria do evento prioriza Recepção, Técnico e Outros.
   columns:
   - name: id_usuario
     data_tests:

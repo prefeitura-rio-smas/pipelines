@@ -2,7 +2,6 @@
 # Relações vêm de constantes, UUIDs, metadados BigQuery e do manifesto dbt.
 """Reconstrução isolada e publicação do prontuário em staging."""
 import csv
-from datetime import datetime, time
 import io
 import json
 import logging
@@ -15,7 +14,6 @@ from tempfile import TemporaryDirectory
 from urllib.parse import urlsplit
 from urllib.request import urlopen
 from uuid import UUID
-from zoneinfo import ZoneInfo
 
 from google.api_core.exceptions import Conflict, NotFound
 from google.cloud import bigquery
@@ -24,11 +22,10 @@ PROJECT = "rj-smas-dev"
 LOCATION = "US"
 DESTINATION = f"{PROJECT}.abordagem.prontuario_eletronico"
 SHEET = f"{PROJECT}.dashboard_acolherio.filtro_email_dev"
-PROGRAMADA = f"{PROJECT}.dashboard_acolherio.dev_atendimentos"
 QUERIES = Path(__file__).resolve().parents[4] / "queries"
-TIMEZONE = ZoneInfo("America/Sao_Paulo")
 MART = "prontuario_eletronico"
 PUBLISHED_MART = "prontuario_cartoes"
+ATTENDANCE_SELECTION = "int_atendimentos_selecionados"
 PERMISSIONS = "int_filtro_email_unidades"
 TEST_PATH = "tests/prontuario_eletronico/"
 LOGGER = logging.getLogger(__name__)
@@ -46,35 +43,6 @@ def execute(client, sql, report, phase, *, config=None, job_id=None):
         job = client.get_job(job_id, location=LOCATION)
     report.setdefault("jobs", {})[phase] = job.job_id
     return job.result()
-
-
-def scheduled_load(client, now, report):
-    """Identifica a última execução agendada na janela de carga do dia local."""
-    start = datetime.combine(now.astimezone(TIMEZONE).date(), time(5), TIMEZONE)
-    config = bigquery.QueryJobConfig(query_parameters=[
-        bigquery.ScalarQueryParameter("inicio", "TIMESTAMP", start),
-    ])
-    rows = execute(client, f"""
-        SELECT job_id, creation_time, end_time, state, error_result IS NULL AS ok
-        FROM `{PROJECT}.region-us.INFORMATION_SCHEMA.JOBS_BY_PROJECT`
-        WHERE creation_time >= @inicio
-          AND destination_table.project_id = '{PROJECT}'
-          AND destination_table.dataset_id = 'dashboard_acolherio'
-          AND destination_table.table_id = 'dev_atendimentos'
-          AND STARTS_WITH(job_id, 'scheduled_query_')
-        ORDER BY creation_time DESC
-        LIMIT 1
-    """, report, "consulta_programada", config=config)
-    job = next(iter(rows), None)
-    if job is not None:
-        report["origem"] = {"job": job.job_id, "status": job.state}
-    if job is None or job.state != "DONE" or not job.ok:
-        raise RuntimeError("A consulta programada de atendimentos do dia ainda não concluiu com sucesso")
-    source = client.get_table(PROGRAMADA)
-    if not source.num_rows or not job.creation_time <= source.modified <= job.end_time:
-        raise RuntimeError("A tabela de atendimentos não corresponde à carga agendada do dia")
-    report["origem"] = {"job": job.job_id, "finalizacao": job.end_time.isoformat(), "linhas": source.num_rows}
-    return source
 
 
 def load_sheet(client, destination, report):
@@ -161,7 +129,7 @@ def compiled_sql(node, references):
     return sql
 
 
-def materialize(client, prefix, source, report):
+def materialize(client, prefix, report):
     manifest, ordered = compile_graph()
     nodes = manifest["nodes"]
     sheet = f"{prefix}.filtro_email"
@@ -174,13 +142,13 @@ def materialize(client, prefix, source, report):
         node = nodes[key]
         name = node["name"]
         relation = f"{prefix}.{name}"
-        if name == "raw_atendimentos_programada" and client.get_table(PROGRAMADA).etag != source.etag:
-            raise RuntimeError("A consulta programada mudou antes da captura")
         execute(client, f"CREATE TABLE `{relation}` AS\n{compiled_sql(node, references)}",
                 report, name)
-        if name == "raw_atendimentos_programada":
-            if client.get_table(PROGRAMADA).etag != source.etag or client.get_table(relation).num_rows != source.num_rows:
-                raise RuntimeError("A consulta programada mudou durante a captura")
+        if name == ATTENDANCE_SELECTION:
+            count = client.get_table(relation).num_rows
+            if not count:
+                raise RuntimeError("A seleção dbt de atendimentos está vazia")
+            report["origem"] = {"modelo": name, "linhas": count}
         references[node["relation_name"]] = relation
     return nodes, references
 
@@ -273,7 +241,7 @@ def validate(client, prefix, published, candidate, nodes, references, report):
         LEFT JOIN permissao p ON t.id_unidade = CAST(p.id_unidade AS STRING)
     """, report, "cadastros_chaves_emails")))
     checks.update(dict(row))
-    checks["programada"] = reconcile_attendance(client, prefix, report)
+    checks["atendimentos_selecionados"] = reconcile_attendance(client, prefix, report)
     if any(checks.values()):
         raise ValueError(f"Candidata diverge das fontes: {checks}")
 
@@ -292,7 +260,7 @@ def reconcile_attendance(client, prefix, report):
                 CONCAT(CAST(p.seq_atendimento AS STRING), p.modulo) AS evento,
                 COALESCE(CAST(p.profissional_id AS STRING), '') AS profissional,
                 COALESCE(CAST(p.id_atendimento AS STRING), '') AS legado, COUNT(*) AS n
-            FROM `{prefix}.raw_atendimentos_programada` p
+            FROM `{prefix}.{ATTENDANCE_SELECTION}` p
             JOIN `{prefix}.dim_usuarios` d ON p.id_usuario = d.id_usuario
             LEFT JOIN eventos e ON CONCAT(CAST(p.seq_atendimento AS STRING), p.modulo) = e.id_atendimento_modulo
             WHERE NOT COALESCE(e.cancelado, FALSE)
@@ -306,7 +274,7 @@ def reconcile_attendance(client, prefix, report):
         )
         SELECT COUNTIF(COALESCE(a.n, 0) != COALESCE(b.n, 0)) AS n
         FROM a FULL JOIN b USING (usuario, evento, profissional, legado)
-    """, report, "reconciliacao_programada")))
+    """, report, "reconciliacao_atendimentos")))
     return row.n
 
 
@@ -417,12 +385,11 @@ def refresh_prontuario(run_id, *, publish, report):
             finish_publication(client, prefix, report)
             return
 
-    source = scheduled_load(client, datetime.now(TIMEZONE), report)
     dataset = bigquery.Dataset(prefix)
     dataset.location = LOCATION
     dataset.default_table_expiration_ms = 24 * 60 * 60 * 1000
     client.create_dataset(dataset)
-    nodes, references = materialize(client, prefix, source, report)
+    nodes, references = materialize(client, prefix, report)
     current = client.get_table(DESTINATION)
     candidate = client.get_table(f"{prefix}.{MART}")
     validate(client, prefix, current, candidate, nodes, references, report)
