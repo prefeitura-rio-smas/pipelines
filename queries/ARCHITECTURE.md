@@ -18,6 +18,10 @@ Este documento descreve a organização e os princípios da arquitetura de dados
     - Limpezas básicas (`TRIM`, `UPPER`).
     - Abstração de nomes de sistemas (ex: pasta `prontuario_carioca_assistencia_social`).
 - **Materialização:** `view`.
+- **Política de ambiente:** sources que recebem dados dos flows de extração usam
+  `database: "{{ target.project }}"` para seguir o ambiente (prod → `rj-smas`;
+  staging/dev/ci → `rj-smas-dev`). Exceções cross-project são explícitas e
+  documentadas no próprio `_sources.yml` (ex.: `dashboard_arcgis_manuais`).
 
 ### `intermediate/` (Silver - Preparação)
 - **Objetivo:** Lógica modular e auxiliar.

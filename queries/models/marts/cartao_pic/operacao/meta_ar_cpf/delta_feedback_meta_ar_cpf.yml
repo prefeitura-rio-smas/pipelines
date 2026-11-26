@@ -3,7 +3,7 @@ version: 2
 sources:
   - name: arcgis_raw
     description: "Meta AR CPF — ArcGIS (SIURB)."
-    database: rj-smas
+    database: "{{ target.project }}"
     schema: arcgis_raw
     tables:
       - name: meta_ar_cpf_raw

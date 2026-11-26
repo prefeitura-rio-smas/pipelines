@@ -3,7 +3,7 @@ version: 2
 sources:
   - name: arcgis_raw
     description: "Feature Services do ArcGIS (SIURB) carregados pelos flows de extração."
-    database: rj-smas
+    database: "{{ target.project }}"
     schema: arcgis_raw
     tables:
       - name: abordagem_repeat_raw
