@@ -1,6 +1,6 @@
 {{ config(materialized='ephemeral', enabled=target.name != 'prod', tags=['planilha_unificada']) }}
 with perfil_geral as (
-    {{ pu_perfil_centro_pop_sql(ref('int_registros_centro_pop'), ref('int_atendimentos_por_usuario'), ref('dim_usuarios')) }}
+    {{ perfil_centro_pop(ref('int_registros_centro_pop'), ref('int_atendimentos_por_usuario'), ref('dim_usuarios')) }}
 ),
 
 registros_escopo as (
@@ -22,7 +22,7 @@ usuarios_escopo as (
     select id_usuario from atendimentos_escopo
 ),
 
-perfil_scoped as ({{ pu_perfil_centro_pop_sql('registros_escopo', 'atendimentos_escopo', 'usuarios_escopo') }}),
+perfil_scoped as ({{ perfil_centro_pop('registros_escopo', 'atendimentos_escopo', 'usuarios_escopo') }}),
 
 participacoes as (
     select * from registros_escopo

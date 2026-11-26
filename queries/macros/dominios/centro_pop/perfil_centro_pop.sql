@@ -1,4 +1,4 @@
-{% macro pu_perfil_centro_pop_sql(registros, atendimentos, usuarios) %}
+{% macro perfil_centro_pop(registros, atendimentos, usuarios) %}
 with encaminhamentos_historicos as (
     select
         r.id_usuario,
