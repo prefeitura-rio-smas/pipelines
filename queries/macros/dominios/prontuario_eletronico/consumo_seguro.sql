@@ -87,19 +87,19 @@ filtrados as (
         array(select as struct
             r.id_unidade,
             r.nome_unidade,
-            {{ pu_campos_perfil_centro_pop('r') }}
+            {{ campos_perfil_centro_pop('r') }}
         from unnest(b.centro_pop.registros) as r with offset as pos
         where cast(r.id_unidade as string) = b.id_unidade
         order by pos) as centro_pop_registros,
         array(select as struct
-            {{ pu_campos_historico_centro_pop('r') }}
+            {{ campos_historico_centro_pop('r') }}
         from unnest(b.centro_pop.historico_mensal) as r with offset as pos
         where cast(r.id_unidade as string) = b.id_unidade
         order by pos) as centro_pop_historico_mensal,
         array(select as struct
             r.id_unidade,
             r.nome_unidade,
-            {{ pu_campos_perfil_creas('r') }}
+            {{ campos_perfil_creas('r') }}
         from unnest(b.creas.registros) as r with offset as pos
         where cast(r.id_unidade as string) = b.id_unidade
         order by pos) as creas_registros,

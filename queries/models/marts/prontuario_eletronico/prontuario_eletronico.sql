@@ -75,7 +75,7 @@ cp_registros as (
             select as struct
                 u.id_unidade,
                 e.nome_unidade,
-                {{ pu_campos_perfil_centro_pop('u.centro_pop') }}
+                {{ campos_perfil_centro_pop('u.centro_pop') }}
         )] as registros
     from {{ ref('int_perfil_centro_pop') }} as p
     cross join unnest(p.registros) as u
@@ -89,7 +89,7 @@ historico_centro_pop as (
         array_agg(
             (
                 select as struct
-                    {{ pu_campos_historico_centro_pop('h') }}
+                    {{ campos_historico_centro_pop('h') }}
             )
             order by h.mes_referencia desc, h.id_unidade asc
         ) as historico_mensal
@@ -188,7 +188,7 @@ creas_por_unidade as (
             select as struct
                 p.id_unidade,
                 em.nome_unidade,
-                {{ pu_campos_perfil_creas('p.creas') }}
+                {{ campos_perfil_creas('p.creas') }}
         )] as registros
     from perfis_creas as p
     left join {{ ref('int_filtro_email_unidades') }} as em on p.id_unidade = em.id_unidade
@@ -534,7 +534,7 @@ select
         )]) as cp
     ) as centro_pop,
     struct(
-        {{ pu_campos_perfil_creas('cr_reg.creas') | trim | indent(8) }},
+        {{ campos_perfil_creas('cr_reg.creas') | trim | indent(8) }},
         coalesce(cr_reg.registros, []) as registros
     ) as creas,
     struct(

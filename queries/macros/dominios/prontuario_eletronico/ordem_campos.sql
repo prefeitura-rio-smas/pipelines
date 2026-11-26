@@ -1,4 +1,4 @@
-{% macro pu_campos_pai_atendimento_social(origem) %}
+{% macro campos_pai_atendimento_social_centro_pop(origem) %}
 {{ origem }}.unidades_atendimento,
 {{ origem }}.possui_registro_pai,
 {{ origem }}.data_ocorrencia_pai,
@@ -25,7 +25,7 @@
 {{ origem }}.observacoes_atendimento_social
 {% endmacro %}
 
-{% macro pu_campos_saude_rua_desligamento_participacao(origem) %}
+{% macro campos_saude_rua_desligamento_participacao_centro_pop(origem) %}
 {{ origem }}.data_ocorrencia_saude,
 {{ origem }}.origem_data_ocorrencia_saude,
 {{ origem }}.situacao_data_ocorrencia_saude,
@@ -63,12 +63,12 @@
 {{ origem }}.ultima_participacao_hora
 {% endmacro %}
 
-{% macro pu_campos_perfil_centro_pop(origem) %}
-    {{ pu_campos_pai_atendimento_social(origem) }},
-    {{ pu_campos_saude_rua_desligamento_participacao(origem) }}
+{% macro campos_perfil_centro_pop(origem) %}
+    {{ campos_pai_atendimento_social_centro_pop(origem) }},
+    {{ campos_saude_rua_desligamento_participacao_centro_pop(origem) }}
 {% endmacro %}
 
-{% macro pu_campos_perfil_creas(origem) %}
+{% macro campos_perfil_creas(origem) %}
 {{ origem }}.mse_id_unidade,
 {{ origem }}.mse_nome_unidade,
 {{ origem }}.mse_data_ocorrencia,
@@ -172,7 +172,7 @@
 {{ origem }}.passo_a_passo_ultima_hora
 {% endmacro %}
 
-{% macro pu_campos_historico_centro_pop(origem) %}
+{% macro campos_historico_centro_pop(origem) %}
 {{ origem }}.mes_referencia,
 {{ origem }}.id_unidade,
 {{ origem }}.nome_unidade,
@@ -185,9 +185,9 @@
 {{ origem }}.quantidade_atendimentos,
 {{ origem }}.quantidade_evolucoes,
 {{ origem }}.quantidade_participacoes,
-{{ pu_campos_pai_atendimento_social(origem) }},
+{{ campos_pai_atendimento_social_centro_pop(origem) }},
 {{ origem }}.data_ultimo_atend_tecnico_informada,
-{{ pu_campos_saude_rua_desligamento_participacao(origem) }},
+{{ campos_saude_rua_desligamento_participacao_centro_pop(origem) }},
 array(
     select as struct
         item2.id_atendimento,
