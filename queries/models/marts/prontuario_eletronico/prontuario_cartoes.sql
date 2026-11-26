@@ -2,7 +2,7 @@
 -- Projeção de publicação para os cartões do Looker. Uma linha por cidadão, unidade e conjunto de famílias
 -- do atendimento. Os nomes e tipos publicados são preservados.
 select  -- noqa: AM04
-    p.* replace (
+    p.* replace (  -- noqa: AM04
         if(
             grupo is null,
             p.familias,
