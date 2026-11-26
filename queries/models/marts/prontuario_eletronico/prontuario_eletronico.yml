@@ -9,7 +9,8 @@ models:
       id_unidade, nome_unidade e email_filtro são campos STRING no topo, referentes à unidade da linha.
       Cadastro e famílias se repetem nas unidades; eventos, perfis e contadores ficam restritos à unidade.
       Para contar pessoas, usar COUNT(DISTINCT id_usuario).
-      Os destinatários são metadados; o isolamento exige a consulta segura de consumo com DS_USER_EMAIL.
+      email_filtro contém a lista de destinatários da unidade. A fonte do Looker deve comparar o endereço completo
+      do visualizador com essa lista e negar acesso para identidade vazia. O acesso direto à tabela segue o IAM do BigQuery.
       Dados pessoais e perfil ficam em usuario; eventos têm quantidade, quantidade por serviço em campos diretos e registros.
       Evoluções não canceladas incluem registros sem formulário, com descrição legível.
       No cadastro, campos escalares são STRING com ausência como ''; no CREAS e alta, ausência é NULL. Bairro e raça/cor nulos
