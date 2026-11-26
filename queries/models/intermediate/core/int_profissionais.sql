@@ -106,7 +106,7 @@ final as (
     left join {{ ref('raw_contas_modulos') }} as cm on ope.id_login = cm.id_login
     left join {{ ref('raw_perfis_grupos') }} as pa on cm.id_perfil_acesso = pa.id_perfil_acesso
     left join ocupacoes as ocu on p.id_profissional = ocu.id_profissional
-    left join unidades_atuacao as ua on p.id_login = ua.id_login
+    left join unidades_atuacao as ua on ope.id_login = ua.id_login
     where upper(p.nome) not like '%TESTE%'
 )
 
