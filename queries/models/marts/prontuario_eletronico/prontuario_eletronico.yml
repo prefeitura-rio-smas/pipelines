@@ -7,7 +7,7 @@ models:
       Usuários sem vínculo com unidade mantêm uma linha com id_unidade vazio; registros sem unidade ficam nessa linha.
       Contrato por assunto: usuario, familias, projetos_sociais, atendimentos, evolucoes, centro_pop, creas e alta_complexidade.
       id_unidade, nome_unidade e email_filtro são campos STRING no topo, referentes à unidade da linha.
-      Cadastro e famílias se repetem nas unidades; eventos, perfis e contadores ficam restritos à unidade.
+      Cadastro e composição familiar se repetem nas unidades; serviços familiares, eventos, perfis e contadores ficam restritos à unidade.
       Para contar pessoas, usar COUNT(DISTINCT id_usuario).
       email_filtro contém a lista de destinatários da unidade. A fonte do Looker deve comparar o endereço completo
       do visualizador com essa lista e negar acesso para identidade vazia. O acesso direto à tabela segue o IAM do BigQuery.

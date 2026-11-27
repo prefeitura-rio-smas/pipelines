@@ -1,7 +1,7 @@
 {{ config(materialized='table', tags=['planilha_unificada']) }}
 -- Materializa a seleção uma vez para que os consumidores compartilhem os mesmos desempates.
 -- Seleção de linhas de atendimento e profissional a partir dos raws do AcolheRio.
--- Replica os rankings publicados, inclusive a chave de CBO sem o módulo e os empates sem ordem definida.
+-- Os rankings operam por módulo e consideram apenas participações não canceladas.
 WITH base_atendimentos AS (
     SELECT
         b.id_atendimento,
@@ -135,7 +135,8 @@ enriquecidos AS (
             ELSE cb.descricao
         END AS profissional_cbo,
         trim(upper(s.nome_operador)) AS cadastrante,
-        b.data_cadastro_atendimento
+        b.data_cadastro_atendimento,
+        b.flag_cancelado
 
     FROM atendimentos_explodidos AS b
     INNER JOIN {{ ref('raw_usuarios') }} AS p ON b.id_paciente = p.id_paciente
@@ -188,10 +189,8 @@ classificados AS (
             ELSE 'Não Informado'
         END AS idade_faixa,
 
-        concat(a.seq_atendimento, '-', a.profissional_id) AS id_atendimento,
-        concat(a.email_cas, ',', a.email_unidade, ',', z.email) AS email
+        concat(a.seq_atendimento, '-', a.profissional_id) AS id_atendimento
     FROM enriquecidos AS a
-    LEFT JOIN {{ source('dashboard_acolherio', 'filtro_email_dev') }} AS z ON a.unidade_atendimento = z.unidade_atendimento
 ),
 
 -- Seleção de projetos ativos no cadastro familiar, inclusive para atendimentos antigos.
@@ -215,23 +214,11 @@ projetos_por_familia AS (
 ),
 
 classificacao AS (
-    SELECT
-        *,
-        row_number() OVER (
-            PARTITION BY id_atendimento
-            ORDER BY data_cadastro_atendimento
-        ) AS cbo_unico_rank,
-        row_number() OVER (
-            PARTITION BY
-                profissional_id, hora_de_atendimento, data_de_atendimento,
-                nome_atendimento_original, id_usuario, unidade_atendimento
-        ) AS atendimento_unico_rank
-    FROM classificados
-    QUALIFY cbo_unico_rank = 1 AND atendimento_unico_rank = 1
+    {{ selecionar_participacoes_atendimento('classificados') }}
 )
 
 SELECT
-    a.*,
+    a.* EXCEPT (flag_cancelado),
     p.projetos_sociais
 FROM classificacao AS a
 LEFT JOIN projetos_por_familia AS p ON a.id_familia = p.id_familia

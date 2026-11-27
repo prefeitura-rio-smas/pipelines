@@ -93,7 +93,9 @@ Nossas pipelines são definidas na pasta `pipelines/`. Para rodar ou testar loca
 
 O deployment existente inclui o Prontuário via `dbt build --select +tag:daily`. Em produção, o dbt materializa `rj-smas.abordagem.prontuario_eletronico`.
 
-Para homologar, compare o build em um dataset isolado com a referência usando as mesmas fontes e data de referência.
+A mart diária `mart_planilha_unificada_centro_pop` continua disponível no grão por atendimento durante a migração dos consumidores.
+
+Antes da primeira publicação do Prontuário, rode o build em um dataset isolado. Compare esquema e dados com a referência usando as mesmas fontes, planilha de permissões e data de referência. No Looker, confirme o acesso por endereço completo com uma conta de uma única unidade, uma conta sem permissão e uma identidade vazia. Registre os resultados e a versão da imagem de produção para recuperação. Em caso de regressão, retome a última versão homologada do dbt e valide a relação publicada antes de liberar o acesso. Se já houver uma tabela em uso, preserve uma cópia recuperável antes do primeiro build com a nova versão.
 
 ---
 

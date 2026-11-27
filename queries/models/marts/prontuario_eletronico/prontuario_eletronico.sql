@@ -44,14 +44,32 @@ with familias_por_usuario as (
         group by id_usuario, id_familia
     ),
 
+    familias_core as (
+        select distinct
+            id_familia,
+            id_usuario_responsavel,
+            nome_responsavel,
+            flag_ativo,
+            data_ultima_modificacao
+        from {{ ref('int_familias') }}
+    ),
+
     familias as (
+        select * from familias_core
+        union all
         select distinct
             r.id_familia,
-            if(c.id_familia is null, r.id_usuario_responsavel, c.id_usuario_responsavel) as id_usuario_responsavel,
-            if(c.id_familia is null, r.flag_ativo, c.flag_ativo) as flag_ativo,
-            if(c.id_familia is null, r.data_ultima_modificacao, c.data_ultima_modificacao) as data_ultima_modificacao
+            r.id_usuario_responsavel,
+            cast(null as string) as nome_responsavel,
+            r.flag_ativo,
+            r.data_ultima_modificacao
         from {{ ref('raw_familias') }} as r
-        left join {{ ref('int_familias') }} as c on r.id_familia = c.id_familia
+        -- O core exige responsável cadastrado. Preservar famílias fora dessa cobertura.
+        where not exists (
+            select 1
+            from familias_core as c
+            where c.id_familia = r.id_familia
+        )
     ),
 
     -- Inclui responsáveis sem registro na tabela de membros.
@@ -138,7 +156,7 @@ with familias_por_usuario as (
         array_agg(struct(
             uf.id_familia,
             f.id_usuario_responsavel,
-            r.nome as nome_responsavel,
+            f.nome_responsavel,
             f.id_usuario_responsavel = uf.id_usuario as flag_responsavel_atual,
             f.flag_ativo,
             f.data_ultima_modificacao,
@@ -148,7 +166,6 @@ with familias_por_usuario as (
         ) order by uf.id_familia) as familias
     from usuarios_familias as uf
     left join familias as f on uf.id_familia = f.id_familia
-    left join {{ ref('dim_usuarios') }} as r on f.id_usuario_responsavel = r.id_usuario
     left join composicao_familiar as cf on uf.id_familia = cf.id_familia
     left join vinculos as v on uf.id_usuario = v.id_usuario and uf.id_familia = v.id_familia
     left join servicos as s on uf.id_familia = s.id_familia
@@ -496,15 +513,7 @@ select
                 from unnest(item1.vinculos) as item2 with offset as posicao
                 order by posicao
             ) as vinculos,
-            array(
-                select as struct
-                    coalesce(item2.nome_unidade, '') as nome_unidade,
-                    coalesce(cast(item2.nome_servico as string), '') as nome_servico,
-                    coalesce(cast(item2.data_cadastro as string), '') as data_cadastro,
-                    coalesce(cast(item2.data_cancelamento as string), '') as data_cancelamento
-                from unnest(item1.servicos) as item2 with offset as posicao
-                order by posicao
-            ) as servicos
+            {{ servicos_da_familia_na_unidade('item1.servicos', 'vinculo.id_unidade') }} as servicos
         from unnest(f.familias) as item1 with offset as posicao
         order by posicao
     ) as familias,

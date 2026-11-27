@@ -2,6 +2,23 @@
     safe_cast(trim(cast({{ coluna }} as string)) as int64)
 {%- endmacro %}
 
+{% macro selecionar_participacoes_atendimento(relacao) %}
+    select
+        *,
+        row_number() over (
+            partition by modulo, seq_atendimento, profissional_id
+            order by data_cadastro_atendimento
+        ) as cbo_unico_rank,
+        row_number() over (
+            partition by
+                modulo, profissional_id, hora_de_atendimento, data_de_atendimento,
+                nome_atendimento_original, id_usuario, unidade_atendimento
+        ) as atendimento_unico_rank
+    from {{ relacao }}
+    where {{ nao_cancelado('flag_cancelado') }}
+    qualify cbo_unico_rank = 1 and atendimento_unico_rank = 1
+{% endmacro %}
+
 {% macro agrupar_atendimentos() %}
 with linhas_preparadas as (
     with eventos_origem as (
@@ -51,7 +68,8 @@ with linhas_preparadas as (
 
     selecionados as (
         select
-            s.*,
+            s.* replace (p.email_cas as email_cas, p.email_unidade as email_unidade),
+            p.email_atendimento as email,
             e.contexto.id_unidade as _id_unidade,
             e.contexto.id_tipo_atendimento as _id_tipo_atendimento,
             e.contexto.flag_cancelado as _flag_cancelado,
@@ -59,10 +77,7 @@ with linhas_preparadas as (
         from {{ ref('int_acolherio_atendimentos') }} as s
         left join contextos as e on s.modulo = e.modulo and s.seq_atendimento = e.id_atendimento
         left join cbos as c on s.profissional_id = c.id_profissional and s.profissional_cbo_original = c.descricao
-    ),
-
-    enriquecidos as (
-        {{ aplicar_filtro_email('selecionados', ref('raw_unidades'), source('dashboard_acolherio', 'filtro_email_dev')) }}
+        left join {{ ref('int_filtro_email_unidades') }} as p on e.contexto.id_unidade = p.id_unidade
     ),
 
     datas as (
@@ -104,7 +119,7 @@ with linhas_preparadas as (
         b._id_tipo_atendimento,
         b._flag_cancelado,
         b._codigo_cbo
-    from enriquecidos as b
+    from selecionados as b
     left join datas on
         b.modulo = datas.modulo and b.seq_atendimento = datas.id_atendimento
         and b.id_usuario = datas.id_usuario and b._id_unidade = datas.id_unidade
