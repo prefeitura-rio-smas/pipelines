@@ -4,7 +4,6 @@ import argparse
 import json
 from pathlib import Path
 
-
 # Preserve column names and order in dashboard_acolherio.dev_atendimentos.
 PUBLIC_COLUMNS = """
 modulo CAS TIPO_UNIDADE UNIDADE_ATENDIMENTO EMAIL_UNIDADE EMAIL_CAS
