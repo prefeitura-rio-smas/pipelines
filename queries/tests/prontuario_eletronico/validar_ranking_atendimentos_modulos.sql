@@ -6,8 +6,10 @@
 
 with casos as (
     select [
-        struct(42 as seq_atendimento, 'u' as modulo, 'N' as flag_cancelado, date '2026-01-02' as data_cadastro_atendimento,
-            42 as id_usuario, 10 as id_familia, 'Psicólogo' as profissional_cbo),
+        struct(
+            42 as seq_atendimento, 'u' as modulo, 'N' as flag_cancelado, date '2026-01-02' as data_cadastro_atendimento,
+            42 as id_usuario, 10 as id_familia, 'Psicólogo' as profissional_cbo
+        ),
         struct(42, 'f', 'N', date '2026-01-01', 42, 10, 'Psicólogo'),
         struct(43, 'f', 'N', date '2026-01-01', 43, 10, 'Psicólogo'),
         struct(43, 'u', null, null, 43, 10, 'Psicólogo'),
@@ -30,8 +32,8 @@ with casos as (
 
 linhas as (
     select
-        posicao,
         evento.*,
+        posicao,
         7 as profissional_id,
         date '2026-01-01' as data_de_atendimento,
         'Recepção' as nome_atendimento_original,
@@ -55,19 +57,28 @@ candidatos_invertidos as (
 ),
 
 obtido as (
-    select 'direta' as ordem, a.*
+    select
+        'direta' as ordem,
+        a.*
     from ({{ selecionar_participacoes_atendimento('candidatos', campos, ['flag_cancelado']) }}) as a
     union all
-    select 'inversa' as ordem, a.*
+    select
+        'inversa' as ordem,
+        a.*
     from ({{ selecionar_participacoes_atendimento('candidatos_invertidos', campos, ['flag_cancelado']) }}) as a
 ),
 
 esperado as (
-    select ordem, evento.*, 'a@example.test' as email
+    select
+        evento.*,
+        ordem,
+        'a@example.test' as email
     from unnest(['direta', 'inversa']) as ordem
     cross join unnest([
-        struct(42 as seq_atendimento, 'f' as modulo, 'N' as flag_cancelado, date '2026-01-01' as data_cadastro_atendimento,
-            42 as id_usuario, 10 as id_familia, 'Psicólogo' as profissional_cbo),
+        struct(
+            42 as seq_atendimento, 'f' as modulo, 'N' as flag_cancelado, date '2026-01-01' as data_cadastro_atendimento,
+            42 as id_usuario, 10 as id_familia, 'Psicólogo' as profissional_cbo
+        ),
         struct(43, 'u', null, null, 43, 10, 'Psicólogo'),
         struct(44, 'u', 'S', date '2026-01-01', 44, 10, 'Psicólogo'),
         struct(45, 'u', 'N', date '2026-01-03', 45, 10, 'Psicólogo'),
@@ -79,17 +90,30 @@ esperado as (
 ),
 
 comparacao as (
-    select ordem, to_json_string(e) as linha, 1 as diferenca
+    select
+        ordem,
+        to_json_string((
+            select as struct
+                e.ordem,
+                e.* except (ordem)
+        )) as linha,
+        1 as diferenca
     from esperado as e
     union all
-    select ordem, to_json_string((select as struct a.* except (
-        profissional_id, data_de_atendimento, nome_atendimento_original, unidade_atendimento,
-        hora_de_atendimento, id_atendimento, cbo_unico_rank, atendimento_unico_rank
-    ))) as linha, -1 as diferenca
+    select
+        ordem,
+        to_json_string((select as struct a.* except (
+            profissional_id, data_de_atendimento, nome_atendimento_original, unidade_atendimento,
+            hora_de_atendimento, id_atendimento, cbo_unico_rank, atendimento_unico_rank
+        ))) as linha,
+        -1 as diferenca
     from obtido as a
 )
 
-select ordem, linha, sum(diferenca) as saldo
+select
+    ordem,
+    linha,
+    sum(diferenca) as saldo
 from comparacao
 group by ordem, linha
 having sum(diferenca) != 0
