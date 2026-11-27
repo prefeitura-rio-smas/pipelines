@@ -91,9 +91,38 @@ Nossas pipelines são definidas na pasta `pipelines/`. Para rodar ou testar loca
 
 #### Transformação diária do Prontuário
 
-O deployment existente inclui o Prontuário via `dbt build --select +tag:daily`. Em produção, o dbt materializa `rj-smas.abordagem.prontuario_eletronico`.
+O deployment existente inclui o Prontuário via `dbt build --select +tag:daily`. A homologação da seleção da Medallion acontece em desenvolvimento, com a busca agendada ativa.
 
-Antes da primeira publicação do Prontuário, rode o build em um dataset isolado. Compare esquema e dados com a referência usando as mesmas fontes, planilha de permissões e data de referência. No Looker, confirme o acesso por endereço completo com uma conta de uma única unidade, uma conta sem permissão e uma identidade vazia. Registre os resultados e a versão da imagem de produção para recuperação. Em caso de regressão, retome a última versão homologada do dbt e valide a relação publicada antes de liberar o acesso. Se já houver uma tabela em uso, preserve uma cópia recuperável antes do primeiro build com a nova versão.
+Antes da publicação em desenvolvimento, valide a autorização no ambiente isolado com uma conta de uma única unidade, uma conta sem permissão e uma identidade vazia. Registre o commit e os resultados da homologação. Preserve uma cópia recuperável da publicação atual antes da primeira promoção incremental.
+
+Para a homologação, execute o build como job dbt e use um identificador de execução novo a cada candidata completa. Por exemplo, `schema_id: prontuario_homologacao_001` gera `rj-smas-dev.ci_prontuario_homologacao_001`.
+
+```bash
+dbt build --project-dir queries --profiles-dir queries --target ci \
+    --vars '{schema_id: prontuario_homologacao_001}' --select +prontuario_eletronico
+```
+
+A busca agendada e a Medallion executam o mesmo cálculo em jobs independentes, cada uma lendo os raws e a planilha. A programada publica as colunas legadas em `rj-smas-dev.dashboard_acolherio.dev_atendimentos`. Gere novamente o SQL versionado quando o cálculo ou seus raws mudarem, usando o perfil `ci`:
+
+```bash
+dbt compile --project-dir queries --profiles-dir queries --target ci \
+    --target-path "$PWD/queries/target" --no-introspect --select +int_acolherio_atendimentos
+python queries/scheduled/render_atendimentos.py queries/target/manifest.json \
+    > queries/scheduled/atendimentos.sql
+```
+
+Para homologar, grave uma cópia autorizada da planilha real em um dataset isolado. Fixe o mesmo timestamp de time travel para os raws e a mesma data de referência nas cópias de teste do SQL. Rode duas execuções de cada pipeline, redirecionando os destinos da programada para tabelas isoladas. Compare chaves, valores de todas as colunas comuns e contagem por linha completa no total e em Centro POP. Exija zero diferenças, inclusive entre as duas execuções de cada pipeline. Valide também esquema, grão pessoa–unidade e ordem dos arrays nas duas OBTs.
+
+Execute a versão anterior da programada sobre a mesma fotografia e registre a variação de população e multiplicidade por profissional, hora, data, nome original, usuário e unidade. Conte trocas de ID, família, CBO e classificação no total e em Centro POP. Para grupos eliminados pelo `QUALIFY`, registre os vencedores dos dois rankings. Mudanças de população nessa transição exigem revisão explícita. A planilha real é requisito para a homologação.
+
+Após o aceite, preserve cópias recuperáveis das duas saídas e do SQL anterior. Atualize o SQL da configuração existente da programada em desenvolvimento e publique a OBT pelo job incremental abaixo. Compare as saídas após a primeira execução independente de cada pipeline. Se divergirem, restaure o SQL anterior e as saídas preservadas.
+
+```bash
+dbt run-operation publicar_prontuario_dev --project-dir queries --profiles-dir queries \
+    --target dev --args '{schema_candidata: ci_prontuario_homologacao_001}'
+```
+
+A operação publica em `rj-smas-dev.abordagem.prontuario_eletronico` e registra a versão da candidata na mesma transação que insere, atualiza e exclui linhas. Para ensaiar a publicação, passe `schema_destino` com o nome de outro dataset isolado `ci_prontuario_*`. Em conflito de atualização concorrente, repita a operação com a mesma candidata após a conclusão da carga mais recente.
 
 #### Planilha Unificada do Centro POP
 
@@ -108,7 +137,7 @@ select
     p.usuario,
     mes.* except (id_unidade, nome_unidade, atendimentos, evolucoes, ocorrencias),
     atendimento
-from `rj-smas.abordagem.prontuario_eletronico` as p
+from `rj-smas-dev.abordagem.prontuario_eletronico` as p
 cross join unnest(p.centro_pop.historico_mensal) as mes
 cross join unnest(mes.atendimentos) as atendimento
 where

@@ -2,61 +2,53 @@
     safe_cast(trim(cast({{ coluna }} as string)) as int64)
 {%- endmacro %}
 
-{% macro selecionar_participacoes_atendimento(relacao) %}
+{% macro selecionar_participacoes_atendimento(relacao, campos_comuns=none, campos_internos=none) %}
+    {% set campos_comuns = campos_comuns if campos_comuns is not none else [
+        'modulo', 'cas', 'tipo_unidade', 'unidade_atendimento', 'email_unidade', 'email_cas',
+        'seq_atendimento', 'data_de_atendimento', 'hora_de_atendimento_original', 'hora_de_atendimento',
+        'id_usuario', 'id_familia', 'nome_usuario', 'documentacao', 'numero_documento',
+        'endereco', 'endereco_numero', 'endereco_complemento', 'bairro', 'referencia_ou_comunidade',
+        'nome_atendimento_original', 'data_nascimento', 'idade', 'raca_cor', 'sexo',
+        'profissional_id', 'profissional', 'profissional_cbo_original', 'profissional_cbo',
+        'cadastrante', 'data_cadastro_atendimento', 'tipo_atendimento', 'nome_atendimento',
+        'idade_faixa', 'id_atendimento', 'email'
+    ] %}
+    {% set campos_internos = campos_internos if campos_internos is not none else [
+        '_id_unidade', '_id_tipo_atendimento', '_flag_cancelado'
+    ] %}
+    {% set desempate_comum = 'to_json_string(struct(a.' ~ campos_comuns | join(', a.') ~ ')) asc' %}
+    {% set ordem_interna = [] %}
+    {% if campos_internos %}
+        {% set ordem_interna = ['to_json_string(struct(a.' ~ campos_internos | join(', a.') ~ ')) asc'] %}
+    {% endif %}
+    {% set ordem = [
+        'a.data_cadastro_atendimento asc nulls first',
+        'a.seq_atendimento asc',
+        'a.modulo asc',
+        desempate_comum
+    ] %}
     select
-        *,
-        row_number() over (
-            partition by modulo, seq_atendimento, profissional_id
-            order by data_cadastro_atendimento
+        a.*,
+        -- Cópias idênticas podem liderar o primeiro ranking. O segundo mantém só uma.
+        rank() over (
+            partition by id_atendimento
+            order by
+                {{ ordem | join(",\n                ") }}
         ) as cbo_unico_rank,
         row_number() over (
             partition by
-                modulo, profissional_id, hora_de_atendimento, data_de_atendimento,
+                profissional_id, hora_de_atendimento, data_de_atendimento,
                 nome_atendimento_original, id_usuario, unidade_atendimento
+            order by
+                {{ (ordem + ordem_interna) | join(",\n                ") }}
         ) as atendimento_unico_rank
-    from {{ relacao }}
-    where {{ nao_cancelado('flag_cancelado') }}
+    from {{ relacao }} as a
     qualify cbo_unico_rank = 1 and atendimento_unico_rank = 1
 {% endmacro %}
 
 {% macro agrupar_atendimentos() %}
 with linhas_preparadas as (
-    with eventos_origem as (
-        select
-            modulo,
-            id_atendimento,
-            id_paciente as id_usuario,
-            id_unidade,
-            id_tipo_atendimento,
-            flag_cancelado,
-            data_atendimento
-        from {{ ref('raw_atendimentos_usuarios') }}
-        union all
-        select
-            modulo,
-            id_atendimento,
-            id_paciente as id_usuario,
-            id_unidade,
-            id_tipo_atendimento,
-            flag_cancelado,
-            data_atendimento
-        from {{ ref('raw_atendimentos_familias') }}
-    ),
-
-    contextos as (
-        select
-            modulo,
-            id_atendimento,
-            if(
-                count(distinct to_json_string(struct(id_unidade, id_tipo_atendimento, flag_cancelado))) > 1,
-                error('Contextos internos conflitantes para atendimento selecionado'),
-                array_agg(struct(id_unidade, id_tipo_atendimento, flag_cancelado) limit 1)[offset(0)]
-            ) as contexto
-        from eventos_origem
-        group by modulo, id_atendimento
-    ),
-
-    cbos as (
+    with cbos as (
         select
             p.id_profissional,
             c.descricao,
@@ -64,31 +56,6 @@ with linhas_preparadas as (
         from {{ ref('raw_profissionais_ocupacoes') }} as p
         inner join {{ ref('raw_cbo') }} as c on p.codigo_cbo = c.codigo_cbo
         group by p.id_profissional, c.descricao
-    ),
-
-    selecionados as (
-        select
-            s.* replace (p.email_cas as email_cas, p.email_unidade as email_unidade),
-            p.email_atendimento as email,
-            e.contexto.id_unidade as _id_unidade,
-            e.contexto.id_tipo_atendimento as _id_tipo_atendimento,
-            e.contexto.flag_cancelado as _flag_cancelado,
-            c.codigo_cbo as _codigo_cbo
-        from {{ ref('int_acolherio_atendimentos') }} as s
-        left join contextos as e on s.modulo = e.modulo and s.seq_atendimento = e.id_atendimento
-        left join cbos as c on s.profissional_id = c.id_profissional and s.profissional_cbo_original = c.descricao
-        left join {{ ref('int_filtro_email_unidades') }} as p on e.contexto.id_unidade = p.id_unidade
-    ),
-
-    datas as (
-        select
-            modulo,
-            id_atendimento,
-            id_usuario,
-            id_unidade,
-            if(count(distinct data_atendimento) > 1, error('Datas conflitantes para atendimento'), min(data_atendimento)) as data_atendimento
-        from eventos_origem
-        group by modulo, id_atendimento, id_usuario, id_unidade
     )
 
     select
@@ -99,7 +66,7 @@ with linhas_preparadas as (
         b.email_unidade,
         b.email_cas,
         b.seq_atendimento,
-        datas.data_atendimento as data_de_atendimento,
+        b.data_de_atendimento,
         b.hora_de_atendimento,
         b.id_usuario,
         b.id_familia,
@@ -118,11 +85,9 @@ with linhas_preparadas as (
         b._id_unidade,
         b._id_tipo_atendimento,
         b._flag_cancelado,
-        b._codigo_cbo
-    from selecionados as b
-    left join datas on
-        b.modulo = datas.modulo and b.seq_atendimento = datas.id_atendimento
-        and b.id_usuario = datas.id_usuario and b._id_unidade = datas.id_unidade
+        c.codigo_cbo as _codigo_cbo
+    from {{ ref('int_acolherio_atendimentos') }} as b
+    left join cbos as c on b.profissional_id = c.id_profissional and b.profissional_cbo_original = c.descricao
 
 ),
 
@@ -185,7 +150,6 @@ eventos as (
             'Não'
         ) as atendimento_compartilhado
     from linhas_preparadas
-    where {{ nao_cancelado('_flag_cancelado') }}
     group by
         id_usuario, id_atendimento_modulo, id_atendimento, origem_modulo,
         id_unidade, nome_unidade, tipo_servico, id_tipo_atendimento,

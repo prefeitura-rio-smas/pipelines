@@ -1,7 +1,7 @@
 version: 2
 models:
   - name: int_acolherio_atendimentos
-    description: Seleção de participações não canceladas por atendimento, módulo e profissional a partir dos raws do AcolheRio.
+    description: Seleção materializada de participações dos raws do AcolheRio com os rankings e filtros da busca programada.
     data_tests:
       - dbt_utils.unique_combination_of_columns:
           arguments:

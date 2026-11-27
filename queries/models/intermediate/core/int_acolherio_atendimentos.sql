@@ -1,7 +1,7 @@
 {{ config(materialized='table', tags=['planilha_unificada']) }}
 -- Materializa a seleção uma vez para que os consumidores compartilhem os mesmos desempates.
 -- Seleção de linhas de atendimento e profissional a partir dos raws do AcolheRio.
--- Os rankings operam por módulo e consideram apenas participações não canceladas.
+-- Mantém as partições da busca programada com desempate determinístico.
 WITH base_atendimentos AS (
     SELECT
         b.id_atendimento,
@@ -136,7 +136,9 @@ enriquecidos AS (
         END AS profissional_cbo,
         trim(upper(s.nome_operador)) AS cadastrante,
         b.data_cadastro_atendimento,
-        b.flag_cancelado
+        b.id_unidade AS _id_unidade,
+        b.id_tipo_atendimento AS _id_tipo_atendimento,
+        b.flag_cancelado AS _flag_cancelado
 
     FROM atendimentos_explodidos AS b
     INNER JOIN {{ ref('raw_usuarios') }} AS p ON b.id_paciente = p.id_paciente
@@ -189,8 +191,10 @@ classificados AS (
             ELSE 'Não Informado'
         END AS idade_faixa,
 
-        concat(a.seq_atendimento, '-', a.profissional_id) AS id_atendimento
+        concat(a.seq_atendimento, '-', a.profissional_id) AS id_atendimento,
+        concat(a.email_cas, ',', a.email_unidade, ',', z.email) AS email
     FROM enriquecidos AS a
+    LEFT JOIN {{ ref('raw_sheets_filtro_email_prontuario') }} AS z ON a.unidade_atendimento = z.unidade_atendimento
 ),
 
 -- Seleção de projetos ativos no cadastro familiar, inclusive para atendimentos antigos.
@@ -218,7 +222,7 @@ classificacao AS (
 )
 
 SELECT
-    a.* EXCEPT (flag_cancelado),
+    a.*,
     p.projetos_sociais
 FROM classificacao AS a
 LEFT JOIN projetos_por_familia AS p ON a.id_familia = p.id_familia

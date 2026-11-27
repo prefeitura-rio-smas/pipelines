@@ -15,7 +15,6 @@ with esperado as (
     from (
         {{ agrupar_atendimentos() }}
     ) as p
-    inner join {{ ref('dim_usuarios') }} as usuario_atendimento on p.id_usuario = usuario_atendimento.id_usuario
     cross join unnest(p.atendimentos) as a
     cross join unnest(a.profissionais) as prof
     union all
@@ -74,11 +73,36 @@ diferencas as (
         to_json_string(o) as registro,
         -1 as sinal
     from obtido as o
+),
+
+selecao as (
+    select
+        to_json_string(struct(
+            cast(id_usuario as string) as id_usuario,
+            coalesce(cast(_id_unidade as string), '') as id_unidade,
+            coalesce(concat(seq_atendimento, modulo), '') as id_evento,
+            coalesce(cast(profissional_id as string), '') as profissional
+        )) as registro,
+        1 as sinal
+    from {{ ref('int_acolherio_atendimentos') }}
+    union all
+    select
+        to_json_string(struct(id_usuario, id_unidade, id_evento, profissional)) as registro,
+        -1 as sinal
+    from obtido
+    where origem = 'atendimento'
 )
 
 select
     registro,
     sum(sinal) as diferenca
 from diferencas
+group by registro
+having sum(sinal) != 0
+union all
+select
+    registro,
+    sum(sinal) as diferenca
+from selecao
 group by registro
 having sum(sinal) != 0

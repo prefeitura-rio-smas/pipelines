@@ -186,7 +186,7 @@ models:
           STRUCT com quantidade INT64, contadores por serviço e registros ARRAY<STRUCT>.
           Cada registro representa uma participação da programada, inclusive com ID profissional vazio.
           Participações do mesmo evento repetem id_atendimento_modulo, data e flag de compartilhamento.
-          Atendimentos cancelados são excluídos.
+          O universo de atendimentos segue a seleção da busca programada, inclusive quanto a cancelamentos.
       - name: atendimentos.quantidade
         description: Número de participações da unidade da linha, igual ao tamanho de atendimentos.registros. Os contadores por serviço usam o mesmo grão.
         data_tests: [not_null]
