@@ -7,9 +7,7 @@ with foto as (
         endereco_numero as numero,
         endereco_complemento as complemento,
         referencia_ou_comunidade
-    from (
-        {{ selecionar_atendimentos() }}
-    )
+    from {{ ref('int_acolherio_atendimentos') }}
 ),
 
 cadastro as (
