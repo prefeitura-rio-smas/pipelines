@@ -49,8 +49,8 @@ models:
       +schema: "{{ 'marts' if target.name == 'prod' else 'relatorio' }}"
 
       prontuario_eletronico:
-        +enabled: "{{ target.name != 'prod' or var('prontuario_publicacao', false) }}"
-        +tags: ["planilha_unificada"]
+        +schema: "{{ 'abordagem' if target.name == 'prod' else 'relatorio' }}"
+        +tags: ["daily", "planilha_unificada"]
 
       core:
         # Star schema conformado: dims em dimensions/ e fatos em facts/ (thin

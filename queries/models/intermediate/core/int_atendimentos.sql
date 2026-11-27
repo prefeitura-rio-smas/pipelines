@@ -50,7 +50,7 @@ uniao_atendimentos_base as (
 
 -- Normaliza o principal uma vez, antes de combinar os profissionais do atendimento.
 atendimentos_normalizados as (
-    select * replace (safe_cast(trim(cast(id_profissional as string)) as int64) as id_profissional)
+    select * replace ({{ normalizar_profissional_atendimento('id_profissional') }} as id_profissional)
     from uniao_atendimentos_base
 ),
 

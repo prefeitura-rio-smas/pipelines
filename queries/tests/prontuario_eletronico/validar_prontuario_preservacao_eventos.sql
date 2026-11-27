@@ -1,4 +1,4 @@
-{{ config(enabled=target.name != 'prod' or var('prontuario_publicacao', false), tags=['planilha_unificada']) }}
+{{ config(tags=['planilha_unificada']) }}
 -- Comparar identidade, unidade, data e multiplicidade de participações e evoluções.
 with esperado as (
     select
@@ -12,7 +12,9 @@ with esperado as (
         coalesce(prof.id_atendimento_legado, '') as id_atendimento_legado,
         coalesce(prof.classificacao_atendimento, '') as classificacao,
         a.atendimento_compartilhado
-    from {{ ref('int_atendimentos_por_usuario') }} as p
+    from (
+    {{ agrupar_atendimentos() }}
+) as p
     inner join {{ ref('dim_usuarios') }} as u on p.id_usuario = u.id_usuario
     cross join unnest(p.atendimentos) as a
     cross join unnest(a.profissionais) as prof
@@ -28,7 +30,9 @@ with esperado as (
         '' as id_atendimento_legado,
         '' as classificacao,
         '' as atendimento_compartilhado
-    from {{ ref('int_evolucoes_por_usuario') }} as e
+    from (
+    {{ preparar_evolucoes() }}
+) as e
     inner join {{ ref('dim_usuarios') }} as u on e.id_usuario = u.id_usuario
 ),
 

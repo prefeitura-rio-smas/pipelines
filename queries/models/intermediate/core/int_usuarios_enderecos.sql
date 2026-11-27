@@ -1,4 +1,4 @@
-{{ config(materialized='ephemeral', enabled=target.name != 'prod' or var('prontuario_publicacao', false), tags=['planilha_unificada']) }}
+{{ config(materialized='ephemeral', tags=['planilha_unificada']) }}
 -- Endereço da seleção de atendimentos; cadastro para usuários sem atendimento.
 with foto as (
     select distinct
@@ -7,11 +7,19 @@ with foto as (
         endereco_numero as numero,
         endereco_complemento as complemento,
         referencia_ou_comunidade
-    from {{ ref('int_atendimentos_selecionados') }}
+    from (
+    {{ selecionar_atendimentos() }}
+)
 ),
 
 cadastro as (
-    select distinct * from {{ ref('raw_usuarios_enderecos') }}
+    select distinct
+        id_paciente,
+        trim(regexp_replace(logradouro, r'[,\s;]+', ' ')) as logradouro,
+        trim(regexp_replace(numero_endereco, r'[,\s;]+', ' ')) as numero,
+        trim(regexp_replace(complemento_endereco, r'[,\s;]+', ' ')) as complemento,
+        trim(regexp_replace(ponto_referencia, r'[,\s;]+', ' ')) as referencia_ou_comunidade
+    from {{ ref('raw_usuarios') }}
 )
 
 select

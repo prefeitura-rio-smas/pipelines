@@ -1,4 +1,3 @@
-{{ config(alias='planilha_unificada', schema=var('pu_candidato_schema', 'pu_candidatos')) }}
 {% set origens_vinculos = [
     'atendimentos_por_usuario',
     'registros_evolucoes',
@@ -11,7 +10,152 @@
 ] %}
 -- noqa: disable=ST06
 -- Contrato por assunto; identificadores públicos restritos aos campos autorizados.
-with encaminhamentos_centro_pop as (
+with familias_por_usuario as (
+    with membros as (
+        select distinct
+            m.id_paciente as id_usuario,
+            m.id_familia,
+            m.id_membro,
+            m.id_familia_nova,
+            m.id_motivo_saida,
+            m.data_entrada,
+            m.data_saida,
+            m.parentesco_responsavel,
+            ms.descricao_motivo_saida as motivo_saida
+        from {{ ref('raw_membros_familia') }} as m
+        left join {{ ref('raw_familias_motivos_saida') }} as ms on m.id_motivo_saida = ms.id_motivo_saida
+        where m.id_paciente is not null and m.id_familia is not null
+    ),
+
+    vinculos as (
+        select
+            id_usuario,
+            id_familia,
+            array_agg(struct(
+                id_membro,
+                id_familia_nova,
+                id_motivo_saida,
+                data_entrada,
+                data_saida,
+                parentesco_responsavel,
+                motivo_saida
+            ) order by data_entrada, id_membro, data_saida, id_familia_nova, id_motivo_saida, parentesco_responsavel) as vinculos
+        from membros
+        group by id_usuario, id_familia
+    ),
+
+    familias as (
+        select distinct
+            r.id_familia,
+            if(c.id_familia is null, r.id_usuario_responsavel, c.id_usuario_responsavel) as id_usuario_responsavel,
+            if(c.id_familia is null, r.flag_ativo, c.flag_ativo) as flag_ativo,
+            if(c.id_familia is null, r.data_ultima_modificacao, c.data_ultima_modificacao) as data_ultima_modificacao
+        from {{ ref('raw_familias') }} as r
+        left join {{ ref('int_familias') }} as c using (id_familia)
+    ),
+
+    -- Inclui responsáveis sem registro na tabela de membros.
+    usuarios_familias as (
+        select
+            id_usuario,
+            id_familia
+        from membros
+        union distinct
+        select
+            id_usuario_responsavel as id_usuario,
+            id_familia
+        from familias
+        where id_usuario_responsavel is not null and id_familia is not null
+    ),
+
+    membros_atuais_candidatos as (
+        select
+            id_familia,
+            id_usuario,
+            parentesco_responsavel,
+            data_entrada,
+            id_membro,
+            0 as prioridade_responsavel
+        from membros
+        where data_saida is null
+        union all
+        select
+            id_familia,
+            id_usuario_responsavel as id_usuario,
+            'Responsável' as parentesco_responsavel,
+            null as data_entrada,
+            null as id_membro,
+            1 as prioridade_responsavel
+        from familias
+        where id_usuario_responsavel is not null and id_familia is not null
+    ),
+
+    membros_atuais_unicos as (
+        select
+            id_familia,
+            id_usuario,
+            parentesco_responsavel
+        from membros_atuais_candidatos
+        qualify row_number() over (
+            partition by id_familia, id_usuario
+            order by prioridade_responsavel desc, data_entrada desc, id_membro desc, parentesco_responsavel asc
+        ) = 1
+    ),
+
+    composicao_familiar as (
+        select
+            m.id_familia,
+            array_agg(struct(
+                m.id_usuario,
+                u.nome,
+                m.parentesco_responsavel
+            ) order by coalesce(u.nome, ''), m.id_usuario) as membros
+        from membros_atuais_unicos as m
+        left join {{ ref('dim_usuarios') }} as u on m.id_usuario = u.id_usuario
+        group by m.id_familia
+    ),
+
+    servicos as (
+        select
+            s.id_familia,
+            array_agg(struct(
+                h.id_servico_assistencial,
+                h.id_unidade,
+                u.nome_unidade,
+                h.id_profissional as id_login_cadastro,
+                h.data_cadastro,
+                h.data_cancelamento,
+                h.nome_servico_socioassistencial as nome_servico
+            ) order by h.data_cadastro, h.id_servico_assistencial, h.id_unidade, h.data_cancelamento, h.id_profissional) as servicos
+        from {{ ref('int_servicos_agregados') }} as s,
+            unnest(s.servicos_historico) as h
+        left join {{ ref('dim_unidades') }} as u on h.id_unidade = u.id_unidade
+        group by s.id_familia
+    )
+
+    select
+        uf.id_usuario,
+        array_agg(struct(
+            uf.id_familia,
+            f.id_usuario_responsavel,
+            r.nome as nome_responsavel,
+            f.id_usuario_responsavel = uf.id_usuario as flag_responsavel_atual,
+            f.flag_ativo,
+            f.data_ultima_modificacao,
+            coalesce(cf.membros, []) as membros,
+            coalesce(v.vinculos, []) as vinculos,
+            coalesce(s.servicos, []) as servicos
+        ) order by uf.id_familia) as familias
+    from usuarios_familias as uf
+    left join familias as f on uf.id_familia = f.id_familia
+    left join {{ ref('dim_usuarios') }} as r on f.id_usuario_responsavel = r.id_usuario
+    left join composicao_familiar as cf on uf.id_familia = cf.id_familia
+    left join vinculos as v on uf.id_usuario = v.id_usuario and uf.id_familia = v.id_familia
+    left join servicos as s on uf.id_familia = s.id_familia
+    group by uf.id_usuario
+),
+
+encaminhamentos_centro_pop as (
     select
         id_usuario,
         id_unidade,
@@ -93,7 +237,7 @@ historico_centro_pop as (
             )
             order by h.mes_referencia desc, h.id_unidade asc
         ) as historico_mensal
-    from {{ ref('int_centro_pop_historico_mensal') }} as h
+    from {{ ref('int_resumo_centro_pop') }} as h
     group by h.id_usuario, h.id_unidade
 ),
 
@@ -106,7 +250,9 @@ projetos_por_usuario as (
             coalesce({{ map_nome_projeto_social('ps.id_projeto_social') }}, format('Projeto não mapeado (ID %d)', ps.id_projeto_social)) as nome_projeto_social,
             ps.id_projeto_social, ps.id_unidade, un.nome_unidade, ps.indicador_ativo, ps.data_cadastro, ps.data_cancelamento
         ) order by ps.id_projeto_social, ps.id_unidade) as projetos_sociais
-    from {{ ref('int_projetos_sociais') }} as ps
+    from (
+    {{ projetos_dos_membros() }}
+) as ps
     inner join {{ ref('dim_usuarios') }} as u on ps.id_usuario = u.id_usuario
     left join {{ ref('dim_unidades') }} as un on ps.id_unidade = un.id_unidade
     group by u.id_usuario, ps.id_unidade
@@ -123,7 +269,9 @@ atendimentos_por_usuario as (
             ))
             order by pos_evento, pos_profissional
         ) as atendimentos
-    from {{ ref('int_atendimentos_por_usuario') }} as p
+    from (
+    {{ agrupar_atendimentos() }}
+) as p
     cross join unnest(p.atendimentos) as a with offset as pos_evento
     cross join unnest(a.profissionais) as profissional with offset as pos_profissional
     group by p.id_usuario, a.id_unidade
@@ -134,7 +282,7 @@ formularios_por_evolucao as (
         p.id_usuario,
         f.id_evolucao_modulo,
         array_agg(struct(f.titulo_formulario, f.observacoes, f.campos, f.data_ocorrencia, f.origem_data_ocorrencia, f.situacao_data_ocorrencia) order by posicao) as formularios
-    from {{ ref('int_formularios_por_usuario') }} as p, unnest(p.formularios) as f with offset as posicao
+    from ({{ agrupar_formularios(ref('int_formularios')) }}) as p, unnest(p.formularios) as f with offset as posicao
     group by p.id_usuario, f.id_evolucao_modulo
 ),
 
@@ -149,7 +297,9 @@ registros_evolucoes as (
             {{ texto_html_legivel('e.descricao_evolucao') }} as descricao_evolucao,
             coalesce(f.formularios, []) as formularios
         ) order by e.data_evolucao, e.id_evolucao_modulo) as evolucoes
-    from {{ ref('int_evolucoes_por_usuario') }} as e
+    from (
+    {{ preparar_evolucoes() }}
+) as e
     left join formularios_por_evolucao as f on e.id_usuario = f.id_usuario and e.id_evolucao_modulo = f.id_evolucao_modulo
     group by e.id_usuario, e.id_unidade
 ),
@@ -556,7 +706,7 @@ left join projetos_por_usuario as proj
         p.id_usuario = proj.id_usuario
         and vinculo.id_unidade is not distinct from proj.id_unidade
 left join {{ ref('int_usuarios_enderecos') }} as end_bi on p.id_usuario = end_bi.id_usuario
-left join {{ ref('int_usuarios_familias') }} as f on p.id_usuario = f.id_usuario
+left join familias_por_usuario as f on p.id_usuario = f.id_usuario
 left join atendimentos_por_usuario as a
     on
         p.id_usuario = a.id_usuario

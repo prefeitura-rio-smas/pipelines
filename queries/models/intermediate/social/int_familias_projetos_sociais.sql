@@ -1,17 +1,5 @@
 {{ config(materialized="ephemeral") }}
 
--- Projetos sociais agregados por família
-with projetos as (
-    select
-        id_familia,
-        array_agg(struct(
-            id_projeto_social,
-            id_unidade,
-            indicador_ativo,
-            data_cadastro,
-            data_cancelamento
-        )) as projetos_sociais
-    from {{ ref('raw_familias_projetos_sociais') }}
-    group by id_familia
-)
-select * from projetos
+select id_familia, array_agg((select as struct p.* except (id_familia))) as projetos_sociais
+from ({{ registros_projetos_sociais() }}) as p
+group by id_familia

@@ -1,4 +1,4 @@
-{{ config(enabled=target.name != 'prod' or var('prontuario_publicacao', false), tags=['planilha_unificada', 'pu_dimensoes']) }}
+{{ config(tags=['planilha_unificada', 'pu_dimensoes']) }}
 {% set campos_por_assunto = {
     'mse': [
         'mse_com_que_frequencia_vai_a_casa_da_familia_ou_pessoa_de_referencia',
@@ -89,7 +89,7 @@ with formularios as (
     select
         p.id_usuario,
         array_agg(f order by f.data_evolucao, f.id_evolucao_modulo) as historico
-    from {{ ref('int_formularios_por_usuario') }} as p, unnest(p.formularios) as f
+    from ({{ agrupar_formularios(ref('int_formularios')) }}) as p, unnest(p.formularios) as f
     where regexp_contains(f.titulo_formulario, r'(?i)CREAS.*(PETI|Adolescente em trabalho|MSE)')
     group by p.id_usuario
 ),
@@ -166,8 +166,84 @@ campos_unicos as (
         r.id_usuario,
         mapa.coluna,
         trim(c.valor) as valor
-    from ultimos as r, unnest(r.campos) as c
-    inner join {{ ref('creas_campos') }} as mapa
+    from ultimos as r
+    cross join unnest(r.campos) as c
+    inner join unnest([
+        struct("CREAS - MSE - Medidas Socioeducativas" as titulo, "- Com que frequência vai à casa da família ou pessoa de referência?" as rotulo, "mse_com_que_frequencia_vai_a_casa_da_familia_ou_pessoa_de_referencia" as coluna),
+        struct("CREAS - MSE - Medidas Socioeducativas" as titulo, "- Com quem moraria?" as rotulo, "mse_com_quem_moraria" as coluna),
+        struct("CREAS - MSE - Medidas Socioeducativas" as titulo, "1º Bimestre  [Documentação]" as rotulo, "mse_1o_bimestre_documentacao" as coluna),
+        struct("CREAS - MSE - Medidas Socioeducativas" as titulo, "1º Bimestre [Benefícios]" as rotulo, "mse_1o_bimestre_beneficios" as coluna),
+        struct("CREAS - MSE - Medidas Socioeducativas" as titulo, "1º Bimestre [CadÚnico]" as rotulo, "mse_1o_bimestre_cadunico" as coluna),
+        struct("CREAS - MSE - Medidas Socioeducativas" as titulo, "1º Bimestre [Localização]" as rotulo, "mse_1o_bimestre_localizacao" as coluna),
+        struct("CREAS - MSE - Medidas Socioeducativas" as titulo, "1º Bimestre [Outras Ações]" as rotulo, "mse_1o_bimestre_outras_acoes" as coluna),
+        struct("CREAS - MSE - Medidas Socioeducativas" as titulo, "1º Bimestre [Saúde]" as rotulo, "mse_1o_bimestre_saude" as coluna),
+        struct("CREAS - MSE - Medidas Socioeducativas" as titulo, "Adolescente em reinfração?" as rotulo, "mse_adolescente_em_reinfracao" as coluna),
+        struct("CREAS - MSE - Medidas Socioeducativas" as titulo, "Adolescente tem histórico de cumprimento de MSE em meio fechado ou semiliberdade?" as rotulo, "mse_adolescente_tem_historico_de_cumprimento_de_mse_em_meio_fechado_ou_semiliberdade" as coluna),
+        struct("CREAS - MSE - Medidas Socioeducativas" as titulo, "Avaliação Técnica Bimestral  | 1º Bimestre" as rotulo, "mse_avaliacao_tecnica_bimestral_1o_bimestre" as coluna),
+        struct("CREAS - MSE - Medidas Socioeducativas" as titulo, "CRAS de Referência" as rotulo, "mse_cras_de_referencia" as coluna),
+        struct("CREAS - MSE - Medidas Socioeducativas" as titulo, "CRAS de referência" as rotulo, "mse_cras_de_referencia" as coluna),
+        struct("CREAS - MSE - Medidas Socioeducativas" as titulo, "CREAS de Referência" as rotulo, "mse_creas_de_referencia" as coluna),
+        struct("CREAS - MSE - Medidas Socioeducativas" as titulo, "CREAS de referência" as rotulo, "mse_creas_de_referencia" as coluna),
+        struct("CREAS - MSE - Medidas Socioeducativas" as titulo, "Carga horária" as rotulo, "mse_carga_horaria" as coluna),
+        struct("CREAS - MSE - Medidas Socioeducativas" as titulo, "Com quem residia anteriormente?" as rotulo, "mse_com_quem_residia_anteriormente" as coluna),
+        struct("CREAS - MSE - Medidas Socioeducativas" as titulo, "Data" as rotulo, "mse_data" as coluna),
+        struct("CREAS - MSE - Medidas Socioeducativas" as titulo, "Data de inclusão no MSE" as rotulo, "mse_data_de_inclusao_no_mse" as coluna),
+        struct("CREAS - MSE - Medidas Socioeducativas" as titulo, "Desdobramento" as rotulo, "mse_desdobramento" as coluna),
+        struct("CREAS - MSE - Medidas Socioeducativas" as titulo, "Em caso de cumprimento de MSE, qual o status?" as rotulo, "mse_em_caso_de_cumprimento_de_mse_qual_o_status" as coluna),
+        struct("CREAS - MSE - Medidas Socioeducativas" as titulo, "Em caso de cumprimento de PSC, qual o local?" as rotulo, "mse_em_caso_de_cumprimento_de_psc_qual_o_local" as coluna),
+        struct("CREAS - MSE - Medidas Socioeducativas" as titulo, "Endereço (CRAS)" as rotulo, "mse_endereco_cras" as coluna),
+        struct("CREAS - MSE - Medidas Socioeducativas" as titulo, "Endereço (CREAS)" as rotulo, "mse_endereco_creas" as coluna),
+        struct("CREAS - MSE - Medidas Socioeducativas" as titulo, "Especialidade" as rotulo, "mse_especialidade" as coluna),
+        struct("CREAS - MSE - Medidas Socioeducativas" as titulo, "Gostaria de retornar para casa ou convívio anterior?" as rotulo, "mse_gostaria_de_retornar_para_casa_ou_convivio_anterior" as coluna),
+        struct("CREAS - MSE - Medidas Socioeducativas" as titulo, "Gostaria de retornar para casa ou convívio anterior?  - Com quem moraria?" as rotulo, "mse_gostaria_de_retornar_para_casa_ou_convivio_anterior_com_quem_moraria" as coluna),
+        struct("CREAS - MSE - Medidas Socioeducativas" as titulo, "Local" as rotulo, "mse_local" as coluna),
+        struct("CREAS - MSE - Medidas Socioeducativas" as titulo, "Mantém contato com a Família ou pessoa de referência?" as rotulo, "mse_mantem_contato_com_a_familia_ou_pessoa_de_referencia" as coluna),
+        struct("CREAS - MSE - Medidas Socioeducativas" as titulo, "Mantém contato com a Família ou pessoa de referência?  - Com que frequência vai à casa da família ou pessoa de referência?" as rotulo, "mse_mantem_contato_com_a_familia_ou_pessoa_de_referencia_com_que_frequencia_vai_a_casa_da_familia_ou_pessoa_de_referencia" as coluna),
+        struct("CREAS - MSE - Medidas Socioeducativas" as titulo, "Medida aplicada" as rotulo, "mse_medida_aplicada" as coluna),
+        struct("CREAS - MSE - Medidas Socioeducativas" as titulo, "Nome do local de cumprimento de PSC" as rotulo, "mse_nome_do_local_de_cumprimento_de_psc" as coluna),
+        struct("CREAS - MSE - Medidas Socioeducativas" as titulo, "Outras atividades" as rotulo, "mse_outras_atividades" as coluna),
+        struct("CREAS - MSE - Medidas Socioeducativas" as titulo, "Por que se afastou da família ou pessoa de referência?" as rotulo, "mse_por_que_se_afastou_da_familia_ou_pessoa_de_referencia" as coluna),
+        struct("CREAS - MSE - Medidas Socioeducativas" as titulo, "Procedimento" as rotulo, "mse_procedimento" as coluna),
+        struct("CREAS - MSE - Medidas Socioeducativas" as titulo, "Profissional (CRAS)" as rotulo, "mse_profissional_cras" as coluna),
+        struct("CREAS - MSE - Medidas Socioeducativas" as titulo, "Profissional (CREAS)" as rotulo, "mse_profissional_creas" as coluna),
+        struct("CREAS - MSE - Medidas Socioeducativas" as titulo, "Quais atividades gostaria de participar?" as rotulo, "mse_quais_atividades_gostaria_de_participar" as coluna),
+        struct("CREAS - MSE - Medidas Socioeducativas" as titulo, "Registrar o que conseguiu cumprir e justificar o que não conseguiu cumprir no prazo estabelecido" as rotulo, "mse_registrar_o_que_conseguiu_cumprir_e_justificar_o_que_nao_conseguiu_cumprir_no_prazo_estabelecido" as coluna),
+        struct("CREAS - MSE - Medidas Socioeducativas" as titulo, "Serviço de proteção social ao adolescente em cumprimento de LA ou PSC" as rotulo, "mse_servico_de_protecao_social_ao_adolescente_em_cumprimento_de_la_ou_psc" as coluna),
+        struct("CREAS - MSE - Medidas Socioeducativas" as titulo, "Telefone (CRAS)" as rotulo, "mse_telefone_cras" as coluna),
+        struct("CREAS - MSE - Medidas Socioeducativas" as titulo, "Telefone (CREAS)" as rotulo, "mse_telefone_creas" as coluna),
+        struct("CREAS - MSE - Medidas Socioeducativas" as titulo, "Tempo de cumprimento" as rotulo, "mse_tempo_de_cumprimento" as coluna),
+        struct("CREAS - MSE - Medidas Socioeducativas" as titulo, "Tipo" as rotulo, "mse_tipo" as coluna),
+        struct("CREAS - MSE - Medidas Socioeducativas" as titulo, "Tipo de ato infracional" as rotulo, "mse_tipo_de_ato_infracional" as coluna),
+        struct("CREAS - MSE - Medidas Socioeducativas" as titulo, "Usuário Interditado?" as rotulo, "mse_usuario_interditado" as coluna),
+        struct("CREAS - MSE - RETORNO" as titulo, "Adolescente em reinfração?" as rotulo, "mse_retorno_adolescente_em_reinfracao" as coluna),
+        struct("CREAS - MSE - RETORNO" as titulo, "Data do desligamento" as rotulo, "mse_retorno_data_do_desligamento" as coluna),
+        struct("CREAS - MSE - RETORNO" as titulo, "Desligamento" as rotulo, "mse_retorno_desligamento" as coluna),
+        struct("CREAS - MSE - RETORNO" as titulo, "Em caso de cumprimento de MSE, qual o status?" as rotulo, "mse_retorno_em_caso_de_cumprimento_de_mse_qual_o_status" as coluna),
+        struct("CREAS - MSE - RETORNO" as titulo, "Em caso de cumprimento de PSC, qual o local?" as rotulo, "mse_retorno_em_caso_de_cumprimento_de_psc_qual_o_local" as coluna),
+        struct("CREAS - MSE - RETORNO" as titulo, "Motivo do desligamento" as rotulo, "mse_retorno_motivo_do_desligamento" as coluna),
+        struct("CREAS - MSE - RETORNO" as titulo, "Nome do local de cumprimento de PSC" as rotulo, "mse_retorno_nome_do_local_de_cumprimento_de_psc" as coluna),
+        struct("CREAS - Adolescente em trabalho não regulamentado e PETI - Programa de Erradicação do Trabalho Infantil" as titulo, "Data da inclusão no PETI" as rotulo, "peti_data_da_inclusao_no_peti" as coluna),
+        struct("CREAS - Adolescente em trabalho não regulamentado e PETI - Programa de Erradicação do Trabalho Infantil" as titulo, "Demanda Inicial" as rotulo, "peti_demanda_inicial" as coluna),
+        struct("CREAS - Adolescente em trabalho não regulamentado e PETI - Programa de Erradicação do Trabalho Infantil" as titulo, "Forma de acesso (informe a origem de acesso)" as rotulo, "peti_forma_de_acesso_informe_a_origem_de_acesso" as coluna),
+        struct("CREAS - Adolescente em trabalho não regulamentado e PETI - Programa de Erradicação do Trabalho Infantil" as titulo, "Marcação nos campo CadÚnico" as rotulo, "peti_marcacao_nos_campo_cadunico" as coluna),
+        struct("CREAS - Adolescente em trabalho não regulamentado e PETI - Programa de Erradicação do Trabalho Infantil" as titulo, "Orientações e Encaminhamentos" as rotulo, "peti_orientacoes_e_encaminhamentos" as coluna),
+        struct("CREAS - Adolescente em trabalho não regulamentado e PETI - Programa de Erradicação do Trabalho Infantil" as titulo, "Outras demandas / vulnerabilidades" as rotulo, "peti_outras_demandas_vulnerabilidades" as coluna),
+        struct("CREAS - Adolescente em trabalho não regulamentado e PETI - Programa de Erradicação do Trabalho Infantil" as titulo, "Outras formas de acesso" as rotulo, "peti_outras_formas_de_acesso" as coluna),
+        struct("CREAS - Adolescente em trabalho não regulamentado e PETI - Programa de Erradicação do Trabalho Infantil" as titulo, "Outros" as rotulo, "peti_outros" as coluna),
+        struct("CREAS - Adolescente em trabalho não regulamentado e PETI - Programa de Erradicação do Trabalho Infantil" as titulo, "Tipo de trabalho infantil" as rotulo, "peti_tipo_de_trabalho_infantil" as coluna),
+        struct("CREAS - Adolescente em trabalho não regulamentado e PETI - Programa de Erradicação do Trabalho Infantil" as titulo, "É acompanhado em outro CREAS?" as rotulo, "peti_e_acompanhado_em_outro_creas" as coluna),
+        struct("CREAS - Adolescente em trabalho não regulamentado e PETI - Programa de Erradicação do Trabalho Infantil" as titulo, "É necessário realizar a Gestão de Benefícios?" as rotulo, "peti_e_necessario_realizar_a_gestao_de_beneficios" as coluna),
+        struct("CREAS - Participação em SCFV - Público prioritário / MSE e Trab. Infantil" as titulo, "Data da solicitação do acolhimento" as rotulo, "scfv_data_da_solicitacao_do_acolhimento" as coluna),
+        struct("CREAS - Participação em SCFV - Público prioritário / MSE e Trab. Infantil" as titulo, "Demanda de acolhimento institucional por decisão judicial?" as rotulo, "scfv_demanda_de_acolhimento_institucional_por_decisao_judicial" as coluna),
+        struct("CREAS - Participação em SCFV - Público prioritário / MSE e Trab. Infantil" as titulo, "Nome do CRAS responsável" as rotulo, "scfv_nome_do_cras_responsavel" as coluna),
+        struct("CREAS - Participação em SCFV - Público prioritário / MSE e Trab. Infantil" as titulo, "O usuário participa do SCFV (Serviço de Convivência e Fortalecimento de Vínculos)?" as rotulo, "scfv_o_usuario_participa_do_scfv_servico_de_convivencia_e_fortalecimento_de_vinculos" as coluna),
+        struct("CREAS - Participação em SCFV - Público prioritário / MSE e Trab. Infantil" as titulo, "Oriundo de instituição de acolhimento interditado?" as rotulo, "scfv_oriundo_de_instituicao_de_acolhimento_interditado" as coluna),
+        struct("CREAS - Participação em SCFV - Público prioritário / MSE e Trab. Infantil" as titulo, "Usuário Interditado?" as rotulo, "scfv_usuario_interditado" as coluna),
+        struct("CREAS - Participação em SCFV - Público prioritário / MSE e Trab. Infantil" as titulo, "Órgão de origem do acolhimento" as rotulo, "scfv_orgao_de_origem_do_acolhimento" as coluna),
+        struct("CREAS - PETI - DESLIGAMENTO - Programa de Erradicação do Trabalho Infantil" as titulo, "Data do desligamento do PETI" as rotulo, "peti_desligamento_data_do_desligamento_do_peti" as coluna),
+        struct("CREAS - PETI - DESLIGAMENTO - Programa de Erradicação do Trabalho Infantil" as titulo, "Motivo do desligamento" as rotulo, "peti_desligamento_motivo_do_desligamento" as coluna),
+        struct("CREAS - PETI - DESLIGAMENTO - Programa de Erradicação do Trabalho Infantil" as titulo, "Outros" as rotulo, "peti_desligamento_outros" as coluna)
+    ]) as mapa
         on
             r.titulo_formulario = mapa.titulo
             and lower(trim(c.label)) = lower(trim(mapa.rotulo))

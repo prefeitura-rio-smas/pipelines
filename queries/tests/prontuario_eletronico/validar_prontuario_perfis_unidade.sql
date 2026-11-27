@@ -1,4 +1,4 @@
-{{ config(enabled=target.name != 'prod' or var('prontuario_publicacao', false), tags=['planilha_unificada']) }}
+{{ config(tags=['planilha_unificada']) }}
 -- Comparar valores por campo: a ordem das chaves JSON não faz parte da regra do perfil.
 -- Indicadores médicos vêm do cadastro; a participação tem apresentação própria na mart.
 with perfis_centro_pop as (

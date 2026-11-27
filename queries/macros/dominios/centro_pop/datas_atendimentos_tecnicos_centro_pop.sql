@@ -13,7 +13,9 @@
             date(e.data_evolucao)
         ) as data_ultimo_atend_tecnico_informada,
         date(e.data_evolucao) as data_evolucao
-    from {{ ref('int_evolucoes_por_usuario') }} as e
+    from (
+    {{ preparar_evolucoes() }}
+) as e
     left join {{ ref('dim_profissionais') }} as profissional
         on
             e.origem_modulo != 'administrativa'

@@ -392,10 +392,6 @@ deployments:
     entrypoint: pipelines/datalake/transform/dbt/flows.py:dbt_transform_flow
     parameters:
       select: "+tag:daily"
-    schedules: []
-    concurrency_limit:
-      limit: 1
-      collision_strategy: CANCEL_NEW
     work_pool:
       name: docker-pool
       job_variables:
@@ -414,8 +410,6 @@ deployments:
     entrypoint: pipelines/datalake/transform/dbt/flows.py:dbt_transform_flow
     parameters:
       select: "+tag:daily"
-      atualizar_prontuario: true
-      publicar_prontuario: true
     schedule:
       cron: "0 10 * * *"
       timezone: "America/Sao_Paulo"
@@ -437,7 +431,7 @@ deployments:
           SIURB_URL: "{{ $SIURB_URL }}"
           SIURB_USER: "{{ $SIURB_USER }}"
           SIURB_PWD: "{{ $SIURB_PWD }}"
-    tags: ["prod", "dbt", "daily"]
+    tags: ["prod", "dbt"]
 
   # ---------------------------------------------------------------------------
   # Transformação — dbt semanal 

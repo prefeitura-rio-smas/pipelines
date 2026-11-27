@@ -1,10 +1,10 @@
-{{ config(enabled=target.name != 'prod' or var('prontuario_publicacao', false), tags=['planilha_unificada']) }}
+{{ config(tags=['planilha_unificada']) }}
 
 select
     id_usuario,
     id_unidade,
     mes_referencia
-from {{ ref('int_centro_pop_mensal') }} as mensal
+from {{ ref('int_resumo_centro_pop') }} as mensal
 where
     quantidade_atendimentos != array_length(atendimentos)
     or quantidade_evolucoes != array_length(evolucoes)
@@ -24,6 +24,6 @@ select
     id_usuario,
     id_unidade,
     mes_referencia
-from {{ ref('int_centro_pop_mensal') }}
+from {{ ref('int_resumo_centro_pop') }}
 group by id_usuario, id_unidade, mes_referencia
 having count(*) > 1

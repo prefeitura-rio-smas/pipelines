@@ -1,13 +1,11 @@
 """Tasks do domínio dbt (execução e relatório)."""
 from datetime import datetime
-import json
 
 from prefect import get_run_logger, task
 from prefect.artifacts import create_markdown_artifact
-
 from dbt.cli.main import dbtRunner
 from dbt.contracts.results import NodeStatus
-from pipelines.datalake.transform.dbt.prontuario import refresh_prontuario
+
 from pipelines.utils.dbt import Summarizer, mensagem_falha
 
 
@@ -66,19 +64,3 @@ def create_dbt_report(execution_info: dict, target: str, select: str | None = No
 
     if not result.success:
         raise RuntimeError(mensagem_falha(result))
-
-
-@task
-def update_prontuario(run_id: str, *, publish: bool, target: str) -> None:
-    report = {}
-    try:
-        refresh_prontuario(run_id, publish=publish, report=report, target=target)
-    except Exception:
-        report["resultado"] = "falha na atualização"
-        raise
-    finally:
-        create_markdown_artifact(
-            key=f"prontuario-{target}",
-            description=f"Reconstrução diária do prontuário em {target}",
-            markdown="```json\n" + json.dumps(report, ensure_ascii=False, indent=2, default=str) + "\n```",
-        )

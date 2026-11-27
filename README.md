@@ -89,19 +89,11 @@ dbt run --select pic --project-dir queries --profiles-dir queries
 ### Rodando Pipelines (Prefect)
 Nossas pipelines são definidas na pasta `pipelines/`. Para rodar ou testar localmente, certifique-se de que seu ambiente virtual (`.venv`) está ativado.
 
-#### Transformação diária e Prontuário em staging
+#### Transformação diária do Prontuário
 
-O deployment `dbt-transform-daily-prod` executa `dbt build --select +tag:daily` diariamente às 10h (São Paulo) e, após o sucesso do build, publica o Prontuário em `rj-smas.abordagem.prontuario_eletronico`. A primeira publicação cria a tabela após os controles da candidata. O deployment `dbt-transform-staging` é manual.
+O deployment existente inclui o Prontuário via `dbt build --select +tag:daily`. Em produção, o dbt materializa `rj-smas.abordagem.prontuario_eletronico`.
 
-O modelo intermediário `int_atendimentos_selecionados` seleciona os atendimentos e profissionais a partir dos raws do AcolheRio e da planilha de permissões. O flow materializa a seleção no dataset isolado e a usa para montar e reconciliar o Prontuário.
-
-Para homologar a troca de fonte, execute o deployment de staging com `atualizar_prontuario=true` e `publicar_prontuario=false`. O artefato `prontuario-staging` registra controles, diferenças de volume e IDs dos jobs. Compare a seleção dbt com a programada usando a mesma fotografia dos raws, a mesma cópia da planilha e a mesma data de referência. Confira esquema, identidade e multiplicidade por usuário, atendimento e profissional, além dos endereços, classificações, projetos, permissões e cartões publicados. Use a programada como referência da comparação e mantenha seu agendamento ativo no BigQuery. A seleção dbt replica os rankings publicados. Empates sem ordenação completa podem produzir vencedores diferentes entre execuções.
-
-Para publicar em `rj-smas-dev.abordagem.prontuario_eletronico`, habilite também `publicar_prontuario=true`. O worker precisa de permissões de escrita e de criação de snapshots. A promoção é transacional e o snapshot de recuperação dura sete dias. O flow remove o dataset após verificar a publicação. As tabelas de candidatas que ficam no dataset expiram em 24 horas.
-
-O flow valida e publica diretamente a mart dbt `prontuario_eletronico`, no grão de uma linha por cidadão e unidade. A promoção exige esquema compatível, chave `id_usuario_unidade` única e preservação dos atendimentos e das permissões.
-
-Se a execução falhar antes de criar o job de publicação, use um novo run para reconstruir a candidata. Se o job já existir, repita o mesmo run para recuperar o resultado.
+Para homologar, compare o build em um dataset isolado com a referência usando as mesmas fontes e data de referência.
 
 ---
 

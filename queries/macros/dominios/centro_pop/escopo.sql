@@ -48,7 +48,7 @@
 {% macro registros_centro_pop() %}
 with formularios as (
     select p.id_usuario, f.*, posicao
-    from {{ ref('int_formularios_por_usuario') }} p, unnest(p.formularios) f with offset posicao
+    from ({{ agrupar_formularios(ref('int_formularios')) }}) p, unnest(p.formularios) f with offset posicao
 ),
 presencas as (
     select distinct p.id_usuario, p.id_unidade, p.id_atividade,
@@ -60,7 +60,9 @@ presencas as (
     left join {{ ref('raw_atividades_grupo') }} a on p.id_atividade = a.id_atividade
 ),
 publico as (
-    select p.id_usuario from {{ ref('int_atendimentos_por_usuario') }} p, unnest(p.atendimentos) a where a.tipo_servico = 'centro_pop'
+    select p.id_usuario from (
+    {{ agrupar_atendimentos() }}
+) p, unnest(p.atendimentos) a where a.tipo_servico = 'centro_pop'
     union distinct select id_usuario from formularios where titulo_formulario in ('Centro POP - Plano de Atendimento Individual (PAI)', 'Centro POP - Atendimento Social', 'Centro POP - Desligamento PAI')
     union distinct select id_usuario from presencas
 ),

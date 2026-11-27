@@ -1,4 +1,4 @@
-{{ config(alias='centro_pop_mensal', schema='relatorio', materialized='table', enabled=target.name != 'prod' or var('prontuario_publicacao', false), tags=['centro_pop_mensal', 'planilha_unificada']) }}
+{{ config(alias='centro_pop_mensal', schema='relatorio', materialized='table', tags=['centro_pop_mensal', 'planilha_unificada']) }}
 {% set mes = var('centro_pop_mes', none) %}
 with cargas as (
     {% for tabela in ['gh_atendimentos', 'gh_atend_familia', 'gh_evolupac', 'gh_evolufamil', 'gh_ativ_paciente'] %}
@@ -31,7 +31,9 @@ atendimentos as (
         a.id_unidade,
         a.data_atendimento as data_evento,
         (select as struct a.* except (email, flag_cancelado, projetos_sociais_familia, atendimento_compartilhado)) as atendimento
-    from {{ ref('int_atendimentos_por_usuario') }} as p
+    from (
+    {{ agrupar_atendimentos() }}
+) as p
     cross join unnest(p.atendimentos) as a
 ),
 
@@ -41,7 +43,7 @@ formularios as (
         f.id_unidade,
         f.id_evolucao_modulo,
         array_agg(f order by posicao) as formularios
-    from {{ ref('int_formularios_por_usuario') }} as p
+    from ({{ agrupar_formularios(ref('int_formularios')) }}) as p
     cross join unnest(p.formularios) as f with offset as posicao
     group by p.id_usuario, f.id_unidade, f.id_evolucao_modulo
 ),
@@ -51,7 +53,9 @@ evolucoes as (
         e.* replace ({{ texto_html_legivel('e.descricao_evolucao') }} as descricao_evolucao),
         date(e.data_evolucao) as data_evento,
         coalesce(f.formularios, []) as formularios
-    from {{ ref('int_evolucoes_por_usuario') }} as e
+    from (
+    {{ preparar_evolucoes() }}
+) as e
     left join formularios as f
         on e.id_usuario = f.id_usuario and e.id_unidade = f.id_unidade and e.id_evolucao_modulo = f.id_evolucao_modulo
 ),

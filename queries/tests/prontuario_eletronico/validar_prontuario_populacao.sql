@@ -1,20 +1,26 @@
-{{ config(enabled=target.name != 'prod' or var('prontuario_publicacao', false), tags=['planilha_unificada']) }}
+{{ config(tags=['planilha_unificada']) }}
 -- Reconstruir os vínculos das fontes para também detectar linhas extras sem eventos.
 with vinculos as (
     select
         cast(p.id_usuario as string) as id_usuario,
         a.id_unidade
-    from {{ ref('int_atendimentos_por_usuario') }} as p, unnest(p.atendimentos) as a
+    from (
+    {{ agrupar_atendimentos() }}
+) as p, unnest(p.atendimentos) as a
     union distinct
     select
         cast(id_usuario as string) as id_usuario,
         id_unidade
-    from {{ ref('int_evolucoes_por_usuario') }}
+    from (
+    {{ preparar_evolucoes() }}
+)
     union distinct
     select
         cast(id_usuario as string) as id_usuario,
         id_unidade
-    from {{ ref('int_projetos_sociais') }}
+    from (
+    {{ projetos_dos_membros() }}
+)
     union distinct
     select
         cast(id_usuario as string) as id_usuario,
@@ -24,7 +30,7 @@ with vinculos as (
     select
         cast(id_usuario as string) as id_usuario,
         id_unidade
-    from {{ ref('int_centro_pop_historico_mensal') }}
+    from {{ ref('int_resumo_centro_pop') }}
     union distinct
     select
         cast(p.id_usuario as string) as id_usuario,

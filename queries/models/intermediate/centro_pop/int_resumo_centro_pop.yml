@@ -1,6 +1,6 @@
 version: 2
 models:
-  - name: int_centro_pop_mensal
+  - name: int_resumo_centro_pop
     description: Histórico recalculado do Centro POP por cidadão, unidade e mês com movimento. Sem reconstrução
       de cadastro histórico; perfil observado na captura, limitado às ocorrências até
       a competência. As listas contêm apenas os eventos da competência.

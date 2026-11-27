@@ -1,4 +1,4 @@
-{{ config(materialized='ephemeral', enabled=target.name != 'prod' or var('prontuario_publicacao', false), tags=['planilha_unificada']) }}
+{% macro preparar_evolucoes() %}
 -- Evoluções familiares só pertencem ao paciente explicitamente indicado.
 -- Não converte id_familia em id_usuario nem distribui registros aos membros.
 select distinct
@@ -32,3 +32,4 @@ left join {{ ref('dim_unidades') }} as un on e.id_unidade = un.id_unidade
 where
     coalesce(e.id_usuario, e.id_paciente_familia) is not null
     and e.data_cancelamento is null
+{% endmacro %}

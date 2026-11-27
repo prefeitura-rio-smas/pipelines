@@ -1,6 +1,6 @@
 version: 2
 models:
-- name: int_formularios_por_usuario
+- name: int_formularios
   description: |
     Formulários HTML extraídos das evoluções, com entidades decodificadas
     nos títulos e campos, origem, unidade e datas; sem escolha do último perfil.
@@ -12,4 +12,3 @@ models:
   - name: id_usuario
     data_tests:
     - not_null
-    - unique

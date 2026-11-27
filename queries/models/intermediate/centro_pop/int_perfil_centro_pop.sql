@@ -1,6 +1,7 @@
-{{ config(materialized='ephemeral', enabled=target.name != 'prod' or var('prontuario_publicacao', false), tags=['planilha_unificada']) }}
+{{ config(materialized='ephemeral', tags=['planilha_unificada']) }}
+{% set atendimentos %}({{ agrupar_atendimentos() }}){% endset %}
 with perfil_geral as (
-    {{ perfil_centro_pop(ref('int_registros_centro_pop'), ref('int_atendimentos_por_usuario'), ref('dim_usuarios')) }}
+    {{ perfil_centro_pop(ref('int_registros_centro_pop'), atendimentos, ref('dim_usuarios')) }}
 ),
 
 registros_escopo as (
@@ -12,7 +13,9 @@ atendimentos_escopo as (
     select
         concat(cast(p.id_usuario as string), ':', coalesce(cast(a.id_unidade as string), '')) as id_usuario,
         array_agg(a) as atendimentos
-    from {{ ref('int_atendimentos_por_usuario') }} as p, unnest(p.atendimentos) as a
+    from (
+    {{ agrupar_atendimentos() }}
+) as p, unnest(p.atendimentos) as a
     group by id_usuario
 ),
 
