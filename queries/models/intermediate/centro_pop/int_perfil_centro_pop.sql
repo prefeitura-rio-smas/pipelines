@@ -14,8 +14,8 @@ atendimentos_escopo as (
         concat(cast(p.id_usuario as string), ':', coalesce(cast(a.id_unidade as string), '')) as id_usuario,
         array_agg(a) as atendimentos
     from (
-    {{ agrupar_atendimentos() }}
-) as p, unnest(p.atendimentos) as a
+        {{ agrupar_atendimentos() }}
+    ) as p, unnest(p.atendimentos) as a
     group by id_usuario
 ),
 

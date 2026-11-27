@@ -13,9 +13,9 @@ with esperado as (
         coalesce(prof.classificacao_atendimento, '') as classificacao,
         a.atendimento_compartilhado
     from (
-    {{ agrupar_atendimentos() }}
-) as p
-    inner join {{ ref('dim_usuarios') }} as u on p.id_usuario = u.id_usuario
+        {{ agrupar_atendimentos() }}
+    ) as p
+    inner join {{ ref('dim_usuarios') }} as usuario_atendimento on p.id_usuario = usuario_atendimento.id_usuario
     cross join unnest(p.atendimentos) as a
     cross join unnest(a.profissionais) as prof
     union all
@@ -31,9 +31,9 @@ with esperado as (
         '' as classificacao,
         '' as atendimento_compartilhado
     from (
-    {{ preparar_evolucoes() }}
-) as e
-    inner join {{ ref('dim_usuarios') }} as u on e.id_usuario = u.id_usuario
+        {{ preparar_evolucoes() }}
+    ) as e
+    inner join {{ ref('dim_usuarios') }} as usuario_evolucao on e.id_usuario = usuario_evolucao.id_usuario
 ),
 
 obtido as (

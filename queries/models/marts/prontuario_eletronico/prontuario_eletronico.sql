@@ -51,7 +51,7 @@ with familias_por_usuario as (
             if(c.id_familia is null, r.flag_ativo, c.flag_ativo) as flag_ativo,
             if(c.id_familia is null, r.data_ultima_modificacao, c.data_ultima_modificacao) as data_ultima_modificacao
         from {{ ref('raw_familias') }} as r
-        left join {{ ref('int_familias') }} as c using (id_familia)
+        left join {{ ref('int_familias') }} as c on r.id_familia = c.id_familia
     ),
 
     -- Inclui responsáveis sem registro na tabela de membros.
@@ -251,8 +251,8 @@ projetos_por_usuario as (
             ps.id_projeto_social, ps.id_unidade, un.nome_unidade, ps.indicador_ativo, ps.data_cadastro, ps.data_cancelamento
         ) order by ps.id_projeto_social, ps.id_unidade) as projetos_sociais
     from (
-    {{ projetos_dos_membros() }}
-) as ps
+        {{ projetos_dos_membros() }}
+    ) as ps
     inner join {{ ref('dim_usuarios') }} as u on ps.id_usuario = u.id_usuario
     left join {{ ref('dim_unidades') }} as un on ps.id_unidade = un.id_unidade
     group by u.id_usuario, ps.id_unidade
@@ -270,8 +270,8 @@ atendimentos_por_usuario as (
             order by pos_evento, pos_profissional
         ) as atendimentos
     from (
-    {{ agrupar_atendimentos() }}
-) as p
+        {{ agrupar_atendimentos() }}
+    ) as p
     cross join unnest(p.atendimentos) as a with offset as pos_evento
     cross join unnest(a.profissionais) as profissional with offset as pos_profissional
     group by p.id_usuario, a.id_unidade
@@ -298,8 +298,8 @@ registros_evolucoes as (
             coalesce(f.formularios, []) as formularios
         ) order by e.data_evolucao, e.id_evolucao_modulo) as evolucoes
     from (
-    {{ preparar_evolucoes() }}
-) as e
+        {{ preparar_evolucoes() }}
+    ) as e
     left join formularios_por_evolucao as f on e.id_usuario = f.id_usuario and e.id_evolucao_modulo = f.id_evolucao_modulo
     group by e.id_usuario, e.id_unidade
 ),

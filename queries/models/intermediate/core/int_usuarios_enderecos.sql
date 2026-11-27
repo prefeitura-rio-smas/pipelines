@@ -8,8 +8,8 @@ with foto as (
         endereco_complemento as complemento,
         referencia_ou_comunidade
     from (
-    {{ selecionar_atendimentos() }}
-)
+        {{ selecionar_atendimentos() }}
+    )
 ),
 
 cadastro as (

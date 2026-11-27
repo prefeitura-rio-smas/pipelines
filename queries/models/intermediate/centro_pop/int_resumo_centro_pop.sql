@@ -32,8 +32,8 @@ atendimentos as (
         a.data_atendimento as data_evento,
         (select as struct a.* except (email, flag_cancelado, projetos_sociais_familia, atendimento_compartilhado)) as atendimento
     from (
-    {{ agrupar_atendimentos() }}
-) as p
+        {{ agrupar_atendimentos() }}
+    ) as p
     cross join unnest(p.atendimentos) as a
 ),
 
@@ -54,8 +54,8 @@ evolucoes as (
         date(e.data_evolucao) as data_evento,
         coalesce(f.formularios, []) as formularios
     from (
-    {{ preparar_evolucoes() }}
-) as e
+        {{ preparar_evolucoes() }}
+    ) as e
     left join formularios as f
         on e.id_usuario = f.id_usuario and e.id_unidade = f.id_unidade and e.id_evolucao_modulo = f.id_evolucao_modulo
 ),
