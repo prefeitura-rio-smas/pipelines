@@ -93,9 +93,30 @@ Nossas pipelines são definidas na pasta `pipelines/`. Para rodar ou testar loca
 
 O deployment existente inclui o Prontuário via `dbt build --select +tag:daily`. Em produção, o dbt materializa `rj-smas.abordagem.prontuario_eletronico`.
 
-A mart diária `mart_planilha_unificada_centro_pop` continua disponível no grão por atendimento durante a migração dos consumidores.
-
 Antes da primeira publicação do Prontuário, rode o build em um dataset isolado. Compare esquema e dados com a referência usando as mesmas fontes, planilha de permissões e data de referência. No Looker, confirme o acesso por endereço completo com uma conta de uma única unidade, uma conta sem permissão e uma identidade vazia. Registre os resultados e a versão da imagem de produção para recuperação. Em caso de regressão, retome a última versão homologada do dbt e valide a relação publicada antes de liberar o acesso. Se já houver uma tabela em uso, preserve uma cópia recuperável antes do primeiro build com a nova versão.
+
+#### Planilha Unificada do Centro POP
+
+A fonte da planilha é `prontuario_eletronico`. Use `usuario` para o cadastro atual e `centro_pop.historico_mensal` para o perfil e os eventos da competência. A consulta abaixo abre os atendimentos e mantém seus profissionais aninhados. A integração deve preencher `@email_visualizador` com a identidade autenticada.
+
+```sql
+select
+    p.id_usuario_unidade,
+    p.id_usuario,
+    p.id_unidade,
+    p.nome_unidade,
+    p.usuario,
+    mes.* except (id_unidade, nome_unidade, atendimentos, evolucoes, ocorrencias),
+    atendimento
+from `rj-smas.abordagem.prontuario_eletronico` as p
+cross join unnest(p.centro_pop.historico_mensal) as mes
+cross join unnest(mes.atendimentos) as atendimento
+where
+    nullif(trim(@email_visualizador), '') is not null
+    and lower(trim(@email_visualizador)) in unnest(split(p.email_filtro, ', '))
+```
+
+Conte eventos pela chave `(id_usuario_unidade, id_atendimento_modulo)`. Para oficinas, leia `quantidade_participacoes` uma vez por pessoa, unidade e mês, antes de abrir os atendimentos. Na comparação com a relação anterior, confira também a classificação técnica por CBO, a idade no fechamento, a origem de RG, certidão e NIS e a evidência histórica de saúde.
 
 ---
 
