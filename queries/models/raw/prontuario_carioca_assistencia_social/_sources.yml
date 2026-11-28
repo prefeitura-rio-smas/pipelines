@@ -38,6 +38,8 @@ sources:
         description: "Dados complementares do Paciente."
       - name: gh_familias_membros
         description: "Composição familiar e vínculos."
+      - name: gh_familias_motiv_saida
+        description: "Catálogo de motivos de saída de membros da família."
       - name: gh_tpatendimentos
         description: "Tipos de atendimento configurados."
       - name: gh_contas

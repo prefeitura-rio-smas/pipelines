@@ -1,0 +1,4 @@
+version: 2
+models:
+  - name: int_filtro_email_unidades
+    description: Apoio ephemeral de destinatários por unidade, combinando CAS, prontuário e planilha sem multiplicar registros. Sem unidade não há autorização. Correspondências ambíguas interrompem o build.

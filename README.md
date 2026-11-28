@@ -89,6 +89,64 @@ dbt run --select pic --project-dir queries --profiles-dir queries
 ### Rodando Pipelines (Prefect)
 Nossas pipelines são definidas na pasta `pipelines/`. Para rodar ou testar localmente, certifique-se de que seu ambiente virtual (`.venv`) está ativado.
 
+#### Transformação diária do Prontuário
+
+O deployment existente inclui o Prontuário via `dbt build --select +tag:daily`. A homologação da seleção da Medallion acontece em desenvolvimento, com a busca agendada ativa.
+
+Antes da publicação em desenvolvimento, valide a autorização no ambiente isolado com uma conta de uma única unidade, uma conta sem permissão e uma identidade vazia. Registre o commit e os resultados da homologação. Preserve uma cópia recuperável da publicação atual antes da primeira promoção incremental.
+
+Para a homologação, execute o build como job dbt e use um identificador de execução novo a cada candidata completa. Por exemplo, `schema_id: prontuario_homologacao_001` gera `rj-smas-dev.ci_prontuario_homologacao_001`.
+
+```bash
+dbt build --project-dir queries --profiles-dir queries --target ci \
+    --vars '{schema_id: prontuario_homologacao_001}' --select +prontuario_eletronico
+```
+
+A programada `acolherio_atendimentos_dev` e a Medallion aplicam o mesmo desempate em jobs independentes. Gere o SQL independente a partir do modelo dbt quando a seleção ou seus raws mudarem:
+
+```bash
+dbt compile --project-dir queries --profiles-dir queries --target ci \
+    --target-path "$PWD/queries/target" --no-introspect --select +int_acolherio_atendimentos
+python queries/scheduled/render_atendimentos.py queries/target/manifest.json \
+    > queries/scheduled/atendimentos.sql
+```
+
+Para homologar, fixe um timestamp de time travel dos raws, um snapshot da planilha real e a data de referência. Execute duas cargas da programada e duas da Medallion em destinos isolados. Exija igualdade de chaves, valores e multiplicidade nas colunas compartilhadas, além das contagens de participações, IDs de atendimento com módulo, profissionais e famílias referenciadas no total e por unidade. Compare também com o SQL anterior na mesma fotografia e registre as mudanças de população e de vencedores.
+
+Ative `validar_prontuario_familias_referenciadas` com `--vars '{validar_familias_com_programada: true}'` somente ao comparar com a programada da mesma fotografia. O teste usa `rj-smas-dev.dashboard_acolherio.dev_atendimentos` como referência.
+
+Materialize o Prontuário a partir da seleção aprovada e valide o esquema, a chave pessoa–unidade e a correspondência das participações. Preserve cópias das duas saídas e do SQL anterior. Atualize o SQL da configuração ativa em desenvolvimento e publique o par validado em janela sem execuções concorrentes. Confira as contagens e os grupos nas tabelas publicadas. Se houver divergência, restaure o par anterior.
+
+```bash
+dbt run-operation publicar_prontuario_dev --project-dir queries --profiles-dir queries \
+    --target dev --args '{schema_candidata: ci_prontuario_homologacao_001}'
+```
+
+A operação publica em `rj-smas-dev.abordagem.prontuario_eletronico` e registra a versão da candidata na mesma transação que insere, atualiza e exclui linhas. Para ensaiar a publicação, passe `schema_destino` com o nome de outro dataset isolado `ci_prontuario_*`. Em conflito de atualização concorrente, repita a operação com a mesma candidata após a conclusão da carga mais recente.
+
+#### Planilha Unificada do Centro POP
+
+A fonte da planilha é `prontuario_eletronico`. Use `usuario` para o cadastro atual e `centro_pop.historico_mensal` para o perfil e os eventos da competência. A consulta abaixo abre os atendimentos e mantém seus profissionais aninhados. A integração deve preencher `@email_visualizador` com a identidade autenticada.
+
+```sql
+select
+    p.id_usuario_unidade,
+    p.id_usuario,
+    p.id_unidade,
+    p.nome_unidade,
+    p.usuario,
+    mes.* except (id_unidade, nome_unidade, atendimentos, evolucoes, ocorrencias),
+    atendimento
+from `rj-smas-dev.abordagem.prontuario_eletronico` as p
+cross join unnest(p.centro_pop.historico_mensal) as mes
+cross join unnest(mes.atendimentos) as atendimento
+where
+    nullif(trim(@email_visualizador), '') is not null
+    and lower(trim(@email_visualizador)) in unnest(split(p.email_filtro, ', '))
+```
+
+Conte eventos pela chave `(id_usuario_unidade, id_atendimento_modulo)`. Para oficinas, leia `quantidade_participacoes` uma vez por pessoa, unidade e mês, antes de abrir os atendimentos. Na comparação com a relação anterior, confira também a classificação técnica por CBO, a idade no fechamento, a origem de RG, certidão e NIS e a evidência histórica de saúde.
+
 ---
 
 ## ⚠️ 4. Solução de Problemas Comuns

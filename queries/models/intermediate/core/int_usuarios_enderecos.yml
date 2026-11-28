@@ -1,0 +1,10 @@
+version: 2
+models:
+- name: int_usuarios_enderecos
+  description: Um endereço por usuário, da foto do BI quando presente ou do cadastro
+    para os demais; não preenche lacunas entre fontes.
+  columns:
+  - name: id_usuario
+    data_tests:
+    - not_null
+    - unique

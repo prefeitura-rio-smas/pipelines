@@ -1,0 +1,13 @@
+version: 2
+models:
+  - name: int_perfil_centro_pop
+    description: Perfil Centro POP por cidadão, com respostas gerais e registros calculados dentro de cada unidade.
+    columns:
+      - name: id_usuario
+        data_tests:
+          - not_null
+          - unique
+      - name: perfil_geral
+        description: Perfil do cidadão com formulário ou atendimento Centro POP. Nulo quando há registro apenas no recorte por unidade.
+      - name: registros
+        description: Perfis selecionados separadamente por unidade, preservando respostas e participações sem unidade identificada.

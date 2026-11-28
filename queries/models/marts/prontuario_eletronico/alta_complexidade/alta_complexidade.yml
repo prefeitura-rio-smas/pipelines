@@ -1,0 +1,11 @@
+version: 2
+models:
+  - name: alta_complexidade
+    description: Histórico por usuário; preparação no intermediário do escopo.
+    columns:
+      - name: id_usuario
+        data_tests: [unique, not_null]
+      - name: registros
+        description: "Ciclos com autorização por unidade, ordenados por data_entrada e id_ciclo."
+      - name: ultimo_ciclo
+        description: "Ciclo prioritário do histórico original: aberto primeiro, depois entrada e identificador decrescentes, com desempate pelo conteúdo original."
