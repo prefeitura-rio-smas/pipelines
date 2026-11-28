@@ -166,9 +166,10 @@ models:
         data_tests: [not_null]
       - name: familias
         description: |
-          ARRAY<STRUCT> por id_familia com responsável e estado cadastral atuais,
-          vinculos datados e servicos datados da família. Serviços usam nome_unidade,
-          incluem vínculos encerrados e se repetem entre membros; não comprovam
+          ARRAY<STRUCT> das famílias referenciadas nos atendimentos da pessoa na
+          unidade da linha. Sem referências, o array fica vazio. Cada família
+          mantém responsável e estado cadastral atuais, vínculos e serviços datados.
+          Serviços usam nome_unidade, incluem vínculos encerrados e se repetem entre membros; não comprovam
           atendimento individual. Inclui responsáveis sem registro de membro.
           membros é ARRAY<STRUCT<id_usuario STRING, nome STRING, parentesco_responsavel STRING>>,
           com um item por integrante atual (vínculo sem data de saída), inclusive
@@ -265,7 +266,11 @@ models:
       - name: atendimentos.registros.data_atendimento_sistema
         description: Data de cadastro declarada na referência, como STRING, sem fallback pela data de realização.
       - name: atendimentos.registros.profissionais.id_profissional
-        description: ID natural do profissional apresentado na linha do atendimento, como STRING; homônimos são preservados.
+        description: >-
+          Nome de CADASTRANTE da busca programada, como STRING em maiúsculas e sem
+          espaços nas extremidades. O mesmo cadastrante pode aparecer em várias
+          participações. Quando ausente ou vazio, o valor é NULL e a participação é
+          preservada. nome_profissional contém o nome do executor da participação.
       - name: atendimentos.registros.profissionais.id_familia_referencia
         description: Família da linha profissional na referência do BI. Pode variar entre profissionais do mesmo evento; não inferir pela lista cadastral de famílias do usuário.
       - name: atendimentos.registros.profissionais.id_atendimento_legado

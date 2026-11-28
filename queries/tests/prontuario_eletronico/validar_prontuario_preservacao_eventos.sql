@@ -8,7 +8,9 @@ with esperado as (
         coalesce(a.id_atendimento_modulo, '') as id_evento,
         coalesce(cast(a.data_atendimento as string), '') as data_evento,
         coalesce(a.origem_modulo, '') as modulo,
-        coalesce(cast(prof.id_profissional as string), '') as profissional,
+        nullif(trim(upper(a.cadastrante)), '') as cadastrante,
+        coalesce(prof.nome_profissional, '') as nome_profissional,
+        coalesce(cast(prof.id_familia_referencia as string), '') as id_familia_referencia,
         coalesce(prof.id_atendimento_legado, '') as id_atendimento_legado,
         coalesce(prof.classificacao_atendimento, '') as classificacao,
         a.atendimento_compartilhado
@@ -25,7 +27,9 @@ with esperado as (
         e.id_evolucao_modulo as id_evento,
         coalesce(cast(e.data_evolucao as string), '') as data_evento,
         '' as modulo,
-        '' as profissional,
+        cast(null as string) as cadastrante,
+        '' as nome_profissional,
+        '' as id_familia_referencia,
         '' as id_atendimento_legado,
         '' as classificacao,
         '' as atendimento_compartilhado
@@ -43,11 +47,15 @@ obtido as (
         a.id_atendimento_modulo as id_evento,
         a.data_atendimento_informada as data_evento,
         a.origem_modulo as modulo,
-        a.profissionais[safe_offset(0)].id_profissional as profissional,
-        a.profissionais[safe_offset(0)].id_atendimento_legado as id_atendimento_legado,
+        prof.id_profissional as cadastrante,
+        prof.nome_profissional,
+        prof.id_familia_referencia,
+        prof.id_atendimento_legado,
         a.classificacao_atendimento as classificacao,
         a.atendimento_compartilhado
-    from {{ ref('prontuario_eletronico') }} as p, unnest(p.atendimentos.registros) as a
+    from {{ ref('prontuario_eletronico') }} as p
+    cross join unnest(p.atendimentos.registros) as a
+    left join unnest(a.profissionais) as prof on true
     union all
     select
         p.usuario.id_usuario,
@@ -56,7 +64,9 @@ obtido as (
         e.id_evolucao_modulo as id_evento,
         e.data_evolucao as data_evento,
         '' as modulo,
-        '' as profissional,
+        cast(null as string) as cadastrante,
+        '' as nome_profissional,
+        '' as id_familia_referencia,
         '' as id_atendimento_legado,
         '' as classificacao,
         '' as atendimento_compartilhado
@@ -81,13 +91,13 @@ selecao as (
             cast(id_usuario as string) as id_usuario,
             coalesce(cast(_id_unidade as string), '') as id_unidade,
             coalesce(concat(seq_atendimento, modulo), '') as id_evento,
-            coalesce(cast(profissional_id as string), '') as profissional
+            nullif(trim(upper(cadastrante)), '') as cadastrante
         )) as registro,
         1 as sinal
     from {{ ref('int_acolherio_atendimentos') }}
     union all
     select
-        to_json_string(struct(id_usuario, id_unidade, id_evento, profissional)) as registro,
+        to_json_string(struct(id_usuario, id_unidade, id_evento, cadastrante)) as registro,
         -1 as sinal
     from obtido
     where origem = 'atendimento'

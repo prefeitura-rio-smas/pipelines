@@ -44,7 +44,7 @@ select
 from (
 -- Materializa a seleção uma vez para que os consumidores compartilhem os mesmos desempates.
 -- Seleção de linhas de atendimento e profissional a partir dos raws do AcolheRio.
--- Mantém as partições da busca programada com desempate determinístico.
+-- Aplica os rankings da busca programada com desempate determinístico.
 WITH base_atendimentos AS (
     SELECT
         b.id_atendimento,
@@ -531,6 +531,14 @@ projetos_por_familia AS (
     GROUP BY id_familia
 ),
 
+candidatos AS (
+    SELECT
+        a.*,
+        p.projetos_sociais
+    FROM classificados AS a
+    LEFT JOIN projetos_por_familia AS p ON a.id_familia = p.id_familia
+),
+
 classificacao AS (
 
 
@@ -563,14 +571,13 @@ classificacao AS (
                 to_json_string(struct(a.modulo, a.cas, a.tipo_unidade, a.unidade_atendimento, a.email_unidade, a.email_cas, a.seq_atendimento, a.data_de_atendimento, a.hora_de_atendimento_original, a.hora_de_atendimento, a.id_usuario, a.id_familia, a.nome_usuario, a.documentacao, a.numero_documento, a.endereco, a.endereco_numero, a.endereco_complemento, a.bairro, a.referencia_ou_comunidade, a.nome_atendimento_original, a.data_nascimento, a.idade, a.raca_cor, a.sexo, a.profissional_id, a.profissional, a.profissional_cbo_original, a.profissional_cbo, a.cadastrante, a.data_cadastro_atendimento, a.tipo_atendimento, a.nome_atendimento, a.idade_faixa, a.id_atendimento, a.email)) asc,
                 to_json_string(struct(a._id_unidade, a._id_tipo_atendimento, a._flag_cancelado)) asc
         ) as atendimento_unico_rank
-    from classificados as a
+    from candidatos as a
     qualify cbo_unico_rank = 1 and atendimento_unico_rank = 1
 
 )
 
 SELECT
-    a.*,
-    p.projetos_sociais
+    a.* EXCEPT (projetos_sociais),
+    a.projetos_sociais
 FROM classificacao AS a
-LEFT JOIN projetos_por_familia AS p ON a.id_familia = p.id_familia
 ) as a;

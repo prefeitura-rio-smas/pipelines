@@ -1,7 +1,7 @@
 {{ config(materialized='table', tags=['planilha_unificada']) }}
 -- Materializa a seleção uma vez para que os consumidores compartilhem os mesmos desempates.
 -- Seleção de linhas de atendimento e profissional a partir dos raws do AcolheRio.
--- Mantém as partições da busca programada com desempate determinístico.
+-- Aplica os rankings da busca programada com desempate determinístico.
 WITH base_atendimentos AS (
     SELECT
         b.id_atendimento,
@@ -217,12 +217,19 @@ projetos_por_familia AS (
     GROUP BY id_familia
 ),
 
+candidatos AS (
+    SELECT
+        a.*,
+        p.projetos_sociais
+    FROM classificados AS a
+    LEFT JOIN projetos_por_familia AS p ON a.id_familia = p.id_familia
+),
+
 classificacao AS (
-    {{ selecionar_participacoes_atendimento('classificados') }}
+    {{ selecionar_participacoes_atendimento('candidatos') }}
 )
 
 SELECT
-    a.*,
-    p.projetos_sociais
+    a.* EXCEPT (projetos_sociais),
+    a.projetos_sociais
 FROM classificacao AS a
-LEFT JOIN projetos_por_familia AS p ON a.id_familia = p.id_familia

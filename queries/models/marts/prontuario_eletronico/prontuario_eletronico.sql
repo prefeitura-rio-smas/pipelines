@@ -285,7 +285,8 @@ atendimentos_por_usuario as (
                 profissional.classificacao_atendimento as classificacao_atendimento
             ))
             order by pos_evento, pos_profissional
-        ) as atendimentos
+        ) as atendimentos,
+        array_agg(distinct nullif(trim(cast(profissional.id_familia_referencia as string)), '') ignore nulls) as ids_familias_referenciadas
     from (
         {{ agrupar_atendimentos() }}
     ) as p
@@ -515,6 +516,7 @@ select
             ) as vinculos,
             {{ servicos_da_familia_na_unidade('item1.servicos', 'vinculo.id_unidade') }} as servicos
         from unnest(f.familias) as item1 with offset as posicao
+        where trim(cast(item1.id_familia as string)) in unnest(coalesce(a.ids_familias_referenciadas, []))
         order by posicao
     ) as familias,
     array(
@@ -551,7 +553,7 @@ select
                 item1.atendimento_compartilhado,
                 array(
                     select as struct
-                        coalesce(cast(item2.id_profissional as string), '') as id_profissional,
+                        nullif(trim(upper(item1.cadastrante)), '') as id_profissional,
                         coalesce(cast(item2.nome_profissional as string), '') as nome_profissional,
                         coalesce(cast(item2.id_familia_referencia as string), '') as id_familia_referencia,
                         coalesce(item2.id_atendimento_legado, '') as id_atendimento_legado,

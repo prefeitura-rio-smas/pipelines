@@ -102,7 +102,7 @@ dbt build --project-dir queries --profiles-dir queries --target ci \
     --vars '{schema_id: prontuario_homologacao_001}' --select +prontuario_eletronico
 ```
 
-A busca agendada e a Medallion executam o mesmo cálculo em jobs independentes, cada uma lendo os raws e a planilha. A programada publica as colunas legadas em `rj-smas-dev.dashboard_acolherio.dev_atendimentos`. Gere novamente o SQL versionado quando o cálculo ou seus raws mudarem, usando o perfil `ci`:
+A programada `acolherio_atendimentos_dev` e a Medallion aplicam o mesmo desempate em jobs independentes. Gere o SQL independente a partir do modelo dbt quando a seleção ou seus raws mudarem:
 
 ```bash
 dbt compile --project-dir queries --profiles-dir queries --target ci \
@@ -111,11 +111,11 @@ python queries/scheduled/render_atendimentos.py queries/target/manifest.json \
     > queries/scheduled/atendimentos.sql
 ```
 
-Para homologar, grave uma cópia autorizada da planilha real em um dataset isolado. Fixe o mesmo timestamp de time travel para os raws e a mesma data de referência nas cópias de teste do SQL. Rode duas execuções de cada pipeline, redirecionando os destinos da programada para tabelas isoladas. Compare chaves, valores de todas as colunas comuns e contagem por linha completa no total e em Centro POP. Exija zero diferenças, inclusive entre as duas execuções de cada pipeline. Valide também esquema, grão pessoa–unidade e ordem dos arrays nas duas OBTs.
+Para homologar, fixe um timestamp de time travel dos raws, um snapshot da planilha real e a data de referência. Execute duas cargas da programada e duas da Medallion em destinos isolados. Exija igualdade de chaves, valores e multiplicidade nas colunas compartilhadas, além das contagens de participações, IDs de atendimento com módulo, profissionais e famílias referenciadas no total e por unidade. Compare também com o SQL anterior na mesma fotografia e registre as mudanças de população e de vencedores.
 
-Execute a versão anterior da programada sobre a mesma fotografia e registre a variação de população e multiplicidade por profissional, hora, data, nome original, usuário e unidade. Conte trocas de ID, família, CBO e classificação no total e em Centro POP. Para grupos eliminados pelo `QUALIFY`, registre os vencedores dos dois rankings. Mudanças de população nessa transição exigem revisão explícita. A planilha real é requisito para a homologação.
+Ative `validar_prontuario_familias_referenciadas` com `--vars '{validar_familias_com_programada: true}'` somente ao comparar com a programada da mesma fotografia. O teste usa `rj-smas-dev.dashboard_acolherio.dev_atendimentos` como referência.
 
-Após o aceite, preserve cópias recuperáveis das duas saídas e do SQL anterior. Atualize o SQL da configuração existente da programada em desenvolvimento e publique a OBT pelo job incremental abaixo. Compare as saídas após a primeira execução independente de cada pipeline. Se divergirem, restaure o SQL anterior e as saídas preservadas.
+Materialize o Prontuário a partir da seleção aprovada e valide o esquema, a chave pessoa–unidade e a correspondência das participações. Preserve cópias das duas saídas e do SQL anterior. Atualize o SQL da configuração ativa em desenvolvimento e publique o par validado em janela sem execuções concorrentes. Confira as contagens e os grupos nas tabelas publicadas. Se houver divergência, restaure o par anterior.
 
 ```bash
 dbt run-operation publicar_prontuario_dev --project-dir queries --profiles-dir queries \
